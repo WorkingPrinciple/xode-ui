@@ -142,6 +142,13 @@ enum EngineManagementChecks {
               "REQ115 B3: an absent release engine reports Calimocho isn't installed")
 
         let pin = try build()
+        check(CalimochoAvailability.verifiedRelease(root: engines, signature: signed) == .missing,
+              "M1: only -04 installed reports the active -06 missing, not pending")
+        let activeFolder = engines.appendingPathComponent(CalimochoReleasePin.release06.engineName)
+        try FileManager.default.moveItem(at: engines.appendingPathComponent(name), to: activeFolder)
+        check(CalimochoAvailability.verifiedRelease(root: engines, signature: signed) != .missing,
+              "M1: only -06 installed is inspected as active, never mistaken for missing -04")
+        try FileManager.default.moveItem(at: activeFolder, to: engines.appendingPathComponent(name))
         let verified = try CalimochoReleaseEngines.verify(pin, root: engines, signature: signed)
         func inspection(admitted: Bool) -> EngineInspection {
             EngineInspection(schemaVersion: 1, capability: "engineAdmissionV1",

@@ -250,7 +250,7 @@ struct ReadinessChecklistView: View {
         .task(id: allowsStatusReads) {
             guard allowsStatusReads else { return }
             releaseStatus = .checking
-            let status = await CalimochoAvailability.verifyReleaseInBackground(root: calimochoInstaller.enginesRoot)
+            let status = await CalimochoAvailability.verifyReleaseInBackground(CalimochoReleasePin.all.last!, root: calimochoInstaller.enginesRoot)
             guard !Task.isCancelled else { return }
             releaseStatus = status
         }
@@ -264,7 +264,7 @@ struct ReadinessChecklistView: View {
 
     private func refreshReleaseAdmission() async -> Bool {
         await installed.refreshEngineOverrides(force: true)
-        releaseStatus = await CalimochoAvailability.verifyReleaseInBackground(root: calimochoInstaller.enginesRoot)
+        releaseStatus = await CalimochoAvailability.verifyReleaseInBackground(CalimochoReleasePin.all.last!, root: calimochoInstaller.enginesRoot)
         return installed.availableEngineOverrides.contains {
             $0.inspection.engineName == CalimochoRelease.engineID
         }

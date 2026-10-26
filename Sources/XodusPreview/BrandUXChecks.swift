@@ -161,9 +161,9 @@ enum BrandUXChecks {
               && CalimochoAvailability.notChecked.emptyListMessage != nil,
               "REQ-114(4): A completed check renders Ready, Missing or Invalid (reason); an admitted engine is Ready")
         let emptyRoot = FileManager.default.temporaryDirectory.appendingPathComponent("XodusNoEngines-\(UUID().uuidString)")
-        check(CalimochoAvailability.verifiedRelease(root: emptyRoot) == .missing
+        check(CalimochoAvailability.verifiedRelease(CalimochoReleasePin.all.last!, root: emptyRoot) == .missing
               && CalimochoAvailability.from(choices: [failed], checking: false,
-                    release: CalimochoAvailability.verifiedRelease(root: emptyRoot)) == .missing,
+                    release: CalimochoAvailability.verifiedRelease(CalimochoReleasePin.all.last!, root: emptyRoot)) == .missing,
               "REQ-115: The Engines pane maps 135c's release verification of an empty Engines folder to Missing")
         let release = EngineDisplayName.presentation(for: CalimochoRelease.engineID)
         let pinned = CalimochoReleasePin.all.last!.engineName

@@ -544,9 +544,10 @@ enum CalimochoAvailability: Equatable, Sendable {
 
     /// Runs the release verification off the main actor; it reads and hashes the engine.
     static func verifyReleaseInBackground(
+        _ pin: CalimochoReleasePin = CalimochoReleasePin.all.last!,
         root: URL = CalimochoReleaseEngines.defaultEnginesRoot
     ) async -> Self {
-        await Task.detached(priority: .utility) { CalimochoAvailability.verifiedRelease(root: root) }.value
+        await Task.detached(priority: .utility) { CalimochoAvailability.verifiedRelease(pin, root: root) }.value
     }
 
     var needsDownload: Bool {

@@ -544,8 +544,8 @@ enum CalimochoReleaseInstallerChecks {
             .write(to: titleFolder.appendingPathComponent("calimocho-engine.json"))
         check(try LocalCalimochoRelease.installed(root: root) == [old],
               "REQ123: a title-specific -01-fh6 folder cannot break release discovery")
-        check(AcknowledgmentsInventory.installedReleaseEngine(root: root) == nil,
-              "REQ123: Acknowledgments never falls back to an unpinned engine folder")
+        check(AcknowledgmentsInventory.installedReleaseEngine(root: root)?.lastPathComponent == old.engineName,
+              "REQ123: Acknowledgments falls back to the older compiled pin, never the FH6 folder")
         var date = Date(timeIntervalSince1970: 1_800_000_000)
         CalimochoInstallerURLProtocol.configure(Data())
         let controller = CalimochoReleaseInstallController(

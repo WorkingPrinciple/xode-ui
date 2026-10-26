@@ -46,7 +46,7 @@ struct CalimochoReleasePin: Equatable, Sendable {
         archiveSha256: "3fc4467b466b6f8f0855c1934b2fe6a3d1c02b0c5ca85037860b735e4e419ee5",
         archiveByteCount: 200_075_043,
         expandedByteCount: 695_625_804,
-        attestation: "Provisional engine-0.1120.4.6; publication and title gameplay gates pending")
+        attestation: "Calimocho engine-0.1120.4.6; owner-confirmed publication and gameplay gate (COR-216)")
 
     static let all: [Self] = [.release04, .release06]
     static func named(_ name: String) -> Self? { all.first { $0.engineName == name } }
@@ -266,7 +266,7 @@ extension CalimochoAvailability {
     /// Ready only when the fast local pre-filter (descriptor, MANIFEST.sha256 file, Wine digests, Team ID) passes
     /// AND backend `engine-inspect` admitted this exact engine. The backend verifies every manifest entry and the
     /// tree; the app does not. Reads and hashes the engine, so call it off the main actor.
-    static func verifiedRelease(_ pin: CalimochoReleasePin = .release04,
+    static func verifiedRelease(_ pin: CalimochoReleasePin = CalimochoReleasePin.all.last!,
                                 root: URL = CalimochoReleaseEngines.defaultEnginesRoot,
                                 signature: (URL, String) -> Bool = CalimochoReleaseEngines.codeSignatureValid,
                                 admission: EngineInspection? = nil) -> Self {
