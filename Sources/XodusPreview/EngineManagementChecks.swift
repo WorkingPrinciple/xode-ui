@@ -64,6 +64,35 @@ enum EngineManagementChecks {
         check(EngineDisplayName.label("calimocho-wine11.20-gptk4b3-tls-vulkan-private") == "Calimocho"
               && EngineDisplayName.label("apple-gptk-4.0b3") == "Apple Game Porting Toolkit",
               "REQ114 U2 engine identifiers map to user-meaningful names without renaming IDs")
+        highballChecks(check: check)
+    }
+
+    static func highballChecks(check: (Bool, String) -> Void) {
+        func json(_ state: String, qualified: Bool, product: String, error: String?) -> Data {
+            let failure = error.map { "{\"code\":\"\($0)\"}" } ?? "null"
+            return Data("""
+            {"schemaVersion":1,"capability":"highballAdmissionV1","providerID":"highball","state":"\(state)",
+            "qualified":\(qualified),"admitted":\(qualified),"ready":\(qualified),"productID":"\(product)",
+            "candidate":{"version":"0.10.22"},"error":\(failure)}
+            """.utf8)
+        }
+        check(HighballContract.decode(json("missing", qualified: false, product: "9P9VNSQK1W3K",
+                                           error: "HIGHBALL_NOT_INSTALLED")) == .missing,
+              "REQ127 missing Highball decodes and offers Get")
+        check(HighballContract.decode(json("detected", qualified: false, product: "BQVQTL3PCH05",
+                                           error: "HIGHBALL_TITLE_UNQUALIFIED"))
+              == .detected(version: "0.10.22", blocker: "HIGHBALL_TITLE_UNQUALIFIED"),
+              "REQ127 detected-but-unqualified Highball is blocked")
+        check(HighballContract.decode(json("qualified", qualified: true, product: "9P9VNSQK1W3K", error: nil))
+              == .qualified(version: "0.10.22", productID: "9P9VNSQK1W3K"),
+              "REQ127 qualified requires the backend verdict")
+        check(HighballContract.decode(json("detected", qualified: true, product: "X", error: nil)) == nil
+              && HighballContract.decode(json("qualified", qualified: false, product: "X", error: nil)) == nil
+              && HighballContract.decode(Data("{}".utf8)) == nil,
+              "REQ127 inconsistent or unknown backend output is never qualified")
+        check(HighballState.missing.offersGet && !HighballState.detected(version: nil, blocker: nil).offersGet
+              && HighballContract.detect(at: URL(fileURLWithPath: "/nonexistent/Highball.app")) == .missing,
+              "REQ127 Get appears only when absent and detection is read-only")
     }
 
     /// REQ-115/B3: release engines are discovered, hash- and signature-verified and rendered per Mac; nothing user-specific ships.
