@@ -40,22 +40,76 @@ notarization and Gatekeeper checks are completed.
 After notarization is completed, move "X Ode.app" into Applications and
 launch it from there. Keep this archive and its checksum with the beta record.
 """
+RELEASE_INSTALL_NOTE = """X Ode 0.2.0 beta
+
+This app and installer are signed with Developer ID and notarized by Apple.
+The app and disk image are stapled and Gatekeeper-validated.
+
+The corresponding source archive for the bundled backend is provided next to
+this disk image and attached to this draft release as
+xodus-cli-beta-99e20add-source.tar. Keep it paired with this release; do not
+publish the app without its corresponding source.
+"""
 RELEASE_NOTES = """X Ode beta release notes
 
 Private-tester package only. Do not upload or redistribute publicly. The exact
 producer source is inside ZIP packages and paired with DMG packages as
 PRIVATE-TESTER-SOURCE.tar.
 
-The eappx, msixvc, msixvc-common, xodus, xodus-cli, xodus-management, and
-xodus-service workspace crates are licensed under GPL-3.0-only as stated by
-the producer repository's root LICENSE. The corresponding source archive
-includes that LICENSE.
+The six local workspace crates (msixvc, msixvc-common, xodus, xodus-cli,
+xodus-management, and xodus-service) are governed by the GNU General Public License version 3, as provided in the producer repository's root LICENSE. No version-grant statement appears in that LICENSE or the producer README. The corresponding source archive includes that LICENSE.
+
+eappx is a separate external MIT-licensed dependency; its upstream README
+credits WalkingCat and dalion619.
 
 Known beta limitation: No Man's Sky uses an explicitly configured developer-local engine binding.
 On a Mac without that exact tested engine installed, X Ode reports that the engine
 is missing and does not substitute another engine.
 
 In-game voice chat and microphone input aren't supported in this beta.
+"""
+PUBLIC_RELEASE_NOTES = """## X Ode 0.2.0 (Beta)
+
+X Ode is a native macOS app for managing Xbox PC games. It requires an Apple
+silicon Mac running macOS Sonoma 14 or later and a Microsoft account with the
+games you want to play.
+
+### Install
+
+1. Download the disk image from this release and, optionally, verify it against
+   its SHA-256 checksum.
+2. Open the disk image and drag **X Ode** to **Applications**.
+3. Open X Ode from Applications and sign in with your Microsoft account.
+4. When a game needs it, X Ode offers to download Calimocho 0.1120.4.4. If
+   CrossOver is installed, X Ode also detects it.
+
+### Tested with Calimocho 0.1120.4.4
+
+- Brotato and Halls of Torment completed with a clean quit.
+- Forza Horizon 6 reached its title screen; continuing into free roam was not
+  verified.
+
+### Known issues
+
+- An interrupted download starts over from the beginning; X Ode says so and
+  lets you discard the partial download.
+- Vampire Survivors and Balatro do not start yet.
+- No Man's Sky needs a developer engine that is not part of this beta; X Ode
+  shows the engine as missing.
+- In-game voice chat and microphone input are not supported.
+- X Ode does not update itself yet; download new betas from this page.
+
+### Open source
+
+- X Ode is licensed under GPL-3.0-only. The six local backend workspace crates
+  (msixvc, msixvc-common, xodus, xodus-cli, xodus-management, and xodus-service)
+  are governed by the GNU General Public License version 3, as provided in the producer repository's root LICENSE; that LICENSE and the producer README state no version grant. The external eappx dependency is MIT-licensed; its README credits WalkingCat and dalion619.
+- The corresponding source archive for the backend binary is attached as
+  `xodus-cli-beta-99e20add-source.tar` (SHA-256
+  `d67b903137c96479298a139374d5bdf988db4f64ee971588183584bf520e4fdd`).
+- The Calimocho engine is distributed separately; see its
+  [0.1120.4.4 release](https://github.com/WorkingPrinciple/calimocho/releases/tag/engine-0.1120.4.4).
+- "X Ode" and "Working Principle" are trademarks; see TRADEMARKS.
 """
 def run(arguments, timeout=1800):
     result = subprocess.run(arguments, capture_output=True, text=True, timeout=timeout)

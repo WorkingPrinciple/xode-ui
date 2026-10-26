@@ -21,8 +21,13 @@ from shipping_pair import (CLI_SHA256, WINDOWS_HELPER_SHA256 as HELPER_SHA256,
                            hex_value, owned_bytes, require, unique_object)
 from signing_identity import verify_designated_requirement
 from distribution_manifest import require_distribution_ready, distribution_blockers
-from package_beta import (INSTALL_NOTE, PRODUCER_NOTICES_SHA256, RELEASE_NOTES,
-                          create_installer_dmg, validate_dmg_background)
+from package_beta import (PRODUCER_NOTICES_SHA256, PRODUCER_SOURCE_ARCHIVE_BYTES,
+                          PRODUCER_SOURCE_ARCHIVE_SHA256, PRODUCER_SOURCE_COMMIT,
+                          PRODUCER_SOURCE_TREE, PUBLIC_RELEASE_NOTES,
+                          RELEASE_INSTALL_NOTE, create_installer_dmg,
+                          validate_dmg_background)
+
+PRODUCER_SOURCE_ARCHIVE_NAME = "xodus-cli-beta-99e20add-source.tar"
 
 
 def read_json(path):
@@ -36,6 +41,15 @@ def validate_engine_notice(path):
     require(bool(text.strip()) and "\x00" not in text,
             "Calimocho NOTICE must be non-empty UTF-8 text")
     return identity
+
+
+def validate_producer_source_archive(path):
+    require(path is not None, "Pinned backend corresponding-source archive is required")
+    identity, data = owned_bytes(path, PRODUCER_SOURCE_ARCHIVE_SHA256,
+                                 PRODUCER_SOURCE_ARCHIVE_BYTES,
+                                 bounded=PRODUCER_SOURCE_ARCHIVE_BYTES)
+    require(data is not None, "Could not read the pinned backend source archive")
+    return identity, data
 
 
 def frozen_payloads(candidate, approved_unnotarized_cli=None):
@@ -143,12 +157,20 @@ def notarize(path, stage, receipt, receipt_path, label, profile):
 
 
 def distribute(app, stage, receipt, receipt_path, identity, profile, producer_notices_sha256=None,
-               dmg_background=None):
+               dmg_background=None, producer_source_archive=None):
     require(isinstance(PRODUCER_NOTICES_SHA256, str)
             and re.fullmatch(r"[0-9a-f]{64}", PRODUCER_NOTICES_SHA256) is not None
             and producer_notices_sha256 == PRODUCER_NOTICES_SHA256,
             "No current producer-notice inventory is pinned; await the admitted producer rebuild")
     require_distribution_ready(app, producer_notices_sha256)
+    source_identity, source_bytes = validate_producer_source_archive(producer_source_archive)
+    require(receipt.get("producerSourceArchive") == {
+        "file": PRODUCER_SOURCE_ARCHIVE_NAME,
+        "sourceCommit": PRODUCER_COMMIT,
+        "sourceTree": PRODUCER_TREE,
+        **source_identity,
+        "distribution": "separate draft-release asset and DMG sidecar",
+    }, "Backend corresponding-source archive differs from the signed dry-run")
     engine_notice = validate_engine_notice(app / "Contents/Resources/EngineNotices/NOTICE.txt")
     require(engine_notice == receipt.get("engineNotice"),
             "Calimocho NOTICE differs from the signed dry-run candidate")
@@ -192,8 +214,25 @@ def distribute(app, stage, receipt, receipt_path, identity, profile, producer_no
             stage, receipt, receipt_path, "distribution-app-copy")
     execute(["/usr/bin/codesign", "--verify", "--deep", "--strict", str(distribution_app)],
             stage, receipt, receipt_path, "distribution-app-signature")
-    (distribution / "INSTALL.txt").write_text(INSTALL_NOTE, encoding="utf-8")
-    (distribution / "RELEASE-NOTES.txt").write_text(RELEASE_NOTES, encoding="utf-8")
+    source_path = stage / PRODUCER_SOURCE_ARCHIVE_NAME
+    with source_path.open("xb") as output:
+        output.write(source_bytes)
+        output.flush()
+        os.fsync(output.fileno())
+    source_path.chmod(0o600)
+    owned_bytes(source_path, PRODUCER_SOURCE_ARCHIVE_SHA256, PRODUCER_SOURCE_ARCHIVE_BYTES)
+    source_checksum = source_path.with_name(source_path.name + ".sha256")
+    with source_checksum.open("x", encoding="ascii") as output:
+        output.write(PRODUCER_SOURCE_ARCHIVE_SHA256 + "  " + source_path.name + "\n")
+    source_checksum.chmod(0o600)
+    receipt["artifacts"]["producerSourceArchive"] = {
+        "path": str(source_path), **source_identity,
+        "checksumFile": source_checksum.name,
+        "checksumSHA256": PRODUCER_SOURCE_ARCHIVE_SHA256,
+    }
+    write_receipt(receipt_path, receipt)
+    (distribution / "INSTALL.txt").write_text(RELEASE_INSTALL_NOTE, encoding="utf-8")
+    (distribution / "RELEASE-NOTES.txt").write_text(PUBLIC_RELEASE_NOTES, encoding="utf-8")
     dmg = stage / f"X-Ode-{version}-{channel_slug}.dmg"
     def run_dmg_command(arguments):
         if arguments[0] == "dmgbuild":
@@ -227,7 +266,7 @@ def distribute(app, stage, receipt, receipt_path, identity, profile, producer_no
 
 
 def resume(receipt_path, profile, approved_unnotarized_cli=None, producer_notices_sha256=None,
-           dmg_background=None):
+           dmg_background=None, producer_source_archive=None):
     require(isinstance(PRODUCER_NOTICES_SHA256, str)
             and re.fullmatch(r"[0-9a-f]{64}", PRODUCER_NOTICES_SHA256) is not None
             and producer_notices_sha256 == PRODUCER_NOTICES_SHA256,
@@ -239,6 +278,14 @@ def resume(receipt_path, profile, approved_unnotarized_cli=None, producer_notice
             and receipt["installed"] is False and receipt["activated"] is False,
             "Only an untouched successful signed dry-run can be submitted; reconcile partial submissions explicitly")
     require(profile == receipt["notaryProfile"], "Use the dry-run's admitted notary profile")
+    source_identity, _ = validate_producer_source_archive(producer_source_archive)
+    require(receipt.get("producerSourceArchive") == {
+        "file": PRODUCER_SOURCE_ARCHIVE_NAME,
+        "sourceCommit": PRODUCER_COMMIT,
+        "sourceTree": PRODUCER_TREE,
+        **source_identity,
+        "distribution": "separate draft-release asset and DMG sidecar",
+    }, "Backend corresponding-source archive differs from the signed dry-run")
     app = Path(receipt["artifacts"]["app"]["path"])
     require(app.resolve(strict=True) == app and app.is_relative_to(stage), "App must remain in its owned dry-run stage")
     require(validate_engine_notice(app / "Contents/Resources/EngineNotices/NOTICE.txt")
@@ -274,7 +321,7 @@ def resume(receipt_path, profile, approved_unnotarized_cli=None, producer_notice
         execute(["/usr/bin/codesign", "--verify", "--deep", "--strict", str(app)],
                 stage, receipt, receipt_path, "resume-app-signature")
         distribute(app, stage, receipt, receipt_path, receipt["certificateSHA1"], profile,
-                   producer_notices_sha256, dmg_background)
+                   producer_notices_sha256, dmg_background, producer_source_archive)
         frozen_payloads(candidate, approved_unnotarized_cli)
         write_receipt(receipt_path, receipt)
         print(receipt_path, flush=True)
@@ -302,6 +349,7 @@ def build(args):
     require(root == args.output_root and info.st_uid == os.getuid() and info.st_mode & 0o022 == 0,
             "Use a canonical, owned, non-writable-by-others output root")
     cli, helper, producer = frozen_payloads(args.candidate.resolve(strict=True), args.approve_unnotarized_cli)
+    source_archive_identity, _ = validate_producer_source_archive(args.producer_source_archive)
     require(args.dmg_background is not None, "Supply the reviewed X Ode combined HiDPI TIFF background")
     background_identity = validate_dmg_background(args.dmg_background)
     require(args.engine_notice is not None, "Supply the admitted Calimocho NOTICE text")
@@ -311,6 +359,13 @@ def build(args):
     receipt_path = stage / "release-receipt.json"
     receipt = {"version": 1, "state": "building", "dryRun": args.dry_run,
                "appSource": source, "producer": producer, "commands": [], "artifacts": {},
+               "producerSourceArchive": {
+                   "file": PRODUCER_SOURCE_ARCHIVE_NAME,
+                   "sourceCommit": PRODUCER_COMMIT,
+                   "sourceTree": PRODUCER_TREE,
+                   **source_archive_identity,
+                   "distribution": "separate draft-release asset and DMG sidecar",
+               },
                "dmgBackground": background_identity,
                "engineNotice": engine_notice_identity,
                "certificateSHA1": args.identity.upper(), "notaryProfile": args.notary_profile,
@@ -395,6 +450,8 @@ def main():
     parser.add_argument("--identity")
     parser.add_argument("--candidate", type=Path, help="Frozen payload directory with approved producer receipts")
     parser.add_argument("--producer-source", type=Path)
+    parser.add_argument("--producer-source-archive", type=Path,
+                        help="Exact backend source archive paired with the release DMG")
     parser.add_argument("--producer-notices", type=Path)
     parser.add_argument("--producer-notices-sha256",
                         help="Independently reviewed exact inventory digest; required for distribution")
@@ -411,13 +468,14 @@ def main():
     if args.resume_receipt:
         require(not args.dry_run and not any((args.app_commit, args.installed_app, args.output_root,
                                              args.identity, args.candidate, args.producer_source,
-                                             args.producer_notices, args.dmg_background, args.engine_notice)),
-                "Resume takes only its exact dry-run receipt and notary profile")
+                                             args.producer_notices, args.engine_notice)),
+                "Resume takes its dry-run receipt, pinned source archive and admitted release evidence only")
         resume(args.resume_receipt, args.notary_profile, args.approve_unnotarized_cli,
-               args.producer_notices_sha256, args.dmg_background)
+               args.producer_notices_sha256, args.dmg_background, args.producer_source_archive)
     else:
         require(all((args.app_commit, args.installed_app, args.output_root,
-                     args.identity, args.candidate, args.producer_source)), "Supply all pinned build inputs")
+                     args.identity, args.candidate, args.producer_source,
+                     args.producer_source_archive)), "Supply all pinned build inputs")
         build(args)
 
 

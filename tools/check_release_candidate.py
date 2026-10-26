@@ -114,7 +114,8 @@ class ReleaseCandidateChecks(unittest.TestCase):
                                       candidate=root, approve_unnotarized_cli=None,
                                       producer_notices=root / "notices",
                                       producer_notices_sha256=PRODUCER_NOTICES_SHA256,
-                                      dmg_background=root / "background.tiff")
+                                      dmg_background=root / "background.tiff",
+                                      producer_source_archive=root / "source.tar")
             with patch.object(release, "source_identity", return_value=source), \
                     patch.object(release, "release_branch", return_value="feature/package"):
                 with self.assertRaisesRegex(ValueError, "only from main or a release/\\* branch"):
@@ -134,12 +135,16 @@ class ReleaseCandidateChecks(unittest.TestCase):
                                       candidate=root, approve_unnotarized_cli=None,
                                       producer_notices=root / "notices",
                                       producer_notices_sha256=PRODUCER_NOTICES_SHA256,
-                                      dmg_background=root / "background.tiff")
+                                      dmg_background=root / "background.tiff",
+                                      producer_source_archive=root / "source.tar")
+            args.producer_source_archive.write_bytes(b"Neutral source fixture")
             with patch.object(release, "CLI_SHA256", cli_hash), \
                     patch.object(release, "HELPER_SHA256", helper_hash), \
                     patch.object(release, "PRODUCER_MANIFEST_SHA256", manifest_hash), \
                     patch.object(release, "source_identity", return_value=source), \
                     patch.object(release, "release_branch", return_value="main"), \
+                    patch.object(release, "validate_producer_source_archive",
+                                 return_value=({"sha256": "e" * 64, "bytes": 2}, b"{}")), \
                     patch.object(release, "refresh") as refresh, \
                     patch.object(release, "notarize") as notarize:
                 with self.assertRaisesRegex(ValueError, "owner approval"):
@@ -240,8 +245,20 @@ class ReleaseCandidateChecks(unittest.TestCase):
                 background = root / "background.tiff"
                 background.write_bytes(b"II*\x00neutral background")
                 asset_identity = {"sha256": "a" * 64, "bytes": 1}
+                source_bytes = b"Neutral corresponding source archive"
+                source_archive = root / "input-source.tar"
+                source_archive.write_bytes(source_bytes)
+                source_identity = {"sha256": hashlib.sha256(source_bytes).hexdigest(),
+                                   "bytes": len(source_bytes)}
                 receipt["dmgBackground"] = asset_identity
                 receipt["engineNotice"] = asset_identity
+                receipt["producerSourceArchive"] = {
+                    "file": release.PRODUCER_SOURCE_ARCHIVE_NAME,
+                    "sourceCommit": release.PRODUCER_COMMIT,
+                    "sourceTree": release.PRODUCER_TREE,
+                    **source_identity,
+                    "distribution": "separate draft-release asset and DMG sidecar",
+                }
                 def execute(arguments, stage, receipt, path, label):
                     if label == failure:
                         raise ValueError("Required check failed")
@@ -257,11 +274,17 @@ class ReleaseCandidateChecks(unittest.TestCase):
                         return asset_identity, b"icns neutral icon"
                     if Path(path).name == "NOTICE.txt":
                         return asset_identity, b"Calimocho notice fixture\n"
+                    if Path(path) == source_archive or Path(path).name == release.PRODUCER_SOURCE_ARCHIVE_NAME:
+                        return source_identity, source_bytes
                     return asset_identity, b""
                 with patch.object(release, "execute", side_effect=execute), \
                         patch.object(release, "require_distribution_ready"), \
                         patch.object(release, "notarize", side_effect=notarize) as notary, \
                         patch.object(release, "owned_bytes", side_effect=read_asset), \
+                        patch.object(release, "PRODUCER_SOURCE_ARCHIVE_SHA256",
+                                     source_identity["sha256"]), \
+                        patch.object(release, "PRODUCER_SOURCE_ARCHIVE_BYTES",
+                                     source_identity["bytes"]), \
                         patch.object(release, "validate_dmg_background", return_value=asset_identity), \
                         patch.object(package_beta, "validate_dmg_background", return_value=asset_identity), \
                         patch.object(package_beta, "verify_developer_id_component",
@@ -273,14 +296,36 @@ class ReleaseCandidateChecks(unittest.TestCase):
                     if failure:
                         with self.assertRaises(ValueError):
                             release.distribute(app, root, receipt, root / "receipt.json", "c" * 40, "notary",
-                                               PRODUCER_NOTICES_SHA256, background)
+                                               PRODUCER_NOTICES_SHA256, background, source_archive)
                         self.assertFalse(receipt["notarized"])
                     else:
                         release.distribute(app, root, receipt, root / "receipt.json", "c" * 40, "notary",
-                                           PRODUCER_NOTICES_SHA256, background)
+                                           PRODUCER_NOTICES_SHA256, background, source_archive)
                         self.assertTrue(receipt["notarized"])
                         self.assertEqual([call.args[4] for call in notary.call_args_list], ["app", "dmg"])
                         self.assertTrue(set(labels).issubset({record["label"] for record in receipt["commands"]}))
+                        self.assertEqual((root / release.PRODUCER_SOURCE_ARCHIVE_NAME).read_bytes(),
+                                         source_bytes)
+                        self.assertEqual((root / (release.PRODUCER_SOURCE_ARCHIVE_NAME + ".sha256"))
+                                         .read_text(),
+                                         source_identity["sha256"] + "  "
+                                         + release.PRODUCER_SOURCE_ARCHIVE_NAME + "\n")
+                        self.assertEqual(receipt["artifacts"]["producerSourceArchive"]["sha256"],
+                                         source_identity["sha256"])
+                        install_note = (root / "distribution/INSTALL.txt").read_text()
+                        public_notes = (root / "distribution/RELEASE-NOTES.txt").read_text()
+                        self.assertEqual(install_note, package_beta.RELEASE_INSTALL_NOTE)
+                        self.assertEqual(public_notes, package_beta.PUBLIC_RELEASE_NOTES)
+                        self.assertIn("notarized by Apple", install_note)
+                        self.assertNotIn("has not been submitted", install_note)
+                        self.assertNotIn("PRIVATE TESTER PACKAGE ONLY", install_note)
+                        labels_in_order = [record.get("label") for record in receipt["commands"]]
+                        self.assertLess(labels_in_order.index("app-stapler-staple"),
+                                        labels_in_order.index("dmg-create"))
+                        self.assertLess(labels_in_order.index("dmg-create"),
+                                        labels_in_order.index("dmg-sign"))
+                        self.assertLess(labels_in_order.index("dmg-sign"),
+                                        labels_in_order.index("dmg-stapler-staple"))
 
     def test_exact_payloads_and_accepted_receipt_required(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -308,7 +353,9 @@ class ReleaseCandidateChecks(unittest.TestCase):
                 producer_source=root, notary_profile="notary", dry_run=True, approve_unnotarized_cli=None,
                 producer_notices=root / "ReviewedNotices",
                 producer_notices_sha256=PRODUCER_NOTICES_SHA256,
-                dmg_background=root / "background.tiff", engine_notice=root / "Calimocho-NOTICE.txt")
+                dmg_background=root / "background.tiff", engine_notice=root / "Calimocho-NOTICE.txt",
+                producer_source_archive=root / "source.tar")
+            args.producer_source_archive.write_bytes(b"Neutral source fixture")
 
             def refresh(installed, output, *unused):
                 app = output / "candidate/Neutral.app"
@@ -334,6 +381,8 @@ class ReleaseCandidateChecks(unittest.TestCase):
                     patch.object(release, "owned_bytes", return_value=({"sha256": "d" * 64, "bytes": 2}, b"{}")), \
                     patch.object(release, "validate_dmg_background",
                                  return_value={"sha256": "d" * 64, "bytes": 2}), \
+                    patch.object(release, "validate_producer_source_archive",
+                                 return_value=({"sha256": "e" * 64, "bytes": 2}, b"{}")), \
                     patch.object(release, "execute") as execute, \
                     patch.object(release, "notarize") as notarize:
                 path = release.build(args)
@@ -347,6 +396,14 @@ class ReleaseCandidateChecks(unittest.TestCase):
                                  (args.producer_notices_sha256, args.engine_notice))
                 self.assertEqual(blockers.call_args.args[-1], args.producer_notices_sha256)
                 self.assertEqual(receipt["producerNoticesSHA256"], args.producer_notices_sha256)
+                self.assertEqual(receipt["producerSourceArchive"], {
+                    "file": release.PRODUCER_SOURCE_ARCHIVE_NAME,
+                    "sourceCommit": release.PRODUCER_COMMIT,
+                    "sourceTree": release.PRODUCER_TREE,
+                    "sha256": "e" * 64,
+                    "bytes": 2,
+                    "distribution": "separate draft-release asset and DMG sidecar",
+                })
 
     def test_wrong_pinned_source_stops_before_build_or_submission(self):
         args = argparse.Namespace(app_commit="a" * 40)
@@ -394,6 +451,14 @@ class ReleaseCandidateChecks(unittest.TestCase):
                 "notarized": False, "installed": False, "activated": False, "notaryProfile": "notary",
                 "commands": [], "certificateSHA1": "c" * 40, "producer": {},
                 "appSource": {"commit": "a" * 40, "tree": "b" * 40},
+                "producerSourceArchive": {
+                    "file": release.PRODUCER_SOURCE_ARCHIVE_NAME,
+                    "sourceCommit": release.PRODUCER_COMMIT,
+                    "sourceTree": release.PRODUCER_TREE,
+                    "sha256": "e" * 64,
+                    "bytes": 2,
+                    "distribution": "separate draft-release asset and DMG sidecar",
+                },
                 "dmgBackground": identity,
                 "engineNotice": identity,
                 "sealedAppResourceReceipt": identity,
@@ -408,19 +473,37 @@ class ReleaseCandidateChecks(unittest.TestCase):
                     patch.object(release, "frozen_payloads", return_value=(root / "cli", root / "helper", {})), \
                     patch.object(release, "verify_designated_requirement"), \
                     patch.object(release, "validate_dmg_background", return_value=identity), \
+                    patch.object(release, "validate_producer_source_archive",
+                                 return_value=({"sha256": "e" * 64, "bytes": 2}, b"{}")), \
                     patch.object(release, "execute"), patch.object(release, "distribute") as distribute, \
                     patch.object(release, "refresh") as refresh:
                 release.resume(root / "release-receipt.json", "notary",
                                producer_notices_sha256=PRODUCER_NOTICES_SHA256,
-                               dmg_background=root / "background.tiff")
+                               dmg_background=root / "background.tiff",
+                               producer_source_archive=root / "source.tar")
                 self.assertEqual(distribute.call_args.args[0], app)
-                self.assertEqual(distribute.call_args.args[-2], PRODUCER_NOTICES_SHA256)
-                self.assertEqual(distribute.call_args.args[-1], root / "background.tiff")
+                self.assertEqual(distribute.call_args.args[-3], PRODUCER_NOTICES_SHA256)
+                self.assertEqual(distribute.call_args.args[-2], root / "background.tiff")
+                self.assertEqual(distribute.call_args.args[-1], root / "source.tar")
                 refresh.assert_not_called()
                 receipt["state"] = "failed"
                 with self.assertRaises(ValueError):
                     release.resume(root / "release-receipt.json", "notary")
                 self.assertEqual(distribute.call_count, 1)
+
+    def test_resume_cli_accepts_the_pinned_source_archive(self):
+        receipt = "/absolute/release-receipt.json"
+        source_archive = "/absolute/xodus-cli-beta-99e20add-source.tar"
+        with patch("sys.argv", [
+                "release_candidate.py", "--resume-receipt", receipt,
+                "--producer-source-archive", source_archive,
+                "--producer-notices-sha256", PRODUCER_NOTICES_SHA256,
+                "--dmg-background", "/absolute/background.tiff",
+        ]), patch.object(release, "resume") as resume:
+            release.main()
+        resume.assert_called_once_with(
+            Path(receipt), "notary", None, PRODUCER_NOTICES_SHA256,
+            Path("/absolute/background.tiff"), Path(source_archive))
 
 
 if __name__ == "__main__":

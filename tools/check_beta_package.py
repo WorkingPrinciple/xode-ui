@@ -174,6 +174,21 @@ with tempfile.TemporaryDirectory(prefix="xodus-beta-package-") as temporary:
     assert "developer-local engine binding" in beta.RELEASE_NOTES
     assert "does not substitute another engine" in beta.RELEASE_NOTES
     assert "In-game voice chat and microphone input aren't supported in this beta." in beta.RELEASE_NOTES
+    assert "eappx, msixvc" not in beta.RELEASE_NOTES
+    assert "GPL-3.0-only" not in beta.RELEASE_NOTES
+    assert "GNU General Public License version 3, as provided" in beta.RELEASE_NOTES
+    assert "No version-grant statement" in beta.RELEASE_NOTES
+    assert "WalkingCat and dalion619" in beta.RELEASE_NOTES
+    assert "has not been submitted to Apple for" in beta.INSTALL_NOTE
+    assert "PRIVATE TESTER PACKAGE ONLY" in beta.INSTALL_NOTE
+    assert "signed with Developer ID and notarized by Apple" in beta.RELEASE_INSTALL_NOTE
+    assert "PRIVATE-TESTER-SOURCE.tar" not in beta.RELEASE_INSTALL_NOTE
+    assert "xodus-cli-beta-99e20add-source.tar" in beta.RELEASE_INSTALL_NOTE
+    assert "Acknowledge every open-source project" not in beta.PUBLIC_RELEASE_NOTES
+    homebrew_template = (Path(__file__).parent.parent / "docs/homebrew/x-ode.rb.in").read_text()
+    assert "strategy :github_releases" in homebrew_template
+    assert "strategy :github_latest" not in homebrew_template
+    assert "auto_updates" not in homebrew_template
     assert receipt["artifacts"]["sha256"] == hashlib.sha256(artifact_path.read_bytes()).hexdigest()
     assert checksum_path.read_text() == receipt["artifacts"]["sha256"] + "  " + artifact_path.name + "\n"
     assert not any(any(name in command[0] for name in ("notarytool", "stapler", "launchctl"))

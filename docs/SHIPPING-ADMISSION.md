@@ -105,7 +105,12 @@ The release workflow is `tools/release_candidate.py --dry-run` followed by its
 exact-receipt resume, using the existing Developer ID identity and
 `--notary-profile notary`. Resume builds the same drag-to-Applications DMG as
 the no-submit packager and requires the exact reviewed background image from
-the dry-run. A non-dry-run or resume submits private artifact bytes to Apple;
+the dry-run and the exact pinned backend source archive. It stages that source
+archive and its checksum beside the DMG; the same archive must also be attached
+to the unpublished release draft. The tester packager retains its
+not-yet-notarized install note; the final release path uses a separate note
+that describes the notarized/stapled app and DMG. A non-dry-run or resume
+submits private artifact bytes to Apple;
 do not invoke it before the exact distribution target, rights, QA PASS and
 external-submission authority are resolved. It is not an authorization probe.
 `xcrun --find notarytool`, `xcrun --find stapler` and their help/version commands
@@ -675,6 +680,7 @@ python3 tools/release_candidate.py \
   --identity 410914520BCC840C0125D3826CCF0F247F603321 \
   --candidate "$HOME/Library/Application Support/Ode to X/Service/candidates/a1aade5e959a5ad27e695f85c15ef50addf036d4ab857d70e041f57a95abe664" \
   --producer-source /absolute/frozen-xodus-macos-checkout \
+  --producer-source-archive /absolute/xodus-cli-beta-99e20add-source.tar \
   --notary-profile notary \
   --dry-run
 ```
@@ -740,14 +746,19 @@ To submit the **same signed dry-run bytes**, without rebuilding or re-signing:
 ```sh
 python3 tools/release_candidate.py \
   --resume-receipt /absolute/Ode-release-SESSION/release-receipt.json \
+  --producer-notices-sha256 INDEPENDENTLY_APPROVED_SHA256 \
+  --dmg-background /absolute/reviewed/dmg-background.tiff \
+  --producer-source-archive /absolute/xodus-cli-beta-99e20add-source.tar \
   --notary-profile notary
 ```
 
 Resume requires a successful untouched dry-run, the exact signed
 launcher/helper/resource seal, the embedded source receipt and frozen
-CLI/helper bytes. A failed/partially submitted run is not automatically
-replayed: reconcile its recorded Apple submission before retrying. Resuming
-an exception-based dry-run requires the same exact approval flag again.
+CLI/helper bytes, the same hash-pinned corresponding-source archive and the
+same approved notice digest and background image. A failed/partially submitted
+run is not automatically replayed: reconcile its recorded Apple submission
+before retrying. Resuming an exception-based dry-run requires the same exact
+approval flag again.
 
 ### Supported local-candidate build
 

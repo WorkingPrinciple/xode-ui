@@ -9,13 +9,11 @@ cask "x-ode" do
 
   livecheck do
     url :url
-    strategy :github_latest
+    strategy :github_releases
   end
 
   depends_on arch: :arm64
   depends_on macos: ">= :sonoma"
-
-  auto_updates true
 
   app "X Ode.app"
 
