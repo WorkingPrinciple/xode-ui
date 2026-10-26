@@ -553,7 +553,7 @@ enum InstalledGameChecks {
             mountedStorageRoots: { [library.path] }, discoveryRoot: home.appendingPathComponent("unrelated-default"),
             installLocation: { nil }, discoveryCompleteness: { product, candidate in
                 product == "9NR1R1XWLCNB" && candidate.path == folder.path && mountedComplete
-            })
+            }, mountHome: home.path)
         await mountedController.load()
         mountedController.useUnifiedAccount(session)
         await mountedController.discoverNativeInstallations()

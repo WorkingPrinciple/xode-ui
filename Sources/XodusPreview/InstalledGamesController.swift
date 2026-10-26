@@ -87,6 +87,8 @@ final class InstalledGamesController: ObservableObject {
     private let detectAvailability: @Sendable () async -> RunnerAvailability
     private let inspectPackage: @Sendable (URL) throws -> PackageType
     private let mountedStorageRoots: @Sendable () -> [String]?
+    /// Home whose `Mounts` folder holds network library mountpoints.
+    private let mountHome: String
     private let discoveryProbe = GameStorageProbe()
     private var candidateVerificationProbes: [String: GameStorageProbe] = [:]
     private var installationVolumeProbes: [UUID: GameStorageProbe] = [:]
@@ -147,7 +149,9 @@ final class InstalledGamesController: ObservableObject {
          installLocation: @escaping @Sendable () throws -> GameInstallLocation? = {
              try GameInstallLocation.load(.standard)
          },
-         discoveryCompleteness: (@MainActor (String, URL) async throws -> Bool)? = nil) {
+         discoveryCompleteness: (@MainActor (String, URL) async throws -> Bool)? = nil,
+         mountHome: String = NSHomeDirectory()) {
+        self.mountHome = mountHome
         self.store = store
         self.launchingDuration = launchingDuration
         self.logDirectory = logDirectory
@@ -249,10 +253,11 @@ final class InstalledGamesController: ObservableObject {
             }
             discoveringMounts = false
             if let volumes {
-                let mounted = Set(Self.mountedDiscoveryRoots(volumes).map(\.path))
+                let mounted = Set(Self.mountedDiscoveryRoots(volumes, home: mountHome).map(\.path))
                 pendingDiscoveryRoots.formIntersection(mounted)
                 if root == nil { pendingDiscoveryRoots.formUnion(mounted) }
-                undiscoveredInstallations = Self.retainingMountedCandidates(undiscoveredInstallations, volumes: volumes)
+                undiscoveredInstallations = Self.retainingMountedCandidates(undiscoveredInstallations, volumes: volumes,
+                                                                            home: mountHome)
             }
             var observation = try await discoveryProbe.read {
                 try GameInstallationDiscovery.scan(originalRoot: directory,
@@ -261,7 +266,7 @@ final class InstalledGamesController: ObservableObject {
             }
             pendingDiscoveryRoots.subtract(observation.scannedRoots)
             if root == nil {
-                for library in Self.mountedDiscoveryRoots(volumes) {
+                for library in Self.mountedDiscoveryRoots(volumes, home: mountHome) {
                     try Task.checkCancellation()
                     guard loaded, !accountDisconnecting, !applicationTerminating,
                           unifiedSession?.accountHash == account else { return }

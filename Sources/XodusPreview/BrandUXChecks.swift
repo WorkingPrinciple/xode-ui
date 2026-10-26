@@ -262,7 +262,7 @@ enum BrandUXChecks {
                 let joined = labels.joined(separator: " ")
                 check(labels.filter { $0 == "Check Again" }.count == 1
                       && joined.contains("Engines run Windows games")
-                      && joined.contains("Play currently uses Calimocho")
+                      && joined.contains("every other game plays with Calimocho")
                       && !joined.contains("Private") && !joined.contains("Use App"),
                       "COR186 M8/U2: \(scenario) Engines (\(scheme)) leads with an explanation, one Check Again, plain names and honest CrossOver copy: \(labels)")
                 let hasDownloadControl = joined.contains("Get Calimocho")
