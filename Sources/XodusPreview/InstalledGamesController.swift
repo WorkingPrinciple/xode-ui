@@ -194,6 +194,7 @@ final class InstalledGamesController: ObservableObject {
         let folderPanel = NSOpenPanel()
         folderPanel.title = "Import installed Xbox game"
         folderPanel.prompt = "Choose game folder"
+        folderPanel.message = PermissionPrompt.fileSelectionMessage
         folderPanel.canChooseDirectories = true
         folderPanel.canChooseFiles = false
         folderPanel.allowsMultipleSelection = false

@@ -40,22 +40,34 @@ enum PrivacyPermission: String, CaseIterable, Identifiable {
         }
     }
 
+    /// The feature action that can make macOS ask; none of these permissions is requested at launch.
+    var requestTiming: String {
+        let app = AppBrand.displayName
+        return switch self {
+        case .localNetwork: "Only after you choose Find consoles and \(app) explains the search; a game may use it when you start a feature that needs it."
+        case .removableVolumes, .networkVolumes, .documents, .downloads, .desktop:
+            "When \(app) or a game it runs first reads or writes a folder or drive you chose here."
+        case .notifications: "After the first game install or repair finishes and \(app) explains why; never at launch."
+        case .keychain: "When you sign in, or when \(app) first reads your saved Microsoft sign-in on this Mac."
+        }
+    }
+
     /// Info.plist key and usage string; nil when macOS shows its own prompt (Notifications, Keychain).
     var usageDescription: (key: String, text: String)? {
         let app = AppBrand.displayName
         return switch self {
         case .localNetwork: ("NSLocalNetworkUsageDescription",
-            "\(app) and the games it runs use your local network to find Xbox consoles and for multiplayer features.")
+            "\(app) uses Bonjour to find Xbox consoles on your local network; games it runs may use local multiplayer.")
         case .removableVolumes: ("NSRemovableVolumesUsageDescription",
-            "\(app) stores and plays games on this drive, and the games it runs may read or save files there.")
+            "\(app) installs games on this external drive when selected; games it runs may read or save files there.")
         case .networkVolumes: ("NSNetworkVolumesUsageDescription",
-            "\(app) stores and plays games on this network drive, and the games it runs may read or save files there.")
+            "\(app) installs games on this network drive when selected; games it runs may read or save files there.")
         case .documents: ("NSDocumentsFolderUsageDescription",
-            "\(app) and the games it runs use your Documents folder to store games and save files.")
+            "\(app) may install games in Documents when selected; games it runs may read or save files there.")
         case .downloads: ("NSDownloadsFolderUsageDescription",
-            "\(app) and the games it runs use your Downloads folder to store games and read or save files.")
+            "\(app) may install games in Downloads when selected; games it runs may read or save files there.")
         case .desktop: ("NSDesktopFolderUsageDescription",
-            "\(app) and the games it runs use your Desktop to store games and read or save files.")
+            "\(app) may install games on your Desktop when selected; games it runs may read or save files there.")
         case .notifications, .keychain: nil
         }
     }
@@ -86,6 +98,13 @@ enum PrivacyPermission: String, CaseIterable, Identifiable {
     /// The shipped bundle ID (unchanged across releases); used when running unbundled.
     static let bundleIdentifier = "io.github.dragoshont.xodus.development"
     static let installNotesTitle = "What X Ode may ask permission for, and why"
+    static let notificationsDeniedKey = "Xodus.permission.notificationsDenied"
+    static var notificationsDeniedNote: String {
+        "Notifications are off. Installs still finish normally, but \(AppBrand.displayName) won't send ready notices. Turn them on in System Settings ▸ Notifications."
+    }
+    static var notificationsDeferredNote: String {
+        "You chose Not now for ready-to-play notifications. Installs still finish normally."
+    }
     static var localNetworkPromptNote: String {
         "If \(AppBrand.displayName) says local network access is off right after the prompt appeared, answer the prompt, then choose Find consoles again."
     }
@@ -115,6 +134,9 @@ struct OpenPrivacySettingsButton: View {
 
 /// Settings ▸ General: what X Ode may ask for, and where to change it.
 struct PrivacyPermissionsSection: View {
+    @AppStorage(PrivacyPermission.notificationsDeniedKey) private var notificationsDenied = false
+    @AppStorage(GameReadyNotifier.deferredKey) private var notificationsDeferred = false
+
     var body: some View {
         Section {
             ForEach(PrivacyPermission.allCases) { permission in
@@ -123,11 +145,25 @@ struct PrivacyPermissionsSection: View {
                 } label: {
                     Text(permission.title)
                     Text(permission.reason)
+                    Text(permission.requestTiming).font(.caption).foregroundStyle(.secondary)
                 }
             }
             Text(PrivacyPermission.gamesNote).font(.callout).foregroundStyle(.secondary)
             Text(PrivacyPermission.keychainNote).font(.callout).foregroundStyle(.secondary)
             Text(PrivacyPermission.microphoneKnownIssue).font(.callout).foregroundStyle(.secondary)
+            if notificationsDenied {
+                Label(PrivacyPermission.notificationsDeniedNote, systemImage: "bell.slash")
+                    .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            } else if notificationsDeferred {
+                LabeledContent {
+                    Button("Ask Now") { GameReadyNotifier.requestFromSettings() }
+                        .accessibilityLabel("Ask now for ready-to-play notifications")
+                        .accessibilityIdentifier("xodus.privacy.ask.notifications")
+                } label: {
+                    Text(PrivacyPermission.notificationsDeferredNote)
+                        .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                }
+            }
             HStack {
                 Spacer()
                 OpenPrivacySettingsButton(permission: .notifications, title: "Open Notifications")

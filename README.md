@@ -115,18 +115,18 @@ hide or disable existing controls.
 
 ## What X Ode may ask permission for, and why
 
-macOS asks the first time each one is needed. Windows games run through X Ode, so a prompt a game triggers names X Ode.
+macOS asks the first time each one is needed, never all at launch. Before Find consoles and before the first ready-to-play notice, X Ode explains what macOS is about to ask; choosing Not now skips the prompt, and Settings ▸ Permissions offers Ask Now later. Windows games run through X Ode, so a prompt a game triggers names X Ode.
 
-| Permission | When and why |
-|---|---|
-| Local network | X Ode and the games it runs use your local network to find Xbox consoles and for multiplayer features. |
-| External drives | When X Ode stores games on an external drive, or a game it runs reads or saves files there. |
-| Network drives | When X Ode stores games on a network drive, or a game it runs reads or saves files there. |
-| Documents folder | When X Ode stores games in your Documents folder, or a game it runs reads or saves files there. |
-| Downloads folder | When X Ode stores games in your Downloads folder, or a game it runs reads or saves files there. |
-| Desktop folder | When X Ode stores games on your Desktop, or a game it runs reads or saves files there. |
-| Notifications | After a game finishes installing, so X Ode can tell you it's ready to play. Never at launch. |
-| Keychain | When X Ode checks or saves your Microsoft sign-in on this Mac. |
+| Permission | When and why | When macOS asks |
+|---|---|---|
+| Local network | X Ode and the games it runs use your local network to find Xbox consoles and for multiplayer features. | Only after you choose Find consoles and X Ode explains the search; a game may use it when you start a feature that needs it. |
+| External drives | When X Ode stores games on an external drive, or a game it runs reads or saves files there. | When X Ode or a game it runs first reads or writes a folder or drive you chose here. |
+| Network drives | When X Ode stores games on a network drive, or a game it runs reads or saves files there. | When X Ode or a game it runs first reads or writes a folder or drive you chose here. |
+| Documents folder | When X Ode stores games in your Documents folder, or a game it runs reads or saves files there. | When X Ode or a game it runs first reads or writes a folder or drive you chose here. |
+| Downloads folder | When X Ode stores games in your Downloads folder, or a game it runs reads or saves files there. | When X Ode or a game it runs first reads or writes a folder or drive you chose here. |
+| Desktop folder | When X Ode stores games on your Desktop, or a game it runs reads or saves files there. | When X Ode or a game it runs first reads or writes a folder or drive you chose here. |
+| Notifications | After a game finishes installing, so X Ode can tell you it's ready to play. Never at launch. | After the first game install or repair finishes and X Ode explains why; never at launch. |
+| Keychain | When X Ode checks or saves your Microsoft sign-in on this Mac. | When you sign in, or when X Ode first reads your saved Microsoft sign-in on this Mac. |
 
 To change an answer, use System Settings ▸ Privacy & Security for local network and folders, and System Settings ▸ Notifications for notifications. X Ode also shows an Open System Settings button next to a problem it can fix. Keychain asks separately for each saved sign-in; there's no System Settings switch for it. If X Ode says local network access is off right after the prompt appeared, answer the prompt, then choose Find consoles again.
 
@@ -136,7 +136,7 @@ In-game voice chat and microphone input aren't supported in this beta. Developer
 
 X Ode runs Windows games with [Wine](https://www.winehq.org) (LGPL-2.1-or-later; thank you to the Wine authors and CodeWeavers) and is built on [Xodus](https://github.com/xodus-gaming/xodus) (GPL-3.0; thank you to its contributors).
 
-External engine-provider credits: [Highball](https://github.com/gauthierpiarrette/highball) (GPL-3.0; User-installed Wine engine provider); [CrossOver](https://www.codeweavers.com/crossover) (Proprietary; Commercial Wine distribution by CodeWeavers). These are external provider credits only: users install them separately; neither is bundled or installed by X Ode, and listing them does not imply game compatibility.
+External engine-provider credits: [Highball](https://github.com/gauthierpiarrette/highball) (GPL-3.0; User-installed Wine engine provider); [CrossOver](https://www.codeweavers.com/crossover) (Proprietary; Commercial Wine distribution by CodeWeavers). These are external provider credits only: users install them separately. They are not bundled or installed by X Ode, and listing them does not imply game compatibility.
 
 In the app, the credits and every component's licence are in X Ode menu › Acknowledgments
 (or Open-Source Licences…, and Help › Acknowledgments and Licences). They work signed out and offline.

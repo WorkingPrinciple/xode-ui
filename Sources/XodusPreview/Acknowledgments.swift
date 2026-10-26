@@ -287,7 +287,7 @@ enum FeaturedCredits {
                          role: "Commercial Wine distribution by CodeWeavers", license: "Proprietary")
     ]
     static let externalProviderDisclosure =
-        "These are external provider credits only: users install them separately; neither is bundled or installed by X Ode, and listing them does not imply game compatibility."
+        "These are external provider credits only: users install them separately. They are not bundled or installed by X Ode, and listing them does not imply game compatibility."
     static var readmeExternalProvidersLine: String {
         let providers = externalProviders.map {
             "[\($0.name)](\($0.url.absoluteString)) (\($0.license); \($0.role))"

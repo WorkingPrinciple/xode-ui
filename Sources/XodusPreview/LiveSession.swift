@@ -2370,6 +2370,7 @@ final class LiveSession: ObservableObject {
         let panel = NSSavePanel()
         panel.title = "Save reviewed diagnostic summary"
         panel.nameFieldStringValue = "\(AppBrand.displayName)-diagnostics.txt"
+        panel.message = PermissionPrompt.saveMessage
         panel.allowedContentTypes = [.plainText]
         guard panel.runModal() == .OK, let url = panel.url else { return }
         Task { await saveDiagnosticSummary(to: url) }

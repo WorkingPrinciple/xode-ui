@@ -5,6 +5,7 @@ import SwiftUI
 import CryptoKit
 import Vision
 import XodusManagement
+@preconcurrency import UserNotifications
 
 /// COR-186/REQ-114 beta UX regressions: brand, onboarding, Engines, Discover hero, toolbar
 /// accessibility, menus and jargon. Detached views and synthetic state only; no window activation,
@@ -32,6 +33,7 @@ enum BrandUXChecks {
         acknowledgments(check: check)
         credits(check: check)
         permissions(check: check)
+        AccessibilityAuditChecks.run(check: check)
         jargon(check: check)
     }
 
@@ -894,22 +896,78 @@ enum BrandUXChecks {
         let notifier = (try? String(contentsOfFile: "Sources/XodusPreview/GameReadyNotifier.swift", encoding: .utf8)) ?? ""
         let postBody = notifier.range(of: "func post(").map { String(notifier[$0.lowerBound...]) } ?? ""
         let beforePost = notifier.range(of: "func post(").map { String(notifier[..<$0.lowerBound]) } ?? notifier
+        let askBody = notifier.range(of: "private static func ask(").map { String(notifier[$0.lowerBound...]) } ?? ""
+        let app = (try? String(contentsOfFile: "Sources/XodusPreview/XodusPreviewApp.swift", encoding: .utf8)) ?? ""
+        let launch = app.range(of: "func applicationDidFinishLaunching").map { String(app[$0.lowerBound...].prefix(600)) } ?? ""
         check(!sources.isEmpty && requesters == ["XodusPreview/GameReadyNotifier.swift"]
-              && postBody.contains("requestAuthorization") && !beforePost.contains("requestAuthorization"),
-              "REQ-118: Notification permission is asked only when a finished install posts its ready notice, never at launch")
+              && postBody.contains("requestAuthorization") && !beforePost.contains("requestAuthorization")
+              && notifier.components(separatedBy: "requestAuthorization(").count == 2 && askBody.contains("requestAuthorization(")
+              && !launch.isEmpty && !launch.contains("post(") && !launch.contains("requestFromSettings"),
+              "REQ-118: Notification permission is asked only from a finished install's ready notice or Settings ▸ Ask Now, never at launch")
+        check(GameReadyNotifier.step(status: .notDetermined, deferred: false) == .explainThenAsk
+              && GameReadyNotifier.step(status: .notDetermined, deferred: true) == .skipDeferred
+              && GameReadyNotifier.step(status: .denied, deferred: false) == .skipDenied
+              && GameReadyNotifier.step(status: .authorized, deferred: true) == .add
+              && GameReadyNotifier.step(status: .provisional, deferred: false) == .add
+              && postBody.contains("case .explainThenAsk:") && postBody.contains("PermissionPrompt.confirmFirstUse(.notifications")
+              && postBody.contains("defaults.set(true, forKey: Self.deferredKey)")
+              && postBody.contains("defaults.set(true, forKey: PrivacyPermission.notificationsDeniedKey)"),
+              "REQ-118: The first ready notice explains before macOS asks; Not now is remembered (no nagging) and a denial is recorded for Settings")
+        let account = (try? String(contentsOfFile: "Sources/XodusPreview/LiveAccountView.swift", encoding: .utf8)) ?? ""
+        let findConsoles = account.range(of: "Button(\"Find consoles\")").map { String(account[$0.lowerBound...].prefix(200)) } ?? ""
+        let rootView = (try? String(contentsOfFile: "Sources/XodusPreview/LiveRootView.swift", encoding: .utf8)) ?? ""
+        check(findConsoles.contains("PermissionPrompt.confirmFirstUse(.localNetwork)")
+              && findConsoles.range(of: "confirmFirstUse")!.lowerBound < findConsoles.range(of: "discovery.search()")!.lowerBound
+              && rootView.components(separatedBy: "LocalNetworkDiscovery.shared.search()").count == 2
+              && rootView.contains("Xodus.localNetwork.requestOnce"),
+              "REQ-118: Local network discovery starts only after Find consoles and its explanation (plus the one-shot requestOnce test flag), never by itself at launch")
+        let panelSources = ["GameInstallLocationSettings.swift": "PermissionPrompt.fileSelectionMessage",
+                            "InstalledGamesController.swift": "PermissionPrompt.fileSelectionMessage",
+                            "LiveSession.swift": "PermissionPrompt.saveMessage"]
+        check(panelSources.allSatisfy { file, message in
+                  ((try? String(contentsOfFile: "Sources/XodusPreview/" + file, encoding: .utf8)) ?? "").contains("message = " + message)
+              },
+              "REQ-118: Game-folder and save panels explain that macOS may ask for protected folders or drives")
+        let copies = PrivacyPermission.allCases.map(PermissionPrompt.copy(for:))
+        check(copies.allSatisfy { !$0.title.isEmpty && $0.explanation.contains(AppBrand.displayName) && !$0.cancelTitle.isEmpty }
+              && PermissionPrompt.copy(for: .localNetwork).explanation.contains("No search starts")
+              && PermissionPrompt.copy(for: .notifications).explanation.contains("complete either way")
+              && PrivacyPermission.allCases.allSatisfy { !$0.requestTiming.isEmpty && $0.requestTiming.contains(AppBrand.displayName) }
+              && PrivacyPermission.notifications.requestTiming.contains("never at launch"),
+              "REQ-118: Every permission has X Ode explanation copy and a stated, feature-bound request time")
+        let promptSuite = "XodusPermissionPrompt-\(UUID().uuidString)"
+        if let suite = UserDefaults(suiteName: promptSuite) {
+            suite.set(true, forKey: PermissionPrompt.firstUseKey(for: .localNetwork))
+            check(PermissionPrompt.confirmFirstUse(.localNetwork, defaults: suite),
+                  "REQ-118: An explained permission is not explained again (no alert)")
+            suite.removePersistentDomain(forName: promptSuite)
+        }
         check(readme.contains("## " + PrivacyPermission.installNotesTitle)
-              && PrivacyPermission.allCases.allSatisfy { readme.contains("| \($0.title) | \($0.reason) |") }
+              && PrivacyPermission.allCases.allSatisfy { readme.contains("| \($0.title) | \($0.reason) | \($0.requestTiming) |") }
               && readme.contains(PrivacyPermission.gamesNote) && readme.contains(PrivacyPermission.keychainNote)
               && readme.contains(PrivacyPermission.microphoneKnownIssue)
               && readme.contains("System Settings ▸ Notifications") && readme.contains("Developer ID")
               && !readme.contains("| Microphone |"),
               "REQ-118 L1: The install notes exist and list every permission with the app's exact words (fails if README.md is missing)")
+        for (name, deferred, denied) in [("deferred", true, false), ("denied", false, true)] {
+            let suiteName = "XodusPermissions-\(name)-\(UUID().uuidString)"
+            guard let suite = UserDefaults(suiteName: suiteName) else { continue }
+            defer { suite.removePersistentDomain(forName: suiteName) }
+            suite.set(deferred, forKey: GameReadyNotifier.deferredKey)
+            suite.set(denied, forKey: PrivacyPermission.notificationsDeniedKey)
+            let labels = render(Form { PrivacyPermissionsSection() }.formStyle(.grouped).defaultAppStorage(suite),
+                                size: CGSize(width: 600, height: 1100), scheme: .light,
+                                name: "permissions-notifications-\(name)").joined(separator: " ")
+            check(deferred ? labels.contains("Ask Now") && labels.contains("Not now") && !labels.contains("Notifications are off")
+                           : labels.contains("Notifications are off") && !labels.contains("Ask Now"),
+                  "REQ-118 (\(name)): Settings explains notification state and offers a way to change it: \(labels)")
+        }
         for scheme in [ColorScheme.light, .dark] {
             let labels = render(Form { PrivacyPermissionsSection() }.formStyle(.grouped),
-                                size: CGSize(width: 600, height: 860), scheme: scheme,
+                                size: CGSize(width: 600, height: 1100), scheme: scheme,
                                 name: "permissions-\(scheme == .dark ? "dark" : "light")")
             let joined = labels.joined(separator: " ")
-            check(joined.contains("Permissions") && joined.contains("Local network") && joined.contains("Open Notifications")
+            check(joined.contains("Permissions") && joined.contains("Local network") && joined.contains("Open Notifi")
                   && joined.contains("Open Local Network Settings") && !joined.contains("Open Privacy"),
                   "REQ-118 round 3 L3: Settings ▸ General lists permissions with buttons named for where they go (\(scheme)): \(labels)")
         }

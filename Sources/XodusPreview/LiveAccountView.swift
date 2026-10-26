@@ -459,7 +459,10 @@ private struct LocalConsoleDiscoverySettings: View {
             Text("Check for Xbox consoles on your local network. This doesn't confirm account access.")
                 .font(.callout).foregroundStyle(.secondary)
             LabeledContent("Discovery") {
-                Button("Find consoles") { discovery.search() }
+                Button("Find consoles") {
+                    guard PermissionPrompt.confirmFirstUse(.localNetwork) else { return }
+                    discovery.search()
+                }
                     .accessibilityIdentifier("xodus.localNetwork.discover")
             }
             Text(discovery.status).font(.caption).foregroundStyle(.secondary)
