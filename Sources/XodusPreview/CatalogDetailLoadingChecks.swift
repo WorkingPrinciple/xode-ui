@@ -152,10 +152,7 @@ enum CatalogDetailLoadingChecks {
         }
         host.cacheDisplay(in: host.bounds, to: bitmap)
         guard let image = bitmap.cgImage else { throw PCGamesError.transport }
-        let request = VNRecognizeTextRequest()
-        request.recognitionLevel = .accurate
-        try VNImageRequestHandler(cgImage: image).perform([request])
-        let labels = (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }
+        let labels = try NativeCheckOCR.recognize(image)
         check(labels.contains { $0 == "Details" }
               && labels.filter { $0.localizedCaseInsensitiveContains("Xbox PC game") }.count == 1
               && !labels.contains { $0.localizedCaseInsensitiveContains("MSIXVC") }
@@ -203,13 +200,11 @@ enum CatalogDetailLoadingChecks {
                 }
                 host.cacheDisplay(in: host.bounds, to: bitmap)
                 guard let image = bitmap.cgImage else { throw PCGamesError.transport }
-                let request = VNRecognizeTextRequest()
-                request.recognitionLevel = .accurate
-                try VNImageRequestHandler(cgImage: image).perform([request])
-                guard let observation = request.results?.first(where: {
+                let observations = try NativeCheckOCR.observations(image)
+                guard let observation = observations.first(where: {
                     $0.topCandidates(1).first?.string.localizedCaseInsensitiveContains(label) == true
                 }) else {
-                    let labels = (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }
+                    let labels = observations.compactMap { $0.topCandidates(1).first?.string }
                     check(false, "REQ-19: \(label) is actually rendered in \(appearance.rawValue); observed \(labels)")
                     continue
                 }
@@ -275,10 +270,7 @@ enum CatalogDetailLoadingChecks {
             }
             host.cacheDisplay(in: host.bounds, to: bitmap)
             guard let image = bitmap.cgImage else { throw PCGamesError.transport }
-            let request = VNRecognizeTextRequest()
-            request.recognitionLevel = .accurate
-            try VNImageRequestHandler(cgImage: image).perform([request])
-            let labels = (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }
+            let labels = try NativeCheckOCR.recognize(image)
             let showsInstall = labels.contains { $0.caseInsensitiveCompare("Download") == .orderedSame }
             check(labels.contains(where: { $0.localizedCaseInsensitiveContains("Synthetic game") })
                   && (name == "product detail" ? showsInstall : !showsInstall),
@@ -334,11 +326,8 @@ enum CatalogDetailLoadingChecks {
         context.fill(CGRect(x: 0, y: 0, width: image.width, height: image.height))
         context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
         guard let rendered = context.makeImage() else { throw PCGamesError.transport }
-        let request = VNRecognizeTextRequest()
-        request.recognitionLevel = .accurate
-        request.minimumTextHeight = 0.004
-        try VNImageRequestHandler(cgImage: rendered).perform([request])
-        let labels = (request.results ?? []).compactMap { result -> (String, Double)? in
+        let observations = try NativeCheckOCR.observations(rendered, minimumTextHeight: 0.004)
+        let labels = observations.compactMap { result -> (String, Double)? in
             result.topCandidates(1).first.map { ($0.string, result.boundingBox.midY) }
         }
         let headings = ["Synthetic game", "About the game", "Screenshots", "Trailer"]
