@@ -12,7 +12,7 @@ enum LibraryAccessChecks {
                   libraryNotice: "Approve Keychain access in Account settings.",
                   operationNotice: "Wait for the current game operation.") == "Approve Keychain access in Account settings."
               && GameDetailFacetCopy.gamePassActionStatus(startupAllowed: false, libraryNotice: nil,
-                  operationNotice: nil) == "Wait for Ode to X to finish starting."
+                  operationNotice: nil) == "Wait for X Ode to finish starting."
               && GameDetailFacetCopy.gamePassActionStatus(startupAllowed: true, libraryNotice: nil,
                   operationNotice: nil) == nil,
               "COR88: Actual Game Pass action caption covers operation-only, account, startup and ready gates")

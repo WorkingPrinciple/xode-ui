@@ -22,7 +22,7 @@ struct LibraryCompatibilityIssue: Identifiable, Hashable, Sendable {
     var browseTitle: String { kind == .packageType ? "Not supported on Mac yet" : title }
     var browseDetail: String {
         kind == .packageType
-            ? "This game can't run on this Mac with the current version of Ode to X."
+            ? "This game can't run on this Mac with the current version of \(AppBrand.displayName)."
             : detail
     }
 }

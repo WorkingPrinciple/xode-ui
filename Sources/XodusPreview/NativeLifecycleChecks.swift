@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+import Darwin
 import Foundation
 import CryptoKit
 import XodusCore
@@ -33,7 +34,7 @@ enum NativeLifecycleChecks {
         let install = try JSONDecoder().decode(NativeGameResult.self,
             from: Data(json.replacingOccurrences(of: "\"launch\"", with: "\"install\"")
                 .replacingOccurrences(of: "OPERATION_FAILED", with: "CANCELLED").utf8))
-        check(install.failureMessage.contains("Partial files") && install.failureMessage.contains("installation"),
+        check(install.failureMessage.contains("will start over") && !install.failureMessage.contains("resume"),
               "COR137: Real install cancellation keeps installation recovery copy")
         let normal = try JSONDecoder().decode(NativeGameResult.self,
             from: Data(json.replacingOccurrences(of: "\"success\":false", with: "\"success\":true")
@@ -58,6 +59,170 @@ enum NativeLifecycleChecks {
         }
     }
 
+    static func orphanRunChecks(root: URL, check: (Bool, String) -> Void) async throws {
+        let fixture = root.appendingPathComponent("s2-orphan")
+        let destination = fixture.appendingPathComponent("Games/Orphan-Xbox")
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        let state = fixture.appendingPathComponent("state-run")
+        let identity = NativeOrphanRun.Identity(operation: "install", product: "FIXTURE00001",
+            gameDirectory: destination.path, stateDirectory: state.path, executable: "/opt/xode/xodus-cli")
+        let arguments = ["/opt/xode/xodus-cli", "install", "FIXTURE00001", "--game-dir", destination.path,
+                         "--state-dir", state.path, "--account-hash", String(repeating: "a", count: 64),
+                         "--allow-keychain-prompt"]
+        check(NativeOrphanRun.matches(executable: "/opt/xode/xodus-cli", arguments: arguments, identity: identity)
+              && !NativeOrphanRun.matches(executable: "/usr/bin/xodus-cli", arguments: arguments, identity: identity)
+              && !NativeOrphanRun.matches(executable: "/opt/xode/xodus-cli",
+                    arguments: arguments.map { $0 == state.path ? state.path + "-other" : $0 }, identity: identity)
+              && !NativeOrphanRun.matches(executable: "/opt/xode/xodus-cli",
+                    arguments: arguments.map { $0 == "FIXTURE00001" ? "FIXTURE00002" : $0 }, identity: identity)
+              && !NativeOrphanRun.matches(executable: "/opt/xode/xodus-cli",
+                    arguments: arguments.map { $0 == "install" ? "uninstall" : $0 }, identity: identity),
+              "REQ114 S2: Only the exact backend command for this run (executable, operation, product, folder, state) is accepted")
+        check(!NativeOrphanRun.matches(pid: getpid(), identity: identity),
+              "REQ114 S2: Ode never treats itself as the orphaned backend")
+        let unrelated = Process()
+        unrelated.executableURL = URL(fileURLWithPath: "/bin/sleep")
+        unrelated.arguments = ["30"]
+        try unrelated.run()
+        defer { if unrelated.isRunning { unrelated.terminate() } }
+        check(!NativeOrphanRun.terminate(pid: unrelated.processIdentifier, identity: identity) && unrelated.isRunning,
+              "REQ114 S2: Stop download refuses to signal a process that isn't this run's backend")
+        let runs = state.appendingPathComponent("runs/\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: runs, withIntermediateDirectories: true)
+        try GameScriptFiles.writePrivate(Data("""
+            {"version":1,"event":"identity_bound"}
+            {"version":1,"event":"child_started","pid":4242}
+
+            """.utf8), to: runs.appendingPathComponent("events.jsonl"))
+        check(NativeOrphanRun.childStartedPID(state: state) == 4242,
+              "REQ114 S2: The backend's child_started event identifies the running installer")
+
+        check(!NativeOrphanRun.lockHeld(gameDirectory: destination),
+              "REQ114 S2: No backend lock file means no live run")
+        guard let lockURL = NativeOrphanRun.lockURL(gameDirectory: destination) else {
+            check(false, "REQ114 S2 fixture: lock path")
+            return
+        }
+        check(lockURL.lastPathComponent == ".Orphan-Xbox.xodus-lifecycle.lock"
+              && lockURL.deletingLastPathComponent().path == destination.deletingLastPathComponent().resolvingSymlinksInPath().path,
+              "REQ114 S2: The probe uses the backend's sibling game-folder lock")
+        let holder = open(lockURL.path, O_RDWR | O_CREAT | O_CLOEXEC, 0o600)
+        guard holder >= 0, flock(holder, LOCK_EX | LOCK_NB) == 0 else {
+            check(false, "REQ114 S2 fixture: hold backend lock")
+            return
+        }
+        check(NativeOrphanRun.lockHeld(gameDirectory: destination)
+              && NativeOrphanRun.status(identity: identity) == .running(pid: nil),
+              "REQ114 S2: A held backend lock is a live run even when its process can't be verified")
+
+        let paths = GameScriptPaths(scripts: fixture.appendingPathComponent("scripts"),
+            processed: fixture.appendingPathComponent("processed"), logs: fixture.appendingPathComponent("logs"),
+            games: destination.deletingLastPathComponent(), journal: fixture.appendingPathComponent("journal/operation.json"))
+        let journal = GameOperationJournal(file: paths.journal)
+        let library = InstalledGamesController(store: InstalledGameStore(file: fixture.appendingPathComponent("games.json")))
+        await library.load()
+        let record = GameOperationRecord(id: InstalledGamesController.runID(), kind: .install,
+            productID: "FIXTURE00001", title: "Orphan fixture", destination: destination.path,
+            installedID: nil, nativeAccountHash: String(repeating: "a", count: 64))
+        try await journal.save(record)
+        let controller = GameOperationsController(installed: library, paths: paths)
+        await controller.restore()
+        check(controller.orphanRunning && !controller.awaitingRecovery && controller.error == nil
+              && controller.operation?.id == record.id && library.mutationActive && !controller.canDismissRecovery,
+              "REQ114 S2: Relaunch during a still-running download shows it as running, not as needing a check")
+        check(!controller.canCancel,
+              "REQ114 S2: Stop download is offered only after the exact backend process is verified")
+        await controller.reconcile()
+        let stillPending = try await journal.load()
+        check(controller.orphanRunning && controller.error == nil && stillPending?.id == record.id,
+              "REQ114 S2: Checking during a live run never reads its receipt or claims the registry is unreadable")
+        flock(holder, LOCK_UN)
+        close(holder)
+        for _ in 0..<40 where controller.orphanRunning || controller.recoveryRequired {
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        let pending = try await journal.load()
+        check(!controller.orphanRunning && !controller.recoveryRequired && !library.mutationActive && pending == nil
+              && controller.error?.contains("installed games list") != true,
+              "REQ114 S2: When the orphaned run ends, Ode reconciles it automatically and releases the lock")
+    }
+
+    static func recoveryLockChecks(root: URL, check: (Bool, String) -> Void) async throws {
+        for error in [GameScriptError.invalidDestination, .runtimeUnavailable, .invalidReceipt] as [Error] {
+            check(GameOperationsController.releasesWithoutRecovery(native: true, childStarted: false, error: error)
+                  && !GameOperationsController.releasesWithoutRecovery(native: true, childStarted: true, error: error),
+                  "REQ114 B1: A native failure before the backend child starts releases the lock; after start it needs checking")
+        }
+        for kind in [GameOperationRecord.Kind.uninstall, .install] {
+            let fixture = root.appendingPathComponent("b1-nochild-\(kind.rawValue)")
+            let destination = fixture.appendingPathComponent("game")
+            try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+            let paths = GameScriptPaths(scripts: fixture.appendingPathComponent("scripts"),
+                processed: fixture.appendingPathComponent("processed"), logs: fixture.appendingPathComponent("logs"),
+                games: destination, journal: fixture.appendingPathComponent("state/operation.json"))
+            let journal = GameOperationJournal(file: paths.journal)
+            let library = InstalledGamesController(store: InstalledGameStore(file: fixture.appendingPathComponent("games.json")))
+            await library.load()
+            let record = GameOperationRecord(id: InstalledGamesController.runID(), kind: kind,
+                productID: "FIXTURE00001", title: "No child fixture", destination: destination.path,
+                installedID: kind == .uninstall ? UUID() : nil, nativeAccountHash: String(repeating: "a", count: 64))
+            try await journal.save(record)
+            check(!FileManager.default.fileExists(atPath: NativeGameLifecycle.directory(runID: record.id).path),
+                  "REQ114 B1 fixture: the journaled run never created backend state")
+            let controller = GameOperationsController(installed: library, paths: paths)
+            await controller.restore()
+            check(controller.recoveryRequired && library.mutationActive,
+                  "REQ114 B1: Relaunch still fences a pending \(kind.rawValue) until it is checked")
+            // No signed-in account: the missing state folder alone proves nothing ran.
+            await controller.reconcile()
+            let pending = try await journal.load()
+            let resumable = try await journal.loadResumable()
+            check(!controller.recoveryRequired && !library.mutationActive && controller.operation == nil
+                  && pending == nil && controller.error == nil
+                  && controller.notice?.contains("didn't start. Nothing was changed.") == true
+                  && (kind == .install) == (resumable[record.productID] != nil),
+                  "REQ114 B1: Checking a \(kind.rawValue) whose backend never started releases install/uninstall/repair/sign-out")
+        }
+        let fixture = root.appendingPathComponent("b1-uninstall-preflight")
+        let folder = fixture.appendingPathComponent("removed-game")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        try Data("""
+            <Game><Identity Name="Fixture.Removed" Version="1.0.0.0"/><StoreId>FIXTURE00001</StoreId></Game>
+            """.utf8).write(to: folder.appendingPathComponent("MicrosoftGame.config"))
+        let paths = GameScriptPaths(scripts: fixture.appendingPathComponent("scripts"),
+            processed: fixture.appendingPathComponent("processed"), logs: fixture.appendingPathComponent("logs"),
+            games: fixture, journal: fixture.appendingPathComponent("state/operation.json"))
+        let library = InstalledGamesController(store: InstalledGameStore(file: fixture.appendingPathComponent("games.json")),
+                                               inspectPackage: { _ in .msixvc })
+        await library.load()
+        try library.reserveMutation(gameID: nil)
+        try await library.registerNativeInstallation(folder: folder, expectedStoreID: "FIXTURE00001")
+        library.releaseMutation()
+        guard let registered = library.games.first else { throw GameScriptError.invalidReceipt }
+        try FileManager.default.removeItem(at: folder)
+        let controller = GameOperationsController(installed: library, paths: paths)
+        controller.prepareUninstall(registered)
+        controller.confirmUninstall(registered)
+        await controller.waitForMutation()
+        let pending = try await GameOperationJournal(file: paths.journal).load()
+        check(controller.error == InstalledGameError.missingFolder.localizedDescription
+              && !controller.recoveryRequired && !library.mutationActive && pending == nil
+              && controller.canStartMutation && library.games.count == 1,
+              "REQ114 B1: Uninstall of a deleted folder is refused before any journal or lock, and stays recoverable")
+        var unplugged = registered
+        unplugged.storageVolume = GameStorageVolume(path: "/Volumes/REQ114-Unplugged-\(UUID().uuidString)")
+        check(unplugged.storageVolume?.isUnavailable(mountedRoots: GameStorageVolume.mountedRoots()) == true,
+              "REQ114 M7 fixture: the recorded drive is not mounted")
+        let current = GameStorageVolume.read(at: fixture)
+        let recorded = current.map { GameStorageVolume(path: $0.path, uuid: "00000000-0000-0000-0000-000000000000") }
+        check(current?.uuid != nil && current.map { $0.identifies($0) } == true
+              && recorded?.identifies(current) == false
+              && current.map { GameStorageVolume(path: $0.path).identifies($0) } == true
+              && current.map { GameStorageVolume(path: "/Volumes/Other", uuid: $0.uuid).identifies($0) } == false
+              && GameInstallLocationError.driveChanged.localizedDescription.contains("nothing was deleted"),
+              "REQ114 M7: Uninstall requires the same drive identity (mount path and recorded volume UUID)")
+    }
+
     static func run(check: (Bool, String) -> Void) async throws {
         check(NativePlayerFailure.message(errorCode: "TIMEOUT", error: nil, diagnostic: "",
             windowRecorded: nil, monitorReliable: false, success: false)?.contains("Open the launch log") == true,
@@ -67,7 +232,7 @@ enum NativeLifecycleChecks {
             windowRecorded: false, monitorReliable: true, success: false)?.contains("runtime component") == true,
             "A loader's explicit missing-library report names a missing component, not an invented repair")
         check(NativePlayerFailure.message(errorCode: nil, error: nil, diagnostic: "",
-            windowRecorded: false, monitorReliable: true, success: true)?.contains("before Ode to X detected its window") == true,
+            windowRecorded: false, monitorReliable: true, success: true)?.contains("before \(AppBrand.displayName) detected its window") == true,
             "A clean exit with reliable empty window evidence is not described as playable")
         for reliable in [true, false] {
             check(NativePlayerFailure.message(errorCode: "ACCOUNT_UNAVAILABLE", error: nil,
@@ -121,7 +286,7 @@ enum NativeLifecycleChecks {
               && diskFailure?.availableBytes == 29_631_885_312
               && diskFailure?.code == "DISK_SPACE"
               && diskFailure?.message.contains("Not enough space") == true
-              && diskFailure?.message.contains("Partial files are kept") == true,
+              && diskFailure?.message.contains("will start over") == true,
               "COR178: Exact streaming need/have becomes a typed actionable disk-space failure")
         check(NativeGameResult.NativeDiskSpaceFailure.parse("arbitrary disk space text") == nil
               && NativeGameResult.NativeDiskSpaceFailure.parse("Streaming failed: not enough free disk space: need 1 bytes, have 2 bytes") == nil
@@ -183,8 +348,48 @@ enum NativeLifecycleChecks {
                   && controller.resumableInstallations[record.productID]?.destination == destination.path,
                   "COR179 review: \(mode) optional stderr preserves backend failure, partial Resume and terminal journal/mutation release")
         }
+        do {
+            // REQ114 D1: a refused uninstall names its reason and marks the install damaged instead of "game operation failed".
+            let fixture = root.appendingPathComponent("d1-uninstall")
+            let destination = fixture.appendingPathComponent("Games/Pentiment-Xbox")
+            let logs = fixture.appendingPathComponent("logs")
+            try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+            try FileManager.default.createDirectory(at: logs, withIntermediateDirectories: false)
+            let paths = GameScriptPaths(scripts: fixture.appendingPathComponent("scripts"),
+                processed: fixture.appendingPathComponent("processed"), logs: logs,
+                games: fixture.appendingPathComponent("Games"), journal: fixture.appendingPathComponent("state/operation.json"))
+            let journal = GameOperationJournal(file: paths.journal)
+            let installedID = UUID()
+            let library = InstalledGamesController(store: InstalledGameStore(file: fixture.appendingPathComponent("games.json")))
+            await library.load()
+            for (code, expected) in [("UNINSTALL_NOT_A_GAME", "Repair the installation"),
+                                     ("UNINSTALL_PERMISSION_DENIED", destination.path),
+                                     ("UNINSTALL_UNSAFE_TREE", "links or special files")] {
+                let record = GameOperationRecord(id: InstalledGamesController.runID(), kind: .uninstall,
+                    productID: "9N2X2CQNM2KS", title: "Pentiment", destination: destination.path,
+                    installedID: installedID, nativeAccountHash: String(repeating: "a", count: 64))
+                try await journal.save(record)
+                let controller = GameOperationsController(installed: library, paths: paths)
+                await controller.restore()
+                let refused = NativeGameResult(version: 1, runID: UUID().uuidString, operation: "uninstall",
+                    product: record.productID, success: false, exitCode: 1, errorCode: code,
+                    gameDirectory: destination.path, logDirectory: logs.path,
+                    resultPath: logs.appendingPathComponent("result.json").path,
+                    progressPath: logs.appendingPathComponent("progress.jsonl").path)
+                try await controller.completeNative(record, result: refused)
+                let damaged = code == "UNINSTALL_NOT_A_GAME"
+                check(NativeGameResult.failureCodes.contains(code)
+                      && controller.error?.contains(expected) == true
+                      && controller.error?.contains("game operation failed") == false
+                      && (controller.damagedInstallations[installedID] != nil) == damaged
+                      && controller.operation == nil && !library.mutationActive,
+                      "REQ114 D1: \(code) shows its specific reason\(damaged ? " and offers Repair / Remove (Keep Files)" : "")")
+            }
+        }
+        try await recoveryLockChecks(root: root, check: check)
+        try await orphanRunChecks(root: root, check: check)
         for (code, expected) in [
-            ("CANCELLED", "cancelled"), ("TIMEOUT", "install operation took too long"),
+            ("CANCELLED", "will start over"), ("TIMEOUT", "install operation took too long"),
             ("RESOURCE_BUSY", "in use"), ("ACCOUNT_UNAVAILABLE", "Keychain"),
             ("DISK_SPACE_FLOOR", "Free space"), ("DISK_SPACE_FLOOR_INVALID", "limit is invalid"),
             ("OPERATION_FAILED", "Open its log")
@@ -198,7 +403,7 @@ enum NativeLifecycleChecks {
                   "Native lifecycle maps \(code) actionably without inventing a launch during installation")
         }
         try Data().write(to: failureLog.appendingPathComponent("windows.jsonl"))
-        check(try await resultFixture.playerMessage()?.contains("before Ode to X detected its window") == true,
+        check(try await resultFixture.playerMessage()?.contains("before \(AppBrand.displayName) detected its window") == true,
               "Player failure reader binds empty monitor evidence to the exact result run folder")
         try Data(#"{"dialog":false,"title":"Observed game"}"#.utf8)
             .write(to: failureLog.appendingPathComponent("windows.jsonl"))
@@ -576,10 +781,35 @@ enum NativeLifecycleChecks {
         } catch { check(true, "A changed local legacy DLL requires selecting the updated pair") }
         try await installationStatusChecks(root: root, check: check)
         try await titleRecipeChecks(root: root, check: check)
-        try await candidateRecipeChecks(root: root, check: check)
+        try await candidateRecipeChecks(root: root, runtime: reference, shims: shims, check: check)
     }
 
-    private static func candidateRecipeChecks(root: URL, check: (Bool, String) -> Void) async throws {
+    private static func installCalimochoRouteFixture(root: URL, defaults: UserDefaults,
+                                                     fileName: String) throws -> URL {
+        let pin = CalimochoReleasePin.release04
+        let executable = "/usr/bin/true"
+        let registryURL = root.appendingPathComponent(fileName)
+        let bytes = try JSONSerialization.data(withJSONObject: ["engines": [[
+            "name": pin.engineName, "kind": "free", "wine": executable, "wineserver": executable,
+            "sha256": pin.wineSha256, "wineserver_sha256": pin.wineserverSha256,
+            "provider": ["id": "calimocho", "contract_version": 1],
+            "smoke_test": ["status": "pass"]
+        ]]])
+        try bytes.write(to: registryURL)
+        let registry = try NativeEngineRegistry.read(registryURL)
+        let inspection = EngineInspection(schemaVersion: 1, capability: "engineAdmissionV1",
+            registrySha256: registry.byteDigest, engineName: pin.engineName, declaredProvider: "calimocho",
+            admittedProvider: "calimocho", admission: "admitted", ready: true, qualified: false,
+            wineSha256: pin.wineSha256, wineserverSha256: pin.wineserverSha256, error: nil)
+        let selection = AdmittedEngineSelection(registryPath: registryURL.path, inspection: inspection)
+        defaults.set(try JSONEncoder().encode(selection), forKey: AdmittedEngineSelection.preferenceKey)
+        defaults.set(registryURL.path, forKey: "Xodus.lifecycle.registry")
+        return registryURL
+    }
+
+    private static func candidateRecipeChecks(root: URL, runtime: NativeRuntimeReference,
+                                              shims: NativeShimReference,
+                                              check: (Bool, String) -> Void) async throws {
         let rows = try NativeCandidateLaunchCatalogue.rows()
         let expected = [
             "9P8NSTDMZ11P": ("creation-dx11-d3dmetal", "Inscryption.exe"),
@@ -598,9 +828,9 @@ enum NativeLifecycleChecks {
         guard let defaults = UserDefaults(suiteName: suite) else { throw NativeLaunchError.invalidProfile }
         defer { defaults.removePersistentDomain(forName: suite) }
         check(Set(rows.filter(\.admitted).map(\.store_id)) == Set(expected.keys)
-              && NativeCandidateLaunchCatalogue.issue(productID: "9NMNMS626R59") != nil
+              && NativeCandidateLaunchCatalogue.issue(productID: "9NMNMS626R59") == nil
               && NativeCandidateLaunchCatalogue.issue(productID: "UNKNOWN00001") == nil,
-              "Exactly eleven published S1 candidates are admitted for attempts; Halls stays blocked, unknown titles gain no recipe")
+              "Exactly eleven S1 candidates remain admitted; Halls uses its release-pinned -04 profile without Apple4 evidence")
         for row in rows where row.admitted {
             let profile = try NativeTitleLaunchProfile.read(productID: row.store_id, defaults: defaults,
                                                            provider: .standaloneWine)
@@ -611,12 +841,14 @@ enum NativeLifecycleChecks {
                   && row.game_arguments.isEmpty,
                   "Candidate \(row.store_id) binds exact S1 engine/exe/empty args without STA or DLL overrides")
         }
-        do {
-            _ = try NativeTitleLaunchProfile.read(productID: "9NMNMS626R59", defaults: defaults)
-            check(false, "Halls must not resolve a launch profile")
-        } catch NativeLaunchError.candidateBlocked {
-            check(true, "Halls blocks direct profile resolution, not only its visible Play action")
-        }
+        let hallsProfileWithoutEvidence = try? NativeTitleLaunchProfile.read(
+            productID: "9NMNMS626R59", defaults: defaults, provider: .standaloneWine)
+        check(hallsProfileWithoutEvidence?.engine == CalimochoRelease.engineID
+              && hallsProfileWithoutEvidence?.wineSha256 == CalimochoReleasePin.release04.wineSha256
+              && hallsProfileWithoutEvidence?.wineserverSha256 == CalimochoReleasePin.release04.wineserverSha256
+              && NativeLaunchSupport.evaluate(productID: "9NMNMS626R59", defaults: defaults,
+                    engineDefaults: { try NativeEngineDefaults.read() }, releaseStatus: { _ in nil }) == .supported,
+              "Halls resolves and reports supported from its pinned Calimocho -04 sweep without Apple4 evidence")
         let hallsDocument: [String: Any] = [
             "schemaVersion": 1, "updatedAt": "2026-10-22T00:00:00Z",
             "games": [[
@@ -633,9 +865,12 @@ enum NativeLifecycleChecks {
         let hallsProfile = try NativeTitleLaunchProfile.read(productID: "9NMNMS626R59", defaults: defaults,
             provider: .standaloneWine, evidence: hallsEvidence)
         check(NativeCandidateLaunchCatalogue.issue(productID: "9NMNMS626R59", evidence: hallsEvidence) == nil
-              && hallsEvidence.verifiedWorkingEvidence != nil && hallsProfile?.engine == "apple-gptk-4.0b3"
+              && hallsEvidence.verifiedWorkingEvidence != nil && hallsEvidence.engine == "apple-gptk-4.0b3"
+              && hallsProfile?.engine == CalimochoRelease.engineID
+              && hallsProfile?.wineSha256 == CalimochoReleasePin.release04.wineSha256
+              && hallsProfile?.wineserverSha256 == CalimochoReleasePin.release04.wineserverSha256
               && hallsProfile?.arguments == ["--exe", "Halls of Torment.exe", "--timeout-seconds", "300", "--no-auto-dismiss"],
-              "Exact admitted Halls WORKING evidence replaces Launch unavailable with Play eligibility and a Working badge")
+              "Halls' Apple4 WORKING evidence remains distinct from the pinned Calimocho -04 launch profile")
         let hallsRegistry = root.appendingPathComponent("halls-registry.json")
         let hallsRegistryBytes = try JSONSerialization.data(withJSONObject: ["engines": [[
             "name": "apple-gptk-4.0b3", "kind": "free", "wine": "/usr/bin/true",
@@ -647,14 +882,53 @@ enum NativeLifecycleChecks {
         let hallsGame = InstalledGame(id: UUID(), title: "Halls of Torment", identityName: "SyntheticHalls",
             version: "1.0.0.0", storeId: "9NMNMS626R59", folder: root.path, launcher: "",
             importedAt: Date(), usesNativeLifecycle: true)
-        let resolvedHalls = try NativeLaunchConfiguration.resolve(game: hallsGame, provider: .standaloneWine,
-            defaults: defaults, evidence: hallsEvidence)
-        check(resolvedHalls.engine == NativeWorkingLaunchRecipe.engine
-              && resolvedHalls.prefix.path == NativeWorkingLaunchRecipe.admitted(
-                productID: hallsGame.storeId, evidence: hallsEvidence)?.prefix.path
+        do {
+            _ = try NativeLaunchConfiguration.resolve(game: hallsGame, provider: .standaloneWine,
+                defaults: defaults, evidence: hallsEvidence)
+            check(false, "Halls cannot substitute its old Apple4 evidence when the pinned Calimocho engine is absent")
+        } catch NativeLaunchError.engineUnavailable {
+            check(true, "Halls cannot substitute its old Apple4 evidence when the pinned Calimocho engine is absent")
+        }
+        _ = try installCalimochoRouteFixture(root: root, defaults: defaults, fileName: "halls-calimocho-registry.json")
+        let resolvedHalls: NativeLaunchConfiguration
+        do {
+            resolvedHalls = try NativeLaunchConfiguration.resolve(game: hallsGame, provider: .standaloneWine,
+                defaults: defaults)
+            check(true, "Halls resolves on admitted Calimocho -04 without Apple4 evidence or retained-prefix proof")
+        } catch {
+            check(false, "Halls resolves on admitted Calimocho -04 without Apple4 evidence or retained-prefix proof")
+            resolvedHalls = try NativeLaunchConfiguration.resolve(game: hallsGame, provider: .standaloneWine,
+                defaults: defaults, evidence: hallsEvidence)
+        }
+        check(resolvedHalls.engine == CalimochoRelease.engineID
+              && resolvedHalls.prefix.path.hasSuffix("/\(hallsGame.id.uuidString)/\(CalimochoRelease.engineID)")
+              && resolvedHalls.admittedSelection?.inspection.engineName == CalimochoRelease.engineID
+              && resolvedHalls.admittedSelection?.inspection.qualified == false
               && resolvedHalls.profile?.environment.isEmpty == true
+              && resolvedHalls.profile?.preservedPrefixPath == nil
               && resolvedHalls.profile?.runtime?.primarySHA256 == "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8",
-              "Halls exact Apple4/default-COM/runtime/preserved save prefix wins over a conflicting global provider without launching")
+              "Halls resolves on admitted Calimocho -04 without Apple4 evidence or retained-prefix proof")
+        let mismatchedSelection = AdmittedEngineSelection(registryPath: resolvedHalls.admittedSelection!.registryPath,
+            inspection: EngineInspection(schemaVersion: 1, capability: "engineAdmissionV1",
+                registrySha256: resolvedHalls.admittedSelection!.inspection.registrySha256,
+                engineName: CalimochoRelease.engineID, declaredProvider: "calimocho", admittedProvider: "calimocho",
+                admission: "admitted", ready: true, qualified: false,
+                wineSha256: String(repeating: "0", count: 64),
+                wineserverSha256: String(repeating: "1", count: 64), error: nil))
+        var mismatchedHallsGame = hallsGame
+        mismatchedHallsGame.engineOverride = .calimocho
+        mismatchedHallsGame.engineSelection = mismatchedSelection
+        do {
+            _ = try NativeLaunchConfiguration.resolve(game: mismatchedHallsGame, provider: .calimocho,
+                defaults: defaults, evidence: hallsEvidence)
+            check(false, "A selection named -04 with different Wine and wineserver digests cannot satisfy Halls' profile pin")
+        } catch NativeLaunchError.configurationConflict {
+            check(true, "A selection named -04 with different Wine and wineserver digests cannot satisfy Halls' profile pin")
+        }
+        let unpinnedSelectionProfile = NativeTitleLaunchProfile(version: 1, productID: hallsGame.storeId, engine: nil,
+            shimDirectory: nil, environment: [:])
+        check(unpinnedSelectionProfile.enginePinsMatch(resolvedHalls.admittedSelection!.inspection),
+              "A title profile without an engine preserves the existing explicitly selected engine route")
         defaults.set("creation-dx11-d3dshared", forKey: "Xodus.lifecycle.fallback.9NMNMS626R59")
         do {
             _ = try NativeLaunchConfiguration.resolve(game: hallsGame, provider: nil,
@@ -664,6 +938,46 @@ enum NativeLifecycleChecks {
             check(true, "Qualified Halls refuses unobserved fallback or inherited COM/support-library settings")
         }
         defaults.removeObject(forKey: "Xodus.lifecycle.fallback.9NMNMS626R59")
+        let mismatchedProfileDirectory = root.appendingPathComponent("mismatched-profile")
+        try FileManager.default.createDirectory(at: mismatchedProfileDirectory, withIntermediateDirectories: true)
+        let mismatchedProfile = NativeTitleLaunchProfile(version: 1, productID: "UNKNOWN00002",
+            engine: CalimochoRelease.engineID, shimDirectory: nil, environment: [:],
+            wineSha256: String(repeating: "0", count: 64),
+            wineserverSha256: CalimochoReleasePin.release04.wineserverSha256)
+        try JSONEncoder().encode(mismatchedProfile)
+            .write(to: mismatchedProfileDirectory.appendingPathComponent("UNKNOWN00002.json"))
+        defaults.set(mismatchedProfileDirectory.path, forKey: "Xodus.lifecycle.profileDirectory")
+        do {
+            _ = try NativeTitleLaunchProfile.read(productID: "UNKNOWN00002", defaults: defaults)
+            check(false, "A profile whose release pin differs from -04 is rejected")
+        } catch NativeLaunchError.invalidProfile {
+            check(true, "A profile whose release pin differs from -04 is rejected")
+        }
+        defaults.removeObject(forKey: "Xodus.lifecycle.profileDirectory")
+        let unboundProfileDirectory = root.appendingPathComponent("unbound-profile")
+        try FileManager.default.createDirectory(at: unboundProfileDirectory, withIntermediateDirectories: true)
+        let unboundProductID = "UNKNOWN00004"
+        let unboundProfile = NativeTitleLaunchProfile(version: 1, productID: unboundProductID,
+            engine: nil, shimDirectory: nil, environment: [:])
+        try JSONEncoder().encode(unboundProfile)
+            .write(to: unboundProfileDirectory.appendingPathComponent(unboundProductID + ".json"))
+        defaults.set(unboundProfileDirectory.path, forKey: "Xodus.lifecycle.profileDirectory")
+        var unboundGame = InstalledGame(id: UUID(), title: "Unbound profile", identityName: "UnboundProfile",
+            version: "1.0.0.0", storeId: unboundProductID, folder: root.path, launcher: "",
+            importedAt: Date(), usesNativeLifecycle: true)
+        unboundGame.engineOverride = .calimocho
+        unboundGame.engineSelection = resolvedHalls.admittedSelection
+        let resolvedUnbound = try NativeLaunchConfiguration.resolve(game: unboundGame, provider: .calimocho,
+            defaults: defaults, runtime: runtime, shims: shims)
+        check(resolvedUnbound.engine == CalimochoRelease.engineID
+              && NativeLaunchSupport.evaluate(productID: unboundProductID, defaults: defaults,
+                    engineDefaults: { try NativeEngineDefaults.read() }, releaseStatus: { _ in nil }) == .supported,
+              "A profile without an engine preserves selected -04 routing and agrees with launch support")
+        defaults.removeObject(forKey: "Xodus.lifecycle.profileDirectory")
+
+        #if !XODUS_SHIPPING
+        try candidateResolutionSafetyChecks(root: root, runtime: runtime, shims: shims, check: check)
+        #endif
         let hogwartsJSON = String(decoding: hallsBytes, as: UTF8.self)
             .replacingOccurrences(of: "9NMNMS626R59", with: "9MT5NJ5W7B8Z")
             .replacingOccurrences(of: "Halls of Torment", with: "Hogwarts Legacy")
@@ -679,6 +993,7 @@ enum NativeLifecycleChecks {
         let hogwartsGame = InstalledGame(id: UUID(), title: "Hogwarts Legacy", identityName: "SyntheticHogwarts",
             version: "1.0.0.0", storeId: "9MT5NJ5W7B8Z", folder: root.path, launcher: "",
             importedAt: Date(), usesNativeLifecycle: true)
+        defaults.set(hallsRegistry.path, forKey: "Xodus.lifecycle.registry")
         let resolvedHogwarts = try NativeLaunchConfiguration.resolve(game: hogwartsGame,
             provider: .standaloneWine, defaults: defaults, evidence: hogwartsEvidence)
         check(resolvedHogwarts.engine == "apple-gptk-4.0b3"
@@ -701,8 +1016,9 @@ enum NativeLifecycleChecks {
             let changed = String(decoding: hallsBytes, as: UTF8.self)
                 .replacingOccurrences(of: change.0, with: change.1)
             let evidence = try MacGameEvidence.decode(Data(changed.utf8)).games[0]
-            check(NativeCandidateLaunchCatalogue.issue(productID: "9NMNMS626R59", evidence: evidence) != nil,
-                  "Halls partial/unknown/mismatched engine or retention proof cannot bypass its frozen blocked row")
+            check(NativeCandidateLaunchCatalogue.issue(productID: "9NMNMS626R59", evidence: evidence) == nil
+                  && NativeWorkingLaunchRecipe.admitted(productID: "9NMNMS626R59", evidence: evidence) == nil,
+                  "Halls' pinned Calimocho route remains separate from incomplete Apple4 qualification")
         }
         let raw = try JSONSerialization.jsonObject(with: Data(contentsOf:
             LaunchRecipeResources.candidateProfilesURL("small-game-candidates"))) as? [String: Any] ?? [:]
@@ -799,6 +1115,62 @@ enum NativeLifecycleChecks {
         }
     }
 
+    #if !XODUS_SHIPPING
+    private static func candidateResolutionSafetyChecks(root: URL, runtime: NativeRuntimeReference,
+                                                         shims: NativeShimReference,
+                                                         check: (Bool, String) -> Void) throws {
+        let suite = "io.github.xodus.candidate-resolution-check.\(UUID().uuidString)"
+        guard let defaults = UserDefaults(suiteName: suite) else { throw NativeLaunchError.invalidProfile }
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let productID = "UNKNOWN00003"
+        let folder = root.appendingPathComponent("candidate-resolution/\(productID)")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let expectedConfig = Data("synthetic candidate manifest".utf8)
+        let digest = SHA256.hash(data: expectedConfig).map { String(format: "%02x", $0) }.joined()
+        let row = NativeCandidateLaunchCatalogue.Row(title: "Synthetic candidate", store_id: productID,
+            manifest_executable: "Fixture.exe", manifest_sha256: digest,
+            profile: "creation-dx11-d3dmetal", game_arguments: [], title_environment: [:],
+            status: "candidate, not game-qualified", ready_for_launch: true, blocker: nil)
+        let profileDirectory = root.appendingPathComponent("candidate-resolution/profiles")
+        try FileManager.default.createDirectory(at: profileDirectory, withIntermediateDirectories: true)
+        let profile = NativeTitleLaunchProfile(version: 1, productID: productID, engine: row.profile,
+            shimDirectory: nil, environment: [:], executable: row.manifest_executable)
+        try JSONEncoder().encode(profile).write(to: profileDirectory.appendingPathComponent(productID + ".json"))
+        let registryURL = root.appendingPathComponent("candidate-resolution/registry.json")
+        let registryBytes = try JSONSerialization.data(withJSONObject: ["engines": [[
+            "name": row.profile, "kind": "free", "wine": "/usr/bin/true",
+            "smoke_test": ["status": "pass"]
+        ]]])
+        try registryBytes.write(to: registryURL)
+        defaults.set(profileDirectory.path, forKey: "Xodus.lifecycle.profileDirectory")
+        defaults.set(registryURL.path, forKey: "Xodus.lifecycle.registry")
+        let game = InstalledGame(id: UUID(), title: "Synthetic candidate", identityName: "SyntheticCandidate",
+            version: "1.0.0.0", storeId: productID, folder: folder.path, launcher: "",
+            importedAt: Date(), usesNativeLifecycle: true)
+        do {
+            _ = try NativeLaunchConfiguration.resolveForChecks(game: game, defaults: defaults,
+                runtime: runtime, shims: shims, candidate: row)
+            check(false, "Candidate resolve rejects a missing MicrosoftGame.config")
+        } catch GameScriptError.invalidDestination {
+            check(true, "Candidate resolve rejects a missing MicrosoftGame.config")
+        }
+        try expectedConfig.write(to: folder.appendingPathComponent("MicrosoftGame.config"))
+        let unsafeRegistry = try JSONSerialization.data(withJSONObject: ["engines": [[
+            "name": row.profile, "kind": "free", "wine": "/usr/bin/true",
+            "smoke_test": ["status": "pass"],
+            "environment": ["XODUS_PRIVATE_RUNTIME_COM_STA": "1"]
+        ]]])
+        try unsafeRegistry.write(to: registryURL)
+        do {
+            _ = try NativeLaunchConfiguration.resolveForChecks(game: game, defaults: defaults,
+                runtime: runtime, shims: shims, candidate: row)
+            check(false, "Candidate resolve rejects an engine carrying the forbidden STA environment")
+        } catch NativeLaunchError.invalidProfile {
+            check(true, "Candidate resolve rejects an engine carrying the forbidden STA environment")
+        }
+    }
+    #endif
+
     private static func titleRecipeChecks(root: URL, check: (Bool, String) -> Void) async throws {
         let profiles = try NativeTitleLaunchProfile.bundledProfiles()
         let hollowCandidate = try JSONDecoder().decode(NativeTitleLaunchProfile.self,
@@ -853,28 +1225,27 @@ enum NativeLifecycleChecks {
         let fallbackNMS = try NativeTitleLaunchProfile.read(productID: nms.productID, defaults: defaults, provider: .crossover)
         check(defaultNMS?.engine == "calimocho-wine11.20-gptk4b3-tls-vulkan-private" && fallbackNMS?.engine == "crossover-26.3",
               "Automatic NMS uses the observed port11b binding; explicit CrossOver selects its unchanged separate recipe")
-        let brotatoRegistry = root.appendingPathComponent("brotato-route-registry.json")
-        try JSONSerialization.data(withJSONObject: ["engines": [
-            ["name": "wine-stable", "kind": "free", "wine": "/usr/bin/true", "smoke_test": ["status": "pass"]],
-            ["name": "apple-gptk-4.0b3", "kind": "free", "wine": "/usr/bin/true", "smoke_test": ["status": "pass"]]
-        ]]).write(to: brotatoRegistry)
-        defaults.set(brotatoRegistry.path, forKey: "Xodus.lifecycle.registry")
+        _ = try installCalimochoRouteFixture(root: root, defaults: defaults,
+                                              fileName: "brotato-route-registry.json")
         defaults.set("wine-stable", forKey: "Xodus.lifecycle.engine.crossover")
         let brotato = InstalledGame(id: UUID(), title: "Brotato", identityName: "Synthetic.Brotato",
             version: "1.0", storeId: "9P9VNSQK1W3K", folder: root.path, launcher: "",
             importedAt: Date(), usesNativeLifecycle: true)
         for provider: RuntimeProviderKind? in [nil, .crossover] {
             let launch = try NativeLaunchConfiguration.resolve(game: brotato, provider: provider, defaults: defaults)
-            check(launch.engine == "apple-gptk-4.0b3"
+            check(launch.engine == CalimochoRelease.engineID
                   && launch.profile?.arguments == ["--exe", "Brotato.exe", "--no-auto-dismiss"]
                   && launch.profile?.environment.isEmpty == true
                   && Set(launch.profile?.unsetEnvironment ?? []) == Set([
                     "XODUS_PRIVATE_RUNTIME_COM_STA", "XODUS_PRIVATE_CALLER_OWNS_COM", "CX_APPLEGPTK_LIBD3DSHARED_PATH"])
                   && launch.profile?.runtime?.primarySHA256 == "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8"
                   && launch.profile?.runtime?.legacySHA256 == "cfe7e5f837fabc51b8066809ca69c2ee0a7852512afbb1979190ec495b0b8b96"
+                  && launch.profile?.wineSha256 == CalimochoReleasePin.release04.wineSha256
+                  && launch.profile?.wineserverSha256 == CalimochoReleasePin.release04.wineserverSha256
                   && launch.shims.directory.path.hasSuffix("/Ode to X/Engines/profiles/native-web-shims-v1")
-                  && launch.prefix.path.hasSuffix("/\(brotato.id.uuidString)/apple-gptk-4.0b3"),
-                  "#43: Brotato selects its explicit Apple4/defaultCOM/runtime7106/native-shims/direct-exe recipe, not generic wine-stable or a conflicting default provider")
+                  && launch.prefix.path.hasSuffix("/\(brotato.id.uuidString)/\(CalimochoRelease.engineID)")
+                  && launch.admittedSelection?.inspection.engineName == CalimochoRelease.engineID,
+                  "Brotato selects admitted Calimocho -04 with exact Wine/server pins, not a conflicting default provider")
         }
         let observedAbiotic = try NativeTitleLaunchProfile.read(productID: "9P4NV23Q6QC2", defaults: defaults)
         check(observedAbiotic?.launchEnvironment["XODUS_PRIVATE_RUNTIME_COM_STA"] == "1"

@@ -95,6 +95,16 @@ struct NativeCandidateLaunchCatalogue: Decodable {
 
     static func issue(productID: String, evidence: MacGameEvidence.Game? = nil) -> String? {
         do {
+            if productID == "9NMNMS626R59" {
+                guard let profile = try NativeTitleLaunchProfile.bundledProfiles()
+                        .first(where: { $0.productID == productID && $0.provider == nil }),
+                      let engine = profile.engine, let pin = CalimochoReleasePin.named(engine),
+                      profile.wineSha256 == pin.wineSha256,
+                      profile.wineserverSha256 == pin.wineserverSha256 else {
+                    return "Halls of Torment's launch profile doesn't match a pinned Calimocho release."
+                }
+                return nil
+            }
             if productID == "9MT5NJ5W7B8Z" {
                 return NativeWorkingLaunchRecipe.admitted(productID: productID, evidence: evidence) != nil
                     ? nil : "The exact qualified Hogwarts recipe requires its matching Working, save and normal-quit evidence."

@@ -56,33 +56,76 @@ final class PreviewDelegate: NSObject, NSApplicationDelegate {
     var runtimeSettings: RuntimeProviderSettings?
     var installedGames: InstalledGamesController?
     var pcGames: PCGamesController?
-    var gameOperations: GameOperationsController?
+    var calimochoInstaller: CalimochoReleaseInstallController?
+    var gameOperations: GameOperationsController? {
+        didSet {
+            guard let gameOperations, gameOperations !== oldValue else { return }
+            gameOperations.announceReady = { [weak self] in self?.readyNotifier.post($0) }
+        }
+    }
+    let readyNotifier = GameReadyNotifier()
     let termination = ApplicationTerminationCoordinator()
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
+        readyNotifier.play = { [weak self] folder in
+            guard let installed = self?.installedGames,
+                  let game = installed.games.first(where: { $0.folder == folder }) else { return }
+            Task { await installed.play(game) }
+        }
+        readyNotifier.configure()
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        let systemQuit = Self.systemSessionEnding
         Task {
+            if let gameOperations, let download = gameOperations.stoppableDownloadForQuit {
+                if !systemQuit {
+                    let alert = NSAlert()
+                    alert.messageText = GameDownloadCopy.quitTitle(title: download.title, percent: download.percent)
+                    alert.informativeText = GameDownloadCopy.quitMessage
+                    alert.addButton(withTitle: GameDownloadCopy.continueDownloading)
+                    alert.addButton(withTitle: GameDownloadCopy.stopAndQuit)
+                    guard alert.runModal() == .alertSecondButtonReturn else {
+                        sender.reply(toApplicationShouldTerminate: false)
+                        return
+                    }
+                }
+                await gameOperations.stopDownloadForQuit()
+            }
             await LibraryXboxStats.shared.shutdown()
             await XboxCompanionController.shared.shutdown()
             let closed = await termination.shutdown(session: liveSession, runtime: runtimeSettings,
                                                     installedGames: installedGames, pcGames: pcGames,
-                                                    gameOperations: gameOperations)
+                                                    gameOperations: gameOperations,
+                                                    calimochoInstaller: calimochoInstaller)
             if !closed {
                 LibraryXboxStats.shared.resumeAfterTerminationRefusal()
                 XboxCompanionController.shared.resumeAfterTerminationRefusal()
             }
-            if !closed, gameOperations?.canQuit == false {
+            // Logout/restart/shutdown is refused at once without a modal that would hang unattended.
+            if Self.showsWaitBeforeQuitting(closed: closed, systemQuit: systemQuit,
+                                            canQuit: gameOperations?.canQuit ?? true) {
                 let alert = NSAlert()
-                alert.messageText = "Wait before quitting Ode to X"
+                alert.messageText = "Wait before quitting \(AppBrand.displayName)"
                 alert.informativeText = "Wait for the current game operation to finish. You can cancel an installation first."
-                alert.addButton(withTitle: "Keep Ode to X open")
+                alert.addButton(withTitle: "Keep \(AppBrand.displayName) Open")
                 alert.runModal()
             }
             sender.reply(toApplicationShouldTerminate: closed)
         }
         return .terminateLater
+    }
+
+    nonisolated static func showsWaitBeforeQuitting(closed: Bool, systemQuit: Bool, canQuit: Bool) -> Bool {
+        !closed && !systemQuit && !canQuit
+    }
+
+    /// Log out, restart and shut down must not be blocked by a download prompt.
+    private static var systemSessionEnding: Bool {
+        guard let event = NSAppleEventManager.shared().currentAppleEvent,
+              let reason = event.attributeDescriptor(forKeyword: kAEQuitReason)?.enumCodeValue else { return false }
+        return [kAELogOut, kAEReallyLogOut, kAEShowRestartDialog, kAERestart, kAEShowShutdownDialog, kAEShutDown]
+            .map { OSType($0) }.contains(reason)
     }
 }
 
@@ -94,6 +137,11 @@ struct XodusPreviewApp: App {
     @Environment(\.openWindow) private var openWindow
     @Environment(\.openSettings) private var openSettings
 
+    private func openSettingsPane(_ pane: SettingsPane) {
+        SettingsPaneSelection.select(pane)
+        openSettings()
+    }
+
     private var navigationAllowed: Bool {
 #if !XODUS_SHIPPING
         state.fixtureMode || session.hasConfirmedSignIn
@@ -103,7 +151,7 @@ struct XodusPreviewApp: App {
     }
 
     init() {
-        ProcessInfo.processInfo.processName = "Ode to X"
+        ProcessInfo.processInfo.processName = AppBrand.displayName
 #if XODUS_SHIPPING
         if !CommandLine.arguments.dropFirst().isEmpty,
            GameLaunchArguments.parse(Array(CommandLine.arguments.dropFirst())) == nil {
@@ -183,7 +231,7 @@ struct XodusPreviewApp: App {
     }
 
     var body: some Scene {
-        WindowGroup("Ode to X") {
+        WindowGroup(AppBrand.displayName) {
             Group {
 #if !XODUS_SHIPPING
                 if state.fixtureMode { RootView() }
@@ -205,6 +253,7 @@ struct XodusPreviewApp: App {
                     delegate.installedGames = state.installedGames
                     delegate.pcGames = state.pcGames
                     delegate.gameOperations = state.gameOperations
+                    delegate.calimochoInstaller = state.calimochoInstaller
                 }
         }
 
@@ -213,18 +262,34 @@ struct XodusPreviewApp: App {
         .windowToolbarStyle(.unified)
         .commands {
             CommandGroup(replacing: .appInfo) {
-                Button("About Ode to X") {
-                    NSApp.orderFrontStandardAboutPanel(options: [.applicationName: "Ode to X"])
-                }
+                Button("About \(AppBrand.displayName)") { AppBrandPresentation.orderFrontAboutPanel() }
                 Button("Licenses") { openWindow(id: "licenses") }
                 Button("Acknowledgments") { openWindow(id: "acknowledgments") }
             }
+            CommandGroup(after: .appSettings) {
+                Button("Engines…") { openSettingsPane(.engines) }
+#if !XODUS_SHIPPING
+                    .disabled(state.fixtureMode)
+#endif
+                    .keyboardShortcut("e", modifiers: [.command, .shift])
+            }
             CommandGroup(replacing: .appTermination) {
-                Button("Quit Ode to X") { NSApp.terminate(nil) }
+                Button("Quit \(AppBrand.displayName)") { NSApp.terminate(nil) }
                     .keyboardShortcut("q")
             }
+            GameSearchCommands(navigationAllowed: navigationAllowed)
+            CommandGroup(before: .toolbar) {
+                Button("Refresh") { Task { await state.refreshCurrentDestination(session: session) } }
+                    .keyboardShortcut("r")
+                    .disabled(!navigationAllowed || !state.canRefresh(session: session))
+                Divider()
+            }
+            CommandGroup(replacing: .help) {
+                Button(AppBrand.supportTitle) { openWindow(id: AppBrandPresentation.supportWindowID) }
+                Button("Send Feedback…") { openWindow(id: AppBrandPresentation.supportWindowID) }
+            }
             CommandGroup(after: .newItem) {
-                Button("Import installed Xbox game…") { Task { await state.installedGames.chooseGame() } }
+                Button(NativeToolbarImportButton.title + "…") { Task { await state.installedGames.chooseGame() } }
                     .keyboardShortcut("i", modifiers: [.command, .shift])
 #if !XODUS_SHIPPING
                     .disabled(!session.hasConfirmedSignIn || state.fixtureMode || LibraryPreviewExporter.requested || !state.installedGames.loaded ||
@@ -238,7 +303,7 @@ struct XodusPreviewApp: App {
             CommandMenu("Navigate") {
                 Button("Library") { state.navigate(.library) }.keyboardShortcut("1")
                     .disabled(!navigationAllowed)
-                Button("Discover") { state.navigate(.discover) }.keyboardShortcut("2")
+                Button("Discover") { state.selectTab(.discover) }.keyboardShortcut("2")
                     .disabled(!navigationAllowed)
                 Button("Downloads") { state.navigate(.downloads) }.keyboardShortcut("3")
                     .disabled(!navigationAllowed)
@@ -257,13 +322,7 @@ struct XodusPreviewApp: App {
                 Button("My Consoles") { state.openAccount(.consoles) }
                     .disabled(state.fixtureMode || !session.hasConfirmedSignIn)
                     .keyboardShortcut("c", modifiers: [.command, .shift])
-                Button("Engines") {
-                    SettingsPaneSelection.select(.engines)
-                    openSettings()
-                }
-                    .disabled(state.fixtureMode)
-                    .keyboardShortcut("e", modifiers: [.command, .shift])
-                Button("Return to live Ode to X") {
+                Button("Return to live \(AppBrand.displayName)") {
                     state.fixtureMode = false
                     state.navigate(.library)
                 }.disabled(!state.fixtureMode)
@@ -279,11 +338,6 @@ struct XodusPreviewApp: App {
                 Button("My Consoles") { state.openAccount(.consoles) }
                     .disabled(!session.hasConfirmedSignIn)
                     .keyboardShortcut("c", modifiers: [.command, .shift])
-                Button("Engines") {
-                    SettingsPaneSelection.select(.engines)
-                    openSettings()
-                }
-                    .keyboardShortcut("e", modifiers: [.command, .shift])
 #endif
             }
         }
@@ -304,11 +358,17 @@ struct XodusPreviewApp: App {
                     delegate.installedGames = state.installedGames
                     delegate.pcGames = state.pcGames
                     delegate.gameOperations = state.gameOperations
+                    delegate.calimochoInstaller = state.calimochoInstaller
                 }
         }
         Window("Licenses", id: "licenses") { AppLicensesView() }
             .defaultSize(width: 560, height: 420)
-        Window("Acknowledgments", id: "acknowledgments") { AppAcknowledgmentsView() }
-            .defaultSize(width: 560, height: 420)
+        Window("Acknowledgments", id: AppAcknowledgmentsView.windowID) { AppAcknowledgmentsView() }
+            .defaultSize(width: 860, height: 600)
+        Window(AppBrand.supportTitle, id: AppBrandPresentation.supportWindowID) {
+            BetaSupportView { openSettingsPane(.advanced) }
+        }
+            .defaultSize(width: 480, height: 360)
+            .windowResizability(.contentSize)
     }
 }

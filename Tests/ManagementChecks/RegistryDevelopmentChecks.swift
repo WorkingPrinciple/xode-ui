@@ -136,7 +136,7 @@ extension Checks {
                       "Failure payload cannot decode as a successful empty snapshot")
             }
             check(ManagementError.backendError(failure.code, retryable: failure.retryable)
-                .localizedDescription == "Xodus reported \(code). No success was assumed.",
+                .localizedDescription == "X Ode reported \(code). No success was assumed.",
                   "Existing generic failure copy preserves explicit failure, not raw diagnostics")
         }
     }

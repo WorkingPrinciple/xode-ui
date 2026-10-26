@@ -38,20 +38,23 @@ struct GameEngineOverride: Codable, Equatable, Sendable {
     }
 }
 
-enum InstalledGameError: Error, LocalizedError {
+enum InstalledGameError: Error, LocalizedError, Equatable {
     case invalidConfig, missingFolder, folderPermission, folderUnavailable, missingLauncher, placeholderContent, invalidRegistry, storage, launch
+    /// macOS privacy (EPERM) blocked a folder in a protected place; fixed in System Settings, not Finder.
+    case folderPrivacy(PrivacyPermission)
 
     var errorDescription: String? {
         switch self {
         case .invalidConfig: "This folder doesn't contain a valid MicrosoftGame.config. Choose the installed Xbox game folder."
         case .missingFolder: "The game folder is no longer available. Reconnect its drive or import the game again."
         case .folderUnavailable: "The installation couldn't be checked. Try again."
-        case .folderPermission: "Ode to X can't read this folder. Check its permissions and try again."
+        case .folderPermission: "\(AppBrand.displayName) doesn't have permission to read this folder. Check the folder's permissions, then try again."
         case .missingLauncher: "The launch script is missing or isn't an executable file. Import the game again to choose its script."
         case .placeholderContent: "This installation contains only Minecraft's placeholder, not a playable game. Install the full Minecraft Launcher package before playing. Signing in again won't replace these files."
         case .invalidRegistry: "The installed games list couldn't be read. Your game files haven't been changed."
         case .storage: "The installed games list couldn't be saved. Check access to Application Support and try again."
         case .launch: "The game couldn't start. Check its launch script and try again."
+        case .folderPrivacy(let permission): PrivacyDenial.installFolderProblem(.privacyDenied(permission), fallback: "").message
         }
     }
 }
@@ -194,11 +197,15 @@ enum InstalledGameFiles {
     static func checkFolder(_ url: URL) throws {
         let values: URLResourceValues
         do { values = try url.resourceValues(forKeys: [.isDirectoryKey]) }
-        catch { throw folderReadError(error as NSError) }
+        catch { throw folderReadError(error as NSError, path: url.path) }
         guard url.isFileURL, values.isDirectory == true else { throw InstalledGameError.missingFolder }
     }
 
-    static func folderReadError(_ error: NSError) -> InstalledGameError {
+    /// With a path, EPERM in a protected place becomes a privacy denial; EACCES stays ordinary permissions.
+    static func folderReadError(_ error: NSError, path: String? = nil) -> InstalledGameError {
+        if let path, case .privacyDenied(let permission?) = PrivacyDenial.classify(error, path: path) {
+            return .folderPrivacy(permission)
+        }
         if error.domain == NSCocoaErrorDomain, error.code == NSFileReadNoPermissionError { return .folderPermission }
         if error.domain == NSPOSIXErrorDomain, [Int(EACCES), Int(EPERM)].contains(error.code) { return .folderPermission }
         if error.domain == NSCocoaErrorDomain,
@@ -216,7 +223,8 @@ enum InstalledGameFiles {
     }
 
     static func readRegular(_ url: URL, maximumBytes: Int, privateFile: Bool = false) throws -> Data {
-        let descriptor = open(url.path, O_RDONLY | O_NOFOLLOW | O_CLOEXEC)
+        // O_NONBLOCK keeps a FIFO from blocking open(); fstat below still requires a regular file.
+        let descriptor = open(url.path, O_RDONLY | O_NOFOLLOW | O_CLOEXEC | O_NONBLOCK)
         guard descriptor >= 0 else { throw InstalledGameError.invalidRegistry }
         let handle = FileHandle(fileDescriptor: descriptor, closeOnDealloc: true)
         defer { handle.closeFile() }

@@ -157,7 +157,8 @@ enum CatalogDetailLoadingChecks {
         try VNImageRequestHandler(cgImage: image).perform([request])
         let labels = (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }
         check(labels.contains { $0 == "Details" }
-              && labels.filter { $0.localizedCaseInsensitiveContains("MSIXVC") }.count == 1
+              && labels.filter { $0.localizedCaseInsensitiveContains("Xbox PC game") }.count == 1
+              && !labels.contains { $0.localizedCaseInsensitiveContains("MSIXVC") }
               && labels.contains { $0 == "Compatibility" }
               && !labels.contains { $0.localizedCaseInsensitiveContains("Windows package") }
               && !labels.contains { $0.localizedCaseInsensitiveContains("download") }

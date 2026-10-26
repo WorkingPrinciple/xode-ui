@@ -1079,8 +1079,8 @@ enum GameOperationChecks {
               && partialLibrary.games.isEmpty,
               "M2: Cancelling a config-bearing partial install preserves a durable exact-product/destination resume without registering or globally locking")
         check(GameInstallAction(game: game, operations: resumedOperations)
-                .registrationStatusTitle(installed: false) == "Partially installed",
-              "COR178: Retained partial data is labeled Partially installed beside Resume, never Not installed")
+                .registrationStatusTitle(installed: false) == "Download stopped",
+              "COR178: Retained partial data is labeled Download stopped beside Download Again, never Not installed")
         try writeMode("success")
         await resumedOperations.prepareInstall(game)
         guard let resumedConsent = resumedOperations.installConsent else { throw GameScriptError.invalidDestination }
@@ -1116,6 +1116,7 @@ enum GameOperationChecks {
                   "REQ92: Unmounted selected drive is rejected without creating a substitute directory")
         }
         try await InstalledGameChecks.storageLocationChecks(check: check)
+        try await downloadRecoveryChecks(check: check)
         if ProcessInfo.processInfo.environment["XODUS_NATIVE_CONSENT_PRESENTATION_CHECK"] == "1" {
             try await NativeUIChecks.checkInstallSheetPresentation(operations: operations, game: game, check: check)
             check(!FileManager.default.fileExists(atPath: root.appendingPathComponent("arguments").path)
@@ -1152,6 +1153,10 @@ enum GameOperationChecks {
             operations.confirmInstall(consent)
             await operations.waitForMutation()
         }
+        final class Announcements { var items: [GameReadyAnnouncement] = [] }
+        let announcements = Announcements()
+        operations.announceReady = { announcements.items.append($0) }
+        check(operations.downloadIndicator == nil, "REQ114 UX-M2: no toolbar or card download indicator without an operation")
         try writeMode("slow")
         await operations.prepareInstall(game)
         if let error = operations.error { print("NEUTRAL consent failure: \(error)") }
@@ -1179,7 +1184,13 @@ enum GameOperationChecks {
               "XO-022: Matching active detail retains real progress and acknowledged cancellation")
         NativeUIChecks.checkOperationFeedback(operations: operations, installed: installed,
             game: game, expectedStatus: operations.progress?.phase.title ?? "Preparing download",
-            cancelTitle: "Cancel installation", check: check)
+            cancelTitle: GameDownloadCopy.stopDownload, check: check)
+        check(operations.stoppableDownloadForQuit?.title == game.title && operations.canStopAndDiscard,
+              "REQ114 UX-B1/UX-M9: an active new download can be stopped to quit, or stopped with its partial files deleted")
+        check(operations.downloadIndicator?.productID == game.id && operations.downloadIndicator?.title == game.title
+              && operations.downloadIndicator?.status == operations.progress?.phase.title
+              && operations.downloadIndicator?.percent == GameDownloadCopy.percent(operations.progress),
+              "REQ114 UX-M2: the toolbar indicator and the game's card show the running download's real phase and percent")
         let activeID = operations.operation?.id
         await operations.prepareInstall(game)
         operations.signInForGames()
@@ -1234,6 +1245,11 @@ enum GameOperationChecks {
               && imported.folder == consent.destination.path && imported.launcher == launcher.path
               && operations.error == nil && installed.launchableIDs.contains(imported.id),
               "S5 status zero ignores extra result fields and registers only from config validation and durable save")
+        check(announcements.items == [GameReadyAnnouncement(productID: game.id, title: game.title,
+                                                             folder: consent.destination.path)]
+              && announcements.items.first?.body == "\(game.title) is ready to play."
+              && operations.downloadIndicator == nil,
+              "REQ114 UX-M2: only a verified, registered install announces it is ready to play; stopped downloads announce nothing")
         checkUnrelatedDetail(operations, owner: game.id, stage: "completed download")
         check(operations.feedbackProductID == game.id
               && GameOperationProgressView(operations: operations, productID: game.id).operationNotice == operations.notice
@@ -1305,8 +1321,9 @@ enum GameOperationChecks {
             }
             await installed.play(historical)
             check(installed.runningGameID == nil
-                  && installed.playErrors[imported.id] == InstalledGameActionCopy.launchUnavailable,
-                  "REQ95 current per-game \(provider.rawValue) choice refuses before spawning a legacy launcher")
+                  && installed.playErrors[imported.id] == NativeLaunchError.providerPolicy.localizedDescription
+                  && installed.opensEngines(for: historical),
+                  "REQ95/REQ114 B2 current per-game \(provider.rawValue) choice refuses before spawning a legacy launcher")
         }
         await installed.setEngineOverride(nil, for: imported)
         guard let policyGame = installed.games.first(where: { $0.id == imported.id }) else {
@@ -1314,8 +1331,9 @@ enum GameOperationChecks {
         }
         await installed.play(policyGame)
         check(installed.runningGameID == nil
-              && installed.playErrors[imported.id] == InstalledGameActionCopy.launchUnavailable,
-              "REQ95 current Play refuses historical CrossOver execution before spawning its legacy script")
+              && installed.playErrors[imported.id] == NativeLaunchError.providerPolicy.localizedDescription
+              && installed.opensEngines(for: policyGame),
+              "REQ95/REQ114 B2 current Play refuses historical CrossOver execution before spawning its legacy script")
         await installed.playHistoricalFixture(policyGame)
         check(installed.runningGameID == imported.id && !operations.canSignIn,
               "S3 game-service restart is disabled while a game is running")
@@ -1339,6 +1357,23 @@ enum GameOperationChecks {
               && installed.games.first?.lastPlayedAt == history,
               "REQ92: Changed or unavailable default never redirects repair, and repair rejects folder overrides")
         await reloadedLocations.cancelInstallConsent()
+        var asked: [GameLifecycleConfirmation] = []
+        operations.confirmLifecycle = { request in asked.append(request); return false }
+        await operations.repair(game, installed: played, intent: .update)
+        await operations.repair(game, installed: played)
+        check(asked.map(\.intent) == [.update, .repair] && operations.operation == nil
+              && operations.installConsent == nil && installed.games.first?.id == played.id
+              && asked.first?.messageText == "Update \(game.title)?"
+              && asked.last?.informativeText.contains("downloads all of the game's files again") == true,
+              "REQ114 M2: Update and Repair ask first, and declining starts nothing")
+        operations.confirmLifecycle = nil
+        check(GameLifecycleConfirmation(intent: .resume, title: "Pentiment", downloadBytes: nil).actionTitle
+                == GameDownloadCopy.downloadAgain
+              && GameLifecycleConfirmation(intent: .resume, title: "Pentiment", downloadBytes: nil)
+                .informativeText.contains("restart")
+              && GameLifecycleConfirmation(intent: .downloadFullGame, title: "Pentiment",
+                                           downloadBytes: 11_000_000_000).informativeText.contains("Download size"),
+              "REQ114 M2: Resume never promises resume, and Download Full Game states its size")
         await operations.prepareInstall(game, repairing: played)
         guard let repair = operations.installConsent else { throw GameScriptError.invalidDestination }
         check(repair.destination.path == played.folder && repair.installedID == played.id,
@@ -1607,6 +1642,20 @@ enum GameOperationChecks {
         check(privateFailure.operationError == "The game operation needs attention. Sign in to review its details."
               && privateFailure.operationTitle == nil && !privateFailure.showsLog,
               "XO-022: Unknown/global recovery retains welcome privacy redaction")
+        check(unknownRecovery.canDismissRecovery
+              && GameOperationProgressView(operations: unknownRecovery, productID: nil).showsUnboundRecoveryDismiss
+              && !privateFailure.showsUnboundRecoveryDismiss,
+              "REQ114 B1: An unreadable saved operation offers an explicit Dismiss (hidden while privacy-restricted)")
+        await unknownRecovery.dismissRecovery()
+        check(!unknownRecovery.recoveryRequired && !installed.mutationActive && unknownRecovery.canStartMutation
+              && unknownRecovery.notice?.contains("dismissed") == true && unknownRecovery.error == nil
+              && !FileManager.default.fileExists(atPath: paths.journal.path),
+              "REQ114 B1: Dismiss clears the unreadable journal and releases the lock without repeating anything")
+        let afterDismiss = GameOperationsController(installed: installed, paths: paths,
+                                                    compatibilityCatalogue: catalogue)
+        await afterDismiss.restore()
+        check(!afterDismiss.recoveryRequired && !installed.mutationActive,
+              "REQ114 B1: Relaunch after Dismiss does not relock install, uninstall, repair or sign-out")
         installed.releaseMutation()
         for repairing in [true, false] {
             let label = repairing ? "changed-entry" : "occupied-destination"
@@ -1688,5 +1737,247 @@ enum GameOperationChecks {
             check(controller.feedbackProductID == a.id && controller.error == expected,
                   "XO-022 consent: Rejected replay of consumed consent does not reset genuine feedback")
         }
+    }
+
+    /// REQ114 S5/M6/I3: space gate before writing, confined partial discard, honest restart copy.
+    static func downloadRecoveryChecks(check: (Bool, String) -> Void) async throws {
+        let root = URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true)
+            .appendingPathComponent(".xodus-req114-download-checks-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false,
+                                                attributes: [.posixPermissions: 0o700])
+        defer { try? FileManager.default.removeItem(at: root) }
+        let paths = GameScriptPaths(scripts: root.appendingPathComponent("scripts"),
+            processed: root.appendingPathComponent("processed"), logs: root.appendingPathComponent("logs"),
+            games: root.appendingPathComponent("Games"), journal: root.appendingPathComponent("operation.json"))
+        try FileManager.default.createDirectory(at: paths.games, withIntermediateDirectories: false)
+
+        let quitProgress = try GameScriptProgress.parse(Data(#"{"phase":"downloading","bytesDone":45,"bytesTotal":1000}"#.utf8))
+        let quitPreparing = try GameScriptProgress.parse(Data(#"{"phase":"preparing","bytesDone":0,"bytesTotal":null}"#.utf8))
+        check(GameDownloadCopy.quitTitle(title: "Pentiment", percent: GameDownloadCopy.percent(quitProgress))
+                == "Pentiment is still downloading (4%)."
+              && GameDownloadCopy.quitTitle(title: "Pentiment", percent: GameDownloadCopy.percent(quitPreparing))
+                == "Pentiment is still downloading."
+              && GameDownloadCopy.quitMessage.contains("will start over")
+              && GameDownloadCopy.continueDownloading == "Continue Downloading"
+              && GameDownloadCopy.stopAndQuit == "Stop and Quit",
+              "REQ114 UX-B1: quitting during a download explains it will start over and offers Continue Downloading or Stop and Quit")
+        let readyContent = GameReadyNotifier.content(for: GameReadyAnnouncement(productID: "9MZ11KT5KLP6",
+            title: "Pentiment", folder: "/tmp/Pentiment-Xbox"))
+        check(readyContent.title == "Pentiment is ready to play." && readyContent.categoryIdentifier == GameReadyNotifier.category
+              && readyContent.userInfo[GameReadyNotifier.folderKey] as? String == "/tmp/Pentiment-Xbox"
+              && !GameReadyNotifier.available,
+              "REQ114 UX-M2: the completion notification says the game is ready and carries a Play action for its folder (unbundled checks post nothing)")
+
+        let gib: Int64 = 1_073_741_824
+        let starfield = PCGame(id: "9NCJSXWZTP88", title: "Starfield", artwork: nil)
+        let packageBytes = Int64(163.93 * Double(gib))
+        var consent = GameInstallConsent(game: starfield, destination: paths.games.appendingPathComponent("Starfield-Xbox"),
+            freeBytes: Int64(65.39 * Double(gib)), installedID: nil)
+        consent.compatibility = GameCompatibilityResult(storeId: starfield.id, packageBytes: packageBytes,
+            supported: true, reason: nil, checkedAt: "2026-10-21T00:00:00Z", category: nil)
+        let space = consent.space(estimate: nil)
+        check(space?.short == true && consent.blocksOnSpace && space?.needed ?? 0 > packageBytes,
+              "REQ114 S5: a 163.93 GB package with 65.39 GB free is blocked with need/have before any write")
+        consent.freeBytes = GameInstallSpace.needed(for: packageBytes) + gib
+        check(consent.space(estimate: nil)?.short == false, "REQ114 S5: enough space (package + working room) allows install")
+        var resumeConsent = consent
+        resumeConsent.freeBytes = 1
+        resumeConsent.resuming = true
+        check(!resumeConsent.blocksOnSpace, "REQ114 S5: download-again/repair rewrite in place and only report space")
+        consent.compatibility = nil
+        check(consent.space(estimate: 10 * gib)?.download == 10 * gib, "REQ114 S5: catalogue size is used before the verified size arrives")
+
+        let store = InstalledGameStore(file: root.appendingPathComponent("registry/games.json"))
+        let library = InstalledGamesController(store: store, inspectPackage: { _ in .win32 })
+        await library.load()
+        let journal = GameOperationJournal(file: paths.journal)
+        let witcher = PCGame(id: "9N2ZDN7NWQKV", title: "The Witcher 3", artwork: nil)
+        var folders: [String: URL] = [:]
+        for game in [starfield, witcher] {
+            let folder = paths.games.appendingPathComponent("\(game.title.replacingOccurrences(of: " ", with: ""))-Xbox")
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: false)
+            try Data(repeating: 1, count: 4096).write(to: folder.appendingPathComponent("part.msixvc"))
+            folders[game.id] = folder
+            try await journal.retainResumable(GameOperationRecord(id: InstalledGamesController.runID(), kind: .install,
+                productID: game.id, title: game.title, destination: folder.path, installedID: nil))
+        }
+        let operations = GameOperationsController(installed: library, paths: paths, compatibilityCatalogue: nil)
+        check(operations.stoppableDownloadForQuit == nil,
+              "REQ114 UX-B1: with no active download, quitting is not interrupted by a download prompt")
+        await operations.restore()
+        check(operations.resumableInstallations.count == 2, "REQ114 M6 fixture: two stopped downloads are retained")
+        await operations.discardPartialDownload(productID: starfield.id)
+        let witcherRecord = try await journal.loadResumable()[witcher.id]
+        check(!FileManager.default.fileExists(atPath: folders[starfield.id]!.path)
+              && operations.resumableInstallations[starfield.id] == nil
+              && witcherRecord?.destination == folders[witcher.id]!.path
+              && FileManager.default.fileExists(atPath: folders[witcher.id]!.appendingPathComponent("part.msixvc").path)
+              && operations.notice?.contains("Starfield") == true && operations.error == nil
+              && !library.mutationActive,
+              "REQ114 M6: Discard deletes only that title's partial folder and record; another stopped download survives")
+
+        let linkTarget = root.appendingPathComponent("outside")
+        try FileManager.default.createDirectory(at: linkTarget, withIntermediateDirectories: false)
+        try Data([1]).write(to: linkTarget.appendingPathComponent("keep"))
+        let linked = paths.games.appendingPathComponent("Linked-Xbox")
+        try FileManager.default.createSymbolicLink(at: linked, withDestinationURL: linkTarget)
+        let linkedGame = PCGame(id: "9NBLGGH4R315", title: "Linked", artwork: nil)
+        try await journal.retainResumable(GameOperationRecord(id: InstalledGamesController.runID(), kind: .install,
+            productID: linkedGame.id, title: linkedGame.title, destination: linked.path, installedID: nil))
+        let linkedOperations = GameOperationsController(installed: library, paths: paths, compatibilityCatalogue: nil)
+        await linkedOperations.restore()
+        await linkedOperations.discardPartialDownload(productID: linkedGame.id)
+        check(FileManager.default.fileExists(atPath: linkTarget.appendingPathComponent("keep").path)
+              && FileManager.default.fileExists(atPath: linked.path)
+              && linkedOperations.resumableInstallations[linkedGame.id] != nil && linkedOperations.error != nil,
+              "REQ114 M6: a symlinked partial folder is refused and nothing outside it is touched")
+
+        let unmounted = URL(fileURLWithPath: "/Volumes/XodusReq114Detached-\(UUID().uuidString)/Unmounted-Xbox")
+        check(GameStorageVolume.unmountedVolumeRoot(for: unmounted.path, mountedRoots: ["/", "/Volumes/Games"])
+                == unmounted.deletingLastPathComponent().path
+              && GameStorageVolume.unmountedVolumeRoot(for: "/Volumes/Games/X-Xbox", mountedRoots: ["/", "/Volumes/Games"]) == nil
+              && GameStorageVolume.unmountedVolumeRoot(for: "/Users/a/Games/X-Xbox", mountedRoots: ["/"]) == nil
+              && GameStorageVolume.unmountedVolumeRoot(for: unmounted.path, mountedRoots: nil) == nil,
+              "REQ114 L2: only an unmounted /Volumes drive counts as disconnected")
+        let unmountedGame = PCGame(id: "9P3J32CTXLRZ", title: "Unmounted", artwork: nil)
+        try await journal.retainResumable(GameOperationRecord(id: InstalledGamesController.runID(), kind: .install,
+            productID: unmountedGame.id, title: unmountedGame.title, destination: unmounted.path, installedID: nil))
+        let unmountedOperations = GameOperationsController(installed: library, paths: paths, compatibilityCatalogue: nil)
+        await unmountedOperations.restore()
+        await unmountedOperations.discardPartialDownload(productID: unmountedGame.id)
+        let unmountedKept = try await journal.loadResumable()[unmountedGame.id]
+        check(unmountedOperations.resumableInstallations[unmountedGame.id] != nil && unmountedKept != nil
+              && unmountedOperations.error?.contains("Reconnect the drive") == true
+              && unmountedOperations.notice == nil && !library.mutationActive,
+              "REQ114 L1: Discard on a disconnected drive keeps the record, deletes nothing and asks to reconnect the drive")
+        let gone = PCGame(id: "9PCW1SMN9RQC", title: "Gone", artwork: nil)
+        try await journal.retainResumable(GameOperationRecord(id: InstalledGamesController.runID(), kind: .install,
+            productID: gone.id, title: gone.title, destination: paths.games.appendingPathComponent("Gone-Xbox").path,
+            installedID: nil))
+        let goneOperations = GameOperationsController(installed: library, paths: paths, compatibilityCatalogue: nil)
+        await goneOperations.restore()
+        await goneOperations.discardPartialDownload(productID: gone.id)
+        check(goneOperations.resumableInstallations[gone.id] == nil
+              && goneOperations.notice?.contains("No downloaded files were found for Gone") == true
+              && goneOperations.notice?.contains("deleted") == false && goneOperations.error == nil,
+              "REQ114 L1: when only the folder is gone, Discard removes the record and says no files were found")
+        let orphanedParent = PCGame(id: "9NBR2VXT87SJ", title: "Moved", artwork: nil)
+        try await journal.retainResumable(GameOperationRecord(id: InstalledGamesController.runID(), kind: .install,
+            productID: orphanedParent.id, title: orphanedParent.title,
+            destination: root.appendingPathComponent("RemovedFolder/Moved-Xbox").path, installedID: nil))
+        let movedOperations = GameOperationsController(installed: library, paths: paths, compatibilityCatalogue: nil)
+        await movedOperations.restore()
+        await movedOperations.discardPartialDownload(productID: orphanedParent.id)
+        check(movedOperations.resumableInstallations[orphanedParent.id] == nil
+              && movedOperations.notice?.contains("No downloaded files were found for Moved") == true
+              && movedOperations.error == nil && !library.mutationActive,
+              "REQ114 L2: a missing parent folder on a connected drive is not treated as unplugged; the record is removed")
+        let denied = root.appendingPathComponent("Denied")
+        try FileManager.default.createDirectory(at: denied.appendingPathComponent("Sub"), withIntermediateDirectories: true)
+        let lockedGame = PCGame(id: "9NBLGGH537BL", title: "Locked", artwork: nil)
+        try await journal.retainResumable(GameOperationRecord(id: InstalledGamesController.runID(), kind: .install,
+            productID: lockedGame.id, title: lockedGame.title,
+            destination: denied.appendingPathComponent("Sub/Locked-Xbox").path, installedID: nil))
+        chmod(denied.path, 0o000)
+        let lockedOperations = GameOperationsController(installed: library, paths: paths, compatibilityCatalogue: nil)
+        await lockedOperations.restore()
+        await lockedOperations.discardPartialDownload(productID: lockedGame.id)
+        chmod(denied.path, 0o700)
+        let lockedKept = try await journal.loadResumable()[lockedGame.id]
+        check(lockedKept != nil && lockedOperations.resumableInstallations[lockedGame.id] != nil
+              && lockedOperations.error?.contains("isn't writable") == true && lockedOperations.notice == nil
+              && !library.mutationActive,
+              "REQ114 L2/REQ118: denied access to the partial download's folder keeps the record and shows the permission message")
+
+        try await recoveryOwnershipChecks(root: root, paths: paths, check: check)
+
+        check(GameDownloadCopy.stopped(repair: false) == "Download stopped. Downloading again will start over."
+              && !GameDownloadCopy.restartNote.localizedCaseInsensitiveContains("resume")
+              && GameDownloadCopy.downloadAgain == "Download Again",
+              "REQ114 I3: stopped downloads promise a restart, never a resume")
+        let resumeJSON = #"{"mode":"restart_incomplete_from_zero","message":"Download will restart from zero for incomplete files"}"#
+        let decoded = try? JSONDecoder().decode(NativeGameResult.DownloadResume.self, from: Data(resumeJSON.utf8))
+        check(decoded?.restartsFromZero == true,
+              "REQ114 I3: backend download_resume restart mode decodes when present")
+    }
+}
+
+extension GameOperationChecks {
+    /// REQ-114 review M1 + shutdown: restored recovery owns the mutation fence before checking or dismissing.
+    @MainActor
+    static func recoveryOwnershipChecks(root: URL, paths base: GameScriptPaths,
+                                        check: (Bool, String) -> Void) async throws {
+        let folder = root.appendingPathComponent("m1")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: false,
+                                                attributes: [.posixPermissions: 0o700])
+        let paths = GameScriptPaths(scripts: base.scripts, processed: base.processed, logs: base.logs,
+                                    games: base.games, journal: folder.appendingPathComponent("operation.json"))
+        let library = InstalledGamesController(store: InstalledGameStore(file: folder.appendingPathComponent("games.json")),
+                                               inspectPackage: { _ in .win32 })
+        await library.load()
+        let journal = GameOperationJournal(file: paths.journal)
+        func owned(_ controller: GameOperationsController) async -> Bool {
+            for _ in 0..<30 where !controller.recoveryMutationOwned { try? await Task.sleep(for: .milliseconds(100)) }
+            return controller.recoveryMutationOwned
+        }
+
+        try library.reserveMutation(gameID: nil)
+        try Data("not a record".utf8).write(to: paths.journal)
+        chmod(paths.journal.path, 0o600)
+        let unreadable = GameOperationsController(installed: library, paths: paths, compatibilityCatalogue: nil)
+        await unreadable.restore()
+        await unreadable.dismissRecovery()
+        check(unreadable.recoveryRequired && unreadable.recoveryUnreadable && !unreadable.recoveryMutationOwned
+              && !unreadable.canDismissRecovery && library.mutationActive
+              && FileManager.default.fileExists(atPath: paths.journal.path),
+              "REQ114 M1: while other work holds the fence, an unreadable record can't be dismissed and nothing is cleared or released")
+        library.releaseMutation()
+        let claimed = await owned(unreadable)
+        check(claimed && unreadable.canDismissRecovery && library.mutationActive,
+              "REQ114 M1: recovery retries the reservation and owns the fence once the other work ends")
+        await unreadable.dismissRecovery()
+        check(!unreadable.recoveryRequired && !library.mutationActive
+              && !FileManager.default.fileExists(atPath: paths.journal.path),
+              "REQ114 M1: Dismiss releases only the fence this recovery reserved")
+
+        let record = GameOperationRecord(id: InstalledGamesController.runID(), kind: .install, productID: "9NCJSXWZTP88",
+            title: "Starfield", destination: paths.games.appendingPathComponent("Recovery-Xbox").path, installedID: nil)
+        try await journal.save(record)
+        try Data("broken".utf8).write(to: paths.journal.appendingPathExtension("resumable.json"))
+        try library.reserveMutation(gameID: nil)
+        let readable = GameOperationsController(installed: library, paths: paths, compatibilityCatalogue: nil)
+        await readable.restore()
+        let restoredError = readable.error
+        check(readable.downloadIndicator == nil,
+              "REQ114 UX-M2: a restored, not-running record shows no toolbar or card download progress")
+        await readable.reconcile()
+        await readable.dismissRecovery()
+        let kept = try await journal.load()
+        check(readable.recoveryRequired && !readable.recoveryUnreadable && readable.operation?.id == record.id
+              && restoredError != GameScriptError.storage.localizedDescription
+              && !readable.recoveryMutationOwned && readable.error?.contains("Other game activity") == true
+              && kept?.id == record.id && library.mutationActive,
+              "REQ114 M1: a readable record stays readable when stopped downloads can't load or the fence is busy; check waits and keeps it")
+        readable.beginTermination()
+        let fencedWhileQuitting = readable.terminating
+        readable.resumeAfterTerminationRefusal()
+        check(fencedWhileQuitting && !readable.terminating && !readable.orphanReconcilePending
+              && readable.recoveryRequired && library.mutationActive,
+              "REQ114 M2: a refused quit clears the quit state without leaving recovery stuck or releasing the fence")
+        library.releaseMutation()
+        var settled = false
+        for _ in 0..<50 {
+            try? await Task.sleep(for: .milliseconds(100))
+            if readable.recoveryMutationOwned || !readable.recoveryRequired,
+               readable.error?.contains("Other game activity") != true, !readable.checkingRecovery { settled = true; break }
+        }
+        check(settled && readable.error?.contains("Other game activity") != true,
+              "REQ114 M1/L1: once the waiting recovery gets the fence, the requested check runs instead of waiting forever")
+
+        check(!PreviewDelegate.showsWaitBeforeQuitting(closed: false, systemQuit: true, canQuit: false)
+              && PreviewDelegate.showsWaitBeforeQuitting(closed: false, systemQuit: false, canQuit: false)
+              && !PreviewDelegate.showsWaitBeforeQuitting(closed: false, systemQuit: false, canQuit: true)
+              && !PreviewDelegate.showsWaitBeforeQuitting(closed: true, systemQuit: false, canQuit: false),
+              "REQ114 shutdown: logout/restart/shutdown during an uninstall refuses immediately without an alert")
     }
 }

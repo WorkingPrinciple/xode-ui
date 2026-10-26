@@ -4,6 +4,14 @@ import Darwin
 
 struct GameStorageVolume: Codable, Equatable, Sendable {
     let path: String
+    /// M7: the volume's UUID when it was recorded. Older records have none and match by path only.
+    var uuid: String? = nil
+
+    /// The recorded drive is the drive mounted now: same mount path and, when recorded, same volume UUID.
+    func identifies(_ current: Self?) -> Bool {
+        guard let current, current.path == path else { return false }
+        return uuid == nil || uuid == current.uuid
+    }
 
     func contains(_ folder: String) -> Bool {
         path.hasPrefix("/") && path.count <= 4096
@@ -13,15 +21,24 @@ struct GameStorageVolume: Codable, Equatable, Sendable {
 
     static func read(at folder: URL) -> Self? {
         guard folder.standardizedFileURL.path == folder.resolvingSymlinksInPath().standardizedFileURL.path,
-              let values = try? folder.resourceValues(forKeys: [.volumeURLKey]),
+              let values = try? folder.resourceValues(forKeys: [.volumeURLKey, .volumeUUIDStringKey]),
               let volume = values.volume else { return nil }
-        let result = Self(path: volume.standardizedFileURL.path)
+        let result = Self(path: volume.standardizedFileURL.path, uuid: values.volumeUUIDString)
         return result.contains(folder.path) ? result : nil
     }
 
     static func mountedRoots() -> [String]? {
         FileManager.default.mountedVolumeURLs(includingResourceValuesForKeys: nil, options: [])
             .map { $0.map { $0.standardizedFileURL.path } }
+    }
+
+    /// The `/Volumes/<name>` root of `path` when that drive isn't mounted; nil for the startup disk or unknown mounts.
+    static func unmountedVolumeRoot(for path: String, mountedRoots: [String]?) -> String? {
+        guard let mountedRoots else { return nil }
+        let parts = URL(fileURLWithPath: path).standardizedFileURL.pathComponents
+        guard parts.count >= 3, parts[0] == "/", parts[1] == "Volumes" else { return nil }
+        let root = "/Volumes/" + parts[2]
+        return mountedRoots.contains(root) ? nil : root
     }
 
     func isUnavailable(mountedRoots: [String]?) -> Bool {
@@ -64,7 +81,8 @@ struct GameInstallLocation: Codable, Equatable, Sendable {
         var info = stat()
         guard lstat(destination.path, &info) == 0 else {
             if errno == ENOENT { return }
-            throw InstalledGameFiles.folderReadError(NSError(domain: NSPOSIXErrorDomain, code: Int(errno)))
+            throw InstalledGameFiles.folderReadError(NSError(domain: NSPOSIXErrorDomain, code: Int(errno)),
+                                                     path: destination.path)
         }
         guard let record = managedRecord, record.kind == .install, record.productID == productID,
               record.destination == destination.path, record.installedID == nil else {
@@ -109,11 +127,12 @@ struct GameInstallLocation: Codable, Equatable, Sendable {
 }
 
 enum GameInstallLocationError: Error, LocalizedError {
-    case driveUnavailable, notWritable, destinationExists
+    case driveUnavailable, driveChanged, notWritable, destinationExists
 
     var errorDescription: String? {
         switch self {
         case .driveUnavailable: "The selected install drive is unavailable. Reconnect it or choose another folder."
+        case .driveChanged: "A different drive is connected where this game was installed, so nothing was deleted. Reconnect the original drive and try again."
         case .notWritable: "The selected folder isn't writable. Choose another folder."
         case .destinationExists: "A folder already exists at this destination. Check or import it, or choose another install folder."
         }

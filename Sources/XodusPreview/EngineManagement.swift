@@ -15,8 +15,25 @@ enum EngineObservationStatus: String, CaseIterable {
     case error = "Check failed"
 }
 
+/// The released Calimocho engine X Ode points users to. Verification lives in
+/// CalimochoReleaseEngine.swift; launch admission belongs to backend engine inspection.
+enum CalimochoRelease {
+    /// The active pinned release; everything else derives from it, so the
+    /// Engines pane, readiness, Acknowledgments and Play never point at different engine folders.
+    static var engineID: String { CalimochoReleasePin.all.last!.engineName }
+    static var displayName: String { EngineDisplayName.name(engineID) }
+    static let getTitle = "Get Calimocho"
+    static var downloadURL: URL? {
+        guard let pin = CalimochoReleasePin.all.last, pin.archiveSha256 != nil,
+              pin.archiveByteCount != nil, pin.expandedByteCount != nil else { return nil }
+        return pin.downloadURL
+    }
+    static var downloadPublished: Bool { downloadURL != nil }
+    static let unpublishedNotice = "Calimocho isn't available for download yet. Ask the person who invited you to the beta."
+}
+
 enum EngineManagementPolicy {
-    static let calimochoSource = URL(string: "https://github.com/dragoshont/calimocho")!
+    static let calimochoSource = URL(string: "https://github.com/WorkingPrinciple/calimocho")!
 
     static func matches(_ entry: NativeEngineRegistry.Entry, provider: RuntimeProviderKind) -> Bool {
         switch provider {

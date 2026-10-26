@@ -153,7 +153,7 @@ enum InstalledGameChecks {
               "COR170: Registered entry automatically verifies and retains a concrete disconnected-service Retry, never unsafe Play (service \(serviceFailure ?? "nil"), package \(automatic.packageErrors[nativeGame.id] ?? "nil"))")
         for (status, reason, title) in [
             (NativeInstallationStatus.Status.missing, "CONTENT_MISSING", "Download"),
-            (.partial, "CONTENT_INCOMPLETE", "Resume"),
+            (.partial, "CONTENT_INCOMPLETE", GameDownloadCopy.downloadAgain),
             (.partial, "MANIFEST_INVALID", "Repair")
         ] {
             try automatic.recordInstallationStatus(NativeInstallationStatus(version: 1, operation: "install-status",
@@ -478,7 +478,7 @@ enum InstalledGameChecks {
                   resumingManagedOperation: true),
               "REQ106: A queued partial-install record is admitted at its original destination")
         check(InstalledGamesController.readableEngineName("calimocho-wine11.20-gptk4b3-tls-vulkan-private")
-              == "Calimocho 11.20 (Private)"
+              == "Calimocho"
               && !controller.defaultEngineLabel(for: InstalledGame(id: UUID(), title: "Fixture",
                   identityName: "Fixture", version: "1", storeId: "FIXTURE00001",
                   folder: folder.path, launcher: "", importedAt: Date())).isEmpty,
@@ -1391,7 +1391,8 @@ enum InstalledGameChecks {
         guard let cleared = routing.games.first else { throw InstalledGameError.invalidRegistry }
         await routing.play(cleared)
         try await wait { routing.runningGameID == nil }
-        check(routing.playErrors[cleared.id] == InstalledGameActionCopy.launchUnavailable,
+        // REQ114 B2: the refusal keeps its specific cause rather than the generic launch copy.
+        check(routing.playErrors[cleared.id] == NativeLaunchError.providerPolicy.localizedDescription,
               "REQ95 clearing an override without a configured default refuses instead of silently launching CrossOver")
         await routing.waitForSessionPersistence()
         await routing.setEngineOverride(.gptk4, for: cleared)

@@ -41,7 +41,31 @@ final class InstalledProductAccess: ObservableObject {
         pcCandidate && !checking && errors[productID] == nil && permits(productID, account: account, now: now)
     }
 
-    func reviewNotice(for productID: String, account: String?, now: Date = Date()) -> String? {
+    static let notIncludedNotice = "Not included in your Game Pass or purchases."
+    static let storeActionTitle = "View in Microsoft Store"
+
+    static func storeURL(productID: String) -> URL? {
+        guard PCGamesClient.validProductID(productID) else { return nil }
+        return URL(string: "https://apps.microsoft.com/detail/\(productID)")
+    }
+
+    /// True only for a current, error-free check whose license answer is missing or unknown while the
+    /// complete public PC Game Pass list also excludes the game. Transport errors never qualify.
+    func notIncluded(_ productID: String, account: String?, publicGamePassExcludes: Bool,
+                     now: Date = Date()) -> Bool {
+        guard publicGamePassExcludes, let account, accountHash == account, !checking,
+              errors[productID] == nil, let fact = facts[productID],
+              !permits(productID, account: account, now: now),
+              now.timeIntervalSince(fact.checkedAt) >= 0, now.timeIntervalSince(fact.checkedAt) < 300,
+              fact.expiresAt.map({ $0 <= now }) != true else { return false }
+        return fact.value.reason == .productNotListed || fact.value.reason == nil
+    }
+
+    func reviewNotice(for productID: String, account: String?, publicGamePassExcludes: Bool = false,
+                      now: Date = Date()) -> String? {
+        if notIncluded(productID, account: account, publicGamePassExcludes: publicGamePassExcludes, now: now) {
+            return Self.notIncludedNotice
+        }
         guard let account, accountHash == account else {
             return "Access for this account hasn't been checked for this game."
         }
@@ -89,7 +113,7 @@ final class InstalledProductAccess: ObservableObject {
         guard account == nil || session.nativeLifecycleConfiguration != nil else { return }
         await refresh(account: account, installedIDs: installedIDs, now: now, force: force,
                       selectedProductID: selectedProductID) { id in
-            for _ in 0..<100 where session.accountBusy {
+            for _ in 0..<100 where session.accountBusy || session.yieldsToLibraryRead {
                 try await Task.sleep(for: .milliseconds(100))
             }
             guard session.accountCatalogScope == scope else { throw CancellationError() }
@@ -124,8 +148,13 @@ final class InstalledProductAccess: ObservableObject {
             errors = errors.filter { installed.contains($0.key) }
         }
         attempts = attempts.filter { installed.contains($0.key) }
-        if let operation { await operation.value; return }
-        let ids = installed.sorted().filter { id in
+        // A request made during a scan (e.g. a just-installed title) is re-evaluated afterwards rather than dropped.
+        let requestEpoch = generation
+        while let operation {
+            await operation.value
+            guard !Task.isCancelled, generation == requestEpoch, accountHash == account else { return }
+        }
+        let ids = installed.sorted { (attempts[$0] == nil ? 0 : 1, $0) < (attempts[$1] == nil ? 0 : 1, $1) }.filter { id in
             if let selectedProductID, id != selectedProductID { return false }
             if force { return true }
             guard let last = attempts[id] else { return true }

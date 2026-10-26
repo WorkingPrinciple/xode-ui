@@ -9,7 +9,7 @@ struct GameServiceAccountView: View {
 
     var accountStatusText: String {
         if operations.serviceSignOutConfirmed, operations.serviceStatus?.signedIn == false {
-            return "Signed out of Xbox in Ode to X"
+            return "Signed out of Xbox in \(AppBrand.displayName)"
         }
         if operations.serviceAccountNeedsVerification { return "Xbox account hasn't been confirmed" }
         if operations.serviceStatus?.signedIn == true { return "Xbox sign-in confirmed" }
@@ -78,7 +78,7 @@ struct GameServiceSignInActions: View {
                 Label(operations.serviceLabel, systemImage: operations.serviceAccountSymbol)
                     .accessibilityIdentifier(statusIdentifier)
                 Text(operations.serviceError
-                     ?? "Xbox game access uses the account connected to Ode to X. The status above reflects the current connection.")
+                     ?? "Xbox game access uses the account connected to \(AppBrand.displayName). The status above reflects the current connection.")
                     .font(.callout).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                 if let onOpenOdeAccount {
@@ -88,7 +88,7 @@ struct GameServiceSignInActions: View {
             } else {
             Label(statusText, systemImage: operations.serviceAccountSymbol)
                 .accessibilityIdentifier(statusIdentifier)
-            Text("Ode to X sign-in and Xbox game-service sign-in are separate. Continue with Microsoft here only when a game download or Xbox feature needs it; Ode to X won't open this second sign-in automatically.")
+            Text("\(AppBrand.displayName) sign-in and Xbox game-service sign-in are separate. Continue with Microsoft here only when a game download or Xbox feature needs it; \(AppBrand.displayName) won't open this second sign-in automatically.")
                 .font(.callout).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             if operations.serviceAccountNeedsVerification {
@@ -229,6 +229,7 @@ struct GameOperationProgressView: View {
     @ObservedObject var operations: GameOperationsController
     var privacyRestricted = false
     var productID: String?
+    @State private var confirmingStopAndDelete = false
 
     private func includes(_ owner: String?) -> Bool {
         productID == nil || owner == nil || owner == productID
@@ -254,7 +255,11 @@ struct GameOperationProgressView: View {
     }
     var operationNotice: String? { privacyRestricted || !includesFeedback ? nil : operations.notice }
     var preparationCancelTitle: String? { showsPreparation ? "Cancel" : nil }
-    var installCancelTitle: String? { presentedOperation != nil && operations.canCancel ? "Cancel installation" : nil }
+    var installCancelTitle: String? {
+        guard presentedOperation != nil, operations.canCancel else { return nil }
+        if operations.orphanRunning { return GameDownloadCopy.stopDownload }
+        return presentedOperation?.kind == .repair ? GameDownloadCopy.stopRepair : GameDownloadCopy.stopDownload
+    }
     var showsGameSignIn: Bool {
         includesFeedback && !privacyRestricted && operations.failureCode == 11 && operations.downloadNeedsSignIn
     }
@@ -262,6 +267,9 @@ struct GameOperationProgressView: View {
         includesFeedback && !privacyRestricted && operations.hasDownloadRecovery
     }
     var showsLog: Bool { includesFeedback && !privacyRestricted && operations.log != nil }
+    var showsUnboundRecoveryDismiss: Bool {
+        !privacyRestricted && operations.operation == nil && operations.canDismissRecovery
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -276,10 +284,15 @@ struct GameOperationProgressView: View {
             }
             if let operation = presentedOperation, let title = operationTitle {
                 Text(title).font(.headline)
-                if operations.recoveryRequired {
+                if operations.awaitingRecovery {
                     Button("Check last operation") { Task { await operations.reconcile() } }
                         .disabled(operations.checkingRecovery)
                         .accessibilityIdentifier("xodus.install.checkRecovery")
+                    if operations.canDismissRecovery {
+                        Button("Dismiss") { Task { await operations.dismissRecovery() } }
+                            .help("Stop waiting on this operation. Nothing is repeated or deleted.")
+                            .accessibilityIdentifier("xodus.install.dismissRecovery")
+                    }
                 } else {
                     Text(operations.cancelling ? "Stopping installation"
                          : operation.kind == .uninstall ? "Uninstalling"
@@ -287,12 +300,12 @@ struct GameOperationProgressView: View {
                         .foregroundStyle(.secondary)
                     if let value = operations.progress, let total = value.bytesTotal, total > 0 {
                         ProgressView(value: Double(value.bytesDone), total: Double(total))
-                            .accessibilityLabel("Download progress")
+                            .accessibilityLabel("Download progress for \(operation.title)")
                             .accessibilityIdentifier("xodus.install.progress")
                         Text("\(Self.bytes(value.bytesDone)) of \(Self.bytes(total)) (\(Int(Double(value.bytesDone) / Double(total) * 100))%)")
                             .font(.callout).foregroundStyle(.secondary)
                     } else {
-                        ProgressView().controlSize(.small).accessibilityLabel("Download progress")
+                        ProgressView().controlSize(.small).accessibilityLabel("Download progress for \(operation.title)")
                         if let value = operations.progress, value.phase == .downloading {
                             Text("\(Self.bytes(value.bytesDone)) downloaded").font(.callout).foregroundStyle(.secondary)
                         }
@@ -300,6 +313,19 @@ struct GameOperationProgressView: View {
                     if let title = installCancelTitle {
                         Button(title) { Task { await operations.cancelInstall() } }
                             .accessibilityIdentifier("xodus.install.cancel")
+                    }
+                    if installCancelTitle != nil, operations.canStopAndDiscard, let operation = presentedOperation {
+                        Button(GameDownloadCopy.stopAndDelete) { confirmingStopAndDelete = true }
+                            .accessibilityIdentifier("xodus.install.stopAndDelete")
+                            .confirmationDialog("Stop and delete the download of \(operation.title)?",
+                                                isPresented: $confirmingStopAndDelete) {
+                                Button("Stop and Delete", role: .destructive) {
+                                    Task { await operations.stopAndDiscardDownload() }
+                                }
+                                Button(GameDownloadCopy.continueDownloading, role: .cancel) {}
+                            } message: {
+                                Text(GameDownloadCopy.stopAndDeleteMessage(title: operation.title))
+                            }
                     }
                 }
             }
@@ -321,6 +347,11 @@ struct GameOperationProgressView: View {
                 if showsLog {
                     Button("Show log") { operations.showLog() }
                         .accessibilityIdentifier("xodus.install.showLog")
+                }
+                if showsUnboundRecoveryDismiss {
+                    Button("Dismiss") { Task { await operations.dismissRecovery() } }
+                        .help("Stop waiting on the unreadable saved operation. Nothing is repeated or deleted.")
+                        .accessibilityIdentifier("xodus.install.dismissRecovery")
                 }
             }
             if let notice = operationNotice {
@@ -386,7 +417,7 @@ struct GameInstallAction: View {
             : operations.progress?.message ?? operations.progress?.phase.title ?? "Preparing installation"
     }
     var actionTitle: String {
-        operations.resumableInstallations[game.id] != nil ? "Resume"
+        operations.resumableInstallations[game.id] != nil ? GameDownloadCopy.downloadAgain
         : operations.installationCheckRequired(for: game)
             ? operations.existingInstallationError(productID: game.id) == nil ? "Checking…" : "Retry"
             : failed ? "Retry" : "Download"
@@ -404,7 +435,7 @@ struct GameInstallAction: View {
 
     func registrationStatusTitle(installed: Bool) -> String? {
         guard !active, !preparing else { return nil }
-        if !installed, operations.resumableInstallations[game.id] != nil { return "Partially installed" }
+        if !installed, operations.resumableInstallations[game.id] != nil { return "Download stopped" }
         return installed ? "Installed" : "Not installed"
     }
 
@@ -424,11 +455,15 @@ struct GameInstallAction: View {
                 || (operations.installationCheckRequired(for: game) && operations.existingInstallationError(productID: game.id) == nil) {
                 ProgressView("Checking…").controlSize(.small)
                 Button("Cancel") { operations.cancelExistingInstallationCheck(productID: game.id) }
-            } else if active, operations.recoveryRequired {
+            } else if active, operations.awaitingRecovery {
                 Label("Installation needs attention", systemImage: "exclamationmark.circle")
                     .font(.callout.weight(.semibold))
                 Button("Check last operation") { Task { await operations.reconcile() } }
                     .disabled(operations.checkingRecovery)
+                if operations.canDismissRecovery {
+                    Button("Dismiss") { Task { await operations.dismissRecovery() } }
+                        .help("Stop waiting on this operation. Nothing is repeated or deleted.")
+                }
             } else if preparing || active {
                 Text(statusTitle)
                     .font(.callout.weight(.semibold))
@@ -442,14 +477,14 @@ struct GameInstallAction: View {
                         .accessibilityLabel("Preparing \(game.title)")
                 }
                 if showsCancel {
-                    Button("Cancel") {
+                    Button(preparing ? "Cancel" : GameDownloadCopy.stopDownload) {
                         Task {
                             if preparing { await operations.cancelInstallConsent() }
                             else { await operations.cancelInstall() }
                         }
                     }
                     .disabled(operations.cancelling || operations.directInstallCancelled)
-                    .accessibilityLabel("Cancel installation of \(game.title)")
+                    .accessibilityLabel(preparing ? "Cancel installation of \(game.title)" : "Stop downloading \(game.title)")
                 }
             } else {
                 Button {
@@ -487,6 +522,7 @@ struct GameInstallConsentView: View {
     @ObservedObject private var catalog = LibraryCatalogArtwork.shared
     @State private var installRootPath: String
     @FocusState private var installRootFocused: Bool
+    @State private var confirmingDiscard = false
 
     init(operations: GameOperationsController, consent: GameInstallConsent) {
         self.operations = operations
@@ -500,8 +536,8 @@ struct GameInstallConsentView: View {
         VStack(spacing: 0) {
             Form {
                 Section {
-                    Text(consent.resuming ? "Resume installation"
-                         : consent.installedID == nil ? consent.game.title : "Check for update or repair")
+                    Text(consent.resuming ? "Download \(consent.game.title) again?"
+                         : consent.installedID == nil ? "Install \(consent.game.title)?" : "Check for update or repair")
                         .font(.title2.bold()).fixedSize(horizontal: false, vertical: true)
                     if consent.installedID != nil { Text(consent.game.title).font(.headline) }
                 }
@@ -512,7 +548,6 @@ struct GameInstallConsentView: View {
                                 TextField("Install folder", text: $installRootPath)
                                     .textFieldStyle(.roundedBorder)
                                     .labelsHidden()
-                                    .accessibilityLabel("Install folder")
                                     .accessibilityIdentifier("xodus.install.root")
                                     .focused($installRootFocused)
                                     .onSubmit {
@@ -539,17 +574,42 @@ struct GameInstallConsentView: View {
                         Label(error, systemImage: "exclamationmark.circle")
                             .fixedSize(horizontal: false, vertical: true)
                     }
-                    LabeledContent("Free space now",
-                                   value: displayedDestination?.path == consent.destination.path
-                                        ? GameOperationProgressView.bytes(consent.freeBytes) : "—")
-                    if operations.checkingCompatibility,
-                       let estimate = catalog.images[consent.game.id]?.facts.downloadBytes {
-                        LabeledContent("Estimated download",
-                                       value: "About \(GameOperationProgressView.bytes(estimate))")
+                    let space = operations.installSpace(consent)
+                    let sameDestination = displayedDestination?.path == consent.destination.path
+                    if let space {
+                        LabeledContent("Download size", value: (consent.compatibility?.packageBytes == nil ? "About " : "")
+                                       + GameOperationProgressView.bytes(space.download))
+                        if consent.blocksOnSpace {
+                            LabeledContent("Space needed", value: GameOperationProgressView.bytes(space.needed))
+                        }
                     }
-                    if let bytes = consent.compatibility?.packageBytes {
-                        LabeledContent("Verified package size",
-                                       value: GameOperationProgressView.bytes(bytes))
+                    LabeledContent("Available", value: sameDestination ? GameOperationProgressView.bytes(consent.freeBytes) : "—")
+                    if let space, sameDestination, consent.blocksOnSpace, space.short {
+                        Label("Not enough space. \(consent.game.title) needs \(GameOperationProgressView.bytes(space.needed)) including room to install; \(GameOperationProgressView.bytes(space.available)) is available. Free up space or choose another drive.",
+                              systemImage: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.red).fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier("xodus.install.spaceShort")
+                    }
+                }
+                if consent.resuming {
+                    Section {
+                        Text(GameDownloadCopy.restartNote)
+                            .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                        Button(GameDownloadCopy.discard, role: .destructive) { confirmingDiscard = true }
+                            .disabled(!operations.canStartMutation)
+                    }
+                }
+                if consent.installedID == nil, case .notSupported = operations.launchSupport(productID: consent.game.id) {
+                    Section {
+                        Label {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(NativeLaunchSupport.notSupportedTitle).font(.headline)
+                                Text("You can install it, but Play won't be offered until a tested launch setup is available for this game.")
+                                    .foregroundStyle(.secondary)
+                            }
+                        } icon: { Image(systemName: "info.circle") }
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("xodus.install.notSupported")
                     }
                 }
                 if operations.checkingCompatibility || consent.compatibility?.supported == false || consent.checkError != nil {
@@ -588,7 +648,7 @@ struct GameInstallConsentView: View {
                 Spacer()
                 Button("Cancel") { Task { await operations.cancelInstallConsent() } }.keyboardShortcut(.cancelAction)
                     .accessibilityIdentifier("xodus.install.cancelConsent")
-                Button(consent.resuming ? "Resume" : consent.installedID == nil ? "Install" : "Check and repair") {
+                Button(consent.resuming ? GameDownloadCopy.downloadAgain : consent.installedID == nil ? "Install" : "Check and repair") {
                     Task { await operations.confirmInstallLocation(consent, path: installRootPath) }
                 }
                     .disabled(!operations.canConfirmInstall || operations.choosingInstallLocation).keyboardShortcut(.defaultAction)
@@ -599,6 +659,15 @@ struct GameInstallConsentView: View {
         }
         .frame(minWidth: 520, idealWidth: 560, maxWidth: 640)
         .modifier(InstallFormPresentation())
+        .confirmationDialog("Delete the partial download of \(consent.game.title)?", isPresented: $confirmingDiscard) {
+            Button("Delete Partial Download", role: .destructive) {
+                Task {
+                    await operations.cancelInstallConsent()
+                    await operations.discardPartialDownload(productID: consent.game.id)
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: { Text(GameDownloadCopy.discardMessage(title: consent.game.title, folder: consent.destination.path)) }
         .onChange(of: operations.installConsent?.destination) { _, destination in
             if let destination { installRootPath = destination.deletingLastPathComponent().path }
         }
@@ -769,7 +838,7 @@ struct InstalledGameManagement: View {
             if library.updateStatus(for: game).hasUpdate {
                 Button("Update") {
                     Task { await operations.repair(PCGame(id: game.storeId, title: game.title, artwork: nil),
-                                                  installed: game) }
+                                                  installed: game, intent: .update) }
                 }
                 .disabled(!canRepair)
                 .accessibilityIdentifier("xodus.installed.update")
@@ -794,5 +863,154 @@ struct InstalledGameManagement: View {
 
     private var canRepair: Bool {
         operations.canRepair(game)
+    }
+}
+
+/// One row per stopped download: cover, state, folder, and the honest restart/discard actions.
+struct StoppedDownloadsSection: View {
+    @ObservedObject var operations: GameOperationsController
+    var resolveGame: (String) -> PCGame? = { _ in nil }
+    @ObservedObject private var artwork = LibraryCatalogArtwork.shared
+    @State private var discarding: GameOperationRecord?
+
+    private var records: [GameOperationRecord] {
+        operations.resumableInstallations.values
+            .filter { $0.productID != operations.operation?.productID }
+            .sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
+    }
+
+    var body: some View {
+        if !records.isEmpty {
+            Section("Stopped downloads") {
+                ForEach(records, id: \.productID) { record in
+                    HStack(alignment: .top, spacing: 16) {
+                        CatalogArtworkView(reference: artwork.images[record.productID]?.cover,
+                                           status: artwork.images[record.productID]?.cover == nil ? .absent : .available)
+                            .frame(width: 48, height: 72).clipped()
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                            .accessibilityHidden(true)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(record.title).font(.headline)
+                            Text("Download stopped. Downloading again will start over.")
+                                .font(.callout).foregroundStyle(.secondary)
+                            if let bytes = artwork.images[record.productID]?.facts.downloadBytes {
+                                Text("Download size \(GameOperationProgressView.bytes(bytes))")
+                                    .font(.caption).foregroundStyle(.secondary)
+                            }
+                            Text(record.destination).font(.caption).foregroundStyle(.secondary)
+                                .lineLimit(1).truncationMode(.middle).textSelection(.enabled)
+                            HStack {
+                                if let game = resolveGame(record.productID) {
+                                    Button(GameDownloadCopy.downloadAgain) {
+                                        Task { await operations.prepareInstall(game) }
+                                    }
+                                    .disabled(!operations.canStartMutation)
+                                }
+                                Button(GameDownloadCopy.discard, role: .destructive) { discarding = record }
+                                    .disabled(!operations.canStartMutation
+                                              || operations.discardingPartialProductID != nil)
+                                    .accessibilityIdentifier("xodus.downloads.discard.\(record.productID)")
+                                if operations.discardingPartialProductID == record.productID {
+                                    ProgressView().controlSize(.small)
+                                }
+                            }
+                            .padding(.top, 4)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .padding(.vertical, 6)
+                    .accessibilityElement(children: .contain)
+                }
+            }
+            .confirmationDialog("Delete the partial download\(discarding.map { " of \($0.title)" } ?? "")?",
+                                isPresented: Binding(get: { discarding != nil }, set: { if !$0 { discarding = nil } }),
+                                presenting: discarding) { record in
+                Button("Delete Partial Download", role: .destructive) {
+                    Task { await operations.discardPartialDownload(productID: record.productID) }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: { record in
+                Text(GameDownloadCopy.discardMessage(title: record.title, folder: record.destination))
+            }
+        }
+    }
+}
+
+/// UX-M2: a compact toolbar indicator for the running download, with details and Stop in a popover.
+struct GameDownloadToolbarIndicator: View {
+    @ObservedObject var operations: GameOperationsController
+    @State private var showsDetails = false
+
+    var body: some View {
+        if let indicator = operations.downloadIndicator {
+            Button { showsDetails.toggle() } label: {
+                ZStack {
+                    if let fraction = indicator.fraction {
+                        ProgressView(value: fraction).progressViewStyle(.circular)
+                    } else {
+                        ProgressView().progressViewStyle(.circular)
+                    }
+                    Image(systemName: "arrow.down").font(.system(size: 9, weight: .bold))
+                }
+                .controlSize(.small)
+                .frame(width: 22, height: 22)
+            }
+            .buttonStyle(.borderless)
+            .help(indicator.accessibilityLabel)
+            .accessibilityLabel("Download progress for \(indicator.title)")
+            .accessibilityValue(indicator.summary)
+            .accessibilityIdentifier("xodus.download.indicator")
+            .popover(isPresented: $showsDetails, arrowEdge: .bottom) {
+                GameDownloadIndicatorDetails(operations: operations, indicator: indicator)
+            }
+        }
+    }
+}
+
+private struct GameDownloadIndicatorDetails: View {
+    @ObservedObject var operations: GameOperationsController
+    let indicator: GameDownloadIndicator
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(indicator.title).font(.headline)
+            if let fraction = indicator.fraction {
+                ProgressView(value: fraction)
+            } else {
+                ProgressView()
+            }
+            Text(indicator.summary).font(.callout).foregroundStyle(.secondary)
+            if operations.canCancel {
+                Button(operations.operation?.kind == .repair ? GameDownloadCopy.stopRepair : GameDownloadCopy.stopDownload) {
+                    Task { await operations.cancelInstall() }
+                }
+                Text(GameDownloadCopy.stopNote)
+                    .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(14)
+        .frame(width: 260, alignment: .leading)
+    }
+}
+
+/// UX-M2: progress shown under the cover of the game being downloaded.
+struct GameCardDownloadStatus: View {
+    @ObservedObject var operations: GameOperationsController
+    let productID: String
+
+    var body: some View {
+        if let indicator = operations.downloadIndicator, indicator.productID == productID {
+            VStack(alignment: .leading, spacing: 4) {
+                if let fraction = indicator.fraction {
+                    ProgressView(value: fraction)
+                } else {
+                    ProgressView().progressViewStyle(.linear)
+                }
+                Text(indicator.summary).font(.caption).foregroundStyle(.secondary)
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Download progress for \(indicator.title)")
+            .accessibilityValue(indicator.summary)
+        }
     }
 }

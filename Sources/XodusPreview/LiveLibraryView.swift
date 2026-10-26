@@ -207,8 +207,8 @@ struct LiveLibraryView: View {
                                   systemImage: "books.vertical")
                         } description: {
                             Text(filter == .owned
-                                 ? "Ode to X hasn't loaded a complete current PC collection. This doesn't mean you own no games."
-                                 : "Ode to X hasn't loaded a complete current PC collection. Public catalog listings alone don't verify your account's subscription access.")
+                                 ? "\(AppBrand.displayName) hasn't loaded a complete current PC collection. This doesn't mean you own no games."
+                                 : "\(AppBrand.displayName) hasn't loaded a complete current PC collection. Public catalog listings alone don't verify your account's subscription access.")
                         }
                     } else if hiddenUnsupportedCount > 0, !showsUnsupportedGames {
                         ContentUnavailableView {
@@ -434,7 +434,7 @@ struct LiveLibraryView: View {
                 InstalledGameActions(library: installed, operations: operations, game: match,
                                      usesGlass: true, heroStyle: true)
             } else {
-                if let pc = game.pc ?? game.product.map(PCGame.init(product:)) {
+                let install = (game.pc ?? game.product.map(PCGame.init(product:))).map { pc in
                     GameInstallAction(game: pc, operations: operations,
                         enabled: allowsStartupTasks && DiscoverBrowse.canReviewInstall(
                             owned: game.pc != nil, accessIsCurrent: library.accessIsCurrent(for: game.id),
@@ -442,9 +442,18 @@ struct LiveLibraryView: View {
                             pcCandidate: true),
                         showsDiagnostics: false,
                         disabledReason: allowsStartupTasks ? library.installAccessNotice(for: game.id)
-                            : "Wait for Ode to X to finish starting.")
+                            : "Wait for \(AppBrand.displayName) to finish starting.")
                 }
-                Button("View game") { open(game) }.modifier(LibraryActionStyle(primary: false))
+                let blockedReason = install?.heroReplacementReason
+                if let install, blockedReason == nil { install }
+                Button(blockedReason == nil ? "View game" : "View Details") { open(game) }
+                    .modifier(LibraryActionStyle(primary: install != nil && blockedReason != nil))
+                if let blockedReason {
+                    Label(blockedReason, systemImage: "info.circle")
+                        .font(.callout).lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("xodus.library.hero.reason")
+                }
                 if operations.precheckingProductID == game.id {
                     ProgressView().controlSize(.small).help("Checking whether this game runs on Mac")
                 }
@@ -639,7 +648,7 @@ struct LiveLibraryView: View {
                      open: { open(game) }) {
             CatalogArtworkView(reference: artworkAllowed ? art.images[artworkID]?.cover ?? game.cover : nil,
                                status: (art.images[artworkID]?.cover ?? game.cover) == nil ? .absent : .available)
-        } status: { EmptyView() }
+        } status: { GameCardDownloadStatus(operations: operations, productID: artworkID) }
         .contextMenu {
             Button("View details") { open(game) }
             if let match = game.installed {

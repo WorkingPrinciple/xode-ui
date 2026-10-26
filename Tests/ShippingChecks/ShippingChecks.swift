@@ -48,7 +48,7 @@ final class ShippingChecks: XCTestCase {
         await state.loadRecentActivityIfVisible(session: session)
         check(session.recentLibrary == nil && !session.recentLibraryBootstrapRunning
               && session.authentication == nil && session.libraryTitle == "Your PC library isn't available yet"
-              && session.libraryMessage == "Ode to X can't yet verify which PC games you own.",
+              && session.libraryMessage == "X Ode can't yet verify which PC games you own.",
               "Shipping main Library cannot initiate saved-status or history loading")
         state.openRecentActivity()
         check(state.showsRecentActivity && state.query.isEmpty,

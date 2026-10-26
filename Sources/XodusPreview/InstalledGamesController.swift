@@ -25,6 +25,7 @@ final class InstalledGamesController: ObservableObject {
     @Published private(set) var runningGameID: UUID?
     @Published private(set) var playState: InstalledGamePlayState?
     @Published private(set) var playErrors: [UUID: String] = [:]
+    @Published private(set) var engineIssueMessages: [UUID: String] = [:]
     @Published private(set) var historyError: String?
     @Published private(set) var packageErrors: [UUID: String] = [:]
     @Published private(set) var checkingInstallations = Set<UUID>()
@@ -39,6 +40,7 @@ final class InstalledGamesController: ObservableObject {
     @Published private(set) var unavailableDriveIDs: Set<UUID> = []
     @Published private(set) var availableEngineOverrides: [AdmittedEngineSelection] = []
     @Published private(set) var checkingEngineOverrides = false
+    private var engineOverrideWaiters: [CheckedContinuation<Void, Never>] = []
     private var engineOverridesChecked = false
     @Published private(set) var failedEngineOverrides: Set<String> = []
     @Published private(set) var undiscoveredInstallations: [String: String] = [:]
@@ -103,6 +105,7 @@ final class InstalledGamesController: ObservableObject {
     private let compatibilityCatalogue: OfflineGameCompatibility?
     private weak var unifiedSession: LiveSession?
     private var usesUnifiedAccount = false
+    private var launchSupportCache: [String: (NativeLaunchSupport, ContinuousClock.Instant)] = [:]
     private let nativeLauncher = NativeGameLifecycle()
     private var nativeLaunchTask: Task<Void, Never>?
     private var nativePreparationTask: Task<MicrosoftGameConfig, Error>?
@@ -592,12 +595,54 @@ final class InstalledGamesController: ObservableObject {
     }
 
     nonisolated static func nativeLaunchFailureMessage(_ error: Error) -> String {
-        if error is EngineInspectionError { return InstalledGameActionCopy.launchUnavailable }
-        if let failure = error as? NativeLaunchError {
-            if case .installationNotReady = failure { return failure.localizedDescription }
-            return InstalledGameActionCopy.launchUnavailable
-        }
+        if let failure = error as? EngineInspectionError { return failure.localizedDescription }
+        if let failure = error as? NativeLaunchError { return failure.localizedDescription }
         return InstalledGameActionCopy.launchUnavailable
+    }
+
+    /// Launch failures the user resolves in Settings › Engines.
+    nonisolated static func launchFailureOpensEngines(_ error: Error) -> Bool {
+        if error is EngineInspectionError { return true }
+        guard let failure = error as? NativeLaunchError else { return false }
+        switch failure {
+        case .installationNotReady, .candidateBlocked, .invalidProfile, .shimsUnavailable, .legacyLauncher: return false
+        default: return true
+        }
+    }
+
+    /// Play is offered only for titles with an admitted launch setup whose engine is usable here.
+    func launchSupport(for game: InstalledGame) -> NativeLaunchSupport {
+        guard usesUnifiedAccount else { return .supported }
+        let key = "\(game.storeId):\(game.engineOverrideV2 != nil)"
+        if let (value, at) = launchSupportCache[key], ContinuousClock.now < at.advanced(by: .seconds(15)) { return value }
+        let value = NativeLaunchSupport.evaluate(productID: game.storeId,
+            evidence: MacGameEvidenceStore.shared.games[game.storeId], hasEngineOverride: game.engineOverrideV2 != nil)
+        launchSupportCache[key] = (value, .now)
+        return value
+    }
+
+    func invalidateLaunchSupport() { launchSupportCache = [:] }
+
+    /// Support for a title that isn't installed yet (install consent): no per-game override can exist.
+    func launchSupport(productID: String) -> NativeLaunchSupport {
+        guard usesUnifiedAccount else { return .supported }
+        let key = "\(productID):false"
+        if let (value, at) = launchSupportCache[key], ContinuousClock.now < at.advanced(by: .seconds(15)) { return value }
+        let value = NativeLaunchSupport.evaluate(productID: productID,
+            evidence: MacGameEvidenceStore.shared.games[productID], hasEngineOverride: false)
+        launchSupportCache[key] = (value, .now)
+        return value
+    }
+
+    func opensEngines(for game: InstalledGame) -> Bool {
+        guard let message = playErrors[game.id] else { return false }
+        return engineIssueMessages[game.id] == message
+    }
+
+    private func recordLaunchFailure(_ error: Error, for game: InstalledGame) {
+        let message = Self.nativeLaunchFailureMessage(error)
+        playErrors[game.id] = message
+        engineIssueMessages[game.id] = Self.launchFailureOpensEngines(error) ? message : nil
     }
 
     nonisolated static func sessionLog(runID: String, directory: URL) -> URL? {
@@ -710,11 +755,19 @@ final class InstalledGamesController: ObservableObject {
             return
         }
         if usesUnifiedAccount {
+            invalidateLaunchSupport()
+            let support = launchSupport(for: game)
+            guard support.canPlay else {
+                playErrors[game.id] = support.reason
+                engineIssueMessages[game.id] = support.offersEngines ? support.reason : nil
+                Self.launchLog.error("Launch not supported: \(game.storeId, privacy: .public): \(support.reason ?? "", privacy: .public)")
+                return
+            }
             await playNative(game)
             return
         }
         guard historicalFixture || (game.engineOverride ?? defaultEngine()) == .calimocho else {
-            playErrors[game.id] = Self.nativeLaunchFailureMessage(NativeLaunchError.providerPolicy)
+            recordLaunchFailure(NativeLaunchError.providerPolicy, for: game)
             return
         }
         guard game.usesNativeLifecycle != true else {
@@ -920,8 +973,9 @@ final class InstalledGamesController: ObservableObject {
         installationStatuses[game.id] = status
         installationErrors[game.id] = status.success ? nil : status.explanation
         nativeInspectionDates[game.id] = ContinuousClock.now
+        invalidateLaunchSupport()
         if status.success && status.status == .complete && NativeCandidateLaunchCatalogue.issue(productID: game.storeId,
-            evidence: MacGameEvidenceStore.shared.games[game.storeId]) == nil {
+            evidence: MacGameEvidenceStore.shared.games[game.storeId]) == nil && launchSupport(for: game).canPlay {
             launchableIDs.insert(game.id)
             packageErrors[game.id] = nil
         } else { launchableIDs.remove(game.id) }
@@ -972,7 +1026,7 @@ final class InstalledGamesController: ObservableObject {
             }
         }
         guard let configuration = unifiedSession?.nativeInstallStatusConfiguration else {
-            installationErrors[game.id] = "The verified local service isn't connected. Reconnect Ode to X and check again."
+            installationErrors[game.id] = "The verified local service isn't connected. Reconnect \(AppBrand.displayName) and check again."
             return nil
         }
         guard Self.permitsNativeInspection(activeChecks: nativeInspectionTasks.count,
@@ -1043,7 +1097,7 @@ final class InstalledGamesController: ObservableObject {
                     let config = try MicrosoftGameConfig.read(folder: folder)
                     guard config.storeId == game.storeId, config.identityName == game.identityName,
                           config.version == game.version,
-                          game.storageVolume == nil || GameStorageVolume.read(at: folder) == game.storageVolume else {
+                          game.storageVolume.map { $0.identifies(GameStorageVolume.read(at: folder)) } ?? true else {
                         throw InstalledGameError.invalidConfig
                     }
                     return config
@@ -1122,7 +1176,7 @@ final class InstalledGamesController: ObservableObject {
                     }
                 } catch {
                     finished(token: token, gameID: game.id, status: 1)
-                    playErrors[game.id] = Self.nativeLaunchFailureMessage(error)
+                    recordLaunchFailure(error, for: game)
                     playLogs[game.id] = nativeLauncher.stateDirectory
                 }
                 nativeLaunchTask = nil
@@ -1132,7 +1186,7 @@ final class InstalledGamesController: ObservableObject {
             playErrors[game.id] = nil
         } catch {
             finished(token: token, gameID: game.id, status: 1)
-            playErrors[game.id] = Self.nativeLaunchFailureMessage(error)
+            recordLaunchFailure(error, for: game)
             Self.launchLog.error("Play failed before launch: \(game.storeId, privacy: .public): \(error.localizedDescription, privacy: .public)")
         }
     }
@@ -1333,11 +1387,30 @@ final class InstalledGamesController: ObservableObject {
     }
 
     func refreshEngineOverrides(force: Bool = true, retryFailed: Bool = false) async {
-        guard loaded, !checkingEngineOverrides, !applicationTerminating,
+        guard loaded, force || !checkingEngineOverrides, !applicationTerminating,
               force || !engineOverridesChecked || (retryFailed && !failedEngineOverrides.isEmpty),
               let configuration = unifiedSession?.nativeLifecycleConfiguration else { return }
+        await withEngineOverrideCheck {
+            guard !applicationTerminating, !Task.isCancelled else { return }
+            await inspectEngineOverrides(configuration: configuration, force: force)
+        }
+    }
+
+    func withEngineOverrideCheck(_ inspection: @MainActor () async -> Void) async {
+        while checkingEngineOverrides {
+            await withCheckedContinuation { engineOverrideWaiters.append($0) }
+        }
         checkingEngineOverrides = true
-        defer { checkingEngineOverrides = false }
+        defer {
+            checkingEngineOverrides = false
+            let waiters = engineOverrideWaiters
+            engineOverrideWaiters.removeAll()
+            for waiter in waiters { waiter.resume() }
+        }
+        await inspection()
+    }
+
+    private func inspectEngineOverrides(configuration: BackendConfiguration, force: Bool) async {
         do {
             let catalog = try NativeEngineDefaults.read()
             let names = Self.engineInspectionNames(all: Set(catalog.bindings.map(\.engineName)),
@@ -1387,12 +1460,7 @@ final class InstalledGamesController: ObservableObject {
     }
 
     static func readableEngineName(_ name: String?) -> String {
-        guard let name else { return "Calimocho" }
-        if name.contains("dirt5") { return "Calimocho 11.20 (DIRT 5)" }
-        if name.contains("witcher") { return "Calimocho 11.20 (Witcher)" }
-        if name.contains("private") { return "Calimocho 11.20 (Private)" }
-        if name.contains("wine11.20") { return "Calimocho 11.20" }
-        return name
+        EngineDisplayName.name(name)
     }
 
     func setEngineOverrideV2(_ selection: AdmittedEngineSelection?, for game: InstalledGame) async {
@@ -1580,7 +1648,9 @@ final class InstalledGamesController: ObservableObject {
                     }
                     let config = try MicrosoftGameConfig.read(folder: folder)
                     guard config.storeId == game.storeId else { throw InstalledGameError.invalidConfig }
-                    if game.storageVolume == nil, let volume = GameStorageVolume.read(at: folder) {
+                    if let volume = GameStorageVolume.read(at: folder),
+                       game.storageVolume == nil
+                        || (game.storageVolume?.uuid == nil && game.storageVolume?.path == volume.path && volume.uuid != nil) {
                         volumes[game.id] = volume
                     }
                     if nativeIDs.contains(game.id) { validNativeFolders.insert(game.id); continue }

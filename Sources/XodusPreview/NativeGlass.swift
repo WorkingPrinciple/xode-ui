@@ -104,12 +104,20 @@ struct XodusToolbar: ToolbarContent {
         if #available(macOS 26, *) {
             ToolbarSpacer(.flexible, placement: .primaryAction)
         }
+        // Separate items so each toolbar item keeps its own name; one shared item kept the
+        // import button's name after switching to tabs without Import.
         ToolbarItem(placement: .primaryAction) {
-            NativeToolbarAccountActions(accountLabel: accountLabel, accountSymbol: accountSymbol,
-                accountArtwork: accountArtwork, accountBinding: accountBinding,
+            ToolbarAccountButton(label: accountLabel, symbol: accountSymbol, reference: accountArtwork,
                 profileLoading: profileLoading, profileFailed: profileFailed,
-                libraryContrast: libraryContrast, importGame: importGame, importEnabled: importEnabled,
-                openAccount: openAccount)
+                libraryContrast: libraryContrast, action: openAccount)
+                .id(accountBinding)
+                .padding(.trailing, importGame == nil ? 12 : 0)
+        }
+        if let importGame {
+            ToolbarItem(placement: .primaryAction) {
+                NativeToolbarImportButton(enabled: importEnabled, action: importGame)
+                    .padding(.trailing, 12)
+            }
         }
 
     }
@@ -124,7 +132,7 @@ struct XodusToolbar: ToolbarContent {
     }
 
     private var picker: some View {
-        Picker("Navigate Ode to X", selection: selection) {
+        Picker("Navigate \(AppBrand.displayName)", selection: selection) {
             ForEach(Destination.allCases) { destination in
                 Text(destination.rawValue).tag(destination)
                     .accessibilityIdentifier("xodus.navigation.\(destination.rawValue.lowercased())")
@@ -160,15 +168,24 @@ struct NativeToolbarAccountActions: View {
                 profileLoading: profileLoading, profileFailed: profileFailed,
                 libraryContrast: libraryContrast, action: openAccount)
                 .id(accountBinding)
-            if let importGame {
-                Button("Import installed Xbox game", systemImage: "plus", action: importGame)
-                    .labelStyle(.iconOnly).help("Import installed game")
-                    .modifier(NativeToolbarIconStyle())
-                    .disabled(!importEnabled)
-                    .accessibilityIdentifier("xodus.installed.import")
-            }
+            if let importGame { NativeToolbarImportButton(enabled: importEnabled, action: importGame) }
         }
         .padding(.trailing, 12)
+    }
+}
+
+struct NativeToolbarImportButton: View {
+    static let title = "Import Installed Game"
+    var enabled = true
+    let action: () -> Void
+
+    var body: some View {
+        Button(Self.title, systemImage: "plus", action: action)
+            .labelStyle(.iconOnly).help("Import a game that's already installed on this Mac")
+            .modifier(NativeToolbarIconStyle())
+            .disabled(!enabled)
+            .accessibilityLabel(Self.title)
+            .accessibilityIdentifier("xodus.installed.import")
     }
 }
 
@@ -183,6 +200,9 @@ struct ToolbarAccountButton: View {
     @StateObject private var presentation = ArtworkPresentation()
     @Environment(\.catalogPresentationActive) private var presentationActive
 
+    /// The toolbar item's own name, so it can never inherit a neighbour's title.
+    static func title(_ label: String) -> String { "Account: \(label)" }
+
     static func pictureStatus(hasPicture: Bool, loading: Bool, failed: Bool) -> String {
         if hasPicture { return "Profile picture" }
         if failed { return "Profile picture couldn't be loaded" }
@@ -195,18 +215,24 @@ struct ToolbarAccountButton: View {
         let status = Self.pictureStatus(hasPicture: image != nil,
             loading: profileLoading || presentation.loading, failed: profileFailed || presentation.failed)
         Button(action: action) {
-            Group {
-                if let image {
-                    Image(nsImage: image).resizable().scaledToFill()
-                        .frame(width: 26, height: 26).clipShape(Circle())
-                } else {
-                    Image(systemName: symbol).frame(width: 26, height: 26)
-                }
-            }.accessibilityHidden(true)
+            Label {
+                Text(Self.title(label))
+            } icon: {
+                Group {
+                    if let image {
+                        Image(nsImage: image).resizable().scaledToFill()
+                            .frame(width: 26, height: 26).clipShape(Circle())
+                    } else {
+                        Image(systemName: symbol).frame(width: 26, height: 26)
+                    }
+                }.accessibilityHidden(true)
+            }
+            .labelStyle(.iconOnly)
         }
         .modifier(NativeToolbarIconStyle(enabled: libraryContrast))
         .help("\(label) · \(status)")
-        .accessibilityLabel("\(label). \(status)")
+        .accessibilityLabel(Self.title(label))
+        .accessibilityValue(status)
         .accessibilityIdentifier("xodus.account")
         .task(id: presentationActive ? request : nil) {
             guard presentationActive else { return }

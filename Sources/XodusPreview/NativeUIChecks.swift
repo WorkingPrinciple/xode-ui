@@ -42,7 +42,11 @@ enum NativeUIChecks {
             return
         }
         defer { defaults.removePersistentDomain(forName: suite) }
-        let state = AppState(settingsDefaults: defaults)
+        let testEnginesRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent("XodusSettingsEngines-\(UUID().uuidString)", isDirectory: true)
+        let installer = CalimochoReleaseInstallController(
+            service: CalimochoReleaseInstallService(root: testEnginesRoot))
+        let state = AppState(settingsDefaults: defaults, calimochoInstaller: installer)
         let session = LiveSession()
         let renderDirectory = ProcessInfo.processInfo.environment["XODUS_SETTINGS_RENDER_DIRECTORY"]
             .map(URL.init(fileURLWithPath:))
@@ -83,17 +87,12 @@ enum NativeUIChecks {
                     func descendants(_ view: NSView) -> [NSView] {
                         [view] + view.subviews.flatMap(descendants)
                     }
-                    let segmentControls = descendants(host).compactMap { $0 as? NSSegmentedControl }
-                    let segmentLabels = segmentControls.flatMap { control in
-                        (0..<control.segmentCount).compactMap { control.label(forSegment: $0) }
-                    }
-                    let segmentImages = segmentControls.flatMap { control in
-                        (0..<control.segmentCount).map { control.image(forSegment: $0) != nil }
-                    }
-                    check(Set(segmentLabels) == Set(SettingsPane.allCases.map(\.title))
-                          && segmentImages.count == SettingsPane.allCases.count
-                          && segmentImages.allSatisfy { $0 },
-                          "COR174 Native segmented tabs expose all four pane labels and symbols")
+                    let tabViews = descendants(host).compactMap { $0 as? NSTabView }
+                    check(tabViews.count == 1
+                          && tabViews[0].tabViewItems.map(\.label) == SettingsPane.allCases.map(\.title)
+                          && tabViews[0].selectedTabViewItem?.label == pane.title
+                          && descendants(host).compactMap({ $0 as? NSSegmentedControl }).isEmpty,
+                          "COR186 Settings uses the standard TabView with all four panes and restores \(pane.title) (no hand-built strip)")
                     if let renderDirectory, let bitmap = host.bitmapImageRepForCachingDisplay(in: host.bounds) {
                         host.cacheDisplay(in: host.bounds, to: bitmap)
                         let appearanceName = appearance == .darkAqua ? "dark" : "light"
@@ -379,8 +378,8 @@ enum NativeUIChecks {
         catch { check(false, "Native image threshold/thumbnail checks complete without network access") }
         check(GameHeroMetadata.ratingLabel(CatalogStoreRating(average: 4.5, count: 123))
                 == "\(4.5.formatted(.number.precision(.fractionLength(1)))) / 5 · 123 ratings"
-              && LibraryPackageFormatLabel.help(format: "MSIXVC").contains("Windows game package format")
-              && LibraryPackageFormatLabel.help(format: "MSIXVC").contains("does not confirm account access or Mac compatibility"),
+              && LibraryPackageFormatLabel.help(format: "MSIXVC").contains("Package type: MSIXVC")
+              && LibraryPackageFormatLabel.help(format: "MSIXVC").contains("doesn't confirm account access or Mac compatibility"),
               "Hero ratings retain their scale/count and package hover help never implies account or Mac clearance")
         check(GameDetailFacetCopy.installation(installed: false) == "Not installed"
               && GameDetailFacetCopy.installation(installed: true) == "Installed on this Mac"
@@ -483,10 +482,10 @@ enum NativeUIChecks {
         }
         autoreleasepool { checkWelcomeTerminationPolicy(check: check) }
         for appearance in [NSAppearance.Name.aqua, .darkAqua] {
-            for width in [CGFloat(480), 560] {
+            for width in [CGFloat(680), 860] {
                 for (name, view) in [
                     ("Licenses", AnyView(AppLicensesView())),
-                    ("Acknowledgments", AnyView(AppAcknowledgmentsView()))
+                    ("Acknowledgments", AnyView(AppAcknowledgmentsView(inventory: AcknowledgmentsInventory())))
                 ] {
                     let host = NSHostingView(rootView: view)
                     host.sizingOptions = []
@@ -501,7 +500,7 @@ enum NativeUIChecks {
         }
         check(AppLegalCopy.license.contains("GPL-3.0-only")
               && AppLegalCopy.acknowledgment.contains("Xodus")
-              && AppLegalCopy.source.absoluteString == "https://github.com/dragoshont/xodus-macos-app",
+              && AppLegalCopy.source.absoluteString == "https://github.com/WorkingPrinciple/xode-ui",
               "Legal destinations retain the app's exact license and existing upstream attribution without an invented organization")
         for appearance in [NSAppearance.Name.aqua, .darkAqua] {
             for size in [CGSize(width: 480, height: 480), CGSize(width: 560, height: 620)] {
@@ -521,7 +520,7 @@ enum NativeUIChecks {
                       && scrollViews.allSatisfy {
                           !$0.hasHorizontalScroller && ($0.documentView?.bounds.width ?? 0) <= size.width + 1
                       },
-                      "Ode to X welcome fits native \(appearance.rawValue) at \(Int(size.width)) points with a scrolling body")
+                      "X Ode welcome fits native \(appearance.rawValue) at \(Int(size.width)) points with a scrolling body")
                 check(!session.hasConfirmedSignIn && !session.accountBusy
                       && !session.canStartWelcomeSignIn && !runtime.checkingDependency,
                       "Detached welcome layout cannot connect, sign in, inspect credentials or install CrossOver")
@@ -543,7 +542,7 @@ enum NativeUIChecks {
               "COR97/101: One existing cover control exposes catalog membership and exact compatibility reason without another keyboard stop")
         let packageCard = GameCard(title: "Unsupported PC title",
             compatibilityIssues: [LibraryCompatibilityIssue(kind: .packageType, title: "EAPPX",
-                detail: "EAPPX. Ode to X 0.1 supports MSIXVC packages only.", source: nil)], open: {}) {
+                detail: GameSupportPolicy.issues(packageFormat: "EAPPX", antiCheat: nil)[0].detail, source: nil)], open: {}) {
                 Color.blue
             } status: { EmptyView() }
         check(!packageCard.coverStatusDescription.contains("EAPPX")
@@ -607,7 +606,7 @@ enum NativeUIChecks {
         for appearance in [NSAppearance.Name.aqua, .darkAqua] {
             for reduceTransparency in [false, true] {
                 let chrome = NSHostingView(rootView: HStack {
-                    Picker("Navigate Ode to X", selection: .constant(Destination.library)) {
+                    Picker("Navigate \(AppBrand.displayName)", selection: .constant(Destination.library)) {
                         Text("Library").tag(Destination.library)
                     }.pickerStyle(.segmented)
                     NativeToolbarSearch(text: .constant(""), focused: .constant(false), placeholder: "Search Library")
@@ -1088,8 +1087,9 @@ enum NativeUIChecks {
                     saveDetachedEvidence(host, directory: directory, name: "cor171-\(name)-\(Int(width)).png", check: check)
                 }
             }
-            check(heights[1] < heights[0] && heights[2] > heights[0],
-                  "COR171: Sheet height shrinks for resume and grows for recovery instead of retaining blank fixed height (\(heights))")
+            // REQ114 I3/M6: resume now carries the restart note and Discard, so it differs from (not shrinks below) a fresh install.
+            check(heights[1] != heights[0] && heights[2] > max(heights[0], heights[1]),
+                  "COR171: Sheet height follows resume and recovery content instead of retaining blank fixed height (\(heights))")
         }
     }
 

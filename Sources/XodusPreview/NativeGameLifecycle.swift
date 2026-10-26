@@ -13,6 +13,11 @@ struct NativeGameResult: Codable, Equatable, Sendable {
         let code: String
         let message: String
     }
+    struct DownloadResume: Codable, Equatable, Sendable {
+        let mode: String
+        let message: String?
+        var restartsFromZero: Bool { mode == "restart_incomplete_from_zero" }
+    }
     let version: Int
     let runID: String
     let operation: String
@@ -29,9 +34,11 @@ struct NativeGameResult: Codable, Equatable, Sendable {
     var warnings: [Warning]? = nil
     var wineExitCode: Int32? = nil
     var wineTerminationSignal: Int32? = nil
+    var downloadResume: DownloadResume? = nil
 
     private enum CodingKeys: String, CodingKey {
         case version, operation, product, success, error, warnings
+        case downloadResume = "download_resume"
         case popupMonitorError = "popup_monitor_error"
         case wineExitCode = "wine_exit_code", wineTerminationSignal = "wine_termination_signal"
         case runID = "run_id", exitCode = "exit_code", errorCode = "error_code"
@@ -55,8 +62,12 @@ struct NativeGameResult: Codable, Equatable, Sendable {
 
     static let failureCodes: Set<String> = [
         "ACCOUNT_UNAVAILABLE", "ACCOUNT_MISMATCH", "ACCOUNT_CHANGED", "TIMEOUT", "CANCELLED", "OPERATION_FAILED",
-        "RESOURCE_BUSY", "DISK_SPACE_FLOOR", "DISK_SPACE_FLOOR_INVALID"
+        "RESOURCE_BUSY", "DISK_SPACE_FLOOR", "DISK_SPACE_FLOOR_INVALID",
+        "UNINSTALL_PERMISSION_DENIED", "UNINSTALL_NOT_A_GAME", "UNINSTALL_UNSAFE_TREE"
     ]
+
+    /// The backend refused uninstall because the folder no longer proves it is this installed game.
+    var damagedInstallation: Bool { !success && errorCode == "UNINSTALL_NOT_A_GAME" }
 
     var failureMessage: String {
         if operation == "launch" { return InstalledGameActionCopy.launchUnavailable }
@@ -84,7 +95,7 @@ struct NativeGameResult: Codable, Equatable, Sendable {
         switch errorCode {
         case "ACCOUNT_UNAVAILABLE": "Your Xbox sign-in couldn't be read. Check Account and approve any macOS Keychain prompt."
         case "ACCOUNT_MISMATCH", "ACCOUNT_CHANGED": "Your Xbox account changed. Refresh your library before trying again."
-        case "CANCELLED": "The operation was cancelled. Partial files are kept; you can retry the installation."
+        case "CANCELLED": "The operation was stopped. Downloading again will start over."
         case "TIMEOUT":
             operation == "launch"
                 ? "The launcher took too long and was stopped before a playable game appeared. Open the launch log to see what happened."
@@ -92,6 +103,12 @@ struct NativeGameResult: Codable, Equatable, Sendable {
         case "RESOURCE_BUSY": "This installation is in use. Wait for its current operation to finish and try again."
         case "DISK_SPACE_FLOOR": "There isn't enough free space to continue safely. Free space on the installation drive before retrying."
         case "DISK_SPACE_FLOOR_INVALID": "The free-space limit is invalid. Check the operation log before retrying."
+        case "UNINSTALL_PERMISSION_DENIED":
+            "Nothing was deleted. macOS denied write access to files in \(gameDirectory). Check that folder's permissions in Finder, then try again."
+        case "UNINSTALL_NOT_A_GAME":
+            "This folder no longer looks like an installed game, so it wasn't deleted. Repair the installation, or remove it from the Library and keep its files."
+        case "UNINSTALL_UNSAFE_TREE":
+            "Nothing was deleted because the game folder contains links or special files. Review \(gameDirectory) in Finder, or remove it from the Library and keep its files."
         default: "The game operation failed. Open its log to review the cause before retrying."
         }
     }
@@ -103,7 +120,7 @@ struct NativeGameResult: Codable, Equatable, Sendable {
         var message: String {
             let required = ByteCountFormatter.string(fromByteCount: requiredBytes, countStyle: .file)
             let available = ByteCountFormatter.string(fromByteCount: availableBytes, countStyle: .file)
-            return "Not enough space. This installation needs \(required); \(available) is available. Free space on the installation drive, then resume. Partial files are kept."
+            return "Not enough space. This installation needs \(required); \(available) is available. Free space on the installation drive, then download again. The download will start over."
         }
 
         static func parse(_ diagnostic: String) -> Self? {
@@ -182,7 +199,7 @@ enum NativePlayerFailure {
             return "A required runtime component couldn't be loaded. Open the launch log to see its name. No repair has been applied."
         }
         if monitorReliable, windowRecorded == false {
-            return "The game closed before Ode to X detected its window. Open the launch log to review the exit."
+            return "The game closed before \(AppBrand.displayName) detected its window. Open the launch log to review the exit."
         }
         return nil
     }
@@ -324,6 +341,9 @@ final class NativeGameLifecycle {
         process = child
         try child.run()
         started = true
+        // Lets a relaunched app find and verify this exact backend if the app is force quit.
+        try? GameScriptFiles.writePrivate(Data("\(child.processIdentifier)\n".utf8),
+                                          to: state.appendingPathComponent(NativeOrphanRun.pidFileName))
         onStarted()
         do {
             while child.isRunning {
@@ -369,6 +389,20 @@ final class NativeGameLifecycle {
     func cancel() {
         cancellationRequested = true
         if let process, process.isRunning { process.terminate() }
+    }
+
+    /// Follows the progress of a run started by a previous app process. Never spawns or signals.
+    func follow(state: URL, onProgress: (GameScriptProgress) -> Void) throws {
+        guard !active else { return }
+        while try readProgress(state: state, onProgress: onProgress) {}
+    }
+
+    func endFollow() {
+        guard !active else { return }
+        progressFile?.closeFile()
+        progressFile = nil
+        pending = Data()
+        progress = NativeGameProgress()
     }
 
     @discardableResult

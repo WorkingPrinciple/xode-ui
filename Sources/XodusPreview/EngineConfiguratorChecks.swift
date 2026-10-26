@@ -254,9 +254,9 @@ extension EngineConfiguratorChecks {
             [view] + view.subviews.flatMap(descendants)
         }
         func selectedPane() -> SettingsPane? {
-            guard let control = descendants(host).compactMap({ $0 as? NSSegmentedControl }).first,
-                  SettingsPane.allCases.indices.contains(control.selectedSegment) else { return nil }
-            return SettingsPane.allCases[control.selectedSegment]
+            guard let tabs = descendants(host).compactMap({ $0 as? NSTabView }).first,
+                  let label = tabs.selectedTabViewItem?.label else { return nil }
+            return SettingsPane.allCases.first { $0.title == label }
         }
         func renderedText() throws -> [String] {
             guard let bitmap = host.bitmapImageRepForCachingDisplay(in: host.bounds) else {
@@ -314,11 +314,9 @@ extension EngineConfiguratorChecks {
     /// Detached renders of populated synthetic states. These exercise layout, not the installed app.
     static func renderStates(root: URL, check: (Bool, String) -> Void) async throws {
         let choices = [
-            EngineChoice(id: "calimocho-wine11.20-gptk4b3-tls-vulkan-private", name: "Calimocho 11.20 (Private)",
-                         version: "11.20", ready: true),
-            EngineChoice(id: "calimocho-wine11.20-gptk4b3-tls-vulkan", name: "Calimocho 11.20", version: "11.20", ready: true),
-            EngineChoice(id: "calimocho-wine11.20-gptk4b3-ags54-minidump-dirt5", name: "Calimocho 11.20 (DIRT 5)",
-                         version: "11.20", ready: false)
+            EngineChoice.named("calimocho-wine11.20-gptk4b3-tls-vulkan-private", ready: true),
+            EngineChoice.named("calimocho-wine11.20-gptk4b3-tls-vulkan", ready: true),
+            EngineChoice.named("calimocho-wine11.20-gptk4b3-ags54-minidump-dirt5", ready: false)
         ]
         let user = UserEngine(id: UUID(), name: "Wine Staging", version: "10.18",
                               location: "/Volumes/Games/Engines/Wine Staging.app", wine: "w", wineserver: "s")
@@ -339,12 +337,16 @@ extension EngineConfiguratorChecks {
             let settings = RuntimeProviderSettings(detectCrossOver: { crossOver })
             await settings.refreshCrossOverDependency()
             check(settings.crossOverDependency == crossOver, "REQ109: Render fixture CrossOver state is \(name)")
+            let installerRoot = FileManager.default.temporaryDirectory
+                .appendingPathComponent("XodusEngineConfiguratorEngines-\(UUID().uuidString)")
+            let installer = CalimochoReleaseInstallController(
+                service: CalimochoReleaseInstallService(root: installerRoot))
             for width in [CGFloat(560), CGFloat(820)] {
                 for appearance in [NSAppearance.Name.aqua, .darkAqua] {
                     let form = EngineConfiguratorForm(choices: choices, defaultID: choices[0].id,
                         defaultName: choices[0].name, checking: false, error: error, settings: settings,
                         allowsFileReads: true, userEngineStore: store, suggestions: corrupt ? [] : [detected],
-                        setDefault: { _ in }, refresh: {}) {
+                        setDefault: { _ in }, refresh: {}, calimochoInstaller: installer) {
                             LabeledContent("Registry", value: "/Users/example/engines/registry.json")
                         }
                     let host = NSHostingView(rootView: form.frame(width: width, height: 900)

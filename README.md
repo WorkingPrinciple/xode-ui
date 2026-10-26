@@ -1,5 +1,7 @@
 # X Ode
 
+By Working Principle · Beta
+
 A native macOS interface for legitimately entitled Xbox PC games, powered by
 the Xodus backend and separately installed runtimes.
 
@@ -110,20 +112,42 @@ online multiplayer, signing/notarization and distribution need separate evidence
 Heroic integration, Cuphead/Celeste success and UWP/EAppx gameplay are not launch
 claims. Documentation does not hide or disable existing controls.
 
+## What X Ode may ask permission for, and why
+
+macOS asks the first time each one is needed. Windows games run through X Ode, so a prompt a game triggers names X Ode.
+
+| Permission | When and why |
+|---|---|
+| Local network | X Ode and the games it runs use your local network to find Xbox consoles and for multiplayer features. |
+| External drives | When X Ode stores games on an external drive, or a game it runs reads or saves files there. |
+| Network drives | When X Ode stores games on a network drive, or a game it runs reads or saves files there. |
+| Documents folder | When X Ode stores games in your Documents folder, or a game it runs reads or saves files there. |
+| Downloads folder | When X Ode stores games in your Downloads folder, or a game it runs reads or saves files there. |
+| Desktop folder | When X Ode stores games on your Desktop, or a game it runs reads or saves files there. |
+| Notifications | After a game finishes installing, so X Ode can tell you it's ready to play. Never at launch. |
+| Keychain | When X Ode checks or saves your Microsoft sign-in on this Mac. |
+
+To change an answer, use System Settings ▸ Privacy & Security for local network and folders, and System Settings ▸ Notifications for notifications. X Ode also shows an Open System Settings button next to a problem it can fix. Keychain asks separately for each saved sign-in; there's no System Settings switch for it. If X Ode says local network access is off right after the prompt appeared, answer the prompt, then choose Find consoles again.
+
+In-game voice chat and microphone input aren't supported in this beta. Developer ID–signed releases keep the same app identity, so permissions you already granted and your saved sign-in carry over between them.
+
 ## Scope and credits
 
 X Ode builds on [Xodus](https://github.com/xodus-gaming/xodus) and the
 [macOS backend fork](https://github.com/WorkingPrinciple/xodus-macos).
 Original app source, documentation and mockups are GPL-3.0-only; preserve
-[the source license](LICENSE), [licensing boundaries](docs/LICENSING.md),
-upstream notices and corresponding-source obligations when distributing.
+[the source license](LICENSE), [NOTICE](NOTICE), [licensing boundaries](docs/LICENSING.md),
+upstream notices and corresponding-source obligations when distributing. The
+X Ode and Working Principle names and logos aren't licensed by the GPL; see
+[TRADEMARKS](TRADEMARKS.md).
 CrossOver, games and other third-party components retain their own terms; GPL
 does not authorize redistribution of proprietary packages or credentials.
 
 This is an independent project, not affiliated with or endorsed by Microsoft,
-Xbox, Apple, CodeWeavers or game publishers. X Ode is the documentation
-product name; bundle identifiers, Keychain identities, signer requirements and
-existing Xodus paths are unchanged.
+Xbox, Apple, CodeWeavers or game publishers. X Ode is the product name shown in
+the app (one source: `AppBrand` in `Sources/XodusCore/AppBrand.swift`); bundle
+identifiers, executables, module names, preference keys, Keychain identities,
+signer requirements and existing Xodus paths are unchanged.
 
 Backend scope and launch boundaries: [coordinator regrouping notes](https://github.com/WorkingPrinciple/xodus-macos/blob/dragoshont-heroic-xbox-integration/docs/xodus/regrouping.md)
 and [publication precautions](https://github.com/WorkingPrinciple/xodus-macos/blob/dragoshont-heroic-xbox-integration/docs/xodus/publication.md).

@@ -5,6 +5,7 @@ struct GameInstallLocationSettings: View {
     @AppStorage(GameInstallLocation.preferenceKey) private var savedLocation = Data()
     @State private var choosing = false
     @State private var error: String?
+    @State private var deniedPermission: PrivacyPermission?
     @State private var probe = GameStorageProbe()
     @State private var generation = UUID()
 
@@ -22,6 +23,7 @@ struct GameInstallLocationSettings: View {
                     Button("Use original default") {
                         savedLocation = Data()
                         error = nil
+                        deniedPermission = nil
                     }.disabled(choosing)
                 }
                 if choosing { ProgressView("Checking folder").controlSize(.small) }
@@ -31,9 +33,15 @@ struct GameInstallLocationSettings: View {
             if let error {
                 Label(error, systemImage: "exclamationmark.circle")
                     .fixedSize(horizontal: false, vertical: true)
+                if let deniedPermission { OpenPrivacySettingsButton(permission: deniedPermission) }
             }
         }
         .onDisappear { generation = UUID() }
+    }
+
+    /// The error shown after a games folder couldn't be used, and the settings link when macOS privacy blocked it.
+    static func problem(for error: Error, access: PrivacyDenial.FolderAccess) -> (message: String, permission: PrivacyPermission?) {
+        PrivacyDenial.installFolderProblem(access, fallback: "The install folder couldn't be selected. \(error.localizedDescription)")
     }
 
     private var locationLabel: String {
@@ -60,9 +68,14 @@ struct GameInstallLocationSettings: View {
             guard generation == token else { return }
             savedLocation = try JSONEncoder().encode(location)
             error = nil
+            deniedPermission = nil
         } catch {
             guard generation == token else { return }
-            self.error = "The install folder couldn't be selected. \(error.localizedDescription)"
+            // GameInstallLocation reports any permission failure as one error, so probe the raw cause.
+            let access = (try? await probe.read { PrivacyDenial.probe(root) }) ?? .other
+            let problem = Self.problem(for: error, access: access)
+            deniedPermission = problem.permission
+            self.error = problem.message
         }
     }
 }

@@ -323,6 +323,7 @@ struct LiveCatalogView: View {
     @Environment(\.openSettings) private var openSettings
     @ObservedObject var art = LibraryCatalogArtwork.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorSchemeContrast) private var colorSchemeContrast
     @AppStorage(LibrarySupportVisibility.preferenceKey)
     private var showsUnsupportedGames = LibrarySupportVisibility.defaultShowsUnsupported
     let query: String
@@ -672,11 +673,11 @@ struct LiveCatalogView: View {
     }
 
     private var scopePicker: some View {
+        // The picker's own title is its accessibility name; a second label was announced twice.
         Picker("Search scope", selection: $selection.scope) {
             ForEach(GameSearchScope.allCases) { scope in Text(scope.rawValue).tag(scope) }
         }
         .pickerStyle(.menu).labelsHidden().fixedSize()
-        .accessibilityLabel("Search scope")
         .accessibilityIdentifier("xodus.catalog.scope")
     }
 
@@ -911,21 +912,29 @@ struct LiveCatalogView: View {
                 LibraryLandscapeView(references: landscape(game), installed: game.installed,
                                      allowsLoading: allowsArtworkLoading)
             }
-            LinearGradient(colors: [.clear, .black.opacity(0.15), .black.opacity(0.8)],
-                           startPoint: .top, endPoint: .bottom)
-                .frame(height: 210)
-                .allowsHitTesting(false)
+            DiscoverHeroScrim(increasedContrast: colorSchemeContrast == .increased)
+            let blockedReason = heroDownloadUnavailableReason(game)
             VStack(alignment: .leading, spacing: 14) {
                 LibraryLogoTitle(title: game.title, references: art.images[game.id]?.logos ?? [],
                                  allowsLoading: allowsArtworkLoading)
                 LibraryGameInformation(gameFacts: game.facts,
                                        facts: facts[game.id])
+                    .environment(\.libraryOnHeroMedia, true)
                 if game.installed != nil { Label("Installed", systemImage: "internaldrive").font(.caption) }
                 LibraryGlassCluster {
-                    actions(game, primary: true)
-                    Button("View game") { open(game) }
-                        .modifier(LibraryActionStyle(primary: game.installed == nil && !canReviewInstall(game)))
+                    // A disabled Download with no reason is a dead end; the hero offers details instead.
+                    if blockedReason == nil { actions(game, primary: true) }
+                    Button(blockedReason == nil ? "View game" : "View Details") { open(game) }
+                        .modifier(LibraryActionStyle(primary: blockedReason != nil
+                            || (game.installed == nil && !canReviewInstall(game))))
+                        .accessibilityIdentifier("xodus.discover.hero.details")
                 }.controlSize(.large)
+                if let blockedReason {
+                    Label(blockedReason, systemImage: "info.circle")
+                        .font(.callout).lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("xodus.discover.hero.reason")
+                }
             }
             .frame(maxWidth: 800, alignment: .leading)
             .padding(.horizontal, 56).padding(.bottom, 28)
@@ -984,6 +993,7 @@ struct LiveCatalogView: View {
             CatalogArtworkView(reference: allowsArtworkLoading ? cover : nil,
                                status: cover == nil ? .absent : .available)
         } status: {
+            GameCardDownloadStatus(operations: operations, productID: game.id)
             if game.installed != nil { Label("Installed", systemImage: "internaldrive").font(.caption) }
         }
     }
@@ -998,6 +1008,23 @@ struct LiveCatalogView: View {
         showsUnsupportedGames || unsupportedIssues(game).isEmpty
     }
 
+    /// The reason the hero swaps Download for View Details, or nil to keep the install control.
+    private func heroDownloadUnavailableReason(_ game: LibraryGame) -> String? {
+        guard unsupportedIssues(game).isEmpty, game.installed == nil,
+              let pc = game.pc ?? game.product.map(PCGame.init(product:)) else { return nil }
+        return installAction(game, pc: pc, primary: true).heroReplacementReason
+    }
+
+    private func installAction(_ game: LibraryGame, pc: PCGame, primary: Bool) -> GameInstallAction {
+        GameInstallAction(game: pc, operations: operations,
+                          enabled: allowsStartupTasks && canReviewInstall(game), primary: primary,
+                          showsDiagnostics: false,
+                          disabledReason: !allowsStartupTasks ? "Wait for \(AppBrand.displayName) to finish starting."
+                            : game.pc == nil && game.product?.pcCatalogCandidate != true
+                                ? "PC availability for this title hasn't been confirmed. Installation is unavailable."
+                                : library.installAccessNotice(for: game.id))
+    }
+
     @ViewBuilder private func actions(_ game: LibraryGame, primary: Bool) -> some View {
         if !unsupportedIssues(game).isEmpty {
             if primary { LibraryCompatibilityIndicators(issues: unsupportedIssues(game), heroStyle: true) }
@@ -1005,13 +1032,7 @@ struct LiveCatalogView: View {
             InstalledPlayButton(library: installed, operations: operations, game: match,
                                 displayTitle: game.title, usesGlass: true, prominent: primary, showsDiagnostics: false)
         } else if let pc = game.pc ?? game.product.map(PCGame.init(product:)) {
-            GameInstallAction(game: pc, operations: operations,
-                              enabled: allowsStartupTasks && canReviewInstall(game), primary: primary,
-                              showsDiagnostics: false,
-                              disabledReason: !allowsStartupTasks ? "Wait for Ode to X to finish starting."
-                                : game.pc == nil && game.product?.pcCatalogCandidate != true
-                                    ? "PC availability for this title hasn't been confirmed. Installation is unavailable."
-                                    : library.installAccessNotice(for: game.id))
+            installAction(game, pc: pc, primary: primary)
         }
     }
 
@@ -1038,4 +1059,55 @@ struct LiveCatalogView: View {
         }.frame(maxWidth: .infinity, minHeight: 220)
     }
 
+}
+
+/// Darkens hero artwork behind the white title, facts, reason and buttons. Measured by rendering
+/// over pure white artwork (BrandUXChecks): body text from 45% of the hero height down keeps at
+/// least 4.5:1, the large title from 30% keeps 3:1, and Increase Contrast keeps 4.5:1 from 20%.
+struct DiscoverHeroScrim: View {
+    var increasedContrast = false
+
+    static func stops(increasedContrast: Bool) -> [(location: Double, opacity: Double)] {
+        increasedContrast
+            ? [(0, 0.2), (0.2, 0.62), (1, 0.9)]
+            : [(0, 0), (0.2, 0.4), (0.45, 0.68), (1, 0.85)]
+    }
+
+    static func opacity(at location: Double, increasedContrast: Bool) -> Double {
+        let stops = stops(increasedContrast: increasedContrast)
+        guard let upper = stops.firstIndex(where: { $0.location >= location }) else { return stops.last!.opacity }
+        guard upper > 0 else { return stops[0].opacity }
+        let a = stops[upper - 1], b = stops[upper]
+        return a.opacity + (b.opacity - a.opacity) * (location - a.location) / (b.location - a.location)
+    }
+
+    var body: some View {
+        LinearGradient(stops: Self.stops(increasedContrast: increasedContrast).map {
+            Gradient.Stop(color: .black.opacity($0.opacity), location: $0.location)
+        }, startPoint: .top, endPoint: .bottom)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+
+/// When a hero may swap its install control for View Details plus a reason. Only a static
+/// "can't install" qualifies: while this game is preparing, installing, checking an existing
+/// installation or prechecking, the control keeps its in-place progress and Cancel.
+enum HeroInstallReplacement {
+    static func reason(unavailable: String?, active: Bool, preparing: Bool, checking: Bool,
+                       prechecking: Bool) -> String? {
+        guard let unavailable, !active, !preparing, !checking, !prechecking else { return nil }
+        return unavailable
+    }
+}
+
+extension GameInstallAction {
+    /// Mirrors the in-place states GameInstallAction renders for this game.
+    var heroReplacementReason: String? {
+        HeroInstallReplacement.reason(unavailable: unavailableReason, active: active, preparing: preparing,
+            checking: operations.checkingExistingInstallation(productID: game.id)
+                || (operations.installationCheckRequired(for: game)
+                    && operations.existingInstallationError(productID: game.id) == nil),
+            prechecking: operations.precheckingProductID == game.id)
+    }
 }

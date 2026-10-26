@@ -13,7 +13,7 @@ enum PCGamesError: Error, LocalizedError, Equatable {
 
     var errorDescription: String? {
         switch self {
-        case .invalidResponse: "Microsoft returned game-library details Ode to X couldn't read. Try again."
+        case .invalidResponse: "Microsoft returned game-library details \(AppBrand.displayName) couldn't read. Try again."
         case .transport: "Couldn't reach Microsoft. Check your connection and try again."
         case .responseTooLarge: "Microsoft's response was too large to load safely. Try again later."
         case .http(let status): "Microsoft couldn't complete the request (code \(status)). Try again."
@@ -21,8 +21,8 @@ enum PCGamesError: Error, LocalizedError, Equatable {
         case .signInDeclined: "Microsoft sign-in was declined. Start again when you're ready."
         case .signInRequired: "Sign in again to see your PC games."
         case .keychain: "Couldn't access the saved PC-games sign-in. Unlock your Keychain or respond to macOS's permission prompt, then try again."
-        case .credentialBrokerUnavailable: "This copy of Ode to X couldn't verify or reach the saved-sign-in helper. Try again with the approved app and helper pairing. Your saved sign-in is unchanged; Ode to X won't switch to direct Keychain access while the helper is installed."
-        case .keychainApprovalRequired: "Ode to X needs one-time Keychain approval."
+        case .credentialBrokerUnavailable: "This copy of \(AppBrand.displayName) couldn't verify or reach the saved-sign-in helper. Try again with the approved app and helper pairing. Your saved sign-in is unchanged; \(AppBrand.displayName) won't switch to direct Keychain access while the helper is installed."
+        case .keychainApprovalRequired: "\(AppBrand.displayName) needs one-time Keychain approval."
         case .keychainApprovalCancelled: "Keychain approval was cancelled. Your saved sign-in is preserved. Approve access when you're ready."
         case .noXboxProfile: "This Microsoft account needs an Xbox profile. Create one at xbox.com, then sign in again."
         case .childAccount: "This account needs its Xbox family permissions updated before it can sign in."
@@ -719,6 +719,8 @@ struct PCGamesClient: Sendable {
             candidateCount: candidateIDs.count, market: market, language: language, accountID: xid, progress: progress)
     }
 
+    static let descriptorConcurrency = 2
+
     func resolveCollection(ids: [String], kinds: [String: PCGameAcquisitionKind], candidateCount: Int,
                            market: String, language: String, accountID: String? = nil,
                            accountHash: String? = nil,
@@ -738,36 +740,54 @@ struct PCGamesClient: Sendable {
                 detailFailureCount: detailFailures.count)
         }
         if !ids.isEmpty { await progress?(snapshot()) }
-        for start in stride(from: 0, to: ids.count, by: 20) {
-            let batch = Array(ids[start..<min(start + 20, ids.count)])
-            do {
-                let data = try await descriptors.load(ids: batch, market: market, language: language)
-                let products = try decode(PCGamesCatalog.self, data).Products
-                guard products.count <= batch.count,
-                      Set(products.map(\.ProductId)).count == products.count,
-                      products.allSatisfy({ batch.contains($0.ProductId) }) else { throw PCGamesError.invalidResponse }
-                detailFailures.formUnion(await descriptors.failures(ids: batch, market: market,
-                                                                     language: language).keys)
-                games += products.compactMap(\.game).map {
-                    PCGame(id: $0.id, title: $0.title, artwork: $0.artwork, acquisitionKind: kinds[$0.id] ?? .unknown)
+        let batches = stride(from: 0, to: ids.count, by: 20).map { Array(ids[$0..<min($0 + 20, ids.count)]) }
+        let descriptors = descriptors
+        // REQ-119: two independent descriptor reads at a time, inside the producer's four-operation limit;
+        // LIMIT_EXCEEDED stays a retried descriptor failure. Results are merged as they arrive.
+        try await withThrowingTaskGroup(of: (Int, Result<Data, any Error>).self) { group in
+            var next = 0
+            func start(_ group: inout ThrowingTaskGroup<(Int, Result<Data, any Error>), any Error>) {
+                guard next < batches.count else { return }
+                let index = next, batch = batches[index]
+                next += 1
+                group.addTask {
+                    do { return (index, .success(try await descriptors.load(ids: batch, market: market, language: language))) }
+                    catch { return (index, .failure(error)) }
                 }
-                for product in products {
-                    if product.game != nil { unresolved.remove(product.ProductId) }
-                    else if product.isBaseGame == false
-                        || (product.isBaseGame == true && product.pcPackageListing == false) {
-                        unresolved.remove(product.ProductId)
-                        excluded += 1
-                    }
-                }
-                completedBatches += 1
-            } catch is CancellationError { throw CancellationError() }
-            catch {
-                detailFailures.formUnion(batch)
-                Logger(subsystem: "io.github.dragoshont.xodus", category: "pc-library")
-                    .warning("Public PC descriptor batch failed; \(batch.count) candidates remain unresolved")
             }
-            try Task.checkCancellation()
-            await progress?(snapshot())
+            for _ in 0..<Self.descriptorConcurrency { start(&group) }
+            while let (index, result) = try await group.next() {
+                let batch = batches[index]
+                do {
+                    let data = try result.get()
+                    let products = try decode(PCGamesCatalog.self, data).Products
+                    guard products.count <= batch.count,
+                          Set(products.map(\.ProductId)).count == products.count,
+                          products.allSatisfy({ batch.contains($0.ProductId) }) else { throw PCGamesError.invalidResponse }
+                    detailFailures.formUnion(await descriptors.failures(ids: batch, market: market,
+                                                                         language: language).keys)
+                    games += products.compactMap(\.game).map {
+                        PCGame(id: $0.id, title: $0.title, artwork: $0.artwork, acquisitionKind: kinds[$0.id] ?? .unknown)
+                    }
+                    for product in products {
+                        if product.game != nil { unresolved.remove(product.ProductId) }
+                        else if product.isBaseGame == false
+                            || (product.isBaseGame == true && product.pcPackageListing == false) {
+                            unresolved.remove(product.ProductId)
+                            excluded += 1
+                        }
+                    }
+                    completedBatches += 1
+                } catch is CancellationError { throw CancellationError() }
+                catch {
+                    detailFailures.formUnion(batch)
+                    Logger(subsystem: "io.github.dragoshont.xodus", category: "pc-library")
+                        .warning("Public PC descriptor batch failed; \(batch.count) candidates remain unresolved")
+                }
+                try Task.checkCancellation()
+                await progress?(snapshot())
+                start(&group)
+            }
         }
         guard ids.isEmpty || completedBatches > 0 else { throw PCGamesError.incompleteCatalog(0) }
         return snapshot()

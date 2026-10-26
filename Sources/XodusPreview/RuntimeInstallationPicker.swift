@@ -7,6 +7,8 @@ import XodusManagement
 struct RuntimeInstallationPicker: View {
     @ObservedObject var settings: RuntimeProviderSettings
     @ObservedObject private var installed: InstalledGamesController
+    @ObservedObject private var operations: GameOperationsController
+    @ObservedObject private var calimochoInstaller: CalimochoReleaseInstallController
     var backendPath = ""
     var embeddedInSettings = false
     var showsAdvanced = true
@@ -15,14 +17,23 @@ struct RuntimeInstallationPicker: View {
     @ObservedObject private var registryObservation: EngineRegistryObservation
     @State private var error: String?
     @State private var settingDefault = false
+    @State private var releaseStatus: CalimochoAvailability?
+    @State private var releaseCheck = 0
 
     init(settings: RuntimeProviderSettings, backendPath: String = "",
          installed: InstalledGamesController? = nil, embeddedInSettings: Bool = false,
          showsAdvanced: Bool = true, registryObservation: EngineRegistryObservation? = nil,
-         userEngineModel: UserEngineModel = UserEngineModel()) {
+         userEngineModel: UserEngineModel = UserEngineModel(),
+         operations: GameOperationsController? = nil,
+         calimochoInstaller: CalimochoReleaseInstallController? = nil) {
         self.settings = settings
         self.backendPath = backendPath
-        self.installed = installed ?? InstalledGamesController()
+        let installedController = installed ?? InstalledGamesController()
+        _installed = ObservedObject(wrappedValue: installedController)
+        _operations = ObservedObject(wrappedValue:
+            operations ?? GameOperationsController(installed: installedController))
+        _calimochoInstaller = ObservedObject(wrappedValue:
+            calimochoInstaller ?? CalimochoReleaseInstallController())
         self.embeddedInSettings = embeddedInSettings
         self.showsAdvanced = showsAdvanced
         self.userEngineModel = userEngineModel
@@ -34,14 +45,12 @@ struct RuntimeInstallationPicker: View {
 
     private var configurator: EngineConfiguratorForm<NativeEngineSettings> {
         let defaultID = try? NativeEngineSettings.defaultAdmissionName()
+        let choices = installed.availableEngineOverrides.compactMap { selection in
+            selection.inspection.engineName.map { EngineChoice.named($0, ready: true) }
+        } + installed.failedEngineOverrides.sorted().map { EngineChoice.named($0, ready: false) }
         return EngineConfiguratorForm(
-            choices: installed.availableEngineOverrides.compactMap { selection in
-                selection.inspection.engineName.map {
-                    EngineChoice(id: $0, name: InstalledGamesController.readableEngineName($0), version: nil, ready: true)
-                }
-            } + installed.failedEngineOverrides.sorted().map {
-                EngineChoice(id: $0, name: InstalledGamesController.readableEngineName($0), version: nil, ready: false)
-            }, defaultID: defaultID, defaultName: defaultID.map { InstalledGamesController.readableEngineName($0) } ?? "Unavailable",
+            choices: choices,
+            defaultID: defaultID, defaultName: defaultID.map { EngineDisplayName.name($0) } ?? "Unavailable",
             checking: installed.checkingEngineOverrides || settingDefault,
             error: error ?? (defaultID == nil ? "The default engine selection couldn't be read. Refresh engines and try again." : nil),
             settings: settings, allowsFileReads: allowsFileReads, userEngineModel: userEngineModel,
@@ -65,8 +74,29 @@ struct RuntimeInstallationPicker: View {
                         self.error = "This engine couldn't be set as default. Refresh engines and try again."
                     }
                 }
-            }, refresh: { Task { await installed.refreshEngineOverrides(force: true) } },
-            showsAdvanced: showsAdvanced) {
+            }, refresh: {
+                releaseCheck += 1
+                Task { await installed.refreshEngineOverrides(force: true) }
+            },
+            showsAdvanced: showsAdvanced,
+            calimochoStatus: .status(results: installed, verification: releaseStatus, checking: settingDefault),
+            calimochoInstaller: calimochoInstaller,
+            engineRemovalBusy: { [installed, operations, settings] in
+                settings.applicationTerminating || !installed.loaded
+                    || installed.accountDisconnecting || installed.editing || installed.choosing
+                    || installed.runningGameID != nil || installed.stoppingGameID != nil
+                    || installed.mutationActive || operations.isBusy || operations.serviceBusy
+                    || operations.setupRepairing || operations.orphanRunning
+                    || operations.recoveryRequired || operations.checkingRecovery
+            },
+            refreshReleaseAdmission: {
+                await installed.refreshEngineOverrides(force: true)
+                releaseStatus = await CalimochoAvailability.verifyReleaseInBackground(
+                    admission: CalimochoAvailability.admission(in: installed), root: calimochoInstaller.enginesRoot)
+                return installed.availableEngineOverrides.contains {
+                    $0.inspection.engineName == CalimochoRelease.engineID
+                }
+            }) {
             NativeEngineSettings(allowsFileReads: allowsFileReads, backendPath: backendPath,
                                  observation: registryObservation, showsEntries: false)
         }
@@ -81,6 +111,14 @@ struct RuntimeInstallationPicker: View {
         .task {
             await installed.refreshEngineOverrides(force: false)
             await settings.refreshCrossOverDependency()
+        }
+        .task(id: "\(allowsFileReads):\(releaseCheck):\(installed.availableEngineOverrides.count):\(CalimochoAvailability.rejected(in: installed))") {
+            guard allowsFileReads else { return }
+            releaseStatus = .checking
+            let status = await CalimochoAvailability.verifyReleaseInBackground(
+                admission: CalimochoAvailability.admission(in: installed), root: calimochoInstaller.enginesRoot)
+            guard !Task.isCancelled else { return }
+            releaseStatus = status
         }
         .onChange(of: savedAdmission) { _, _ in error = nil }
     }

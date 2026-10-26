@@ -21,9 +21,42 @@ from launch_association_capsule import BROKER_SHA256, stage_capsule, verify_caps
 from python_runtime import approved_pin, inventory
 from package_resources import RUNTIME_RESOURCES
 
+SUPERSEDED_PRODUCER = "01d4" + "cfd6" + "25764c2a8ec4d60824ef4f277b30b9e9"
+SUPERSEDED_PRODUCER_PREFIX = SUPERSEDED_PRODUCER[:8]
+
+
+def require_current_producer_pins(source_root):
+    for directory in ("Sources", "tools"):
+        for path in (source_root / directory).rglob("*"):
+            if path.is_file() and not path.is_symlink() and path.suffix in {
+                    ".swift", ".py", ".json", ".plist"}:
+                data = path.read_bytes()
+                if SUPERSEDED_PRODUCER.encode() in data or SUPERSEDED_PRODUCER_PREFIX.encode() in data:
+                    raise ValueError("Superseded producer pin found in " + str(path.relative_to(source_root)))
+
+
 count = 0
+project = Path(__file__).resolve().parent.parent
+require_current_producer_pins(project)
+count += 1
 with tempfile.TemporaryDirectory(prefix="xodus-pair-portable-") as temporary:
     root = Path(temporary).resolve()
+    stale_source = root / "stale-source"
+    stale_pin = stale_source / "Sources/XodusPreview/ShippingProducerPins.swift"
+    stale_pin.parent.mkdir(parents=True)
+    stale_pin.write_text("static let commit = \"" + SUPERSEDED_PRODUCER + "\"", encoding="utf-8")
+    try:
+        require_current_producer_pins(stale_source)
+        raise AssertionError("Superseded producer source pin accepted")
+    except ValueError:
+        count += 1
+    stale_pin.unlink()
+    stale_pin.write_text("static let commit = \"" + SUPERSEDED_PRODUCER_PREFIX + "\"", encoding="utf-8")
+    try:
+        require_current_producer_pins(stale_source)
+        raise AssertionError("Superseded producer prefix accepted")
+    except ValueError:
+        count += 1
     inventory_path = root / "inventory.json"
     producer_inventory = {
         "producer": {"commit": PRODUCER, "tree": PRODUCER_TREE},
@@ -164,7 +197,6 @@ with tempfile.TemporaryDirectory(prefix="xodus-pair-portable-") as temporary:
     helper = macos / "XodusAuthHost"
     for directory in (source / "Sources/XodusPreview", source / "tools", pair.parent, macos):
         directory.mkdir(parents=True, exist_ok=True)
-    project = Path(__file__).resolve().parent.parent
     shutil.copyfile(project / "tools/Info.plist", source / "tools/Info.plist")
     shutil.copyfile(project / "LICENSE", source / "LICENSE")
     (source / "NOTICE").write_text("Neutral notice fixture", encoding="utf-8")

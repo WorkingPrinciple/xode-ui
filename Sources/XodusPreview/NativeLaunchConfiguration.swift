@@ -214,6 +214,8 @@ struct NativeTitleLaunchProfile: Codable {
     var unsetEnvironment: [String]? = nil
     var crossOverEnvironment: [String: String]? = nil
     var executable: String? = nil
+    var wineSha256: String? = nil
+    var wineserverSha256: String? = nil
     var timeoutSeconds: UInt? = nil
     var noAutoDismiss: Bool? = nil
     var runtime: NativeLocalRuntime? = nil
@@ -225,6 +227,14 @@ struct NativeTitleLaunchProfile: Codable {
     var dllOverrideEvidence: DLLOverrideEvidence? = nil
     var preservedPrefixPath: String? = nil
     var registrySHA256: String? = nil
+
+    func enginePinsMatch(_ inspection: EngineInspection) -> Bool {
+        guard let engine else { return true }
+        guard engine == inspection.engineName else { return false }
+        if wineSha256 == nil && wineserverSha256 == nil { return true }
+        guard let wineSha256, let wineserverSha256 else { return false }
+        return wineSha256 == inspection.wineSha256 && wineserverSha256 == inspection.wineserverSha256
+    }
 
     struct DLLOverrideEvidence: Codable {
         let runID: String
@@ -346,6 +356,12 @@ struct NativeTitleLaunchProfile: Codable {
                 && !path.split(separator: "/", omittingEmptySubsequences: false).contains(where: { ["", ".", ".."].contains(String($0)) })
         }
         let mirrored = crossOverEnvironment ?? [:]
+        if wineSha256 != nil || wineserverSha256 != nil {
+            guard let engine, let pin = CalimochoReleasePin.named(engine),
+                  wineSha256 == pin.wineSha256, wineserverSha256 == pin.wineserverSha256 else {
+                throw NativeLaunchError.invalidProfile
+            }
+        }
         if preservedPrefixPath != nil || registrySHA256 != nil {
             guard productID == "BQVQTL3PCH05",
                   engine == "calimocho-wine11.20-gptk4b3-tls-vulkan-private",
@@ -476,7 +492,7 @@ struct NativeLaunchConfiguration {
         let profile = try NativeTitleLaunchProfile.read(productID: game.storeId, defaults: defaults,
                                                        provider: .calimocho)
         if let profile {
-            guard profile.engine == selection.inspection.engineName,
+            guard profile.enginePinsMatch(selection.inspection),
                   profile.registrySHA256.map({ $0 == selection.inspection.registrySha256 }) ?? true else {
                 throw NativeLaunchError.configurationConflict
             }
@@ -503,6 +519,8 @@ struct NativeLaunchConfiguration {
             try validateOverride(selection, game: game, defaults: defaults)
         } else if let titleEngine = profile?.engine {
             guard let binding = catalog.bindings.first(where: { $0.engineName == titleEngine }),
+                  profile?.wineSha256.map({ $0 == binding.wineSha256 }) ?? true,
+                  profile?.wineserverSha256.map({ $0 == binding.wineserverSha256 }) ?? true,
                   profile?.registrySHA256.map({ $0 == binding.registrySha256 }) ?? true else {
                 throw NativeLaunchError.engineUnavailable
             }
@@ -542,6 +560,27 @@ struct NativeLaunchConfiguration {
                         shims: NativeShimReference = .approved,
                         provenEngine: String? = nil, evidence: MacGameEvidence.Game? = nil,
                         detectCrossOver: () -> CrossOverDependencyState = CrossOverDetector.detect) throws -> Self {
+        try resolve(game: game, provider: provider, defaults: defaults, runtime: runtime, shims: shims,
+                    provenEngine: provenEngine, evidence: evidence, detectCrossOver: detectCrossOver,
+                    candidateOverride: nil)
+    }
+
+    #if !XODUS_SHIPPING
+    static func resolveForChecks(game: InstalledGame, defaults: UserDefaults,
+                                 runtime: NativeRuntimeReference, shims: NativeShimReference,
+                                 candidate: NativeCandidateLaunchCatalogue.Row) throws -> Self {
+        try resolve(game: game, provider: nil, defaults: defaults, runtime: runtime, shims: shims,
+                    candidateOverride: candidate)
+    }
+    #endif
+
+    private static func resolve(game: InstalledGame, provider: RuntimeProviderKind?,
+                                defaults: UserDefaults,
+                                runtime: NativeRuntimeReference?,
+                                shims: NativeShimReference,
+                                provenEngine: String? = nil, evidence: MacGameEvidence.Game? = nil,
+                                detectCrossOver: () -> CrossOverDependencyState = CrossOverDetector.detect,
+                                candidateOverride: NativeCandidateLaunchCatalogue.Row?) throws -> Self {
         let localRuntime = try defaults.data(forKey: "Xodus.lifecycle.runtime")
             .map { try JSONDecoder().decode(NativeLocalRuntime.self, from: $0).reference }
         let selected: AdmittedEngineSelection?
@@ -555,11 +594,20 @@ struct NativeLaunchConfiguration {
         }
         var profile = try NativeTitleLaunchProfile.read(productID: game.storeId, defaults: defaults,
                                                        provider: provider, evidence: evidence)
-        if let selected, let engine = profile?.engine, engine != selected.inspection.engineName {
-            throw NativeLaunchError.configurationConflict
+        if let selected, let profile {
+            guard profile.enginePinsMatch(selected.inspection) else { throw NativeLaunchError.configurationConflict }
         }
-        let qualified = NativeWorkingLaunchRecipe.admitted(productID: game.storeId, evidence: evidence)
-        let candidate = qualified != nil ? nil : try NativeCandidateLaunchCatalogue.row(productID: game.storeId)
+        let workingRecipe = NativeWorkingLaunchRecipe.admitted(productID: game.storeId, evidence: evidence)
+        let qualified = profile?.engine == NativeWorkingLaunchRecipe.engine ? workingRecipe : nil
+        let releasePinnedProfile: Bool
+        if let profile, let engine = profile.engine, let pin = CalimochoReleasePin.named(engine) {
+            releasePinnedProfile = profile.wineSha256 == pin.wineSha256
+                && profile.wineserverSha256 == pin.wineserverSha256
+        } else {
+            releasePinnedProfile = false
+        }
+        let candidate = qualified != nil || releasePinnedProfile
+            ? nil : try candidateOverride ?? NativeCandidateLaunchCatalogue.row(productID: game.storeId)
         if let candidate {
             try candidate.validateManifest(folder: URL(fileURLWithPath: game.folder))
             guard profile?.engine == candidate.profile, profile?.executable == candidate.manifest_executable else {
@@ -745,31 +793,31 @@ enum NativeLaunchError: Error, LocalizedError {
         switch self {
         case .candidateBlocked(let reason): reason
         case .runtimeNotQualified:
-            "Choose the local primary and legacy runtime pair in Runtime settings before playing. Experimental local runtimes do not require release qualification."
+            "This game's tested runtime isn't set up on this Mac. Open Engines to choose the runtime it needs. No other runtime was substituted."
         case .registryMissing:
-            "Choose the engine registry in Runtime settings before playing."
+            "No engine is set up for this game. Open Engines to choose one before playing."
         case .engineNotSelected:
             "Choose a verified Calimocho build in Engines before playing. No CrossOver or GPTK engine was substituted."
         case .configurationConflict:
             "This game's launch recipe does not match the selected Calimocho configuration. No engine or prefix was substituted. Choose a matching verified configuration."
         case .legacyLauncher:
-            "This legacy launch script cannot verify the selected Calimocho configuration. Use the connected Ode lifecycle service; the script was not started."
+            "This legacy launch script cannot verify the selected Calimocho configuration. Use the connected \(AppBrand.displayName) lifecycle service; the script was not started."
         case .prefixConflict:
             "This prefix is owned by another engine or has an invalid ownership record. It was not changed. Choose a matching configuration; no migration was attempted."
         case .providerPolicy:
-            "Only a verified Calimocho configuration can be launched in Ode. Historical CrossOver, GPTK and generic Wine choices are retained but cannot run. Choose Calimocho in Engines."
+            "Only a verified Calimocho configuration can be launched in \(AppBrand.displayName). Historical CrossOver, GPTK and generic Wine choices are retained but cannot run. Choose Calimocho in Engines."
         case .selectionChanged:
             "The saved Calimocho configuration has changed. Refresh and explicitly select the verified build again. No other engine was substituted."
         case .providerNotAdmitted:
             "This Calimocho configuration has not passed artifact admission. Refresh its registry in Engines. It cannot launch or fall back to another provider."
         case .engineUnavailable:
-            "The selected registry engine is no longer available. Restore it or choose another engine in Runtime settings."
+            "The engine this game uses isn't available on this Mac. Open Engines to restore it or choose another. No other engine was substituted."
         case .invalidProfile:
             "The title's local launch profile is invalid. Check its product ID and use the verified native-web-shims-v1 folder, separate from the game runtime."
         case .shimsUnavailable:
             "The native sign-in components are missing or have changed. Restore native-web-shims-v1 before playing."
         case .installationNotReady:
-            "This installation isn't verified complete. Check it, resume the download or repair it before playing."
+            "This installation isn't verified complete. Check it, download it again or repair it before playing."
         }
     }
 }

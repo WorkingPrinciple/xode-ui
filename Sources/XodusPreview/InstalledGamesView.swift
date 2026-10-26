@@ -58,7 +58,7 @@ struct InstalledGamesView: View {
             if library.loading {
                 ProgressView("Loading installed games").controlSize(.small)
             } else if library.loaded, library.games.isEmpty {
-                Text("Add a game you've already installed with Ode to X.")
+                Text("Add a game you've already installed with \(AppBrand.displayName).")
                     .foregroundStyle(.secondary)
                 importButton
             }
@@ -88,7 +88,7 @@ struct InstalledGamesView: View {
     }
 
     private var importButton: some View {
-        Button("Import installed Xbox game") { Task { await library.chooseGame() } }
+        Button(NativeToolbarImportButton.title) { Task { await library.chooseGame() } }
             .disabled(!library.loaded || library.editing || library.choosing || library.mutationActive)
             .accessibilityIdentifier("xodus.installed.import")
     }
@@ -113,7 +113,7 @@ struct InstalledUpdateBadge: View {
                 Button("Update") {
                     Task {
                         await operations.repair(
-                            PCGame(id: game.storeId, title: game.title, artwork: nil), installed: game)
+                            PCGame(id: game.storeId, title: game.title, artwork: nil), installed: game, intent: .update)
                     }
                 }
                 .disabled(!operations.canRepair(game))
@@ -131,7 +131,48 @@ struct InstalledPlayError: View {
     var body: some View {
         if let message = library.packageErrors[game.id] ?? library.playErrors[game.id] ?? library.playNotices[game.id] {
             InstallationWarning(message: message)
+            if library.packageErrors[game.id] == nil, library.opensEngines(for: game) { OpenEnginesButton() }
         }
+    }
+}
+
+struct InstalledLaunchSupportStatus: View {
+    let support: NativeLaunchSupport
+    let gameTitle: String
+    var showsReason = true
+
+    private var title: String {
+        support.offersEngines ? "Engine needed" : NativeLaunchSupport.notSupportedTitle
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Label(title, systemImage: support.offersEngines ? "wrench.and.screwdriver" : "info.circle")
+                .font(.callout.weight(.medium))
+            if showsReason, let reason = support.reason {
+                Text(reason).font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            if support.offersEngines {
+                OpenEnginesButton()
+            }
+        }
+        .help(support.reason ?? title)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("\(title) for \(gameTitle). \(support.reason ?? "")")
+        .accessibilityIdentifier(support.offersEngines ? "xodus.installed.engineNeeded" : "xodus.installed.notSupported")
+    }
+}
+
+struct OpenEnginesButton: View {
+    @Environment(\.openSettings) private var openSettings
+
+    var body: some View {
+        Button("Open Engines") {
+            SettingsPaneSelection.select(.engines)
+            openSettings()
+        }
+        .accessibilityIdentifier("xodus.installed.openEngines")
     }
 }
 
@@ -142,9 +183,14 @@ struct InstallationWarning: View {
     var body: some View {
         Group {
             if showsMessage {
-                Label(message, systemImage: "exclamationmark.triangle")
-                    .font(.callout)
-                    .fixedSize(horizontal: false, vertical: true)
+                VStack(alignment: .leading, spacing: 6) {
+                    Label(message, systemImage: "exclamationmark.triangle")
+                        .font(.callout)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if let permission = PrivacyDenial.permission(inMessage: message) {
+                        OpenPrivacySettingsButton(permission: permission)
+                    }
+                }
             } else {
                 Image(systemName: "exclamationmark.triangle")
             }
@@ -261,7 +307,7 @@ struct InstalledPlayButton: View {
         switch nativeAction {
         case .play: return "Play"
         case .install: return "Download"
-        case .resume: return "Resume"
+        case .resume: return GameDownloadCopy.downloadAgain
         case .repair: return "Repair"
         case .check: return "Retry"
         }
@@ -292,7 +338,8 @@ struct InstalledPlayButton: View {
                 let product = PCGame(id: game.storeId, title: game.title, artwork: nil)
                 switch action {
                 case .check: await library.checkInstallation(game)
-                case .install, .resume: await operations.resume(product, installed: game)
+                case .install: await operations.repair(product, installed: game, resuming: true, intent: .downloadFullGame)
+                case .resume: await operations.resume(product, installed: game)
                 case .repair: await operations.repair(product, installed: game)
                 case .play: await library.play(game)
                 }
@@ -353,6 +400,8 @@ struct InstalledPlayButton: View {
             LibraryCompatibilityIndicators(issues: unsupportedIssues, heroStyle: heroStyle)
         } else if !canStop, !launching, library.requiresNativeInstallationStatus(game), nativeAction != .play {
             nativeInstallationButton
+        } else if !canStop, !launching, case let support = library.launchSupport(for: game), !support.canPlay {
+            InstalledLaunchSupportStatus(support: support, gameTitle: actionGameTitle, showsReason: showsDiagnostics)
         } else {
             actionButton
             if library.updateStatus(for: game).hasUpdate {
