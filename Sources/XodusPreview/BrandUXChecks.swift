@@ -15,6 +15,7 @@ enum BrandUXChecks {
         .map { URL(fileURLWithPath: $0, isDirectory: true) }
 
     static func run(check: (Bool, String) -> Void) {
+        NativeCheckOCR.checks(check)
         if let renderDirectory {
             try? FileManager.default.createDirectory(at: renderDirectory, withIntermediateDirectories: true)
         }
@@ -665,10 +666,8 @@ enum BrandUXChecks {
         host.cacheDisplay(in: host.bounds, to: bitmap)
         save(bitmap, name: name)
         guard let image = bitmap.cgImage else { return [] }
-        let request = VNRecognizeTextRequest()
-        request.recognitionLevel = .accurate
-        try? VNImageRequestHandler(cgImage: image).perform([request])
-        return (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }
+        do { return try NativeCheckOCR.recognize(image) }
+        catch { return [error.localizedDescription] }
     }
 
     static func save(_ bitmap: NSBitmapImageRep, name: String) {

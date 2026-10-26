@@ -264,10 +264,7 @@ extension EngineConfiguratorChecks {
             }
             host.cacheDisplay(in: host.bounds, to: bitmap)
             guard let image = bitmap.cgImage else { throw EngineLayoutError.unreadable }
-            let request = VNRecognizeTextRequest()
-            request.recognitionLevel = .fast
-            try VNImageRequestHandler(cgImage: image).perform([request])
-            return (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }
+            return try NativeCheckOCR.recognize(image, level: .fast)
         }
         check(selectedPane() == .engines,
               "COR174: The retained engine model is mounted in the selected Engines pane")
