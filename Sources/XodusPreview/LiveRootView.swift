@@ -104,6 +104,12 @@ struct LiveRootView: View {
         startupAllowed && LibraryFirstLoad.shouldBegin(interactiveSignIn: state.unifiedSignInRequested,
             signedIn: session.hasConfirmedSignIn, hasLibrary: !state.pcGames.representedGames.isEmpty)
     }
+    /// REQ-119: recent activity and access checks wait until the library's collection read is sent.
+    private var backgroundAccountReadsAllowed: Bool {
+        let library = state.pcGames
+        return !unifiedAccountMode || library.collectionReadStarted || library.snapshot != nil
+            || library.error != nil || !session.accountCountryReady
+    }
     private var firstLoadCovers: Bool { firstLoad.covers || coldSignInPending }
     private var firstScreenGames: [(id: String, cover: CatalogArtworkReference?)] {
         let projection = state.librarySelection.projection.current
@@ -347,8 +353,8 @@ struct LiveRootView: View {
             state.installedGames.setAccountAccessAllowed(unifiedAccountVerified,
                 message: "Your Xbox Live account is being checked. Try again when it finishes.")
         }
-        .task(id: "\(session.accountCatalogScope):\(unifiedAccountVerified):\(state.installedGames.games.map(\.storeId).sorted().joined(separator: ","))") {
-            guard startupAllowed, unifiedAccountMode else { return }
+        .task(id: "\(session.accountCatalogScope):\(unifiedAccountVerified):\(backgroundAccountReadsAllowed):\(state.installedGames.games.map(\.storeId).sorted().joined(separator: ","))") {
+            guard startupAllowed, unifiedAccountMode, backgroundAccountReadsAllowed else { return }
             while !Task.isCancelled {
                 await state.installedGames.productAccess.refresh(session: session,
                     installedIDs: state.installedGames.games.map(\.storeId))
@@ -357,7 +363,7 @@ struct LiveRootView: View {
             }
         }
         .onReceive(state.installedGames.$games) { games in
-            guard startupAllowed, unifiedAccountMode else { return }
+            guard startupAllowed, unifiedAccountMode, backgroundAccountReadsAllowed else { return }
             Task {
                 await state.installedGames.productAccess.refresh(session: session,
                     installedIDs: games.map(\.storeId))
@@ -381,6 +387,7 @@ struct LiveRootView: View {
             if startupAllowed, scenePhase == .active {
                 await session.revalidateAccountOnForeground()
                 await state.pcGames.refreshInBackground()
+                guard backgroundAccountReadsAllowed else { return }
                 await state.installedGames.productAccess.refresh(session: session,
                     installedIDs: state.installedGames.games.map(\.storeId))
             }
@@ -412,8 +419,8 @@ struct LiveRootView: View {
         .task {
             if startupAllowed { await session.prepareWelcome() }
         }
-        .task(id: "\(accountContentAllowed):\(state.destination.rawValue):\(state.showsRecentActivity):\(scenePhase == .active):\(session.isReady):\(session.connectionTransitioning):\(session.accountBusy)") {
-            guard accountContentAllowed, scenePhase == .active else { return }
+        .task(id: "\(accountContentAllowed):\(state.destination.rawValue):\(state.showsRecentActivity):\(scenePhase == .active):\(session.isReady):\(session.connectionTransitioning):\(session.accountBusy):\(backgroundAccountReadsAllowed)") {
+            guard accountContentAllowed, scenePhase == .active, backgroundAccountReadsAllowed else { return }
             await state.loadRecentActivityIfVisible(session: session)
         }
         .task(id: "\(accountContentAllowed):\(state.destination.rawValue):\(state.query):\(session.market):\(session.language):\(session.isReady)") {

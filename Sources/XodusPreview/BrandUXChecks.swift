@@ -919,6 +919,24 @@ enum BrandUXChecks {
         check(yields && !priority.yieldsToLibraryRead && priority.libraryReadsWaiting == 0,
               "REQ-119 quick win: Recent-activity and license reads hold back while the cold library read waits to dispatch, and the hold always clears")
 
+        let restore: [(Bool, CredentialState?, Bool, TimeInterval?)] = [
+            (false, nil, false, nil), (true, .credentialPresent, false, 0.7), (true, .credentialPresent, false, 2.9)]
+        let restoringPath = restore.allSatisfy {
+            LiveSession.signInRestoring(statusSettled: $0.0, state: $0.1, hashValid: $0.2, unverifiedFor: $0.3)
+        }
+        let confirmed = !LiveSession.signInRestoring(statusSettled: true, state: .credentialPresent, hashValid: true,
+                                                     unverifiedFor: nil)
+        let realFailures = [CredentialState.expired, .invalid, .signedOut].allSatisfy {
+            !LiveSession.signInRestoring(statusSettled: true, state: $0, hashValid: false, unverifiedFor: nil)
+        } && !LiveSession.signInRestoring(statusSettled: true, state: .credentialPresent, hashValid: false,
+                                          unverifiedFor: LiveSession.restoreGrace)
+        check(restoringPath && confirmed && realFailures && !WelcomeCopy.restoring.contains("reconnect")
+              && WelcomeCopy.restoring == "Checking your sign-in…",
+              "REQ-119 restore: Launch → first status → identity verification → signed in stays on \"Checking your sign-in…\" and never passes through \"needs to be reconnected\"; that copy appears only for expired or invalid sign-ins, or after a \(Int(LiveSession.restoreGrace)) s unverified wait")
+        let restoringSession = LiveSession()
+        check(!restoringSession.restoringSignIn,
+              "REQ-119 restore: A session that can't read sign-in status never sits in the restoring state")
+
         let still = LibraryFirstLoadMotion(reduceMotion: true)
         let moving = LibraryFirstLoadMotion(reduceMotion: false)
         check(still.lineChange == .crossfade && !still.showsSpinner && moving.lineChange == .slide && moving.showsSpinner,

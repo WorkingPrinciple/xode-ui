@@ -343,6 +343,10 @@ final class LiveSession: ObservableObject {
     private var licenseReadGeneration: Int?
     private var licenseReadInFlight: Bool { licenseReadGeneration == generation }
     private var waitingInteractiveAccountReads = 0
+    /// The first status read on this connection finished, successfully or not.
+    @Published private(set) var initialStatusSettled = false
+    @Published private(set) var unverifiedCredentialSince: Date?
+    @Published private var restoreTick = 0
     /// REQ-119: a library collection read waiting to dispatch. License and recent-activity reads hold
     /// back for it, so the cold library isn't queued behind background reads.
     @Published private(set) var libraryReadsWaiting = 0
@@ -427,7 +431,7 @@ final class LiveSession: ObservableObject {
             || connectionFailedAfterAdmission
             || !isReady || !nativeSignInHostAdmitted || !supports(.authBegin)
             || !supports(.authCancel) || !supports(.authStatus) || signInPending
-            || accountError != nil || needsAccountDisconnect
+            || accountError != nil || needsAccountDisconnect || restoringSignIn
             || authentication?.flow?.state == .failed || authentication?.flow?.state == .cancelled
             || (appSignOutComplete && authentication?.state == .signedOut && accountStatusCurrent) {
             return welcomeMessage
@@ -450,6 +454,7 @@ final class LiveSession: ObservableObject {
         if accountError != nil {
             return "Your sign-in couldn't be confirmed. Try again. If macOS asks for Keychain access, respond in its permission window."
         }
+        if restoringSignIn { return WelcomeCopy.restoring }
         if needsAccountDisconnect { return "Your saved sign-in needs to be reconnected." }
         if authentication?.flow?.state == .failed { return "Sign-in didn't finish. Try again when you're ready." }
         if authentication?.flow?.state == .cancelled { return "Sign-in was cancelled. Your games stay hidden until you sign in." }
@@ -464,7 +469,10 @@ final class LiveSession: ObservableObject {
 
     func prepareWelcome() async {
         guard !connectionTransitioning, !accountBusy, !signInPending else { return }
-        if !isReady { await connect() }
+        if !isReady {
+            await connect(readingAccountFirst: true)
+            if isReady, initialStatusSettled { return }
+        }
         if isReady { await refreshAccount() }
     }
     func revalidateAccountOnForeground() async {
@@ -701,6 +709,21 @@ final class LiveSession: ObservableObject {
         }
         if query.isEmpty { return "Find your next game with Discover or search." }
         return "Try a different title or a shorter search."
+    }
+    /// REQ-119: a stored sign-in is still being restored — the launch's first status read hasn't
+    /// settled, or the saved credential's identity isn't verified yet. Neutral, never "reconnect".
+    static let restoreGrace: TimeInterval = 15
+    static func signInRestoring(statusSettled: Bool, state: CredentialState?, hashValid: Bool,
+                                unverifiedFor: TimeInterval?) -> Bool {
+        guard statusSettled else { return true }
+        return state == .credentialPresent && !hashValid && (unverifiedFor ?? 0) < restoreGrace
+    }
+    var restoringSignIn: Bool {
+        guard isReady, supports(.authStatus), !signInPending, !signingOut, accountError == nil,
+              !hasConfirmedSignIn else { return false }
+        return Self.signInRestoring(statusSettled: initialStatusSettled, state: authentication?.state,
+            hashValid: authentication?.accountHash.map(XboxAccountBinding.valid) == true,
+            unverifiedFor: unverifiedCredentialSince.map { Date().timeIntervalSince($0) })
     }
     var needsAccountDisconnect: Bool {
         guard let state = authentication?.state else { return false }
@@ -1076,7 +1099,7 @@ final class LiveSession: ObservableObject {
     }
 #endif
 
-    func connect() async {
+    func connect(readingAccountFirst: Bool = false) async {
         guard !applicationTerminating else { return }
         guard !connectionTransitioning, !backendPath.isEmpty else {
             if backendPath.isEmpty { errorMessage = "Choose your trusted app engine in Settings first." }
@@ -1141,7 +1164,12 @@ final class LiveSession: ObservableObject {
                     await self.connectionFailed(error)
                 }
             }
-            // Connection setup stays anonymous; explicit Recent activity entry owns its saved-status read.
+            // REQ-119: the launch's sign-in check runs before installed and catalogue reads, so the
+            // welcome screen resolves first. Plain reconnects stay anonymous.
+            if readingAccountFirst {
+                await refreshAccount()
+                guard token == generation, revision == lifecycleRevision, client === connection else { return }
+            }
             await refreshInstalled()
             guard token == generation, revision == lifecycleRevision, client === connection else { return }
             if queryGeneration == startupQueryRevision { await search("") }
@@ -1197,6 +1225,8 @@ final class LiveSession: ObservableObject {
         hello = nil
         if authentication != nil || countryAccountHash != nil { retireAccountCountry() }
         authentication = nil
+        initialStatusSettled = false
+        unverifiedCredentialSince = nil
         accountStatusCurrent = false
         nativeSignInHostAdmitted = false
         connectionFailedAfterAdmission = false
@@ -1315,8 +1345,10 @@ final class LiveSession: ObservableObject {
             accountError = nil
             failedAccountAction = nil
             errorMessage = nil
+            initialStatusSettled = true
         } catch {
             guard token == generation, authToken == authenticationGeneration else { return }
+            initialStatusSettled = true
             clearRecentLibrary()
             accountStatusCurrent = false
             accountStatusError = error as? ManagementError
@@ -1356,6 +1388,19 @@ final class LiveSession: ObservableObject {
             retireAccountCountry()
         }
         authentication = status
+        if status.state == .credentialPresent, status.accountHash.map(XboxAccountBinding.valid) != true {
+            if unverifiedCredentialSince == nil {
+                unverifiedCredentialSince = Date()
+                let token = generation
+                Task { [weak self] in
+                    try? await Task.sleep(for: .seconds(Self.restoreGrace))
+                    guard let self, token == self.generation else { return }
+                    self.restoreTick &+= 1
+                }
+            }
+        } else {
+            unverifiedCredentialSince = nil
+        }
         if status.state != .signedOut { appSignOutComplete = false }
         if status.flow?.state != .pending {
             MicrosoftSignInGate.shared.release(signInOwner)

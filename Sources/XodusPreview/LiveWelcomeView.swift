@@ -10,6 +10,8 @@ enum WelcomeCopy {
     static let acknowledgments = "Acknowledgments"
     static let acknowledgmentsAccessibility = "Open-source acknowledgments"
     static let checking = "Checking your Microsoft account"
+    /// While a saved sign-in is restored at launch; "needs to be reconnected" only after it fails.
+    static let restoring = "Checking your sign-in…"
     /// Shown only while a check runs, when macOS may ask for Keychain access.
     static var keychain: String {
         "If macOS asks about Keychain access, it's \(AppBrand.displayName) checking or saving your sign-in on this Mac."
@@ -69,7 +71,8 @@ struct LiveWelcomeView: View {
                         .buttonStyle(.borderedProminent)
                         .controlSize(.large)
                         .keyboardShortcut(.defaultAction)
-                        .disabled(session.connectionTransitioning || session.accountBusy || session.hasConfirmedSignIn)
+                        .disabled(session.connectionTransitioning || session.accountBusy || session.hasConfirmedSignIn
+                                  || session.restoringSignIn)
                         .accessibilityIdentifier("xodus.welcome.signIn")
                     }
                     if session.connectionTransitioning || session.accountBusy {

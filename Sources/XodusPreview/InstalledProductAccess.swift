@@ -29,6 +29,12 @@ final class InstalledProductAccess: ObservableObject {
     private var generation = UUID()
     private let logger = Logger(subsystem: "io.github.dragoshont.xodus", category: "product-access")
 
+    /// REQ-119: not checked yet for this account (no result and no error); the tile shows, Play waits.
+    func pending(_ productID: String, account: String?) -> Bool {
+        guard let account, accountHash == nil || accountHash == account else { return false }
+        return facts[productID] == nil && errors[productID] == nil
+    }
+
     func permits(_ productID: String, account: String?, now: Date = Date()) -> Bool {
         guard let account, accountHash == account, let fact = facts[productID],
               now.timeIntervalSince(fact.checkedAt) >= 0,
@@ -198,8 +204,7 @@ final class InstalledProductAccess: ObservableObject {
                     errors[id] = LiveSession.describe(error)
                     logger.error("Product access \(id, privacy: .public) failed: \(LiveSession.describe(error), privacy: .public)")
                 }
-                do { try await Task.sleep(for: .milliseconds(100)) }
-                catch { return }
+                await Task.yield()
             }
         }
         await operation?.value

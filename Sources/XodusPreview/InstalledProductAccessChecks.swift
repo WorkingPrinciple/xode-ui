@@ -22,6 +22,25 @@ enum InstalledProductAccessChecks {
             return try JSONDecoder().decode(OdeAccountRead.self,
                 from: JSONSerialization.data(withJSONObject: payload))
         }
+        let pendingAccess = InstalledProductAccess()
+        let pendingIDs = (0..<20).map { String(format: "9PEND%07d", $0) }
+        let unchecked = pendingAccess.pending(product, account: account) && !pendingAccess.pending(product, account: nil)
+        let started = ContinuousClock.now
+        await pendingAccess.refresh(account: account, installedIDs: pendingIDs + [product], now: now) { id in
+            if id == product { return try response(id) }
+            throw ManagementError.disconnected
+        }
+        let elapsed = started.duration(to: .now)
+        check(unchecked && !pendingAccess.pending(product, account: account)
+              && pendingAccess.permits(product, account: account, now: now)
+              && !pendingAccess.pending(pendingIDs[0], account: account)
+              && !pendingAccess.permits(pendingIDs[0], account: account, now: now)
+              && !pendingAccess.pending(product, account: other),
+              "REQ-119 F1: An installed game is pending only until its own check answers; a failed check isn't pending or permitted, and another account never inherits it")
+        check(elapsed < .milliseconds(1_500),
+              "REQ-119 F1: Access checks run back to back with no fixed 100 ms gap (21 synthetic checks took \(elapsed))")
+        pendingAccess.retire()
+
         let controller = InstalledProductAccess()
         defer { controller.retire() }
         var requests: [String] = []

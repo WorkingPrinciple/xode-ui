@@ -14,6 +14,10 @@ extension FocusedValues {
     }
 }
 
+enum LibraryAccessCopy {
+    static let checking = "Checking access…"
+}
+
 struct LiveLibraryView: View {
     @ObservedObject var library: PCGamesController
     @ObservedObject var installed: InstalledGamesController
@@ -74,7 +78,6 @@ struct LiveLibraryView: View {
     private var showsLoadingPlaceholders: Bool {
         LibraryLoadingPresentation.showsPlaceholders(
             library: library, loadingInstalled: installed.loading,
-            checkingAccess: installed.productAccess.checking,
             hasUsableContent: hasUsableLibraryContent,
             query: query) && installed.error == nil
     }
@@ -96,7 +99,9 @@ struct LiveLibraryView: View {
         LibraryProjectionKey(accountHash: session.accountHash, query: query, owned: library.representedGames,
             products: session.products, gamePass: session.gamePassProducts, active: operations.gamePassActive,
             installed: installed.games, permitted: Set(installed.games.map(\.storeId).filter {
+                // REQ-119: unchecked installed games show now; only Play waits for the access check.
                 installed.productAccess.permits($0, account: session.accountHash)
+                    || installed.productAccess.pending($0, account: session.accountHash)
             }), launchable: installed.launchableIDs, accessIsCurrent: library.accessIsCurrent,
             metadataRevision: art.revision, compatibility: operations.compatibility,
             filter: filter, sort: sort, showsUnsupported: showsUnsupported)
@@ -648,7 +653,16 @@ struct LiveLibraryView: View {
                      open: { open(game) }) {
             CatalogArtworkView(reference: artworkAllowed ? art.images[artworkID]?.cover ?? game.cover : nil,
                                status: (art.images[artworkID]?.cover ?? game.cover) == nil ? .absent : .available)
-        } status: { GameCardDownloadStatus(operations: operations, productID: artworkID) }
+        } status: {
+            if game.installed != nil, installed.productAccess.pending(artworkID, account: session.accountHash),
+               !installed.productAccess.permits(artworkID, account: session.accountHash) {
+                Label(LibraryAccessCopy.checking, systemImage: "hourglass")
+                    .font(.caption).foregroundStyle(.secondary)
+                    .accessibilityIdentifier("xodus.library.card.checkingAccess")
+            } else {
+                GameCardDownloadStatus(operations: operations, productID: artworkID)
+            }
+        }
         .contextMenu {
             Button("View details") { open(game) }
             if let match = game.installed {
