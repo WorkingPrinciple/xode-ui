@@ -1572,7 +1572,8 @@ final class GameOperationsController: ObservableObject {
                 guard lstat(destination.deletingLastPathComponent().path, &parent) == 0 else {
                     // A denied removable volume (EACCES/EPERM) keeps the record and shows the permission message.
                     if errno == ENOENT || errno == ENOTDIR { return false }
-                    throw InstalledGameFiles.folderReadError(NSError(domain: NSPOSIXErrorDomain, code: Int(errno)))
+                    throw InstalledGameFiles.folderReadError(NSError(domain: NSPOSIXErrorDomain, code: Int(errno)),
+                                                             path: destination.deletingLastPathComponent().path)
                 }
                 try GameInstallLocation.validateDestination(destination, productID: productID, managedRecord: record)
                 guard FileManager.default.fileExists(atPath: destination.path) else { return false }
@@ -1588,6 +1589,8 @@ final class GameOperationsController: ObservableObject {
             let cocoa = error as NSError
             if error as? GameInstallLocationError == .driveUnavailable {
                 self.error = "The drive for \(record.title)'s partial download isn't connected, so nothing was deleted. Reconnect the drive, then try again."
+            } else if case .folderPrivacy? = error as? InstalledGameError {
+                self.error = "The partial download of \(record.title) wasn't deleted. \((error as? LocalizedError)?.errorDescription ?? "")"
             } else if error as? InstalledGameError == .folderPermission
                 || [NSFileWriteNoPermissionError, NSFileReadNoPermissionError].contains(cocoa.code)
                 || InstalledGameFiles.folderReadError(cocoa) == .folderPermission

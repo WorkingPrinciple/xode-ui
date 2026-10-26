@@ -38,8 +38,10 @@ struct GameEngineOverride: Codable, Equatable, Sendable {
     }
 }
 
-enum InstalledGameError: Error, LocalizedError {
+enum InstalledGameError: Error, LocalizedError, Equatable {
     case invalidConfig, missingFolder, folderPermission, folderUnavailable, missingLauncher, placeholderContent, invalidRegistry, storage, launch
+    /// macOS privacy (EPERM) blocked a folder in a protected place; fixed in System Settings, not Finder.
+    case folderPrivacy(PrivacyPermission)
 
     var errorDescription: String? {
         switch self {
@@ -52,6 +54,7 @@ enum InstalledGameError: Error, LocalizedError {
         case .invalidRegistry: "The installed games list couldn't be read. Your game files haven't been changed."
         case .storage: "The installed games list couldn't be saved. Check access to Application Support and try again."
         case .launch: "The game couldn't start. Check its launch script and try again."
+        case .folderPrivacy(let permission): PrivacyDenial.installFolderProblem(.privacyDenied(permission), fallback: "").message
         }
     }
 }
@@ -194,11 +197,15 @@ enum InstalledGameFiles {
     static func checkFolder(_ url: URL) throws {
         let values: URLResourceValues
         do { values = try url.resourceValues(forKeys: [.isDirectoryKey]) }
-        catch { throw folderReadError(error as NSError) }
+        catch { throw folderReadError(error as NSError, path: url.path) }
         guard url.isFileURL, values.isDirectory == true else { throw InstalledGameError.missingFolder }
     }
 
-    static func folderReadError(_ error: NSError) -> InstalledGameError {
+    /// With a path, EPERM in a protected place becomes a privacy denial; EACCES stays ordinary permissions.
+    static func folderReadError(_ error: NSError, path: String? = nil) -> InstalledGameError {
+        if let path, case .privacyDenied(let permission?) = PrivacyDenial.classify(error, path: path) {
+            return .folderPrivacy(permission)
+        }
         if error.domain == NSCocoaErrorDomain, error.code == NSFileReadNoPermissionError { return .folderPermission }
         if error.domain == NSPOSIXErrorDomain, [Int(EACCES), Int(EPERM)].contains(error.code) { return .folderPermission }
         if error.domain == NSCocoaErrorDomain,

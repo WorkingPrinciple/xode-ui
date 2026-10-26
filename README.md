@@ -127,7 +127,7 @@ macOS asks the first time each one is needed. Windows games run through X Ode, s
 | Notifications | After a game finishes installing, so X Ode can tell you it's ready to play. Never at launch. |
 | Keychain | When X Ode checks or saves your Microsoft sign-in on this Mac. |
 
-To change an answer, use System Settings ▸ Privacy & Security for local network and folders, and System Settings ▸ Notifications for notifications. X Ode also shows an Open System Settings button next to a problem it can fix. Keychain asks separately for each saved sign-in; there's no System Settings switch for it.
+To change an answer, use System Settings ▸ Privacy & Security for local network and folders, and System Settings ▸ Notifications for notifications. X Ode also shows an Open System Settings button next to a problem it can fix. Keychain asks separately for each saved sign-in; there's no System Settings switch for it. If X Ode says local network access is off right after the prompt appeared, answer the prompt, then choose Find consoles again.
 
 In-game voice chat and microphone input aren't supported in this beta. Developer ID–signed releases keep the same app identity, so permissions you already granted and your saved sign-in carry over between them.
 

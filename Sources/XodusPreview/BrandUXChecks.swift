@@ -735,6 +735,30 @@ enum BrandUXChecks {
         check(lockedAccess == .notPermitted
               && GameInstallLocationSettings.problem(for: cause, access: lockedAccess).permission == nil,
               "REQ-118 L1: A real folder without read permission (EACCES) is ordinary permissions end to end, with no privacy button")
+        let readme = (try? String(contentsOfFile: "README.md", encoding: .utf8)) ?? ""
+        // Round 3 M: installed games (relaunch, discard) get the same EPERM/EACCES split as the chooser.
+        let protectedPath = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Documents/Games/Halls").path
+        let installedPrivacy = InstalledGameFiles.folderReadError(NSError(domain: NSPOSIXErrorDomain, code: Int(EPERM)),
+                                                                  path: protectedPath)
+        let installedOrdinary = InstalledGameFiles.folderReadError(NSError(domain: NSPOSIXErrorDomain, code: Int(EACCES)),
+                                                                   path: protectedPath)
+        let installedUnprotected = InstalledGameFiles.folderReadError(NSError(domain: NSPOSIXErrorDomain, code: Int(EPERM)),
+                                                                      path: "/opt/Games/Halls")
+        let privacyMessage = installedPrivacy.localizedDescription
+        check(installedPrivacy == .folderPrivacy(.documents)
+              && privacyMessage.contains("Files and Folders") && !privacyMessage.contains("Finder")
+              && PrivacyDenial.permission(inMessage: "The partial download wasn't deleted. " + privacyMessage) == .documents
+              && installedOrdinary == .folderPermission && installedUnprotected == .folderPermission
+              && !installedOrdinary.localizedDescription.contains("Files and Folders")
+              && PrivacyDenial.permission(inMessage: installedOrdinary.localizedDescription) == nil
+              && InstalledGameFiles.folderReadError(NSError(domain: NSCocoaErrorDomain, code: NSFileReadNoPermissionError)) == .folderPermission,
+              "REQ-118 round 3 M: Installed-game EPERM in a protected place explains Files and Folders and offers its button; EACCES stays plain")
+        let deepMissing = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("XodusDoesNotExist-\(UUID().uuidString)/denied/child").path
+        check(PrivacyDenial.volumeTraits(deepMissing) != nil
+              && PrivacyPermission.notifications.settingsURL?.absoluteString.hasSuffix("?id=" + (Bundle.main.bundleIdentifier ?? PrivacyPermission.bundleIdentifier)) == true
+              && readme.contains(PrivacyPermission.localNetworkPromptNote),
+              "REQ-118 round 3 L2/L4: Volume traits come from the nearest readable ancestor; Notifications opens X Ode's own row; the prompt-focus note is in the install notes")
         // Notifications are requested only when an install or repair finishes (GameReadyNotifier.post), never at launch.
         let sources = (try? FileManager.default.subpathsOfDirectory(atPath: "Sources")) ?? []
         let requesters = sources.filter { $0.hasSuffix(".swift") && !$0.hasSuffix("BrandUXChecks.swift") }.filter {
@@ -746,7 +770,6 @@ enum BrandUXChecks {
         check(!sources.isEmpty && requesters == ["XodusPreview/GameReadyNotifier.swift"]
               && postBody.contains("requestAuthorization") && !beforePost.contains("requestAuthorization"),
               "REQ-118: Notification permission is asked only when a finished install posts its ready notice, never at launch")
-        let readme = (try? String(contentsOfFile: "README.md", encoding: .utf8)) ?? ""
         check(readme.contains("## " + PrivacyPermission.installNotesTitle)
               && PrivacyPermission.allCases.allSatisfy { readme.contains("| \($0.title) | \($0.reason) |") }
               && readme.contains(PrivacyPermission.gamesNote) && readme.contains(PrivacyPermission.keychainNote)
@@ -760,8 +783,8 @@ enum BrandUXChecks {
                                 name: "permissions-\(scheme == .dark ? "dark" : "light")")
             let joined = labels.joined(separator: " ")
             check(joined.contains("Permissions") && joined.contains("Local network") && joined.contains("Open Notifications")
-                  && joined.contains("Open Privacy"),
-                  "REQ-118: Settings ▸ General lists permissions with Notifications and Privacy & Security links (\(scheme)): \(labels)")
+                  && joined.contains("Open Local Network Settings") && !joined.contains("Open Privacy"),
+                  "REQ-118 round 3 L3: Settings ▸ General lists permissions with buttons named for where they go (\(scheme)): \(labels)")
         }
     }
 

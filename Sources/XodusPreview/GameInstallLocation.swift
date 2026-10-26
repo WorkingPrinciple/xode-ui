@@ -81,7 +81,8 @@ struct GameInstallLocation: Codable, Equatable, Sendable {
         var info = stat()
         guard lstat(destination.path, &info) == 0 else {
             if errno == ENOENT { return }
-            throw InstalledGameFiles.folderReadError(NSError(domain: NSPOSIXErrorDomain, code: Int(errno)))
+            throw InstalledGameFiles.folderReadError(NSError(domain: NSPOSIXErrorDomain, code: Int(errno)),
+                                                     path: destination.path)
         }
         guard let record = managedRecord, record.kind == .install, record.productID == productID,
               record.destination == destination.path, record.installedID == nil else {

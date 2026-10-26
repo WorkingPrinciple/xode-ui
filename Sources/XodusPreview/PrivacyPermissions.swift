@@ -66,7 +66,8 @@ enum PrivacyPermission: String, CaseIterable, Identifiable {
         case .localNetwork: URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_LocalNetwork")
         case .removableVolumes, .networkVolumes, .documents, .downloads, .desktop:
             URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_FilesAndFolders")
-        case .notifications: URL(string: "x-apple.systempreferences:com.apple.Notifications-Settings.extension")
+        case .notifications: URL(string: "x-apple.systempreferences:com.apple.Notifications-Settings.extension?id="
+            + (Bundle.main.bundleIdentifier ?? Self.bundleIdentifier))
         case .keychain: nil
         }
     }
@@ -82,7 +83,12 @@ enum PrivacyPermission: String, CaseIterable, Identifiable {
         }
     }
 
+    /// The shipped bundle ID (unchanged across releases); used when running unbundled.
+    static let bundleIdentifier = "io.github.dragoshont.xodus.development"
     static let installNotesTitle = "What X Ode may ask permission for, and why"
+    static var localNetworkPromptNote: String {
+        "If \(AppBrand.displayName) says local network access is off right after the prompt appeared, answer the prompt, then choose Find consoles again."
+    }
     static var gamesNote: String {
         "Windows games run through \(AppBrand.displayName), so a prompt a game triggers names \(AppBrand.displayName)."
     }
@@ -125,7 +131,7 @@ struct PrivacyPermissionsSection: View {
             HStack {
                 Spacer()
                 OpenPrivacySettingsButton(permission: .notifications, title: "Open Notifications")
-                OpenPrivacySettingsButton(permission: .localNetwork, title: "Open Privacy & Security")
+                OpenPrivacySettingsButton(permission: .localNetwork, title: "Open Local Network Settings")
             }
         } header: {
             Text("Permissions")
@@ -187,12 +193,29 @@ enum PrivacyDenial {
         return nil
     }
 
+    /// Traits of the volume holding `path`, read from the volume root found via the nearest readable ancestor,
+    /// because the denied folder itself can't be read.
     static func volumeTraits(_ path: String) -> (removable: Bool, local: Bool)? {
+        var url = URL(fileURLWithPath: path).standardizedFileURL
+        var volume: URL?
+        while volume == nil {
+            volume = try? url.resourceValues(forKeys: [.volumeURLKey]).volume
+            guard volume == nil, url.path != "/" else { break }
+            url.deleteLastPathComponent()
+        }
         let keys: Set<URLResourceKey> = [.volumeIsRemovableKey, .volumeIsEjectableKey, .volumeIsLocalKey, .volumeIsInternalKey]
-        guard let values = try? URL(fileURLWithPath: path).resourceValues(forKeys: keys) else { return nil }
+        guard let root = volume, let values = try? root.resourceValues(forKeys: keys) else { return nil }
         let removable = values.volumeIsRemovable == true || values.volumeIsEjectable == true
             || values.volumeIsInternal == false && values.volumeIsLocal != false
         return (removable, values.volumeIsLocal ?? true)
+    }
+
+    /// The permission whose privacy message is part of `message`, so any view showing it can offer the fix.
+    static func permission(inMessage message: String) -> PrivacyPermission? {
+        PrivacyPermission.allCases.first { permission in
+            permission.settingsURL != nil
+                && message.contains(installFolderProblem(.privacyDenied(permission), fallback: "").message)
+        }
     }
 
     /// Message and settings link for a games folder that couldn't be used.
@@ -200,7 +223,7 @@ enum PrivacyDenial {
         let app = AppBrand.displayName
         switch access {
         case .privacyDenied(let permission?):
-            return ("macOS hasn't allowed \(app) to use this folder. Allow \(permission.title) in \(permission.settingsLocation ?? "System Settings"), then choose it again.", permission)
+            return ("macOS hasn't allowed \(app) to use this folder. Allow \(permission.title) in \(permission.settingsLocation ?? "System Settings"), then try again.", permission)
         case .privacyDenied(nil):
             return ("macOS didn't allow \(app) to use this folder. Choose another folder.", nil)
         case .notPermitted:

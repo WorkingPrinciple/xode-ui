@@ -183,9 +183,14 @@ struct InstallationWarning: View {
     var body: some View {
         Group {
             if showsMessage {
-                Label(message, systemImage: "exclamationmark.triangle")
-                    .font(.callout)
-                    .fixedSize(horizontal: false, vertical: true)
+                VStack(alignment: .leading, spacing: 6) {
+                    Label(message, systemImage: "exclamationmark.triangle")
+                        .font(.callout)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if let permission = PrivacyDenial.permission(inMessage: message) {
+                        OpenPrivacySettingsButton(permission: permission)
+                    }
+                }
             } else {
                 Image(systemName: "exclamationmark.triangle")
             }

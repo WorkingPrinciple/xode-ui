@@ -52,6 +52,8 @@ final class LocalNetworkDiscovery: ObservableObject {
 
     func search() {
         guard browser == nil else { return }
+        if let previous = retryObserver { NotificationCenter.default.removeObserver(previous) }
+        retryObserver = nil
         tracker.start()
         startBrowsing()
     }
@@ -110,6 +112,7 @@ final class LocalNetworkDiscovery: ObservableObject {
             self.tracker.retrying()
             self.startBrowsing()
         }
+        if let previous = retryObserver { NotificationCenter.default.removeObserver(previous) }
         retryObserver = NotificationCenter.default.addObserver(forName: NSApplication.didBecomeActiveNotification,
                                                                object: nil, queue: .main) { _ in
             Task { @MainActor in retry() }
