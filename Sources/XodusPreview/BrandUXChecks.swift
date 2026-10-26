@@ -708,7 +708,8 @@ enum BrandUXChecks {
                                 size: CGSize(width: 860, height: 1100), scheme: scheme,
                                 name: "req122-acknowledgments-\(suffix)").joined(separator: " ")
             check(labels.contains(FeaturedCredits.sectionTitle) && labels.contains("winehq.org")
-                  && labels.contains("github.com/xodus-gaming/xodus") && labels.contains("All components and licences"),
+                  // OCR can misread the small dark-mode link ("xodus-aaming"); the exact URL is asserted above.
+                  && labels.contains("github.com/xodus-") && labels.contains("All components and licences"),
                   "REQ-122 render (\(suffix)): Built on Wine and Xodus leads Acknowledgments with both links, offline and signed out: \(labels)")
         }
     }
