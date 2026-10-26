@@ -658,6 +658,9 @@ enum BrandUXChecks {
             check(joined.contains("Built on open source") && joined.contains("Key projects") && joined.contains("MoltenVK")
                   && joined.contains(FeaturedCredits.sectionTitle) && joined.contains("winehq.org")
                   && joined.contains("github.com/xodus-gaming/xodus") && joined.contains("CodeWeavers")
+                  && joined.contains("External engine providers") && joined.contains("Highball")
+                  && joined.contains("github.com/gauthierpiarrette/highball") && joined.contains("GPL-3.0")
+                  && joined.contains("CrossOver") && joined.contains("not bundled")
                   && (joined.range(of: FeaturedCredits.sectionTitle)?.lowerBound ?? joined.endIndex)
                     < (joined.range(of: "Key projects")?.lowerBound ?? joined.startIndex)
                   && joined.contains("Apple D3DMetal") && !joined.contains("DXVK"),
@@ -680,6 +683,16 @@ enum BrandUXChecks {
         check(about.components(separatedBy: "\n").first == FeaturedCredits.aboutLine
               && FeaturedCredits.aboutLine.contains("Wine") && FeaturedCredits.aboutLine.contains("Xodus"),
               "REQ-122: About X Ode credits Wine and Xodus in one line above the copyright")
+        let packaged = AppVersion(info: ["CFBundleShortVersionString": "0.2.0", "CFBundleVersion": "412",
+                                         "XodeReleaseChannel": "Beta"])
+        for scheme in [ColorScheme.light, .dark] {
+            let suffix = scheme == .dark ? "dark" : "light"
+            let aboutLabels = render(AboutPanelCreditSnapshot(version: packaged),
+                                     size: CGSize(width: 340, height: 220), scheme: scheme,
+                                     name: "req122-about-panel-credits-\(suffix)").joined(separator: " ")
+            check(aboutLabels.contains("Wine") && aboutLabels.contains("Xodus"),
+                  "REQ-122 About panel credit snapshot (\(suffix)): \(aboutLabels)")
+        }
         let line = WelcomeCopy.technology
         check(line.hasPrefix("X Ode runs Windows games with Wine") && line.contains("Xodus")
               && "\(WelcomeCopy.acknowledgments) \(WelcomeCopy.credits)".contains("X Ode menu") && line.count <= 70
@@ -688,8 +701,18 @@ enum BrandUXChecks {
               && FeaturedCredits.xodus.role.components(separatedBy: "backend").count == 2,
               "COR-209: The sign-in window names Wine first, then Xodus, and says where credits and licences are, in two short lines")
         let readme = (try? String(contentsOfFile: "README.md", encoding: .utf8)) ?? ""
-        check(readme.contains(FeaturedCredits.readmeLine) && readme.contains(FeaturedCredits.helpMenu),
-              "REQ-122: README's credits use the app's exact Wine and Xodus line (fails if README.md is missing)")
+        check(readme.contains(FeaturedCredits.readmeLine)
+              && readme.contains(FeaturedCredits.readmeExternalProvidersLine)
+              && readme.contains(FeaturedCredits.helpMenu),
+              "REQ-122: README credits match the shared Wine, Xodus and external-provider copy (fails if README.md is missing)")
+        let providers = FeaturedCredits.externalProviders
+        check(providers.map(\.name) == ["Highball", "CrossOver"]
+              && providers[0].url.absoluteString == "https://github.com/gauthierpiarrette/highball"
+              && providers[0].license == "GPL-3.0" && providers[0].role.contains("User-installed")
+              && providers[1].role.contains("CodeWeavers") && providers[1].license == "Proprietary"
+              && FeaturedCredits.externalProviderDisclosure.contains("not bundled")
+              && FeaturedCredits.externalProviderDisclosure.contains("does not imply game compatibility"),
+              "External providers: Highball is credited as GPL-3.0 and user-installed; CrossOver credits CodeWeavers; neither is bundled or implied compatible")
         check(AcknowledgmentsNavigation.appMenu.map(\.title) == ["Acknowledgments…", "Open-Source Licences…"]
               && AcknowledgmentsNavigation.appMenu.map(\.focus) == [.overview, .licences]
               && AcknowledgmentsNavigation.helpMenu.map(\.title) == ["Acknowledgments and Licences"],
@@ -1241,6 +1264,26 @@ enum BrandUXChecks {
         try? png.write(to: renderDirectory.appendingPathComponent(name + ".png"))
     }
 }
+private struct AboutPanelCreditSnapshot: View {
+    let version: AppVersion
+
+    var body: some View {
+        let options = AppBrandPresentation.aboutPanelOptions(version)
+        VStack(spacing: 8) {
+            Text(options[.applicationName] as? String ?? "")
+                .font(.system(size: 26, weight: .regular))
+            Text("Version \(options[.applicationVersion] as? String ?? "") (\(options[.version] as? String ?? ""))")
+                .font(.caption).foregroundStyle(.secondary)
+            Text((options[.credits] as? NSAttributedString)?.string ?? "")
+                .font(.system(size: 11)).foregroundStyle(.secondary).multilineTextAlignment(.center)
+        }
+        .padding(24)
+        .frame(width: 340, height: 220)
+        .background(Color(nsColor: .windowBackgroundColor))
+        .accessibilityIdentifier("xodus.about-panel-credit-snapshot")
+    }
+}
+
 @MainActor
 private struct FakeEngineCheck: EngineCheckResults {
     var availableEngineOverrides: [AdmittedEngineSelection] = []

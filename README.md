@@ -136,6 +136,8 @@ In-game voice chat and microphone input aren't supported in this beta. Developer
 
 X Ode runs Windows games with [Wine](https://www.winehq.org) (LGPL-2.1-or-later; thank you to the Wine authors and CodeWeavers) and is built on [Xodus](https://github.com/xodus-gaming/xodus) (GPL-3.0; thank you to its contributors).
 
+External engine-provider credits: [Highball](https://github.com/gauthierpiarrette/highball) (GPL-3.0; User-installed Wine engine provider); [CrossOver](https://www.codeweavers.com/crossover) (Proprietary; Commercial Wine distribution by CodeWeavers). These are external provider credits only: users install them separately; neither is bundled or installed by X Ode, and listing them does not imply game compatibility.
+
 In the app, the credits and every component's licence are in X Ode menu › Acknowledgments
 (or Open-Source Licences…, and Help › Acknowledgments and Licences). They work signed out and offline.
 
