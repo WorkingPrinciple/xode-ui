@@ -1037,6 +1037,30 @@ extension PublicDescriptorChecks {
               && sample.allSatisfy { failedArtwork.images[$0]?.product.title == "Game \($0) v2" } && failedRequests == 1,
               "REQ-121: A failed revalidation keeps saved tiles without an error and waits before asking again")
 
+        let delistedDirectory = root.appendingPathComponent("delisted")
+        let delistedIDs = ids(3, offset: 7_300)
+        let delistedSeed = store(DescriptorTransport(), disk(delistedDirectory))
+        _ = try await delistedSeed.load(ids: delistedIDs, market: "US", language: "en-US")
+        await delistedSeed.flushPersistence()
+        clock.advance(600)
+        let delistTransport = DescriptorTransport()
+        await delistTransport.configure(omitted: [delistedIDs[2]])
+        let delistStore = store(delistTransport, disk(delistedDirectory))
+        let delistLibrary = try await PCGamesClient(transport: delistTransport, descriptors: delistStore)
+            .resolveCollection(ids: delistedIDs, kinds: [:], candidateCount: 3, market: "US", language: "en-US")
+        await delistStore.flushPersistence()
+        let delistedFile = delistedDirectory.appendingPathComponent(PublicDescriptorDiskCache.fileName(
+            .init(id: delistedIDs[2], market: "US", language: "en-us")))
+        DescriptorURLProtocol.state.reset(offline: true)
+        let keptSaved = try await store(http, disk(delistedDirectory))
+            .read(ids: Array(delistedIDs.prefix(2)), market: "US", language: "en-US")
+        var delistedServed = true
+        do { _ = try await store(http, disk(delistedDirectory)).read(ids: [delistedIDs[2]], market: "US", language: "en-US") }
+        catch { delistedServed = false }
+        check(delistLibrary.games.count == 2 && delistLibrary.unresolvedIDs == [delistedIDs[2]]
+              && !FileManager.default.fileExists(atPath: delistedFile.path) && keptSaved.staleIDs.count == 2 && !delistedServed,
+              "REQ-121: A product its revalidation no longer returns loses its saved copy and stays unresolved")
+
         let capTransport = DescriptorTransport()
         await capTransport.configure(blocked: Set(0..<16))
         let capStore = store(capTransport, disk())
@@ -1072,35 +1096,76 @@ extension PublicDescriptorChecks {
         check(fifth == ids(20, offset: 8_080) && sixth == urgent && Set(seventh) == Set(sample),
               "REQ-121: Queued foreground reads are admitted in order and before saved-copy revalidation")
 
+        // Each defect below is planted in an otherwise valid, in-age record, so each check stands alone.
         let corruptDirectory = root.appendingPathComponent("corrupt")
-        let seed = store(DescriptorTransport(), disk(corruptDirectory))
-        let damaged = ids(4, offset: 7_100)
-        _ = try await seed.load(ids: damaged, market: "US", language: "en-US")
-        await seed.flushPersistence()
+        let encoder = PropertyListEncoder()
+        encoder.outputFormat = .binary
+        func digestOf(_ data: Data) -> String { SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined() }
+        func body(_ id: String) throws -> Data {
+            try JSONSerialization.data(withJSONObject: ["ProductId": id, "ProductType": "Game"], options: [.sortedKeys])
+        }
+        func record(_ id: String, schema: Int = PublicDescriptorDiskCache.schemaVersion, productID: String? = nil,
+                    market: String = "US", language: String = "en-us", fetchedAt: Date? = nil,
+                    product: Data? = nil, digest: String? = nil) throws -> Data {
+            let product = try product ?? body(id)
+            return try encoder.encode(PublicDescriptorRecord(schema: schema, productID: productID ?? id, market: market,
+                language: language, fetchedAt: fetchedAt ?? clock.now(), digest: digest ?? digestOf(product),
+                product: product))
+        }
+        let other = "9DESC0007999"
+        let defects: [(label: String, make: (String) throws -> Data)] = [
+            ("unreadable bytes", { _ in Data("not a descriptor".utf8) }),
+            ("a foreign schema version", { try record($0, schema: PublicDescriptorDiskCache.schemaVersion + 1) }),
+            ("another product's ID", { try record($0, productID: other) }),
+            ("another market", { try record($0, market: "GB") }),
+            ("another language", { try record($0, language: "en-gb") }),
+            ("a digest that doesn't match", { try record($0, digest: digestOf(try body(other))) }),
+            ("a product body for another ID", { try record($0, product: try body(other)) }),
+            ("an age over seven days", {
+                try record($0, fetchedAt: clock.now().addingTimeInterval(-PublicDescriptorDiskCache.maximumAge - 1)) }),
+            ("a fetch time in the future", { try record($0, fetchedAt: clock.now().addingTimeInterval(3_600)) })
+        ]
+        let controlID = "9DESC0007100"
+        let controlKey = PublicDescriptorDiskCache.Key(id: controlID, market: "US", language: "en-us")
+        let corruptDisk = disk(corruptDirectory)
+        try await corruptDisk.store([controlKey: try body(controlID)], fetchedAt: clock.now())
+        func defectID(_ offset: Int) -> String { String(format: "9DESC%07d", 7_101 + offset) }
         func file(_ id: String) -> URL {
             corruptDirectory.appendingPathComponent(PublicDescriptorDiskCache.fileName(.init(id: id, market: "US", language: "en-us")))
         }
-        try Data("not a descriptor".utf8).write(to: file(damaged[0]))
-        let encoder = PropertyListEncoder()
-        encoder.outputFormat = .binary
-        let product = try JSONSerialization.data(withJSONObject: ["ProductId": damaged[1]])
-        let digest = SHA256.hash(data: product).map { String(format: "%02x", $0) }.joined()
-        try encoder.encode(PublicDescriptorRecord(schema: PublicDescriptorDiskCache.schemaVersion + 1, productID: damaged[1],
-            market: "US", language: "en-us", fetchedAt: clock.now(), digest: digest, product: product)).write(to: file(damaged[1]))
-        try encoder.encode(PublicDescriptorRecord(schema: PublicDescriptorDiskCache.schemaVersion, productID: damaged[2],
-            market: "US", language: "en-us", fetchedAt: clock.now(), digest: digest, product: product)).write(to: file(damaged[2]))
-        for id in damaged.prefix(3) {
-            try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: file(id).path)
+        func plant() throws {
+            for (offset, defect) in defects.enumerated() {
+                let id = defectID(offset)
+                try defect.make(id).write(to: file(id))
+                try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: file(id).path)
+            }
         }
-        clock.advance(PublicDescriptorDiskCache.maximumAge + 1)
+        try plant()
+        let control = await corruptDisk.read([controlKey])
+        check(control[controlKey] != nil, "REQ-121: A valid in-age saved descriptor planted beside the damaged ones is served")
+        for (offset, defect) in defects.enumerated() {
+            let id = defectID(offset)
+            let key = PublicDescriptorDiskCache.Key(id: id, market: "US", language: "en-us")
+            let before = await corruptDisk.rejected
+            let found = await corruptDisk.read([key])
+            let after = await corruptDisk.rejected
+            check(found.isEmpty && after == before + 1 && !FileManager.default.fileExists(atPath: file(id).path),
+                  "REQ-121: A saved descriptor with \(defect.label) is rejected and deleted")
+        }
+        try plant()
         let corruptTransport = DescriptorTransport()
-        let corruptDisk = disk(corruptDirectory)
-        let corruptStore = PublicCatalogDescriptors(transport: corruptTransport, now: { clock.now() }, persistence: corruptDisk)
-        let recovered = try await corruptStore.read(ids: damaged, market: "US", language: "en-US")
-        let corruptRequests = await corruptTransport.requests.count, rejected = await corruptDisk.rejected
-        check(try titles(recovered.data) == damaged.map { "Game \($0)" } && recovered.staleIDs.isEmpty
-              && corruptRequests == 1 && rejected == 4,
-              "REQ-121: Corrupt, foreign-schema, mismatched and week-old saved descriptors are discarded and refetched")
+        let corruptStore = PublicCatalogDescriptors(transport: corruptTransport, now: { clock.now() },
+                                                    persistence: disk(corruptDirectory))
+        let damaged = defects.indices.map(defectID)
+        let recovered = try await corruptStore.read(ids: damaged + [controlID], market: "US", language: "en-US")
+        _ = await recovered.revalidation?.value
+        let corruptRequests = await corruptTransport.requests.count
+        let firstRequest = await corruptTransport.requestedIDs(0), secondRequest = await corruptTransport.requestedIDs(1)
+        check(try titles(recovered.data) == damaged.map { "Game \($0)" } + [""]
+              && recovered.staleIDs == [controlID] && corruptRequests == 2
+              && (firstRequest == damaged || secondRequest == damaged),
+              "REQ-121: Damaged saved descriptors are refetched in one request while the valid saved one is served")
+        let digest = digestOf(try body(sample[0]))
         let linked = root.appendingPathComponent("linked")
         try FileManager.default.createSymbolicLink(at: linked, withDestinationURL: directory)
         let linkedRead = try await store(DescriptorTransport(), disk(linked))

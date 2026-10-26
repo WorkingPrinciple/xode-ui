@@ -211,6 +211,10 @@ final class LibraryCatalogArtwork: ObservableObject {
         for (id, message) in failures { batchErrors[id] = message }
         for id in parsed.images.keys { batchErrors[id] = parsed.errors[id] }
         if !parsed.images.isEmpty {
+            for (id, image) in parsed.images {
+                CatalogArtworkIdentity.register([image.cover, image.hero].compactMap { $0 } + image.landscape + image.logos,
+                                                owner: id)
+            }
             images.merge(parsed.images, uniquingKeysWith: { _, new in new })
         }
         if batchErrors != detailErrors { detailErrors = batchErrors }
@@ -219,12 +223,12 @@ final class LibraryCatalogArtwork: ObservableObject {
     }
 
     /// When a revalidation lands, adopts fresh expiries and republishes only the tiles whose details changed.
-    private func follow(_ revalidation: Task<Set<String>, Never>, staleIDs: Set<String>, market: String,
-                        language: String, epoch: UUID) {
+    private func follow(_ revalidation: Task<PublicCatalogDescriptors.Revalidated, Never>, staleIDs: Set<String>,
+                        market: String, language: String, epoch: UUID) {
         let id = UUID()
         revalidations[id] = Task {
             defer { if generation == epoch { revalidations[id] = nil } }
-            let changed = await revalidation.value
+            let changed = await revalidation.value.changed
             guard !Task.isCancelled, generation == epoch else { return }
             let ordered = staleIDs.sorted()
             let fresh = await descriptors.expirations(ids: ordered, market: market, language: language)

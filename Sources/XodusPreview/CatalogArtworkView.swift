@@ -227,6 +227,10 @@ final class CatalogArtworkStore {
         try await descriptors?.clearPersisted()
     }
 
+    /// Sign-out cleanup: removes saved artwork and, for the shared store, saved public descriptors, whose
+    /// product IDs reflect the library and whose market reflects the account country.
+    func clearForSignOut() async throws { try await clearCache() }
+
     #if DEBUG
     func peakConcurrentWork() async -> Int { await admission.peak }
     #endif
@@ -411,16 +415,40 @@ final class CatalogArtworkStore {
 struct CatalogArtworkRequest: Hashable {
     let reference: CatalogArtworkReference?
     let bucket: CatalogImageBucket?
+    /// Whose artwork this is, usually a product ID. Nil uses the product that published the URL, else the URL.
+    var identity: String? = nil
+}
+
+/// Maps published catalogue artwork URLs to the product that owns them, so a tile can tell a refreshed URL
+/// for the same game from another game's artwork.
+@MainActor
+enum CatalogArtworkIdentity {
+    private static var owners: [URL: String] = [:]
+
+    static func register(_ references: [CatalogArtworkReference], owner: String) {
+        if owners.count > 8_192 { owners.removeAll(keepingCapacity: true) }
+        for reference in references {
+            if let url = try? reference.validatedURL() { owners[url] = owner }
+        }
+    }
+
+    static func identity(of request: CatalogArtworkRequest) -> String? {
+        if let identity = request.identity { return identity }
+        guard let url = try? request.reference?.validatedURL() else { return nil }
+        return owners[url].map { "product:\($0)" } ?? "url:\(url.absoluteString)"
+    }
 }
 
 @MainActor
 final class ArtworkPresentation: ObservableObject {
-    /// The last decoded image. A tile keeps showing it while a changed request loads (REQ-121).
+    /// The last decoded image. While a request for the same artwork identity loads (a resize, or a refreshed
+    /// URL for the same product), the tile keeps showing it (REQ-121); any other artwork never borrows it.
     @Published private(set) var image: NSImage?
     @Published private(set) var loading = false
     @Published private(set) var failed = false
     private var loadID = UUID()
     private var imageRequest: CatalogArtworkRequest?
+    private var imageIdentity: String?
     private var drawn = false
     private let store: CatalogArtworkStore
     private let tracker: ArtworkDrawTracker?
@@ -433,19 +461,28 @@ final class ArtworkPresentation: ObservableObject {
     /// The image decoded for exactly this request, or nil while another request's image is retained.
     func image(for request: CatalogArtworkRequest) -> NSImage? { imageRequest == request ? image : nil }
 
-    /// What a tile draws: this request's image, else an already decoded copy of the same artwork, else the
-    /// tile's previous artwork, so a descriptor or shelf refresh never returns a drawn tile to a placeholder.
+    /// What a tile draws: this request's image, else an already decoded copy of the same URL, else the tile's
+    /// previous image only when it is the same artwork identity. A withdrawn reference (nil, for example when
+    /// artwork isn't allowed) or another game's artwork draws the placeholder instead.
     func displayImage(for request: CatalogArtworkRequest) -> NSImage? {
         if imageRequest == request, let image { return image }
-        if let reference = request.reference, let bucket = request.bucket,
-           let cached = store.cachedImage(for: reference, bucket: bucket) { return cached }
+        guard let reference = request.reference else { return nil }
+        if let bucket = request.bucket, let cached = store.cachedImage(for: reference, bucket: bucket) { return cached }
+        guard let image, let imageIdentity, imageIdentity == CatalogArtworkIdentity.identity(of: request) else { return nil }
         return image
+    }
+
+    private func forgetImage() {
+        image = nil
+        imageRequest = nil
+        imageIdentity = nil
     }
 
     func load(_ request: CatalogArtworkRequest) async {
         let token = UUID()
         loadID = token
         failed = false
+        if request.reference == nil, image != nil { forgetImage() }
         guard let reference = request.reference, let bucket = request.bucket else { loading = false; return }
         let tracked = imageRequest == request ? nil : tracker
         tracked?.began()
@@ -461,6 +498,7 @@ final class ArtworkPresentation: ObservableObject {
             guard loadID == token else { return }
             image = loaded
             imageRequest = request
+            imageIdentity = CatalogArtworkIdentity.identity(of: request)
             outcome.drawn = !drawn
             drawn = true
         } catch is CancellationError { }
@@ -468,6 +506,7 @@ final class ArtworkPresentation: ObservableObject {
             if loadID == token {
                 failed = true
                 outcome.failed = true
+                if imageIdentity != CatalogArtworkIdentity.identity(of: request) { forgetImage() }
             }
         }
     }
@@ -477,6 +516,8 @@ struct CatalogArtworkView: View {
     let reference: CatalogArtworkReference?
     var status: CatalogArtworkStatus = .absent
     var contentMode: ContentMode = .fill
+    /// The product or other owner of this artwork, when the caller knows it (see `CatalogArtworkRequest.identity`).
+    var identity: String? = nil
     @StateObject private var presentation = ArtworkPresentation(tracker: .shared)
     @Environment(\.displayScale) private var displayScale
     @Environment(\.catalogPresentationActive) private var presentationActive
@@ -495,7 +536,8 @@ struct CatalogArtworkView: View {
         GeometryReader { geometry in
             let request = CatalogArtworkRequest(reference: reference,
                 bucket: CatalogImageBucket.target(reference: reference, size: geometry.size,
-                                                   scale: displayScale, mode: contentMode))
+                                                   scale: displayScale, mode: contentMode),
+                identity: identity.map { "product:\($0)" })
             Group {
                 if let image = presentation.displayImage(for: request) {
                     Image(nsImage: image).resizable().aspectRatio(contentMode: contentMode)

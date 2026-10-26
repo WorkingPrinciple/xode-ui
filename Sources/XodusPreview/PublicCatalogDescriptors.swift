@@ -10,12 +10,17 @@ actor PublicCatalogDescriptors {
     /// A consumer shown a saved descriptor asks again after this long if its revalidation failed.
     static let staleRetryDelay: TimeInterval = 60
 
-    /// A read's products, which of them came from the saved copy, and their background revalidation,
-    /// which yields the product IDs whose details changed.
+    /// What a revalidation learned about saved descriptors: products whose details changed, and products the
+    /// network no longer returned (delisted or unavailable), whose saved copies were deleted.
+    struct Revalidated: Sendable {
+        var changed = Set<String>()
+        var withdrawn = Set<String>()
+    }
+    /// A read's products, which of them came from the saved copy, and their background revalidation.
     struct Read: Sendable {
         let data: Data
         let staleIDs: Set<String>
-        let revalidation: Task<Set<String>, Never>?
+        let revalidation: Task<Revalidated, Never>?
     }
     private struct Key: Hashable {
         let id: String
@@ -26,7 +31,7 @@ actor PublicCatalogDescriptors {
     private struct Revalidation {
         let id: UUID
         let stale: Data
-        let task: Task<Set<String>, Never>
+        let task: Task<Revalidated, Never>
     }
     private struct Waiter {
         let id: UUID
@@ -63,7 +68,7 @@ actor PublicCatalogDescriptors {
     private var errors: [Key: String] = [:]
     private var pending: [Key: Pending] = [:]
     private var revalidating: [Key: Revalidation] = [:]
-    private var revalidations: [UUID: Task<Set<String>, Never>] = [:]
+    private var revalidations: [UUID: Task<Revalidated, Never>] = [:]
     private var writes: [UUID: Task<Void, Never>] = [:]
     private var networkActive = 0
     private var waiters: [Waiter] = []
@@ -187,7 +192,7 @@ actor PublicCatalogDescriptors {
         var result: [Key: Data] = [:]
         var waiting: [Key: Task<Data?, Error>] = [:]
         var stale: [Key: Data] = [:]
-        var following: [Task<Set<String>, Never>] = []
+        var following: [Task<Revalidated, Never>] = []
         var missing: [Key] = []
         func classify(_ key: Key, saved: Data? = nil) -> Bool {
             if var entry = entries[key], entry.expiresAt > time {
@@ -269,21 +274,26 @@ actor PublicCatalogDescriptors {
         outcome = counts.network > 0 ? "miss" : counts.stale > 0 ? "stale" : "hit"
         let staleIDs = Set(stale.keys.map(\.id))
         let tasks = following
-        let revalidation: Task<Set<String>, Never>? = tasks.isEmpty ? nil : Task.detached {
-            var changed = Set<String>()
-            for task in tasks { changed.formUnion(await task.value) }
-            return changed.intersection(staleIDs)
+        let revalidation: Task<Revalidated, Never>? = tasks.isEmpty ? nil : Task.detached {
+            var result = Revalidated()
+            for task in tasks {
+                let next = await task.value
+                result.changed.formUnion(next.changed.intersection(staleIDs))
+                result.withdrawn.formUnion(next.withdrawn.intersection(staleIDs))
+            }
+            return result
         }
         return Read(data: data, staleIDs: staleIDs, revalidation: revalidation)
     }
 
     /// Refreshes saved descriptors behind foreground reads. A failure keeps the saved copy on screen and
-    /// publishes no error; success replaces it in memory and on disk.
+    /// publishes no error; success replaces it in memory and on disk. A product the response omits without an
+    /// error (delisted or unavailable) loses its saved copy, so a restart can't keep serving it.
     private func startRevalidation(_ keys: [Key], stale: [Key: Data], market: String, language: String,
-                                   wireLanguage: String, epoch: UUID) -> Task<Set<String>, Never> {
+                                   wireLanguage: String, epoch: UUID) -> Task<Revalidated, Never> {
         let client = client
         let id = UUID()
-        let task = Task { () -> Set<String> in
+        let task = Task { () -> Revalidated in
             defer {
                 revalidations[id] = nil
                 for key in keys where revalidating[key]?.id == id { revalidating[key] = nil }
@@ -292,21 +302,31 @@ actor PublicCatalogDescriptors {
                 let batch = try await recovering(ids: keys.map(\.id), market: market,
                     language: client == nil ? language : wireLanguage, client: client, refresh: false,
                     epoch: epoch, background: true)
-                guard generation == epoch else { return [] }
-                var changed = Set<String>()
+                guard generation == epoch else { return Revalidated() }
+                var result = Revalidated()
                 for key in keys {
-                    guard let value = batch.entries[key.id] else { continue }
+                    guard let value = batch.entries[key.id] else {
+                        if batch.failures[key.id] == nil { result.withdrawn.insert(key.id) }
+                        continue
+                    }
                     errors[key] = nil
                     insert(value, for: key)
-                    if value.bytes != stale[key] { changed.insert(key.id) }
+                    if value.bytes != stale[key] { result.changed.insert(key.id) }
                 }
                 persist(batch.entries, market: market, language: language)
-                return changed
+                if !result.withdrawn.isEmpty, let persistence {
+                    do {
+                        try await persistence.remove(keys.filter { result.withdrawn.contains($0.id) }.map(\.saved))
+                    } catch {
+                        logger.warning("stage=descriptorCacheRemoveFailed; a withdrawn product's saved details remain until they age out")
+                    }
+                }
+                return result
             } catch is CancellationError {
-                return []
+                return Revalidated()
             } catch {
                 logger.notice("stage=descriptorRevalidationFailed; showing saved public details")
-                return []
+                return Revalidated()
             }
         }
         revalidations[id] = task

@@ -5,7 +5,8 @@ import Foundation
 import OSLog
 
 /// One saved public catalogue descriptor: the public product JSON for a product, market and language.
-/// It never contains account, entitlement, library or token data.
+/// It holds no account, entitlement or token data, but the saved product IDs reflect what the library and
+/// Discover showed and the market reflects the account country, so sign-out clears it.
 struct PublicDescriptorRecord: Codable, Sendable {
     let schema: Int
     let productID: String
@@ -139,6 +140,7 @@ actor PublicDescriptorDiskCache {
             let handle = FileHandle(fileDescriptor: fd, closeOnDealloc: true)
             do {
                 try handle.write(contentsOf: bytes)
+                guard fsync(fd) == 0 else { throw CatalogMediaCacheError.storage }
                 try handle.close()
                 guard rename(temporary.path, target.path) == 0 else { throw CatalogMediaCacheError.storage }
             } catch {
@@ -152,6 +154,18 @@ actor PublicDescriptorDiskCache {
         if knownBytes.map({ $0 > limit }) ?? true
             || lastSweep.map({ now().timeIntervalSince($0) >= Self.sweepInterval }) ?? true {
             try sweep()
+        }
+    }
+
+    /// Deletes saved descriptors the network no longer returns.
+    func remove(_ keys: [Key]) throws {
+        guard try exists() else { return }
+        for key in keys {
+            let file = directory.appendingPathComponent(Self.fileName(key))
+            var info = stat()
+            let removed: Int64 = lstat(file.path, &info) == 0 ? Int64(info.st_size) : 0
+            if unlink(file.path) != 0, errno != ENOENT { throw CatalogMediaCacheError.storage }
+            if let known = knownBytes { knownBytes = max(0, known - removed) }
         }
     }
 

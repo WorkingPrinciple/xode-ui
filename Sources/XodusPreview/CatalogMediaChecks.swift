@@ -205,6 +205,24 @@ enum CatalogMediaChecks {
         check(earlySweeps == 1 && timedSweeps == 2,
               "REQ-121: The artwork disk cache sweeps once per session and on its timer, not after every save")
 
+        // REQ-121: sign-out clears saved artwork and saved public descriptors together.
+        let signOutDirectory = root.appendingPathComponent("sign-out")
+        let savedArtwork = CatalogMediaDiskCache(directory: signOutDirectory.appendingPathComponent("media"))
+        try await savedArtwork.store(entry(url), for: url, generation: 0)
+        let savedDescriptors = PublicDescriptorDiskCache(directory: signOutDirectory.appendingPathComponent("descriptors"))
+        let savedKey = PublicDescriptorDiskCache.Key(id: "9SIGNOUT0001", market: "GB", language: "en-gb")
+        try await savedDescriptors.store([savedKey: try JSONSerialization.data(withJSONObject: ["ProductId": "9SIGNOUT0001"])],
+                                         fetchedAt: Date())
+        let signOutStore = CatalogArtworkStore(diskCache: savedArtwork, session: session,
+                                               descriptors: PublicCatalogDescriptors(persistence: savedDescriptors))
+        let artworkBefore = try await savedArtwork.lookup(url).entry != nil
+        let descriptorsBefore = await savedDescriptors.read([savedKey]).count
+        try await signOutStore.clearForSignOut()
+        let artworkAfter = try await savedArtwork.lookup(url).entry != nil
+        let descriptorsAfter = await savedDescriptors.read([savedKey]).count
+        check(artworkBefore && descriptorsBefore == 1 && !artworkAfter && descriptorsAfter == 0,
+              "REQ-121: Sign-out cleanup clears both saved artwork and saved public descriptors")
+
         // REQ-121: decoded-artwork memory budget and memory-pressure eviction.
         check(CatalogArtworkStore.memoryCountLimit == 200 && CatalogArtworkStore.memoryCostLimit == 256 * 1024 * 1024
               && CatalogArtworkStore(diskCache: nil, session: session).memoryLimits == (200, 256 * 1024 * 1024),
@@ -225,34 +243,66 @@ enum CatalogMediaChecks {
               && MediaFixtureProtocol.state.observed().count == 2 && pressured.pressureEvictions == 1,
               "REQ-121: Memory pressure evicts decoded artwork, and the next read decodes it again")
 
-        // REQ-121: a tile with artwork never returns to a placeholder while its replacement loads or fails.
+        // REQ-121: a tile keeps its artwork only while the same game's artwork is resized or refreshed.
         let tileStore = CatalogArtworkStore(diskCache: nil, session: session)
         let tracker = ArtworkDrawTracker(firstTileCount: 1)
         let tile = ArtworkPresentation(store: tileStore, tracker: tracker)
-        let firstRequest = CatalogArtworkRequest(reference: try makeReference("TileA"), bucket: .card)
+        let gameA = "product:9TILEA000001"
+        let first = CatalogArtworkRequest(reference: try makeReference("TileA"), bucket: .card, identity: gameA)
         MediaFixtureProtocol.state.reset([reply])
-        await tile.load(firstRequest)
-        let shown = tile.displayImage(for: firstRequest)
-        let failingRequest = CatalogArtworkRequest(reference: try makeReference("TileB"), bucket: .card)
-        let keptBeforeLoad = tile.displayImage(for: failingRequest)
+        await tile.load(first)
+        let shown = tile.displayImage(for: first)
+        let refreshing = CatalogArtworkRequest(reference: try makeReference("TileA2"), bucket: .card, identity: gameA)
+        let keptWhileRefreshing = tile.displayImage(for: refreshing)
         MediaFixtureProtocol.state.reset([])
-        await tile.load(failingRequest)
-        let keptAfterFailure = tile.displayImage(for: failingRequest)
-        let replacementRequest = CatalogArtworkRequest(reference: try makeReference("TileC"), bucket: .card)
+        await tile.load(refreshing)
+        let keptAfterFailure = tile.displayImage(for: refreshing)
+        let sameGameFailed = tile.failed
+        let refreshed = CatalogArtworkRequest(reference: try makeReference("TileA3"), bucket: .card, identity: gameA)
         MediaFixtureProtocol.state.reset([reply])
-        let replacing = Task { await tile.load(replacementRequest) }
-        let keptWhileLoading = tile.displayImage(for: replacementRequest)
+        let replacing = Task { await tile.load(refreshed) }
+        let keptWhileLoading = tile.displayImage(for: refreshed)
         await replacing.value
-        let replaced = tile.displayImage(for: replacementRequest)
-        let withdrawn = tile.displayImage(for: CatalogArtworkRequest(reference: nil, bucket: nil))
-        check(shown != nil && keptBeforeLoad === shown && keptWhileLoading === shown && keptAfterFailure === shown
-              && tile.failed == false && replaced != nil && replaced !== shown && withdrawn === replaced
-              && tile.image(for: failingRequest) == nil,
-              "REQ-121: Refreshed tiles keep their current artwork until the replacement decodes, even if it fails")
+        let replaced = tile.displayImage(for: refreshed)
+        check(shown != nil && keptWhileRefreshing === shown && keptAfterFailure === shown && sameGameFailed
+              && keptWhileLoading === shown && replaced != nil && replaced !== shown && !tile.failed,
+              "REQ-121: A tile keeps its artwork while the same game's refreshed artwork loads or fails")
+
+        let ownedFirst = try makeReference("TileC1"), ownedRefresh = try makeReference("TileC2")
+        CatalogArtworkIdentity.register([ownedFirst, ownedRefresh], owner: "9TILEC000001")
+        let libraryTile = ArtworkPresentation(store: tileStore)
+        let libraryFirst = CatalogArtworkRequest(reference: ownedFirst, bucket: .card)
+        MediaFixtureProtocol.state.reset([reply])
+        await libraryTile.load(libraryFirst)
+        let libraryShown = libraryTile.displayImage(for: libraryFirst)
+        let libraryKept = libraryTile.displayImage(for: CatalogArtworkRequest(reference: ownedRefresh, bucket: .card))
+        let notBorrowed = libraryTile.displayImage(for: CatalogArtworkRequest(reference: try makeReference("TileD"),
+                                                                               bucket: .card))
+        check(libraryShown != nil && libraryKept === libraryShown && notBorrowed == nil,
+              "REQ-121: A refreshed URL the catalogue publishes for the same product keeps the tile's art; another URL never borrows it")
+
+        let row = ArtworkPresentation(store: tileStore)
+        let rowGameA = CatalogArtworkRequest(reference: try makeReference("RowA"), bucket: .card, identity: "product:9ROWA0000001")
+        MediaFixtureProtocol.state.reset([reply])
+        await row.load(rowGameA)
+        let rowShown = row.displayImage(for: rowGameA)
+        let rowGameB = CatalogArtworkRequest(reference: try makeReference("RowB"), bucket: .card, identity: "product:9ROWB0000001")
+        let whileOtherGameLoads = row.displayImage(for: rowGameB)
+        MediaFixtureProtocol.state.reset([])
+        await row.load(rowGameB)
+        let afterOtherGameFails = row.displayImage(for: rowGameB)
+        check(rowShown != nil && whileOtherGameLoads == nil && afterOtherGameFails == nil && row.failed && row.image == nil,
+              "REQ-121: Another game's artwork never shows the previous game's image, and its failure shows the failure placeholder")
+
+        let withdrawnRequest = CatalogArtworkRequest(reference: nil, bucket: .card, identity: gameA)
+        let withdrawnDisplay = tile.displayImage(for: withdrawnRequest)
+        await tile.load(withdrawnRequest)
+        check(withdrawnDisplay == nil && tile.image == nil && tile.displayImage(for: withdrawnRequest) == nil,
+              "REQ-121: Withdrawing artwork (no reference, as when artwork isn't allowed) removes art already drawn")
         let recreated = ArtworkPresentation(store: tileStore)
-        let resized = CatalogArtworkRequest(reference: replacementRequest.reference, bucket: .hero)
-        check(recreated.displayImage(for: replacementRequest) === replaced && recreated.displayImage(for: resized) != nil
-              && recreated.image(for: replacementRequest) == nil,
+        let resized = CatalogArtworkRequest(reference: refreshed.reference, bucket: .hero, identity: gameA)
+        check(recreated.displayImage(for: refreshed) === replaced && recreated.displayImage(for: resized) != nil
+              && recreated.image(for: refreshed) == nil,
               "REQ-121: A recreated or resized tile draws already decoded artwork on its first frame")
         check(tracker.firstTilesDrawn && tracker.drawn == 1 && tracker.failed == 1 && tracker.active == 0
               && tracker.completedBursts == 3,

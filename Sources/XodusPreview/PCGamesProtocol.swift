@@ -730,7 +730,7 @@ struct PCGamesClient: Sendable {
               candidateCount >= ids.count else { throw PCGamesError.invalidResponse }
         var resolved: [Int: [PCGamesCatalog.Product]] = [:]
         var failed: [Int: Set<String>] = [:]
-        var revalidations: [Int: Task<Set<String>, Never>] = [:]
+        var revalidations: [Int: Task<PublicCatalogDescriptors.Revalidated, Never>] = [:]
         var completedBatches = 0
         func snapshot() -> PCGamesSnapshot {
             var games: [PCGame] = []
@@ -808,7 +808,13 @@ struct PCGamesClient: Sendable {
         var revised = false
         for index in revalidations.keys.sorted() {
             guard let revalidation = revalidations[index] else { continue }
-            let changed = try await CancellableWait.value(of: revalidation)
+            let revalidated = try await CancellableWait.value(of: revalidation)
+            if !revalidated.withdrawn.isEmpty {
+                // The network no longer returns these products, so saved details can't resolve them.
+                resolved[index] = (resolved[index] ?? []).filter { !revalidated.withdrawn.contains($0.ProductId) }
+                revised = true
+            }
+            let changed = revalidated.changed
             guard !changed.isEmpty else { continue }
             let updated = batches[index].filter(changed.contains)
             do {
