@@ -29,6 +29,9 @@ struct LiveRootView: View {
     @State private var firstLoad = LibraryFirstLoad()
     @State private var firstScreenArtwork = FirstScreenArtwork()
     @State private var readinessAfterFirstLoad = false
+    @State private var firstLoadDoneFor: String?
+    @State private var firstScreenRequested = Set<String>()
+    @State private var windowID = UUID()
     @ObservedObject private var companion = XboxCompanionController.shared
 #if !XODUS_SHIPPING
     var allowsStartupTasks = true
@@ -99,34 +102,67 @@ struct LiveRootView: View {
     private var searchEnabled: Bool {
         !requiresAccountGate && !firstLoadCovers
     }
-    /// REQ-119: this run's own sign-in just finished and there's no library to show yet.
-    private var coldSignInPending: Bool {
-        startupAllowed && LibraryFirstLoad.shouldBegin(interactiveSignIn: state.unifiedSignInRequested,
-            signedIn: session.hasConfirmedSignIn, hasLibrary: !state.pcGames.representedGames.isEmpty)
+    /// REQ-119: recent activity and access checks wait until the library's collection read is sent.
+    private var backgroundAccountReadsAllowed: Bool {
+        let library = state.pcGames
+        return !unifiedAccountMode || library.collectionReadStarted || library.snapshot != nil
+            || library.error != nil || !session.accountCountryReady
     }
-    private var firstLoadCovers: Bool { firstLoad.covers || coldSignInPending }
-    private var firstScreenGames: [(id: String, cover: CatalogArtworkReference?)] {
+    /// Covers in the same frame this run's own sign-in confirms, before onChange begins the state.
+    private var interactiveFirstLoadPending: Bool {
+        startupAllowed && unifiedAccountMode && state.unifiedSignInRequested && session.hasConfirmedSignIn
+            && firstLoad.phase == .inactive && firstLoadDoneFor != session.accountHash
+    }
+    private var firstLoadCovers: Bool { firstLoad.covers || interactiveFirstLoadPending }
+    private static let coveringFirstLoad: LibraryFirstLoad = {
+        var value = LibraryFirstLoad()
+        value.begin(at: .now, immediate: true)
+        return value
+    }()
+    /// Signed in, but this account's first load hasn't handed over yet; the readiness sheet waits.
+    private var firstLoadOutstanding: Bool {
+        startupAllowed && unifiedAccountMode && session.hasConfirmedSignIn
+            && firstLoadDoneFor != session.accountHash && !firstLoadFinished
+    }
+    private var firstLoadFinished: Bool { if case .finished = firstLoad.phase { true } else { false } }
+    /// The first viewport in the grid's display order: the hero image (also the backdrop) and the top tiles.
+    private var firstScreenItems: [FirstScreenArtwork.Item] {
         let projection = state.librarySelection.projection.current
-        var seen = Set<String>()
-        let games = (projection.hero + projection.visible).filter { seen.insert($0.id).inserted }
-            .prefix(LibraryFirstLoad.firstScreenSize).map { (id: $0.installed?.storeId ?? $0.id, cover: $0.cover) }
-        guard games.isEmpty else { return games }
-        return state.pcGames.representedGames.prefix(LibraryFirstLoad.firstScreenSize).map { (id: $0.id, cover: $0.artwork) }
+        let art = LibraryCatalogArtwork.shared
+        func resolved(_ id: String) -> Bool {
+            !PCGamesClient.validProductID(id) || FirstScreenArtwork.resolved(
+                loaded: art.images[id] != nil, failed: art.detailErrors[id] != nil || art.error != nil,
+                requested: firstScreenRequested.contains(id), pending: art.pendingIDs.contains(id))
+        }
+        var items: [FirstScreenArtwork.Item] = []
+        if let hero = projection.hero.first {
+            let id = hero.installed?.storeId ?? hero.id
+            let reference = art.images[id]?.landscape.first
+                ?? hero.product?.artwork.first { $0.role == .hero }
+            items.append(.init(kind: .hero, id: id, reference: reference, resolved: resolved(id)))
+        }
+        for game in projection.visible.prefix(LibraryFirstLoad.firstScreenSize) {
+            let id = game.installed?.storeId ?? game.id
+            items.append(.init(kind: .cover, id: id, reference: art.images[id]?.cover ?? game.cover,
+                               resolved: resolved(id)))
+        }
+        return items
     }
     private var firstLoadInputs: LibraryFirstLoadInputs {
         let library = state.pcGames
         return LibraryFirstLoadInputs(
             signedIn: session.hasConfirmedSignIn, loading: library.busy || library.restoringPresence,
             gamesFound: library.representedGames.count,
-            libraryComplete: library.snapshot != nil && !library.busy, error: library.error,
+            libraryComplete: library.representedSnapshot.map { !library.busy || $0.isComplete } ?? false,
+            error: library.error,
             needsAccountAction: library.needsSignIn || library.needsKeychainApproval
                 || (library.error != nil && !session.accountCountryReady),
             artworkTotal: firstScreenArtwork.total, artworkReady: firstScreenArtwork.ready,
             artworkSettled: firstScreenArtwork.settled)
     }
     private var firstLoadArtworkKey: String {
-        guard firstLoad.covers, LibraryFirstLoad.gamesReady(firstLoadInputs) else { return "idle" }
-        return firstScreenGames.map(\.id).joined(separator: ",")
+        guard firstLoad.active, LibraryFirstLoad.gamesReady(firstLoadInputs) else { return "idle" }
+        return firstScreenItems.map { "\($0.key)=\($0.resolved)" }.joined(separator: ",")
     }
     private var libraryArtworkAllowed: Bool {
 #if XODUS_SHIPPING
@@ -147,12 +183,6 @@ struct LiveRootView: View {
         return "Refresh Library - updated \(age)"
     }
 
-    private static let pendingFirstLoad: LibraryFirstLoad = {
-        var value = LibraryFirstLoad()
-        value.begin(at: .now)
-        return value
-    }()
-
     private func applyFirstLoad(_ change: (inout LibraryFirstLoad) -> Void) {
         let old = firstLoad
         change(&firstLoad)
@@ -163,33 +193,43 @@ struct LiveRootView: View {
         }
         if case .finished(let handover) = firstLoad.phase {
             FirstLoadTimeline.mark("handover", "reason=\(handover)")
+            firstLoadDoneFor = session.accountHash
+        }
+        state.setFirstLoadCovering(firstLoad.covers, window: windowID)
+        if old.covers, !firstLoad.covers {
+            // Hand VoiceOver and keyboard focus back to the library underneath.
+            NSAccessibility.post(element: NSApp as Any, notification: .layoutChanged)
         }
     }
 
-    /// Fetches the first screen's covers while the overlay shows, so the library opens with artwork.
+    /// Fetches the first viewport's artwork while the setup view waits, so the library opens with it.
+    /// A superseded run can't count: settling is tied to the generation `target` returned.
     private func prefetchFirstScreenArtwork() async {
-        let games = firstScreenGames
-        firstScreenArtwork = FirstScreenArtwork()
-        await LibraryCatalogArtwork.shared.load(ids: games.map(\.id).filter(PCGamesClient.validProductID),
-                                                market: session.market, language: session.language)
+        let ids = firstScreenItems.map(\.id).filter(PCGamesClient.validProductID)
+        await LibraryCatalogArtwork.shared.load(ids: ids, market: session.market, language: session.language)
         guard !Task.isCancelled else { return }
-        let references = games.compactMap { LibraryCatalogArtwork.shared.images[$0.id]?.cover ?? $0.cover }
-        firstScreenArtwork.total = references.count
-        let reads = references.map { reference in
-            Task { (try? await CatalogArtworkStore.shared.image(for: reference, bucket: .card)) != nil }
+        firstScreenRequested.formUnion(ids)
+        let token = firstScreenArtwork.target(firstScreenItems)
+        let work = firstScreenArtwork.pending
+        let reads = work.map { item in
+            Task { () -> (FirstScreenArtwork.Item, Bool) in
+                guard let reference = item.reference else { return (item, false) }
+                let image = try? await CatalogArtworkStore.shared.image(for: reference,
+                                                                        bucket: item.kind == .hero ? .hero : .card)
+                return (item, image != nil)
+            }
         }
         for read in reads {
             guard !Task.isCancelled else {
                 reads.forEach { $0.cancel() }
                 return
             }
-            let loaded = await read.value
-            firstScreenArtwork.ready += 1
-            if loaded { FirstLoadTimeline.mark("firstArtwork") }
+            let (item, loaded) = await read.value
+            if firstScreenArtwork.settle(item, generation: token), loaded { FirstLoadTimeline.mark("firstArtwork") }
         }
-        guard !Task.isCancelled else { return }
-        firstScreenArtwork.settled = true
-        FirstLoadTimeline.mark("firstScreenArtwork", "ready=\(firstScreenArtwork.ready) of=\(firstScreenArtwork.total)")
+        if firstScreenArtwork.settled {
+            FirstLoadTimeline.mark("firstScreenArtwork", "ready=\(firstScreenArtwork.ready) of=\(firstScreenArtwork.total)")
+        }
     }
 
     var body: some View {
@@ -220,11 +260,14 @@ struct LiveRootView: View {
                     }
                 }
                 .id("\(session.accountHash ?? ""):\(session.market):\(session.language)")
+                // REQ-119 M2: the library underneath is inert and hidden from VoiceOver while covered.
+                .disabled(firstLoadCovers)
+                .accessibilityHidden(firstLoadCovers)
             }
         }
         .overlay {
             if firstLoadCovers {
-                LibraryFirstLoadView(state: firstLoad.covers ? firstLoad : Self.pendingFirstLoad,
+                LibraryFirstLoadView(state: firstLoad.covers ? firstLoad : Self.coveringFirstLoad,
                                      inputs: firstLoadInputs,
                                      showNow: { applyFirstLoad { $0.showLibraryNow() } },
                                      tryAgain: {
@@ -238,14 +281,17 @@ struct LiveRootView: View {
         .onChange(of: firstLoadInputs, initial: true) { _, inputs in
             applyFirstLoad { $0.update(inputs, now: .now) }
         }
-        .onChange(of: firstLoadCovers) { _, covering in
-            guard !covering, readinessAfterFirstLoad else { return }
+        .onDisappear { state.setFirstLoadCovering(false, window: windowID) }
+        .onChange(of: firstLoad.active) { _, active in
+            guard !active, readinessAfterFirstLoad else { return }
             readinessAfterFirstLoad = false
             if session.hasConfirmedSignIn { state.showingReadiness = true }
         }
         .task(id: firstLoad.startedAt) {
-            guard firstLoad.covers else { return }
-            do { try await Task.sleep(for: LibraryFirstLoad.slowAfter) } catch { return }
+            guard firstLoad.active else { return }
+            do { try await Task.sleep(for: LibraryFirstLoad.graceDelay) } catch { return }
+            applyFirstLoad { $0.update(firstLoadInputs, now: .now) }
+            do { try await Task.sleep(for: LibraryFirstLoad.slowAfter - LibraryFirstLoad.graceDelay) } catch { return }
             applyFirstLoad { $0.update(firstLoadInputs, now: .now) }
         }
         .task(id: firstLoadArtworkKey) {
@@ -347,8 +393,8 @@ struct LiveRootView: View {
             state.installedGames.setAccountAccessAllowed(unifiedAccountVerified,
                 message: "Your Xbox Live account is being checked. Try again when it finishes.")
         }
-        .task(id: "\(session.accountCatalogScope):\(unifiedAccountVerified):\(state.installedGames.games.map(\.storeId).sorted().joined(separator: ","))") {
-            guard startupAllowed, unifiedAccountMode else { return }
+        .task(id: "\(session.accountCatalogScope):\(unifiedAccountVerified):\(backgroundAccountReadsAllowed):\(state.installedGames.games.map(\.storeId).sorted().joined(separator: ","))") {
+            guard startupAllowed, unifiedAccountMode, backgroundAccountReadsAllowed else { return }
             while !Task.isCancelled {
                 await state.installedGames.productAccess.refresh(session: session,
                     installedIDs: state.installedGames.games.map(\.storeId))
@@ -357,7 +403,7 @@ struct LiveRootView: View {
             }
         }
         .onReceive(state.installedGames.$games) { games in
-            guard startupAllowed, unifiedAccountMode else { return }
+            guard startupAllowed, unifiedAccountMode, backgroundAccountReadsAllowed else { return }
             Task {
                 await state.installedGames.productAccess.refresh(session: session,
                     installedIDs: games.map(\.storeId))
@@ -381,6 +427,7 @@ struct LiveRootView: View {
             if startupAllowed, scenePhase == .active {
                 await session.revalidateAccountOnForeground()
                 await state.pcGames.refreshInBackground()
+                guard backgroundAccountReadsAllowed else { return }
                 await state.installedGames.productAccess.refresh(session: session,
                     installedIDs: state.installedGames.games.map(\.storeId))
             }
@@ -412,8 +459,8 @@ struct LiveRootView: View {
         .task {
             if startupAllowed { await session.prepareWelcome() }
         }
-        .task(id: "\(accountContentAllowed):\(state.destination.rawValue):\(state.showsRecentActivity):\(scenePhase == .active):\(session.isReady):\(session.connectionTransitioning):\(session.accountBusy)") {
-            guard accountContentAllowed, scenePhase == .active else { return }
+        .task(id: "\(accountContentAllowed):\(state.destination.rawValue):\(state.showsRecentActivity):\(scenePhase == .active):\(session.isReady):\(session.connectionTransitioning):\(session.accountBusy):\(backgroundAccountReadsAllowed)") {
+            guard accountContentAllowed, scenePhase == .active, backgroundAccountReadsAllowed else { return }
             await state.loadRecentActivityIfVisible(session: session)
         }
         .task(id: "\(accountContentAllowed):\(state.destination.rawValue):\(state.query):\(session.market):\(session.language):\(session.isReady)") {
@@ -431,13 +478,16 @@ struct LiveRootView: View {
         .onChange(of: session.hasConfirmedSignIn) { _, confirmed in
             if confirmed {
                 FirstLoadTimeline.begin(state.unifiedSignInRequested ? "interactive" : "restored")
-                if coldSignInPending {
+                if startupAllowed, unifiedAccountMode, firstLoadDoneFor != session.accountHash,
+                   LibraryFirstLoad.shouldBegin(signedIn: true) {
                     firstScreenArtwork = FirstScreenArtwork()
-                    applyFirstLoad { $0.begin(at: .now) }
-                    readinessAfterFirstLoad = true
+                    firstScreenRequested = []
+                    applyFirstLoad { $0.begin(at: .now, immediate: state.unifiedSignInRequested) }
+                    readinessAfterFirstLoad = state.unifiedSignInRequested
                 }
             } else {
-                firstLoad = LibraryFirstLoad()
+                applyFirstLoad { $0 = LibraryFirstLoad() }
+                firstLoadDoneFor = nil
                 readinessAfterFirstLoad = false
             }
             if confirmed, state.consumeUnifiedSignInRequest() {
@@ -459,7 +509,7 @@ struct LiveRootView: View {
             }
         }
         .sheet(isPresented: Binding(get: { requiresAccountGate || state.showingAccount
-                                        || (state.showingReadiness && !firstLoadCovers) },
+                                        || (state.showingReadiness && !firstLoadOutstanding) },
                                     set: { presented in
                                         if !presented { state.showingReadiness = false }
                                         state.showingAccount = !requiresAccountGate && presented
@@ -525,7 +575,8 @@ struct LiveRootView: View {
 
     @ToolbarContentBuilder
     private var rootToolbar: some ToolbarContent {
-        if !requiresAccountGate {
+        // REQ-119 M2: sections, search, Import and Account wait until the setup view hands over.
+        if !requiresAccountGate && !firstLoadCovers {
             XodusToolbar(selection: state.navigationSelection, searchText: $state.query,
                          searchFocused: Binding(get: { searchFocused }, set: { searchFocused = $0 }),
                          searchPlaceholder: searchPlaceholder, searchEnabled: searchEnabled,

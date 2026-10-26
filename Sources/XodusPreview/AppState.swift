@@ -120,6 +120,13 @@ final class AppState: ObservableObject {
     @Published var showingSetup = false
     /// Set when the user signs in from the welcome screen; the sheet then shows the readiness checklist.
     @Published var showingReadiness = false
+    /// REQ-119: the setup view covers the window; navigation, Import and Account wait.
+    @Published private(set) var firstLoadCoveringWindows = Set<UUID>()
+    var firstLoadCovering: Bool { !firstLoadCoveringWindows.isEmpty }
+    /// Each window reports its own setup view; closing one never uncovers another still in setup.
+    func setFirstLoadCovering(_ covering: Bool, window: UUID) {
+        if covering { firstLoadCoveringWindows.insert(window) } else { firstLoadCoveringWindows.remove(window) }
+    }
     @Published var destination: Destination = .library
     @Published var query = ""
     @Published private(set) var unifiedSignInRequested = false
@@ -290,6 +297,7 @@ final class AppState: ObservableObject {
     }
 
     func openAccount(_ destination: AccountDestination = .account) {
+        guard !firstLoadCovering else { return }
         if destination == .engines {
             SettingsPaneSelection.select(.engines, defaults: settingsDefaults)
             showingAccount = false

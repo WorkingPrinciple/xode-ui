@@ -134,8 +134,12 @@ In-game voice chat and microphone input aren't supported in this beta. Developer
 
 ## Scope and credits
 
-X Ode builds on [Xodus](https://github.com/xodus-gaming/xodus) and the
-[macOS backend fork](https://github.com/WorkingPrinciple/xodus-macos).
+X Ode runs Windows games with [Wine](https://www.winehq.org) (LGPL-2.1-or-later; thank you to the Wine authors and CodeWeavers) and is built on [Xodus](https://github.com/xodus-gaming/xodus) (GPL-3.0; thank you to its contributors).
+
+In the app, the credits and every component's licence are in X Ode menu › Acknowledgments
+(or Open-Source Licences…, and Help › Acknowledgments and Licences). They work signed out and offline.
+
+X Ode's backend is the [macOS backend fork](https://github.com/WorkingPrinciple/xodus-macos) of Xodus.
 Original app source, documentation and mockups are GPL-3.0-only; preserve
 [the source license](LICENSE), [NOTICE](NOTICE), [licensing boundaries](docs/LICENSING.md),
 upstream notices and corresponding-source obligations when distributing. The

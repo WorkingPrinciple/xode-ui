@@ -685,8 +685,10 @@ struct NativeLaunchConfiguration {
             }
         }
         let prefix = profile?.preservedPrefixPath.map { URL(fileURLWithPath: NativeTitleLaunchProfile.expand($0)) }
-            ?? qualified?.prefix ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(
-            "Library/Application Support/Xodus/Prefixes/\(game.id.uuidString)/\(engineName)")
+            ?? qualified?.prefix ?? CalimochoPrefixContinuity.location(
+                productID: game.storeId, installationID: game.id, engine: engineName,
+                root: URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(
+                    "Library/Application Support/Xodus/Prefixes"))
         try GameScriptFiles.checkPath(prefix, allowMissing: true)
         if let selected = profile?.shimDirectory, selected != shims.directory.path {
             throw NativeLaunchError.invalidProfile
@@ -759,6 +761,11 @@ struct NativeLaunchConfiguration {
             try GameScriptFiles.checkPath(marker, allowMissing: true)
             if FileManager.default.fileExists(atPath: marker.path) {
                 let bytes = try InstalledGameFiles.readRegular(marker, maximumBytes: 4_096)
+                if let pin = CalimochoReleasePin.named(engine),
+                   prefix.lastPathComponent == CalimochoPrefixContinuity.family(pin),
+                   try CalimochoPrefixContinuity.markerMatches(bytes, pin: pin) {
+                    return nil
+                }
                 let value = try JSONValue.decodeUnique(bytes, maximumBytes: 4_096)
                 guard case .object(let fields) = value,
                       Set(fields.keys) == ["version", "engine", "wine_sha256"],
@@ -783,12 +790,15 @@ struct NativeLaunchConfiguration {
 }
 
 enum NativeLaunchError: Error, LocalizedError {
+    case prefixContinuity(String)
     case candidateBlocked(String)
     case runtimeNotQualified, registryMissing, engineNotSelected, engineUnavailable, invalidProfile, shimsUnavailable,
          installationNotReady, configurationConflict, legacyLauncher, prefixConflict, providerPolicy,
          selectionChanged, providerNotAdmitted
     var errorDescription: String? {
         switch self {
+        case .prefixContinuity(let detail):
+            "The previous Calimocho prefix couldn't be preserved: \(detail). The game wasn't started. The previous prefix was kept."
         case .candidateBlocked(let reason): reason
         case .runtimeNotQualified:
             "This game's tested runtime isn't set up on this Mac. Open Engines to choose the runtime it needs. No other runtime was substituted."
@@ -801,7 +811,7 @@ enum NativeLaunchError: Error, LocalizedError {
         case .legacyLauncher:
             "This legacy launch script cannot verify the selected Calimocho configuration. Use the connected \(AppBrand.displayName) lifecycle service; the script was not started."
         case .prefixConflict:
-            "This prefix is owned by another engine or has an invalid ownership record. It was not changed. Choose a matching configuration; no migration was attempted."
+            "This prefix has conflicting or invalid ownership, or multiple previous prefixes were found. The game wasn't started. Existing saved data was kept. Choose a matching configuration."
         case .providerPolicy:
             "Only a verified Calimocho configuration can be launched in \(AppBrand.displayName). Historical CrossOver, GPTK and generic Wine choices are retained but cannot run. Choose Calimocho in Engines."
         case .selectionChanged:

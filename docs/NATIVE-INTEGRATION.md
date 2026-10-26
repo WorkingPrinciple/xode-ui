@@ -1244,10 +1244,11 @@ The shared Foundation/ImageIO loader admits only
 Redirects, URL credentials, HTTP authentication and cookies are disabled.
 Each transfer is bounded to 10 seconds and 8 MiB; actual dimensions are checked
 before a maximum-2400-pixel thumbnail is decoded off the main actor. Rejected
-transfers are cancelled. The shared decoded cache is memory-only and bounded
-to 40 images / 64 MiB. No covers, account identifiers or personal history are
-saved to disk or sent to a third-party art service. Fetch failures are visible
-placeholders, not mutations of metadata status.
+transfers are cancelled. The shared decoded cache is memory-only, bounded to
+200 images / 256 MiB and emptied under memory pressure. No covers, account
+identifiers or personal history are saved to disk or sent to a third-party art
+service. Fetch failures are visible placeholders, not mutations of metadata
+status.
 
 `library.recent` is a separate negotiated read: limit 1-100, TitleHub v2,
 recentlyPlayed/live/partial, null cursor and null Store product mapping.

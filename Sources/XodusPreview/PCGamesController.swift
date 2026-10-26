@@ -52,6 +52,8 @@ final class PCGamesController: ObservableObject {
     @Published private(set) var legacyKeychainRetained = false
     @Published private(set) var restoringPresence = false
     @Published private(set) var presenceUnavailable = false
+    /// REQ-119: this scope's collection read has been sent, or can't be; background account reads wait for it.
+    @Published private(set) var collectionReadStarted = false
     private(set) var accountDisconnecting = false
     private let store: any PCGamesRefreshStore
     private let client: PCGamesClient
@@ -76,16 +78,18 @@ final class PCGamesController: ObservableObject {
         usesUnifiedAccount = true
     }
 
-    var representedGames: [PCGame] {
-        guard !needsSignIn else { return [] }
+    /// The snapshot only while it belongs to the current account, country and market.
+    var representedSnapshot: PCGamesSnapshot? {
+        guard !needsSignIn else { return nil }
         if usesUnifiedAccount {
             guard unifiedSession?.hasConfirmedSignIn == true,
                   unifiedSession?.accountCountryReady == true,
                   snapshotScope == unifiedSession?.accountCatalogScope,
-                  accountHash == unifiedSession?.accountHash else { return [] }
+                  accountHash == unifiedSession?.accountHash else { return nil }
         }
-        return snapshot?.games ?? []
+        return snapshot
     }
+    var representedGames: [PCGame] { representedSnapshot?.games ?? [] }
     var accountHash: String? { snapshot?.boundAccountHash ?? snapshot?.accountID.flatMap(XboxAccountBinding.hash) }
     var resolutionNotice: String? {
         guard !busy, let snapshot, snapshot.detailFailureCount > 0 else { return nil }
@@ -348,6 +352,7 @@ final class PCGamesController: ObservableObject {
                 guard session.accountCatalogScope == scope else { throw CancellationError() }
                 session.endLibraryReadPriority()
                 prioritized = false
+                collectionReadStarted = true
                 logger.notice("Account collection dispatch")
                 FirstLoadTimeline.mark("collectionDispatch")
                 let read = try await session.readUnifiedAccount(.library, market: market, language: language)
@@ -380,6 +385,7 @@ final class PCGamesController: ObservableObject {
                 needsSignIn = false
             } catch is CancellationError { }
             catch {
+                collectionReadStarted = true
                 guard generation == token, !terminating else { return }
                 if accountHash != session.accountHash || !session.hasConfirmedSignIn { snapshot = nil }
                 if error as? PCGamesError == .libraryReadBusy {
@@ -403,6 +409,7 @@ final class PCGamesController: ObservableObject {
         old?.cancel()
         snapshot = nil
         snapshotScope = nil
+        collectionReadStarted = false
         lastAutomaticAttempt = nil
         hasSavedSignIn = false
         restored = false

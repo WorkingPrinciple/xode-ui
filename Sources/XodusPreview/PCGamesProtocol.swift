@@ -160,8 +160,9 @@ struct PCGamesHTTP: PCGamesTransport {
     static let maximumBytes = 4 * 1024 * 1024
     private let session: URLSession
 
-    init() {
+    init(protocolClasses: [AnyClass]? = nil) {
         let config = URLSessionConfiguration.ephemeral
+        if let protocolClasses { config.protocolClasses = protocolClasses }
         config.httpCookieStorage = nil
         config.httpShouldSetCookies = false
         config.urlCredentialStorage = nil
@@ -727,31 +728,59 @@ struct PCGamesClient: Sendable {
                            progress: (@MainActor @Sendable (PCGamesSnapshot) -> Void)? = nil) async throws -> PCGamesSnapshot {
         guard ids.count <= 10_000, Set(ids).count == ids.count, ids.allSatisfy(Self.validProductID),
               candidateCount >= ids.count else { throw PCGamesError.invalidResponse }
-        var games: [PCGame] = []
-        var unresolved = Set(ids)
-        var detailFailures = Set<String>()
-        var excluded = 0
+        var resolved: [Int: [PCGamesCatalog.Product]] = [:]
+        var failed: [Int: Set<String>] = [:]
+        var revalidations: [Int: Task<PublicCatalogDescriptors.Revalidated, Never>] = [:]
         var completedBatches = 0
         func snapshot() -> PCGamesSnapshot {
-            PCGamesSnapshot(games: games.sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending },
+            var games: [PCGame] = []
+            var unresolved = Set(ids)
+            var excluded = 0
+            for index in resolved.keys.sorted() {
+                for product in resolved[index] ?? [] {
+                    if let game = product.game {
+                        games.append(PCGame(id: game.id, title: game.title, artwork: game.artwork,
+                                            acquisitionKind: kinds[game.id] ?? .unknown))
+                        unresolved.remove(product.ProductId)
+                    } else if product.isBaseGame == false
+                        || (product.isBaseGame == true && product.pcPackageListing == false) {
+                        unresolved.remove(product.ProductId)
+                        excluded += 1
+                    }
+                }
+            }
+            let detailFailures = failed.values.reduce(into: Set<String>()) { $0.formUnion($1) }
+            // Ties break by ID so the display order doesn't depend on which batch finished first.
+            return PCGamesSnapshot(games: games.sorted {
+                    let order = $0.title.localizedStandardCompare($1.title)
+                    return order == .orderedSame ? $0.id < $1.id : order == .orderedAscending
+                },
                 excludedCount: excluded, updatedAt: Date(), accountID: accountID, boundAccountHash: accountHash,
                 unresolvedIDs: unresolved, unresolvedCount: candidateCount - ids.count + unresolved.count,
                 unresolvedKinds: kinds.filter { unresolved.contains($0.key) },
                 detailFailureCount: detailFailures.count)
+        }
+        func products(_ data: Data, batch: [String]) throws -> [PCGamesCatalog.Product] {
+            let products = try decode(PCGamesCatalog.self, data).Products
+            guard products.count <= batch.count,
+                  Set(products.map(\.ProductId)).count == products.count,
+                  products.allSatisfy({ batch.contains($0.ProductId) }) else { throw PCGamesError.invalidResponse }
+            return products
         }
         if !ids.isEmpty { await progress?(snapshot()) }
         let batches = stride(from: 0, to: ids.count, by: 20).map { Array(ids[$0..<min($0 + 20, ids.count)]) }
         let descriptors = descriptors
         // REQ-119: two independent descriptor reads at a time, inside the producer's four-operation limit;
         // LIMIT_EXCEEDED stays a retried descriptor failure. Results are merged as they arrive.
-        try await withThrowingTaskGroup(of: (Int, Result<Data, any Error>).self) { group in
+        // REQ-121: saved descriptors resolve at once and are revalidated before the final snapshot.
+        try await withThrowingTaskGroup(of: (Int, Result<PublicCatalogDescriptors.Read, any Error>).self) { group in
             var next = 0
-            func start(_ group: inout ThrowingTaskGroup<(Int, Result<Data, any Error>), any Error>) {
+            func start(_ group: inout ThrowingTaskGroup<(Int, Result<PublicCatalogDescriptors.Read, any Error>), any Error>) {
                 guard next < batches.count else { return }
                 let index = next, batch = batches[index]
                 next += 1
                 group.addTask {
-                    do { return (index, .success(try await descriptors.load(ids: batch, market: market, language: language))) }
+                    do { return (index, .success(try await descriptors.read(ids: batch, market: market, language: language))) }
                     catch { return (index, .failure(error)) }
                 }
             }
@@ -759,28 +788,14 @@ struct PCGamesClient: Sendable {
             while let (index, result) = try await group.next() {
                 let batch = batches[index]
                 do {
-                    let data = try result.get()
-                    let products = try decode(PCGamesCatalog.self, data).Products
-                    guard products.count <= batch.count,
-                          Set(products.map(\.ProductId)).count == products.count,
-                          products.allSatisfy({ batch.contains($0.ProductId) }) else { throw PCGamesError.invalidResponse }
-                    detailFailures.formUnion(await descriptors.failures(ids: batch, market: market,
-                                                                         language: language).keys)
-                    games += products.compactMap(\.game).map {
-                        PCGame(id: $0.id, title: $0.title, artwork: $0.artwork, acquisitionKind: kinds[$0.id] ?? .unknown)
-                    }
-                    for product in products {
-                        if product.game != nil { unresolved.remove(product.ProductId) }
-                        else if product.isBaseGame == false
-                            || (product.isBaseGame == true && product.pcPackageListing == false) {
-                            unresolved.remove(product.ProductId)
-                            excluded += 1
-                        }
-                    }
+                    let read = try result.get()
+                    resolved[index] = try products(read.data, batch: batch)
+                    failed[index] = Set(await descriptors.failures(ids: batch, market: market, language: language).keys)
+                    if let revalidation = read.revalidation { revalidations[index] = revalidation }
                     completedBatches += 1
                 } catch is CancellationError { throw CancellationError() }
                 catch {
-                    detailFailures.formUnion(batch)
+                    failed[index] = Set(batch)
                     Logger(subsystem: "io.github.dragoshont.xodus", category: "pc-library")
                         .warning("Public PC descriptor batch failed; \(batch.count) candidates remain unresolved")
                 }
@@ -790,6 +805,81 @@ struct PCGamesClient: Sendable {
             }
         }
         guard ids.isEmpty || completedBatches > 0 else { throw PCGamesError.incompleteCatalog(0) }
+        var revised = false
+        for index in revalidations.keys.sorted() {
+            guard let revalidation = revalidations[index] else { continue }
+            let revalidated = try await CancellableWait.value(of: revalidation)
+            if !revalidated.withdrawn.isEmpty {
+                // The network no longer returns these products, so saved details can't resolve them.
+                resolved[index] = (resolved[index] ?? []).filter { !revalidated.withdrawn.contains($0.ProductId) }
+                revised = true
+            }
+            let changed = revalidated.changed
+            guard !changed.isEmpty else { continue }
+            let updated = batches[index].filter(changed.contains)
+            do {
+                let fresh = try products(try await descriptors.load(ids: updated, market: market, language: language),
+                                         batch: updated)
+                resolved[index] = (resolved[index] ?? []).filter { !changed.contains($0.ProductId) } + fresh
+                revised = true
+            } catch is CancellationError { throw CancellationError() }
+            catch {
+                Logger(subsystem: "io.github.dragoshont.xodus", category: "pc-library")
+                    .warning("Revalidated PC descriptors couldn't be read; saved details remain")
+            }
+        }
+        try Task.checkCancellation()
+        if revised { await progress?(snapshot()) }
         return snapshot()
     }
 }
+
+/// Awaits an unstructured task's value but stops waiting, without cancelling the task, when the caller is cancelled.
+enum CancellableWait {
+    static func value<T: Sendable>(of task: Task<T, Never>) async throws -> T {
+        let gate = ResumeGate<T>()
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<T, Error>) in
+                gate.install(continuation)
+                Task { gate.resume(.success(await task.value)) }
+            }
+        } onCancel: {
+            gate.resume(.failure(CancellationError()))
+        }
+    }
+
+    private final class ResumeGate<T: Sendable>: @unchecked Sendable {
+        private let lock = NSLock()
+        private var continuation: CheckedContinuation<T, Error>?
+        private var early: Result<T, Error>?
+        private var finished = false
+
+        func install(_ continuation: CheckedContinuation<T, Error>) {
+            lock.lock()
+            if let early {
+                finished = true
+                self.early = nil
+                lock.unlock()
+                continuation.resume(with: early)
+                return
+            }
+            self.continuation = continuation
+            lock.unlock()
+        }
+
+        func resume(_ result: Result<T, Error>) {
+            lock.lock()
+            guard !finished else { lock.unlock(); return }
+            guard let continuation else {
+                if early == nil { early = result }
+                lock.unlock()
+                return
+            }
+            finished = true
+            self.continuation = nil
+            lock.unlock()
+            continuation.resume(with: result)
+        }
+    }
+}
+

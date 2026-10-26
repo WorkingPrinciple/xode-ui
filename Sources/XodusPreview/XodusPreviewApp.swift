@@ -65,6 +65,7 @@ final class PreviewDelegate: NSObject, NSApplicationDelegate {
     }
     let readyNotifier = GameReadyNotifier()
     let termination = ApplicationTerminationCoordinator()
+    private var terminationRequested = false
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
         readyNotifier.play = { [weak self] folder in
@@ -76,8 +77,18 @@ final class PreviewDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        guard !terminationRequested else { return .terminateLater }
+        terminationRequested = true
         let systemQuit = Self.systemSessionEnding
         Task {
+            defer { terminationRequested = false }
+            if let installedGames, let id = installedGames.runningGameID {
+                let title = installedGames.games.first { $0.id == id }?.title ?? "A game"
+                guard RunningGameQuitConfirmation.confirm(title: title) else {
+                    sender.reply(toApplicationShouldTerminate: false)
+                    return
+                }
+            }
             if let gameOperations, let download = gameOperations.stoppableDownloadForQuit {
                 if !systemQuit {
                     let alert = NSAlert()
@@ -144,9 +155,9 @@ struct XodusPreviewApp: App {
 
     private var navigationAllowed: Bool {
 #if !XODUS_SHIPPING
-        state.fixtureMode || session.hasConfirmedSignIn
+        (state.fixtureMode || session.hasConfirmedSignIn) && !state.firstLoadCovering
 #else
-        session.hasConfirmedSignIn
+        session.hasConfirmedSignIn && !state.firstLoadCovering
 #endif
     }
 
@@ -263,8 +274,10 @@ struct XodusPreviewApp: App {
         .commands {
             CommandGroup(replacing: .appInfo) {
                 Button("About \(AppBrand.displayName)") { AppBrandPresentation.orderFrontAboutPanel() }
-                Button("Licenses") { openWindow(id: "licenses") }
-                Button("Acknowledgments") { openWindow(id: "acknowledgments") }
+                ForEach(AcknowledgmentsNavigation.appMenu, id: \.title) { item in
+                    Button(item.title) { AcknowledgmentsNavigation.shared.open(item.focus) { openWindow(id: $0) } }
+                }
+                Button("\(AppBrand.displayName) Licence…") { openWindow(id: "licenses") }
             }
             CommandGroup(after: .appSettings) {
                 Button("Engines…") { openSettingsPane(.engines) }
@@ -277,6 +290,8 @@ struct XodusPreviewApp: App {
                 Button("Quit \(AppBrand.displayName)") { NSApp.terminate(nil) }
                     .keyboardShortcut("q")
             }
+            // The standard Edit menu: Spelling and Grammar, Substitutions, Transformations and Speech.
+            TextEditingCommands()
             GameSearchCommands(navigationAllowed: navigationAllowed)
             CommandGroup(before: .toolbar) {
                 Button("Refresh") { Task { await state.refreshCurrentDestination(session: session) } }
@@ -287,16 +302,20 @@ struct XodusPreviewApp: App {
             CommandGroup(replacing: .help) {
                 Button(AppBrand.supportTitle) { openWindow(id: AppBrandPresentation.supportWindowID) }
                 Button("Send Feedback…") { openWindow(id: AppBrandPresentation.supportWindowID) }
+                Divider()
+                ForEach(AcknowledgmentsNavigation.helpMenu, id: \.title) { item in
+                    Button(item.title) { AcknowledgmentsNavigation.shared.open(item.focus) { openWindow(id: $0) } }
+                }
             }
             CommandGroup(after: .newItem) {
                 Button(NativeToolbarImportButton.title + "…") { Task { await state.installedGames.chooseGame() } }
                     .keyboardShortcut("i", modifiers: [.command, .shift])
 #if !XODUS_SHIPPING
-                    .disabled(!session.hasConfirmedSignIn || state.fixtureMode || LibraryPreviewExporter.requested || !state.installedGames.loaded ||
+                    .disabled(!session.hasConfirmedSignIn || state.firstLoadCovering || state.fixtureMode || LibraryPreviewExporter.requested || !state.installedGames.loaded ||
                               state.installedGames.editing || state.installedGames.choosing ||
                               state.installedGames.mutationActive)
 #else
-                    .disabled(!session.hasConfirmedSignIn || !state.installedGames.loaded || state.installedGames.editing ||
+                    .disabled(!session.hasConfirmedSignIn || state.firstLoadCovering || !state.installedGames.loaded || state.installedGames.editing ||
                               state.installedGames.choosing || state.installedGames.mutationActive)
 #endif
             }
@@ -309,6 +328,7 @@ struct XodusPreviewApp: App {
                     .disabled(!navigationAllowed)
             }
             CommandMenu("Account") {
+                Group {
 #if !XODUS_SHIPPING
                 Button("Account") { state.openAccount() }
                     .disabled(state.fixtureMode)
@@ -339,6 +359,8 @@ struct XodusPreviewApp: App {
                     .disabled(!session.hasConfirmedSignIn)
                     .keyboardShortcut("c", modifiers: [.command, .shift])
 #endif
+                            }
+                .disabled(state.firstLoadCovering)
             }
         }
         Settings {

@@ -21,10 +21,11 @@ enum UserEngineStore {
     static let limit = 32
 
     enum StoreError: Error, Equatable {
-        case full, unreadable, unwritable
+        case full, unreadable, unwritable, duplicate
 
         var message: String {
             switch self {
+            case .duplicate: "This engine is already added."
             case .full: "You can add up to \(UserEngineStore.limit) engines. Remove one to add another."
             case .unreadable: "Saved engines couldn't be read. They are kept unchanged."
             case .unwritable: "The engine list couldn't be saved. Try again."
@@ -48,13 +49,17 @@ enum UserEngineStore {
         guard defaults.data(forKey: preferenceKey) == data else { throw .unwritable }
     }
 
-    /// Adds by resolved location; re-adding the same location replaces its record in place.
+    /// The path with `~`, `.`/`..`, trailing slashes and symlinks resolved.
+    static func resolved(_ path: String) -> String {
+        URL(fileURLWithPath: (path as NSString).expandingTildeInPath).standardizedFileURL.resolvingSymlinksInPath().path
+    }
+
+    /// QA E8: the same engine — the same resolved folder or the same resolved Wine binary — is
+    /// refused rather than listed twice.
     static func adding(_ engine: UserEngine, to engines: [UserEngine]) throws(StoreError) -> [UserEngine] {
-        if let index = engines.firstIndex(where: { $0.location == engine.location }) {
-            var next = engines
-            next[index] = UserEngine(id: engines[index].id, name: engine.name, version: engine.version,
-                                     location: engine.location, wine: engine.wine, wineserver: engine.wineserver)
-            return next
+        let location = resolved(engine.location), wine = resolved(engine.wine)
+        if engines.contains(where: { resolved($0.location) == location || resolved($0.wine) == wine }) {
+            throw .duplicate
         }
         guard engines.count < limit else { throw .full }
         return engines + [engine]
@@ -320,8 +325,9 @@ struct UserEngineList: View {
 
     var body: some View {
         ForEach(model.engines) { engine in
-            EngineRow(name: engine.name, detail: engine.version, location: engine.location,
-                      state: .configured) {
+            EngineRow(name: engine.name,
+                      detail: [engine.version, EnginesCopy.testingOnly].compactMap { $0 }.joined(separator: " · "),
+                      location: engine.location, state: .configured) {
                 Button("Remove", role: .destructive) { model.remove(engine) }
                     .disabled(!model.storeReadable || model.terminating())
                     .accessibilityLabel("Remove \(engine.name)")
@@ -545,10 +551,10 @@ enum CalimochoAvailability: Equatable, Sendable {
     /// Runs the active pin's raw release verification off the main actor (it reads and hashes the engine).
     /// `status(results:verification:)` applies the engine check's admission and rejection.
     static func verifyReleaseInBackground(
+        _ pin: CalimochoReleasePin = CalimochoReleasePin.all.last!,
         admission: EngineInspection?, root: URL = CalimochoReleaseEngines.defaultEnginesRoot
     ) async -> Self {
-        let pin = CalimochoReleasePin.all.last!
-        return await Task.detached(priority: .utility) {
+        await Task.detached(priority: .utility) {
             CalimochoAvailability.verifiedRelease(pin, root: root, admission: admission)
         }.value
     }
@@ -570,7 +576,12 @@ enum CalimochoAvailability: Equatable, Sendable {
 
     /// The engine choices a completed check produced.
     @MainActor static func choices(in results: some EngineCheckResults) -> [EngineChoice] {
-        results.availableEngineOverrides.compactMap { $0.inspection.engineName.map { EngineChoice.named($0, ready: true) } }
+        results.availableEngineOverrides.compactMap { selection in
+            selection.inspection.engineName.map {
+                EngineChoice.named($0, ready: true,
+                                   playable: EngineChoice.playsInBeta(admittedProvider: selection.inspection.admittedProvider))
+            }
+        }
             + results.failedEngineOverrides.sorted().map { EngineChoice.named($0, ready: false) }
     }
 
@@ -647,7 +658,7 @@ struct CalimochoReleaseInstallControls: View {
                     }
                 }
                 .accessibilityIdentifier("xodus.engines.calimocho.progress")
-            } else if !installer.hasEngineFolder {
+            } else if !installer.hasEngineFolder && !installer.offersPinnedUpdate {
                 if CalimochoRelease.downloadPublished {
                     HStack {
                         Button(CalimochoRelease.getTitle) {
@@ -713,7 +724,9 @@ struct CalimochoReleaseInstallControls: View {
 }
 
 enum EnginesCopy {
-    static let lead = "Engines run Windows games on your Mac. \(AppBrand.displayName) plays games with Calimocho. You can also add your own Wine engines."
+    static let lead = "Engines run Windows games on your Mac. You can add your own Wine engines for testing; in this beta, games play with Calimocho."
+    /// Why a non-Calimocho engine can't be the default (REQ-109/COR-201: custom-engine launching isn't in 0.2.0).
+    static let testingOnly = "Saved for testing. In this beta, games play with Calimocho."
     static let crossOver = "\(AppBrand.displayName) detects and configures CrossOver, but Play currently uses Calimocho."
     static let crossOverLicense = "Use your own licensed copy of CrossOver; \(AppBrand.displayName) doesn't include it."
 }
@@ -724,11 +737,17 @@ struct EngineChoice: Identifiable, Equatable {
     let name: String
     var version: String? = nil
     let ready: Bool
+    /// Whether Play can use it in this beta: only engines the backend admits as Calimocho.
+    var playable = true
+
+    /// The default and per-game choices offer only engines Play uses, so a choice is never ignored.
+    static func playsInBeta(admittedProvider: String?) -> Bool { admittedProvider == "calimocho" }
 
     /// A choice named from its engine ID, with the secondary line users see under it.
-    static func named(_ id: String, ready: Bool) -> Self {
+    static func named(_ id: String, ready: Bool, playable: Bool = true) -> Self {
         let presentation = EngineDisplayName.presentation(for: id)
-        return EngineChoice(id: id, name: presentation.name, version: presentation.detail, ready: ready)
+        return EngineChoice(id: id, name: presentation.name, version: presentation.detail, ready: ready,
+                            playable: playable)
     }
 }
 
@@ -753,6 +772,10 @@ struct EngineConfiguratorForm<Advanced: View>: View {
     var calimochoInstaller: CalimochoReleaseInstallController? = nil
     var engineRemovalBusy: @MainActor @Sendable () -> Bool = { true }
     var refreshReleaseAdmission: @MainActor () async -> Bool = { false }
+    var showsCalimochoUpdates = false
+    var checkCalimochoUpdatesOnOpen = false
+    var beginCalimochoUpdate: @MainActor (LocalCalimochoRelease) -> Void = { _ in }
+    var removeOldCalimocho: @MainActor () -> Void = {}
     @ViewBuilder let advanced: () -> Advanced
 
     var body: some View {
@@ -768,6 +791,9 @@ struct EngineConfiguratorForm<Advanced: View>: View {
             refresh: refresh, showsAdvanced: showsAdvanced, userEngineModel: userEngineModel,
             calimochoStatus: calimochoStatus, calimochoInstaller: calimochoInstaller,
             engineRemovalBusy: engineRemovalBusy, refreshReleaseAdmission: refreshReleaseAdmission,
+            showsCalimochoUpdates: showsCalimochoUpdates, beginCalimochoUpdate: beginCalimochoUpdate,
+            removeOldCalimocho: removeOldCalimocho,
+            checkCalimochoUpdatesOnOpen: checkCalimochoUpdatesOnOpen,
             advanced: advanced)
     }
 }
@@ -786,6 +812,10 @@ struct EngineConfiguratorSections<Advanced: View>: View {
     let calimochoStatus: CalimochoAvailability?
     let engineRemovalBusy: @MainActor @Sendable () -> Bool
     let refreshReleaseAdmission: @MainActor () async -> Bool
+    let showsCalimochoUpdates: Bool
+    let beginCalimochoUpdate: @MainActor (LocalCalimochoRelease) -> Void
+    let removeOldCalimocho: @MainActor () -> Void
+    let checkCalimochoUpdatesOnOpen: Bool
     let advanced: () -> Advanced
     @StateObject private var ownedUsers: UserEngineModel
     @StateObject private var ownedCalimochoInstaller: CalimochoReleaseInstallController
@@ -801,6 +831,10 @@ struct EngineConfiguratorSections<Advanced: View>: View {
          calimochoInstaller: CalimochoReleaseInstallController? = nil,
          engineRemovalBusy: @escaping @MainActor @Sendable () -> Bool = { true },
          refreshReleaseAdmission: @escaping @MainActor () async -> Bool = { false },
+         showsCalimochoUpdates: Bool = false,
+         beginCalimochoUpdate: @escaping @MainActor (LocalCalimochoRelease) -> Void = { _ in },
+         removeOldCalimocho: @escaping @MainActor () -> Void = {},
+         checkCalimochoUpdatesOnOpen: Bool = false,
          advanced: @escaping () -> Advanced) {
         self.choices = choices
         self.defaultID = defaultID
@@ -815,6 +849,10 @@ struct EngineConfiguratorSections<Advanced: View>: View {
         self.calimochoStatus = calimochoStatus
         self.engineRemovalBusy = engineRemovalBusy
         self.refreshReleaseAdmission = refreshReleaseAdmission
+        self.showsCalimochoUpdates = showsCalimochoUpdates
+        self.beginCalimochoUpdate = beginCalimochoUpdate
+        self.removeOldCalimocho = removeOldCalimocho
+        self.checkCalimochoUpdatesOnOpen = checkCalimochoUpdatesOnOpen
         self.advanced = advanced
         _ownedUsers = StateObject(wrappedValue:
             userEngineModel ?? UserEngineModel(store: userEngineStore, suggestions: suggestions))
@@ -839,7 +877,7 @@ struct EngineConfiguratorSections<Advanced: View>: View {
                     refresh()
                     Task { await settings.refreshCrossOverDependency() }
                 }
-                .disabled(checkingAny || !allowsFileReads || settings.applicationTerminating)
+                .disabled(checkingAny || calimochoInstaller.isWorking || !allowsFileReads || settings.applicationTerminating)
                 .accessibilityLabel("Check engines and CrossOver again")
                 .accessibilityIdentifier("xodus.engines.refresh")
             }
@@ -850,20 +888,31 @@ struct EngineConfiguratorSections<Advanced: View>: View {
             }
             CalimochoReleaseInstallControls(installer: calimochoInstaller, isBusy: engineRemovalBusy,
                                             refreshAdmission: refreshReleaseAdmission)
+            if showsCalimochoUpdates {
+                CalimochoUpdateControls(installer: calimochoInstaller, isBusy: engineRemovalBusy,
+                                        beginUpdate: beginCalimochoUpdate, removeOld: removeOldCalimocho)
+                    .task(id: checkCalimochoUpdatesOnOpen) {
+                        guard checkCalimochoUpdatesOnOpen, allowsFileReads else { return }
+                        await calimochoInstaller.checkForUpdates(automatic: true)
+                    }
+            }
         }
         Section {
             Picker("Default Engine", selection: Binding(
                 get: { defaultID ?? "" },
-                set: { id in if id != defaultID, choices.contains(where: { $0.id == id && $0.ready }) { setDefault(id) } })) {
+                set: { id in
+                    if id != defaultID, choices.contains(where: { $0.id == id && $0.ready && $0.playable }) { setDefault(id) }
+                })) {
                 if defaultID == nil || !choices.contains(where: { $0.id == defaultID }) {
                     Text(defaultName).tag(defaultID ?? "")
                 }
                 ForEach(choices) { choice in
-                    Text(choice.name).tag(choice.id).selectionDisabled(!choice.ready)
+                    Text(choice.playable ? choice.name : "\(choice.name) — testing only").tag(choice.id)
+                        .selectionDisabled(!choice.ready || !choice.playable)
                 }
             }
             .pickerStyle(.menu)
-            .disabled(!allowsFileReads || settings.applicationTerminating)
+            .disabled(!allowsFileReads || settings.applicationTerminating || calimochoInstaller.isWorking)
             .accessibilityIdentifier("xodus.engines.default")
             if let error {
                 Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
@@ -877,7 +926,9 @@ struct EngineConfiguratorSections<Advanced: View>: View {
             }
             ForEach(choices) { choice in
                 EngineRow(name: choice.name,
-                          detail: choice.version.flatMap { choice.name.contains($0) ? nil : $0 },
+                          detail: [choice.version.flatMap { choice.name.contains($0) ? nil : $0 },
+                                   choice.playable ? nil : EnginesCopy.testingOnly].compactMap { $0 }
+                                   .joined(separator: " · ").nilIfEmpty,
                           state: !choice.ready ? .unverified : choice.id == defaultID ? .isDefault : .ready) {
                     EmptyView()
                 }
@@ -1040,4 +1091,8 @@ struct CrossOverLocationRow: View {
             await settings.refreshCrossOverDependency()
         }
     }
+}
+
+private extension String {
+    var nilIfEmpty: String? { isEmpty ? nil : self }
 }

@@ -9,6 +9,15 @@ import XodusManagement
 @MainActor
 enum ApplicationTerminationChecks {
     static func run(check: (Bool, String) -> Void) async throws {
+        let alert = RunningGameQuitConfirmation.alert(title: "Halls of Torment")
+        check(alert.messageText == "Halls of Torment is running."
+              && alert.informativeText.contains("unsaved progress may be lost")
+              && alert.buttons.map(\.title) == ["Cancel", "Quit and Close Game"]
+              && alert.buttons[0].keyEquivalent == "\r" && alert.buttons[1].keyEquivalent.isEmpty,
+              "S9: running-game Quit warns about unsaved progress with Cancel as the default")
+        check(!RunningGameQuitConfirmation.confirm(title: "Halls") { _ in .alertFirstButtonReturn }
+              && RunningGameQuitConfirmation.confirm(title: "Halls") { _ in .alertSecondButtonReturn },
+              "S9: only explicit Quit and Close Game permits termination; Cancel keeps the game running")
         let owned = [
             RuntimeProviderSettings(), RuntimeProviderSettings(), RuntimeProviderSettings(),
         ]

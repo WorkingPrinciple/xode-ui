@@ -15,6 +15,7 @@ enum BrandUXChecks {
         .map { URL(fileURLWithPath: $0, isDirectory: true) }
 
     static func run(check: (Bool, String) -> Void) {
+        NativeCheckOCR.checks(check)
         if let renderDirectory {
             try? FileManager.default.createDirectory(at: renderDirectory, withIntermediateDirectories: true)
         }
@@ -29,6 +30,7 @@ enum BrandUXChecks {
         firstLoad(check: check)
         support(check: check)
         acknowledgments(check: check)
+        credits(check: check)
         permissions(check: check)
         jargon(check: check)
     }
@@ -52,7 +54,8 @@ enum BrandUXChecks {
         let about = AppBrandPresentation.aboutPanelOptions(packaged)
         check(about[.applicationName] as? String == "X Ode"
               && about[.applicationVersion] as? String == "0.2.0 Beta" && about[.version] as? String == "412"
-              && (about[.credits] as? NSAttributedString)?.string == "© Working Principle"
+              && (about[.credits] as? NSAttributedString)?.string
+                == "Runs Windows games with Wine and is built on Xodus. Thank you to both projects.\n© Working Principle"
               && AppBrandPresentation.aboutPanelOptions(AppVersion(info: nil))[.applicationVersion] as? String
                 == "Development build",
               "COR186/COR198/L1: About shows X Ode, Version 0.2.0 Beta (412) and © Working Principle, without xode.win")
@@ -189,18 +192,18 @@ enum BrandUXChecks {
               "REVIEW L1: A failed engine check makes readiness Invalid; a clean re-check returns it to pending")
         let release = EngineDisplayName.presentation(for: CalimochoRelease.engineID)
         let pinned = CalimochoReleasePin.all.last!.engineName
-        check(CalimochoRelease.engineID == "calimocho-11.20-4.0b3-04"
-              && EngineDisplayName.releaseVersion(CalimochoRelease.engineID)?.version == "0.1120.4.4"
-              && CalimochoReleasePin.all == [.release04]
-              && CalimochoReleasePin.release04.wineSha256
-                == "2482af598928431f89fc32c99de72e72e146195dd86a859cc834bcab57fad3d0"
-              && CalimochoReleasePin.release04.wineserverSha256
-                == "655812965207694589e550bd58156c7841c08eeae50ecd09a1c8d803ed78cfc9"
-              && CalimochoReleasePin.release04.engineJSONSha256
-                == "98473033e8b1e4f02a1986749b684d0becd5e2be7d0ff388f7a2049566296425"
-              && CalimochoReleasePin.release04.manifestSha256
-                == "5ce80d16347304d2cd5d149072fed4aeed848e854fe17e20c3bd45c5013b2aba"
-              && CalimochoReleasePin.release04.teamID == "M62Z4M5EUY"
+        check(CalimochoRelease.engineID == "calimocho-11.20-4.0b3-06"
+              && EngineDisplayName.releaseVersion(CalimochoRelease.engineID)?.version == "0.1120.4.6"
+              && CalimochoReleasePin.all == [.release04, .release06]
+              && CalimochoReleasePin.release06.wineSha256
+                == "803a62d101303bb3160da4aa8a506857c3d1e1146aa4a0c9ee8250357ef12505"
+              && CalimochoReleasePin.release06.wineserverSha256
+                == "7102d70405e7667acf143e710723f58fb24d32eee81468b1f0f02279343601d0"
+              && CalimochoReleasePin.release06.engineJSONSha256
+                == "d3ca32d8d706be0ca948f661f76e68c4a735b78362c6fb95fe50c12eb5db18ff"
+              && CalimochoReleasePin.release06.manifestSha256
+                == "db1b642e1d1a93cf50a3620a994ca049e34ce2352dc25fc34617a651302528bf"
+              && CalimochoReleasePin.release06.teamID == "M62Z4M5EUY"
               && CalimochoRelease.engineID == pinned && CalimochoReleasePin.named(CalimochoRelease.engineID) != nil
               && release.name == "Calimocho \(EngineDisplayName.releaseVersion(pinned)!.version)"
               && release.detail == "Wine 11.20 · GPTK 4.0 beta 3" && !release.titleSpecific
@@ -209,13 +212,13 @@ enum BrandUXChecks {
               && EngineDisplayName.releaseVersion("calimocho-11.20-4.0b3-00") == nil
               && CalimochoRelease.displayName == release.name
               && CalimochoRelease.getTitle == "Get Calimocho"
-              && CalimochoReleasePin.release04.downloadURL?.absoluteString
-                == "https://github.com/WorkingPrinciple/calimocho/releases/download/engine-0.1120.4.4/calimocho-11.20-4.0b3-04-macos.zip"
-              && CalimochoReleasePin.release04.archiveSha256
-                == "193420eff603e05e9c76344de14e961ed230f016fd129f00667a176251a2fb6b"
-              && CalimochoRelease.downloadURL == CalimochoReleasePin.release04.downloadURL
+              && CalimochoReleasePin.release06.downloadURL?.absoluteString
+                == "https://github.com/WorkingPrinciple/calimocho/releases/download/engine-0.1120.4.6/calimocho-11.20-4.0b3-06-macos.zip"
+              && CalimochoReleasePin.release06.archiveSha256
+                == "3fc4467b466b6f8f0855c1934b2fe6a3d1c02b0c5ca85037860b735e4e419ee5"
+              && CalimochoRelease.downloadURL == CalimochoReleasePin.release06.downloadURL
               && CalimochoRelease.downloadPublished,
-              "REQ-115: The -04 pin exposes only the owner-published, archive-hash-pinned release asset")
+              "REQ-115: The active -06 pin retains -04 and exposes only its exact archive-hash-pinned asset")
         check(AppLegalCopy.d3dMetal.contains("Apple D3DMetal") && AppLegalCopy.d3dMetal.contains("non-commercial")
               && AppLegalCopy.d3dMetal.contains("downloaded separately"),
               "COR187: Licenses state that Calimocho bundles Apple D3DMetal under Apple's non-commercial license, downloaded separately")
@@ -447,7 +450,8 @@ enum BrandUXChecks {
 
     static func welcome(check: (Bool, String) -> Void) {
         check(WelcomeCopy.signIn == "Sign in with Microsoft"
-              && WelcomeCopy.technology == "X Ode runs Windows games with Wine and other open-source libraries."
+              && WelcomeCopy.technology == "X Ode runs Windows games with Wine and is built on Xodus."
+              && "\(WelcomeCopy.acknowledgments) \(WelcomeCopy.credits)" == "Acknowledgments and licences are also in the X Ode menu."
               && WelcomeCopy.keychain.contains("Keychain") && XOdeLockup.accessibilityName == "X Ode",
               "COR186 M7: The login screen is the X Ode lockup, Sign in with Microsoft and the Wine/open-source line")
         for scheme in [ColorScheme.light, .dark] {
@@ -458,7 +462,8 @@ enum BrandUXChecks {
                                 name: "welcome-\(scheme == .dark ? "dark" : "light")")
             let joined = labels.joined(separator: " ")
             check(labels.contains("Ode") && joined.contains("Sign in with Microsoft")
-                  && joined.contains("Wine") && joined.contains("Acknowledgments")
+                  && joined.contains("Wine") && joined.contains("Acknowledgments") && joined.contains("Xodus")
+                  && joined.contains("menu") && joined.contains("licences")
                   && !joined.contains("Keychain") && !joined.contains("PC Game Pass") && !joined.contains("Beta")
                   && !joined.contains("Xbox Live") && !joined.contains("Xode") && !joined.contains("Welcome"),
                   "COR186 M7: Rendered login (\(scheme)) keeps only the lockup, Microsoft sign-in, state notices and the Wine line: \(labels)")
@@ -643,16 +648,85 @@ enum BrandUXChecks {
         let welcome = LiveWelcomeView(session: LiveSession(), runtime: RuntimeProviderSettings(),
             operations: GameOperationsController(installed: InstalledGamesController()), openAcknowledgments: { opened = true })
         welcome.openAcknowledgmentsAction()
-        check(opened && WelcomeCopy.acknowledgmentsAccessibility == "Open-source acknowledgments"
+        check(opened && WelcomeCopy.acknowledgmentsAccessibility == "Open-source acknowledgments and licences"
               && AppAcknowledgmentsView.windowID == "acknowledgments",
               "REQ-117: The login screen's Acknowledgments link opens the Acknowledgments window")
         for scheme in [ColorScheme.light, .dark] {
-            let labels = render(AppAcknowledgmentsView(inventory: loaded), size: CGSize(width: 860, height: 600),
+            let labels = render(AppAcknowledgmentsView(inventory: loaded), size: CGSize(width: 860, height: 1200),
                                 scheme: scheme, name: "acknowledgments-\(scheme == .dark ? "dark" : "light")")
             let joined = labels.joined(separator: " ")
             check(joined.contains("Built on open source") && joined.contains("Key projects") && joined.contains("MoltenVK")
+                  && joined.contains(FeaturedCredits.sectionTitle) && joined.contains("winehq.org")
+                  && joined.contains("github.com/xodus-gaming/xodus") && joined.contains("CodeWeavers")
+                  && (joined.range(of: FeaturedCredits.sectionTitle)?.lowerBound ?? joined.endIndex)
+                    < (joined.range(of: "Key projects")?.lowerBound ?? joined.startIndex)
                   && joined.contains("Apple D3DMetal") && !joined.contains("DXVK"),
                   "REQ-117: The Acknowledgments window (\(scheme)) leads with the derived key projects and the separate D3DMetal note: \(labels)")
+        }
+    }
+
+    // MARK: Wine and Xodus credits (REQ-122, COR-209)
+
+    static func credits(check: (Bool, String) -> Void) {
+        let wine = FeaturedCredits.wine, xodus = FeaturedCredits.xodus
+        check(FeaturedCredits.sectionTitle == "Built on Wine and Xodus"
+              && wine.url.absoluteString == "https://www.winehq.org" && wine.organisation == "WineHQ"
+              && wine.license == "LGPL-2.1-or-later" && wine.role == "Runs Windows games on your Mac"
+              && wine.thanks.contains("Wine authors") && wine.thanks.contains("CodeWeavers")
+              && xodus.url.absoluteString == "https://github.com/xodus-gaming/xodus" && xodus.license == "GPL-3.0"
+              && xodus.role.contains("Xbox library and install engine") && xodus.thanks.contains("Xodus contributors"),
+              "REQ-122: Wine (WineHQ, LGPL-2.1-or-later) and Xodus (xodus-gaming, GPL-3.0) each have a role, a thank-you and a working link")
+        let about = (AppBrandPresentation.aboutPanelOptions()[.credits] as? NSAttributedString)?.string ?? ""
+        check(about.components(separatedBy: "\n").first == FeaturedCredits.aboutLine
+              && FeaturedCredits.aboutLine.contains("Wine") && FeaturedCredits.aboutLine.contains("Xodus"),
+              "REQ-122: About X Ode credits Wine and Xodus in one line above the copyright")
+        let line = WelcomeCopy.technology
+        check(line.hasPrefix("X Ode runs Windows games with Wine") && line.contains("Xodus")
+              && "\(WelcomeCopy.acknowledgments) \(WelcomeCopy.credits)".contains("X Ode menu") && line.count <= 70
+              && "\(WelcomeCopy.acknowledgments) \(WelcomeCopy.credits)".count <= 70
+              && !FeaturedCredits.xodus.role.lowercased().contains("backend is built on")
+              && FeaturedCredits.xodus.role.components(separatedBy: "backend").count == 2,
+              "COR-209: The sign-in window names Wine first, then Xodus, and says where credits and licences are, in two short lines")
+        let readme = (try? String(contentsOfFile: "README.md", encoding: .utf8)) ?? ""
+        check(readme.contains(FeaturedCredits.readmeLine) && readme.contains(FeaturedCredits.helpMenu),
+              "REQ-122: README's credits use the app's exact Wine and Xodus line (fails if README.md is missing)")
+        check(AcknowledgmentsNavigation.appMenu.map(\.title) == ["Acknowledgments…", "Open-Source Licences…"]
+              && AcknowledgmentsNavigation.appMenu.map(\.focus) == [.overview, .licences]
+              && AcknowledgmentsNavigation.helpMenu.map(\.title) == ["Acknowledgments and Licences"],
+              "COR-209: The X Ode menu has Acknowledgments… and Open-Source Licences…; Help has Acknowledgments and Licences")
+        let navigation = AcknowledgmentsNavigation()
+        var windows: [String] = []
+        var focuses: [AcknowledgmentsNavigation.Focus?] = []
+        for item in AcknowledgmentsNavigation.appMenu + AcknowledgmentsNavigation.helpMenu {
+            navigation.open(item.focus) { windows.append($0) }
+            focuses.append(navigation.request)
+        }
+        check(windows == Array(repeating: AppAcknowledgmentsView.windowID, count: 3)
+              && focuses == [.overview, .licences, .overview],
+              "COR-209: Each menu item opens the Acknowledgments window; Open-Source Licences asks for the licence list")
+        check(AppAcknowledgmentsView.selection(for: .licences) == .licences
+              && AppAcknowledgmentsView.selection(for: .overview) == .overview,
+              "REQ-122 review L5: Open-Source Licences opens its own All components and licences page, so it never depends on scrolling before layout")
+        for scheme in [ColorScheme.light, .dark] {
+            let suffix = scheme == .dark ? "dark" : "light"
+            let navigation = AcknowledgmentsNavigation()
+            navigation.request = .licences
+            let page = render(AppAcknowledgmentsView(inventory: AcknowledgmentsInventory(), navigation: navigation),
+                              size: CGSize(width: 860, height: 600), scheme: scheme,
+                              name: "req122-licences-\(suffix)").joined(separator: " ")
+            check(page.contains(AppAcknowledgmentsView.licencesTitle) && page.contains("Choose one to read")
+                  && !page.contains(FeaturedCredits.sectionTitle),
+                  "REQ-122 review L5 render (\(suffix)): The licences request opens on the component and licence list: \(page.prefix(240))")
+        }
+        for scheme in [ColorScheme.light, .dark] {
+            let suffix = scheme == .dark ? "dark" : "light"
+            let labels = render(AppAcknowledgmentsView(inventory: AcknowledgmentsInventory()),
+                                size: CGSize(width: 860, height: 1100), scheme: scheme,
+                                name: "req122-acknowledgments-\(suffix)").joined(separator: " ")
+            check(labels.contains(FeaturedCredits.sectionTitle) && labels.contains("winehq.org")
+                  // OCR can misread the small dark-mode link ("xodus-aaming"); the exact URL is asserted above.
+                  && labels.contains("github.com/xodus-") && labels.contains("All components and licences"),
+                  "REQ-122 render (\(suffix)): Built on Wine and Xodus leads Acknowledgments with both links, offline and signed out: \(labels)")
         }
     }
 
@@ -834,56 +908,64 @@ enum BrandUXChecks {
               "COR186 minor 7: Package type uses plain words; the technical name stays in the tooltip")
     }
 
-    // MARK: First library load (REQ-119)
+    // MARK: First library load (REQ-119, COR-213)
 
     static func firstLoad(check: (Bool, String) -> Void) {
         typealias Inputs = LibraryFirstLoadInputs
         let t0 = ContinuousClock.now
-        check(LibraryFirstLoad.shouldBegin(interactiveSignIn: true, signedIn: true, hasLibrary: false)
-              && !LibraryFirstLoad.shouldBegin(interactiveSignIn: false, signedIn: true, hasLibrary: false)
-              && !LibraryFirstLoad.shouldBegin(interactiveSignIn: true, signedIn: true, hasLibrary: true)
-              && !LibraryFirstLoad.shouldBegin(interactiveSignIn: true, signedIn: false, hasLibrary: false)
-              && !LibraryFirstLoad().covers,
-              "REQ-119 warm: Only this run's own sign-in with no library covers the window; restored sessions and a loaded library go straight in")
+        let grace = LibraryFirstLoad.graceDelay
+        func begun() -> LibraryFirstLoad { var value = LibraryFirstLoad(); value.begin(at: t0); return value }
 
-        var cold = LibraryFirstLoad()
-        cold.begin(at: t0)
+        var fast = begun()
+        let pendingFirst = fast.phase == .pending && !fast.covers && fast.active
+        fast.update(Inputs(loading: true, gamesFound: 3), now: t0 + .milliseconds(200))
+        let stillHidden = fast.phase == .pending && !fast.covers
+        fast.update(Inputs(gamesFound: 3, libraryComplete: true, artworkTotal: 4, artworkReady: 4, artworkSettled: true),
+                    now: t0 + .milliseconds(350))
+        var slowStart = begun()
+        slowStart.update(Inputs(loading: true), now: t0 + grace - .milliseconds(1))
+        let notYet = !slowStart.covers
+        slowStart.update(Inputs(loading: true), now: t0 + grace)
+        check(LibraryFirstLoad.shouldBegin(signedIn: true) && !LibraryFirstLoad.shouldBegin(signedIn: false)
+              && pendingFirst && stillHidden && fast.phase == .finished(.ready) && !fast.covers
+              && LibraryFirstLoad.announcement(from: begun(), to: fast) == nil
+              && notYet && slowStart.covers && slowStart.step == .findingGames,
+              "REQ-119 COR-213: Every launch waits \(grace) before covering; a fast library never shows the setup view, a slow one covers instead of showing placeholders")
+
+        var cold = begun()
+        cold.update(Inputs(loading: true), now: t0 + grace)
         let started = cold
-        cold.update(Inputs(loading: true), now: t0)
         let finding = cold.covers && cold.step == .findingGames && !cold.offersShowNow
         cold.update(Inputs(loading: true, gamesFound: 5), now: t0 + .seconds(2))
         let stillFinding = cold.covers && cold.step == .findingGames
-        cold.update(Inputs(loading: true, gamesFound: 12, artworkTotal: 12, artworkReady: 3), now: t0 + .seconds(4))
+        cold.update(Inputs(loading: true, gamesFound: 8, artworkTotal: 9, artworkReady: 3), now: t0 + .seconds(4))
         let fetching = cold.covers && cold.step == .fetchingArtwork
         let artworkStep = cold
-        cold.update(Inputs(loading: true, gamesFound: 40, artworkTotal: 12, artworkReady: 12), now: t0 + .seconds(5))
+        cold.update(Inputs(loading: true, gamesFound: 40, artworkTotal: 9, artworkReady: 9, artworkSettled: true),
+                    now: t0 + .seconds(5))
         check(finding && stillFinding && fetching && cold.phase == .finished(.ready) && !cold.covers,
-              "REQ-119 cold: Signed in, then finding games with a live count, then artwork; hands over once the first screen and its artwork are ready, while the rest still loads")
-        var small = LibraryFirstLoad()
-        small.begin(at: t0)
-        small.update(Inputs(gamesFound: 3, libraryComplete: true, artworkTotal: 3, artworkReady: 1, artworkSettled: true), now: t0)
-        var empty = LibraryFirstLoad()
-        empty.begin(at: t0)
-        empty.update(Inputs(libraryComplete: true), now: t0)
+              "REQ-119: Signed in, then finding games with a live count, then the first viewport's artwork; hands over then, while the rest still loads")
+        var small = begun()
+        small.update(Inputs(gamesFound: 3, libraryComplete: true, artworkTotal: 4, artworkReady: 1, artworkSettled: true), now: t0 + grace)
+        var empty = begun()
+        empty.update(Inputs(libraryComplete: true), now: t0 + grace)
         check(small.phase == .finished(.ready) && empty.phase == .finished(.ready),
-              "REQ-119 cold: A small library hands over once its artwork settles, even with failed covers; an empty library opens straight away")
+              "REQ-119: A small library hands over once its artwork settles, even with failed covers; an empty library opens straight away")
 
-        var slow = LibraryFirstLoad()
-        slow.begin(at: t0)
+        var slow = begun()
         slow.update(Inputs(loading: true, gamesFound: 2), now: t0 + .seconds(19))
-        let notYet = slow.phase == .loading && !slow.offersShowNow
+        let notSlow = slow.phase == .loading && !slow.offersShowNow
         slow.update(Inputs(loading: true, gamesFound: 2), now: t0 + LibraryFirstLoad.slowAfter)
         let offered = slow.phase == .slow && slow.offersShowNow && slow.covers
         var readyLate = slow
-        readyLate.update(Inputs(loading: true, gamesFound: 12, artworkTotal: 12, artworkReady: 12), now: t0 + .seconds(25))
+        readyLate.update(Inputs(loading: true, gamesFound: 8, artworkTotal: 9, artworkReady: 9, artworkSettled: true), now: t0 + .seconds(25))
         slow.showLibraryNow()
-        check(notYet && offered && slow.phase == .finished(.showNow) && !slow.covers
+        check(notSlow && offered && slow.phase == .finished(.showNow) && !slow.covers
               && readyLate.phase == .finished(.ready),
               "REQ-119 slow: After 20 s it offers Show library now and never blocks; reaching the first screen later still hands over")
 
-        var failing = LibraryFirstLoad()
-        failing.begin(at: t0)
-        failing.update(Inputs(loading: true), now: t0)
+        var failing = begun()
+        failing.update(Inputs(loading: true), now: t0 + grace)
         failing.update(Inputs(error: "Your PC library couldn't load. The request timed out."), now: t0 + .seconds(3))
         let failed = failing.failure == "Your PC library couldn't load. The request timed out." && failing.covers
             && failing.offersShowNow
@@ -891,25 +973,87 @@ enum BrandUXChecks {
         retried.retry(at: t0 + .seconds(4))
         retried.update(Inputs(error: "Your PC library couldn't load. The request timed out."), now: t0 + .seconds(4))
         let waitsForRetry = retried.phase == .loading
+        var stuck = retried
+        stuck.update(Inputs(error: "Your PC library couldn't load. The request timed out."), now: t0 + .seconds(25))
         retried.update(Inputs(loading: true), now: t0 + .seconds(5))
         let reloading = retried.phase == .loading
         retried.update(Inputs(gamesFound: 3, libraryComplete: true, artworkSettled: true), now: t0 + .seconds(7))
-        var partial = LibraryFirstLoad()
-        partial.begin(at: t0)
+        var partial = begun()
         partial.update(Inputs(gamesFound: 4, libraryComplete: true, error: "Some games didn't load.",
-                              artworkSettled: true), now: t0)
+                              artworkSettled: true), now: t0 + grace)
         check(failed && waitsForRetry && reloading && retried.phase == .finished(.ready)
               && partial.phase == .finished(.ready),
               "REQ-119 failure: A load error shows its specific message with Try Again; Try Again ignores the stale error until the reload starts; a partial library still opens")
+        check(stuck.phase == .slow && stuck.offersShowNow,
+              "REQ-119 review L1: Try Again whose reload never starts still reaches Show library now after 20 s")
 
-        var account = LibraryFirstLoad()
-        account.begin(at: t0)
+        var account = begun()
         account.update(Inputs(error: "Confirm your account country to load your PC library.", needsAccountAction: true), now: t0)
-        var signedOut = LibraryFirstLoad()
-        signedOut.begin(at: t0)
-        signedOut.update(Inputs(signedIn: false, loading: true), now: t0)
-        check(account.phase == .finished(.accountAction) && !signedOut.covers && signedOut.phase == .inactive,
+        var signedOut = begun()
+        signedOut.update(Inputs(signedIn: false, loading: true), now: t0 + grace)
+        check(account.phase == .finished(.accountAction) && !signedOut.active && signedOut.phase == .inactive,
               "REQ-119: Account country, sign-in or Keychain actions hand over to the library that asks for them; signing out removes the overlay")
+
+        // M1: the first viewport is tracked per image, in display order, across out-of-order batches.
+        func ref(_ name: String) -> CatalogArtworkReference {
+            let json = #"{"role":"boxArt","url":"https://store-images.s-microsoft.com/image/"# + name
+                + #"","width":600,"height":900,"source":"MicrosoftDisplayCatalog:v7.0"}"#
+            return try! JSONDecoder().decode(CatalogArtworkReference.self, from: Data(json.utf8))
+        }
+        typealias Item = FirstScreenArtwork.Item
+        let hero = Item(kind: .hero, id: "9HERO0000001", reference: ref("hero"))
+        let a = Item(kind: .cover, id: "9AAAA0000001", reference: ref("a"))
+        let b = Item(kind: .cover, id: "9BBBB0000001", reference: ref("b"))
+        let pendingC = Item(kind: .cover, id: "9CCCC0000001", reference: nil, resolved: false)
+        var artwork = FirstScreenArtwork()
+        let first = artwork.target([hero, a, b, pendingC])
+        artwork.settle(a, generation: first)
+        let partialFirst = artwork.ready == 1 && artwork.total == 4 && !artwork.settled
+        let aaa = Item(kind: .cover, id: "9AAA00000000", reference: ref("aaa"))
+        let second = artwork.target([hero, aaa, a, b])
+        let cancelledCounted = artwork.settle(b, generation: first)
+        let keptA = artwork.ready == 1 && artwork.pending == [hero, aaa, b]
+        for item in [hero, aaa] { artwork.settle(item, generation: second) }
+        let missingHero = !artwork.settled
+        artwork.settle(b, generation: second)
+        var unresolved = FirstScreenArtwork()
+        _ = unresolved.target([pendingC])
+        check(partialFirst && !cancelledCounted && keptA && missingHero && artwork.settled
+              && !unresolved.settled && unresolved.ready == 0,
+              "REQ-119 review M1: First-screen artwork includes the hero, keeps settled images when a later batch reorders the grid, ignores a superseded run, and never treats an unread descriptor as ready")
+
+        let appSource = (try? String(contentsOfFile: "Sources/XodusPreview/XodusPreviewApp.swift", encoding: .utf8)) ?? ""
+        check(appSource.contains("TextEditingCommands()") && !appSource.contains("replacing: .textEditing")
+              && !appSource.contains("replacing: .textFormatting"),
+              "QA U1: The Edit menu keeps the system Spelling and Grammar, Substitutions, Transformations and Speech submenus (TextEditingCommands, nothing replaces .textEditing); fails if the source is missing")
+        let custom = EngineChoice.named("wine-custom-11", ready: true,
+                                        playable: EngineChoice.playsInBeta(admittedProvider: "wine"))
+        let release = EngineChoice.named(CalimochoRelease.engineID, ready: true,
+                                         playable: EngineChoice.playsInBeta(admittedProvider: "calimocho"))
+        check(!custom.playable && release.playable && RuntimeProviderSettings.providerChoices == [.calimocho]
+              && EnginesCopy.lead.contains("for testing; in this beta, games play with Calimocho")
+              && EnginesCopy.testingOnly.contains("Calimocho")
+              && NativeLaunchError.providerPolicy.localizedDescription.contains("Calimocho"),
+              "COR-201 E7: Added engines are kept for testing: the default and per-game choices offer only Calimocho, other engines say testing only, and Play refuses anything else with a clear message")
+        let chrome = AppState()
+        let chromeWindow = UUID()
+        chrome.setFirstLoadCovering(true, window: chromeWindow)
+        chrome.openAccount()
+        let accountBlocked = !chrome.showingAccount
+        chrome.setFirstLoadCovering(false, window: chromeWindow)
+        chrome.openAccount()
+        check(accountBlocked && chrome.showingAccount,
+              "REQ-119 review M2: While the setup view covers the window, Account (and the toolbar, Navigate and Import, which share the flag) wait; afterwards they work")
+
+        let lines = FirstLoadCopy.lines
+        let failureText = FirstLoadCopy.failedTitle + " " + "Your PC library couldn't load. The request timed out."
+        check(lines.count == 8 && Set(lines).count == 8
+              && lines.allSatisfy { $0.hasSuffix("…") && $0.count <= 30 && !$0.contains("!") && !$0.contains("—") }
+              && !lines.contains("Polishing the cover art…")
+              && failureText.components(separatedBy: "couldn't load").count == 2
+              && !(lines + [FirstLoadCopy.title, FirstLoadCopy.slow, FirstLoadCopy.failedTitle]).contains { text in
+                  AppBrand.retiredNames.contains { text.contains($0) } },
+              "REQ-119 copy: Eight distinct short lines without near-duplicates; the failure screen says \"couldn't load\" once: \(lines)")
 
         let priority = LiveSession()
         priority.beginLibraryReadPriority()
@@ -919,18 +1063,100 @@ enum BrandUXChecks {
         check(yields && !priority.yieldsToLibraryRead && priority.libraryReadsWaiting == 0,
               "REQ-119 quick win: Recent-activity and license reads hold back while the cold library read waits to dispatch, and the hold always clears")
 
+        func restoring(settled: Bool, expected: Bool = true, for wait: TimeInterval? = 0.5,
+                       _ state: CredentialState?, hash: Bool, unverified: TimeInterval? = nil) -> Bool {
+            LiveSession.signInRestoring(statusSettled: settled, restoreExpected: expected, restoringFor: wait,
+                                        state: state, hashValid: hash, unverifiedFor: unverified)
+        }
+        let restoringPath = restoring(settled: false, nil, hash: false)
+            && restoring(settled: true, .credentialPresent, hash: false, unverified: 0.7)
+            && restoring(settled: true, .credentialPresent, hash: false, unverified: 2.9)
+        let confirmed = !restoring(settled: true, .credentialPresent, hash: true)
+        let realFailures = [CredentialState.expired, .invalid, .signedOut].allSatisfy {
+            !restoring(settled: true, $0, hash: false)
+        } && !restoring(settled: true, .credentialPresent, hash: false, unverified: LiveSession.restoreGrace)
+        check(restoringPath && confirmed && realFailures && !WelcomeCopy.restoring.contains("reconnect")
+              && WelcomeCopy.restoring == "Checking your sign-in…",
+              "REQ-119 restore: Launch → first status → identity verification → signed in stays on \"Checking your sign-in…\" and never passes through \"needs to be reconnected\"; that copy appears only for expired or invalid sign-ins, or after a \(Int(LiveSession.restoreGrace)) s unverified wait")
+        check(!restoring(settled: false, expected: false, nil, hash: false)
+              && !restoring(settled: false, for: LiveSession.restoreGrace, nil, hash: false),
+              "REQ-119 review M-A: A plain Reconnect that reads no status is never \"restoring\", and an unanswered launch read stops restoring (and re-enables Sign in) after \(Int(LiveSession.restoreGrace)) s")
+        check(LiveSession.rereadsStatusAtGrace(state: .credentialPresent, hashValid: false, alreadyReread: false)
+              && !LiveSession.rereadsStatusAtGrace(state: .credentialPresent, hashValid: false, alreadyReread: true)
+              && !LiveSession.rereadsStatusAtGrace(state: .credentialPresent, hashValid: true, alreadyReread: false)
+              && !LiveSession.rereadsStatusAtGrace(state: .expired, hashValid: false, alreadyReread: false),
+              "REQ-119 review M-A: At the end of the wait an unverified sign-in is read once more before reconnect copy shows")
+        let restoringSession = LiveSession()
+        check(!restoringSession.restoringSignIn,
+              "REQ-119 restore: A session that can't read sign-in status never sits in the restoring state")
+
+        var immediate = LibraryFirstLoad()
+        immediate.begin(at: t0, immediate: true)
+        check(immediate.covers && immediate.phase == .loading && begun().phase == .pending,
+              "REQ-119 review L1: Right after this run's own sign-in the setup view covers at once; only restored launches wait the grace delay")
+        let dropped = FirstScreenArtwork.resolved(loaded: false, failed: false, requested: true, pending: false)
+        let inFlight = FirstScreenArtwork.resolved(loaded: false, failed: false, requested: true, pending: true)
+        let unasked = FirstScreenArtwork.resolved(loaded: false, failed: false, requested: false, pending: false)
+        var droppedHero = FirstScreenArtwork()
+        _ = droppedHero.target([.init(kind: .hero, id: "9HERO0000002", reference: nil, resolved: dropped)])
+        check(dropped && !inFlight && !unasked && droppedHero.settled,
+              "REQ-119 review L2: A dropped hero descriptor (e.g. PACKAGE_UNAVAILABLE) counts as resolved with fallback art, so hand-over doesn't wait 20 s")
+        let countryStore = UserDefaults(suiteName: "req121.country.\(UUID().uuidString)")!
+        let countryAccount = String(repeating: "c", count: 64)
+        countryStore.set("GB", forKey: LiveSession.lastVerifiedCountryKey(countryAccount))
+        countryStore.set("FR", forKey: "Xodus.accountCountry.\(countryAccount)")
+        let countrySession = LiveSession(countryDefaults: countryStore)
+        countrySession.applyProvisionalAccountCountry()
+        let ignoredSignedOut = !countrySession.accountCountryReady && !countrySession.accountCountryProvisional
+        countrySession.forgetAccountCountry(countryAccount)
+        check(ignoredSignedOut && LiveSession.lastVerifiedCountryKey(countryAccount).hasSuffix(countryAccount)
+              && countryStore.string(forKey: LiveSession.lastVerifiedCountryKey(countryAccount)) == nil
+              && countryStore.string(forKey: "Xodus.accountCountry.\(countryAccount)") == nil,
+              "REQ-121 hook: The provisional launch country is only a country code keyed by the account hash, never applied without a confirmed sign-in, and removed on sign-out")
+        check(LibraryFirstLoad.gamesReady(Inputs(loading: true, gamesFound: 3, libraryComplete: true))
+              && !LibraryFirstLoad.gamesReady(Inputs(loading: true, gamesFound: 3, libraryComplete: false)),
+              "REQ-121 hook: A complete library counts as ready even while a background revalidation keeps it busy")
+        let installedFixtures = (0..<3).map {
+            InstalledGame(id: UUID(), title: "Installed \($0)", identityName: "Fixture.Installed\($0)", version: "1.0.0.0",
+                          storeId: String(format: "FIXTURE%05d", $0 + 10), folder: "/tmp/installed-\($0)", launcher: "",
+                          importedAt: Date(), usesNativeLifecycle: true)
+        }
+        let localFixtures = LibraryGame.localRecords(installed: installedFixtures, qualified: [], query: "", sort: .title)
+        let missingLauncher = NativeMinecraftInstallation(state: .missing)
+        let readyLauncher = NativeMinecraftInstallation(state: .ready)
+        check(missingLauncher.appears(in: .all, query: "")
+              && LibraryGame.installedCount(local: localFixtures, native: missingLauncher.countsAsInstalled) == 3
+              && LibraryGame.installedCount(local: localFixtures, native: readyLauncher.countsAsInstalled) == 4
+              && !NativeMinecraftInstallation(state: .checking).countsAsInstalled,
+              "QA REQ-64: \"Installed games\" counts only completed installs; the Minecraft card offered in All while its launcher is missing or still checking isn't counted, and partial downloads stay in the resume journal")
+        let windowState = AppState()
+        let windowA = UUID(), windowB = UUID()
+        windowState.setFirstLoadCovering(true, window: windowA)
+        windowState.setFirstLoadCovering(true, window: windowB)
+        windowState.setFirstLoadCovering(false, window: windowB)
+        let stillCovered = windowState.firstLoadCovering
+        windowState.setFirstLoadCovering(false, window: windowA)
+        windowState.openAccount()
+        check(stillCovered && !windowState.firstLoadCovering && windowState.showingAccount,
+              "REQ-119 review M-B: Closing a window during setup ends only its own covering; once none cover, Account, Navigate and Import work in a reopened window")
+        check(LiveSession.countrySource(verified: false, provisional: true) == "last confirmed by Xbox"
+              && LiveSession.countrySource(verified: true, provisional: false) == "verified by Xbox"
+              && LiveSession.countrySource(verified: false, provisional: false) == "confirmed by you"
+              && LiveSession.provisionalCountryRetry > 0,
+              "REQ-121 review L2: A provisional country reads \"last confirmed by Xbox\", never \"confirmed by you\", and the failed re-check is retried once later")
+
         let still = LibraryFirstLoadMotion(reduceMotion: true)
         let moving = LibraryFirstLoadMotion(reduceMotion: false)
         check(still.lineChange == .crossfade && !still.showsSpinner && moving.lineChange == .slide && moving.showsSpinner,
               "REQ-119 Reduce Motion: No spinner or sliding text, at most a crossfade between lines")
 
-        let announced = [LibraryFirstLoad.announcement(from: LibraryFirstLoad(), to: started),
+        let announced = [LibraryFirstLoad.announcement(from: begun(), to: started),
                          LibraryFirstLoad.announcement(from: started, to: artworkStep),
                          LibraryFirstLoad.announcement(from: artworkStep, to: cold)]
         var counted = started
-        counted.update(Inputs(loading: true, gamesFound: 7), now: t0)
-        var slowAgain = LibraryFirstLoad()
-        slowAgain.begin(at: t0)
+        counted.update(Inputs(loading: true, gamesFound: 7), now: t0 + grace)
+        var slowAgain = begun()
+        slowAgain.update(Inputs(loading: true), now: t0 + grace)
         let beforeSlow = slowAgain
         slowAgain.update(Inputs(loading: true), now: t0 + .seconds(21))
         check(announced == [FirstLoadCopy.findingGames, FirstLoadCopy.fetchingArtwork, FirstLoadCopy.ready]
@@ -938,28 +1164,20 @@ enum BrandUXChecks {
               && LibraryFirstLoad.announcement(from: beforeSlow, to: slowAgain) == FirstLoadCopy.slow
               && LibraryFirstLoad.announcement(from: started, to: failing)?.hasPrefix(FirstLoadCopy.failedTitle) == true
               && LibraryFirstLoad.announcement(from: failing, to: retried) == FirstLoadCopy.ready,
-              "REQ-119 VoiceOver: Step and state changes are announced; count changes and the rotating lines are not")
-
-        let lines = FirstLoadCopy.lines
-        check(lines.count == 8 && Set(lines).count == 8
-              && lines.allSatisfy { $0.hasSuffix("…") && $0.count <= 30 && !$0.contains("!") && !$0.contains("—") }
-              && !(lines + [FirstLoadCopy.title, FirstLoadCopy.slow, FirstLoadCopy.failedTitle]).contains { text in
-                  AppBrand.retiredNames.contains { text.contains($0) } },
-              "REQ-119 copy: Eight short, distinct lines in X Ode's voice, without exclamation marks or retired names: \(lines)")
+              "REQ-119 VoiceOver: Step and state changes are announced; count changes, the grace delay and the rotating lines are not")
 
         for scheme in [ColorScheme.light, .dark] {
             let suffix = scheme == .dark ? "dark" : "light"
             let loading = render(LibraryFirstLoadView(state: artworkStep,
-                    inputs: Inputs(loading: true, gamesFound: 13, artworkTotal: 12, artworkReady: 5),
+                    inputs: Inputs(loading: true, gamesFound: 13, artworkTotal: 9, artworkReady: 5),
                     showNow: {}, tryAgain: {}, lineIndex: 0),
                 size: CGSize(width: 900, height: 620), scheme: scheme, name: "req119-first-load-\(suffix)")
             let joined = loading.joined(separator: " ")
             check(joined.contains(FirstLoadCopy.title) && joined.contains("Signed in") && joined.contains("Found 13 games")
-                  && joined.contains("Fetching artwork") && joined.contains("5 of 12")
+                  && joined.contains("Fetching artwork") && joined.contains("5 of 9")
                   && joined.contains("Unboxing your games") && !joined.contains(FirstLoadCopy.showNow),
                   "REQ-119 render (\(suffix)): Setting up your library shows the three steps, the live count and a line, with no placeholder tiles: \(loading)")
-            var slowState = LibraryFirstLoad()
-            slowState.begin(at: t0)
+            var slowState = begun()
             slowState.update(Inputs(loading: true, gamesFound: 4), now: t0 + .seconds(21))
             let slowText = render(LibraryFirstLoadView(state: slowState, inputs: Inputs(loading: true, gamesFound: 4),
                     showNow: {}, tryAgain: {}, lineIndex: 1),
@@ -993,10 +1211,8 @@ enum BrandUXChecks {
         host.cacheDisplay(in: host.bounds, to: bitmap)
         save(bitmap, name: name)
         guard let image = bitmap.cgImage else { return [] }
-        let request = VNRecognizeTextRequest()
-        request.recognitionLevel = .accurate
-        try? VNImageRequestHandler(cgImage: image).perform([request])
-        return (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }
+        do { return try NativeCheckOCR.recognize(image) }
+        catch { return [error.localizedDescription] }
     }
 
     static func save(_ bitmap: NSBitmapImageRep, name: String) {

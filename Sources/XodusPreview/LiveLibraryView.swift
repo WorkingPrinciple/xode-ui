@@ -14,6 +14,10 @@ extension FocusedValues {
     }
 }
 
+enum LibraryAccessCopy {
+    static let checking = "Checking access…"
+}
+
 struct LiveLibraryView: View {
     @ObservedObject var library: PCGamesController
     @ObservedObject var installed: InstalledGamesController
@@ -62,6 +66,9 @@ struct LiveLibraryView: View {
     }
     private var continuing: [InstalledGame] { projection.continuing }
     private var localRecords: [LibraryGame] { projection.local }
+    private var countsNativeMinecraft: Bool {
+        showsNativeMinecraft && nativeMinecraft.installation.countsAsInstalled
+    }
     private var showsNativeMinecraft: Bool {
         nativeMinecraft.installation.appears(in: filter, query: query)
     }
@@ -74,7 +81,6 @@ struct LiveLibraryView: View {
     private var showsLoadingPlaceholders: Bool {
         LibraryLoadingPresentation.showsPlaceholders(
             library: library, loadingInstalled: installed.loading,
-            checkingAccess: installed.productAccess.checking,
             hasUsableContent: hasUsableLibraryContent,
             query: query) && installed.error == nil
     }
@@ -96,7 +102,9 @@ struct LiveLibraryView: View {
         LibraryProjectionKey(accountHash: session.accountHash, query: query, owned: library.representedGames,
             products: session.products, gamePass: session.gamePassProducts, active: operations.gamePassActive,
             installed: installed.games, permitted: Set(installed.games.map(\.storeId).filter {
+                // REQ-119: unchecked installed games show now; only Play waits for the access check.
                 installed.productAccess.permits($0, account: session.accountHash)
+                    || installed.productAccess.pending($0, account: session.accountHash)
             }), launchable: installed.launchableIDs, accessIsCurrent: library.accessIsCurrent,
             metadataRevision: art.revision, compatibility: operations.compatibility,
             filter: filter, sort: sort, showsUnsupported: showsUnsupported)
@@ -137,7 +145,7 @@ struct LiveLibraryView: View {
             }
             VStack(alignment: .leading, spacing: 22) {
                 if query.isEmpty, !continuing.isEmpty { continuePlaying }
-                GameOperationProgressView(operations: operations)
+                GameOperationSlimRow(operations: operations)
                 if OfflineGameCompatibility.unavailable {
                     Text("The offline compatibility catalogue couldn't be read. Live package checks remain available.")
                         .font(.callout).foregroundStyle(.secondary)
@@ -174,7 +182,7 @@ struct LiveLibraryView: View {
                 VStack(alignment: .leading, spacing: 22) {
                 VStack(spacing: 0) {
                 LibraryControls(count: LibraryGame.displayedCount(
-                                    qualified: visible, local: visibleLocalRecords, native: showsNativeMinecraft),
+                                    qualified: visible, local: visibleLocalRecords, native: countsNativeMinecraft),
                                 hiddenUnsupportedCount: hiddenUnsupportedCount,
                                 filter: Binding(get: { filter }, set: { filter = $0 }), sort: $selection.sort,
                                 showsUnsupportedGames: Binding(get: { showsUnsupportedGames }, set: {
@@ -252,7 +260,7 @@ struct LiveLibraryView: View {
                 }
                 if !visibleLocalRecords.isEmpty || showsNativeMinecraft {
                     VStack(alignment: .leading, spacing: 16) {
-                        Text("Installed games (\(LibraryGame.installedCount(local: visibleLocalRecords, native: showsNativeMinecraft)))")
+                        Text("Installed games (\(LibraryGame.installedCount(local: visibleLocalRecords, native: countsNativeMinecraft)))")
                             .font(.title2.weight(.semibold))
                         LazyVGrid(columns: LibraryGridLayout.columns, alignment: .leading, spacing: 30) {
                             ForEach(visibleLocalRecords) { game in card(game).id("library-local-\(game.id)") }
@@ -648,13 +656,66 @@ struct LiveLibraryView: View {
                      open: { open(game) }) {
             CatalogArtworkView(reference: artworkAllowed ? art.images[artworkID]?.cover ?? game.cover : nil,
                                status: (art.images[artworkID]?.cover ?? game.cover) == nil ? .absent : .available)
-        } status: { GameCardDownloadStatus(operations: operations, productID: artworkID) }
+        } status: {
+            if game.installed != nil, installed.productAccess.pending(artworkID, account: session.accountHash),
+               !installed.productAccess.permits(artworkID, account: session.accountHash) {
+                Label(LibraryAccessCopy.checking, systemImage: "hourglass")
+                    .font(.caption).foregroundStyle(.secondary)
+                    .accessibilityIdentifier("xodus.library.card.checkingAccess")
+            } else {
+                GameCardDownloadStatus(operations: operations, productID: artworkID)
+            }
+        }
         .contextMenu {
             Button("View details") { open(game) }
             if let match = game.installed {
                 InstalledGameManagement(library: installed, operations: operations, game: match)
                 Button("Show in Finder") { NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: match.folder) }
             }
+        }
+    }
+}
+
+/// QA U3: on Library and Discover home, a running operation is one slim line under the toolbar's
+/// download indicator. Full progress and the single Stop control live in Downloads and the game's page.
+struct GameOperationSlimRow: View {
+    @ObservedObject var operations: GameOperationsController
+    static let maximumHeight: CGFloat = 28
+
+    private var line: (title: String, detail: String, fraction: Double?)? {
+        if let indicator = operations.downloadIndicator {
+            return (indicator.title, indicator.summary, indicator.fraction)
+        }
+        if operations.installingDirectly { return ("Preparing installation…", "", nil) }
+        return nil
+    }
+
+    var body: some View {
+        if let line {
+            HStack(spacing: 10) {
+                if let fraction = line.fraction {
+                    ProgressView(value: fraction).frame(width: 90)
+                } else {
+                    ProgressView().controlSize(.mini)
+                }
+                Text(line.title).fontWeight(.medium).lineLimit(1)
+                if !line.detail.isEmpty {
+                    Text(line.detail).foregroundStyle(.secondary).lineLimit(1)
+                }
+                Spacer(minLength: 0)
+            }
+            .font(.callout)
+            .frame(maxHeight: Self.maximumHeight)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Download progress for \(line.title)")
+            .accessibilityValue(line.detail)
+            .accessibilityIdentifier("xodus.operation.slim")
+        } else if let error = operations.error {
+            Label(error, systemImage: "exclamationmark.circle")
+                .font(.callout).foregroundStyle(.secondary).lineLimit(1)
+                .help(error)
+                .frame(maxHeight: Self.maximumHeight)
+                .accessibilityIdentifier("xodus.operation.slim.error")
         }
     }
 }

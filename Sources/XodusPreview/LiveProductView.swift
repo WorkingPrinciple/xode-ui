@@ -214,10 +214,7 @@ struct LiveProductView: View {
         return library.installRecovery(for: product.id)
     }
     private func recoverInstall() {
-        if notIncluded {
-            if let url = InstalledProductAccess.storeURL(productID: product.id) { NSWorkspace.shared.open(url) }
-            return
-        }
+        if notIncluded { return }
         if checksTitleAccess {
             guard session.nativeLifecycleConfiguration != nil else { openSettings(); return }
             Task { await titleAccess.refresh(session: session, installedIDs: [product.id], force: true) }
@@ -231,12 +228,11 @@ struct LiveProductView: View {
         }
     }
     private var installRecoveryTitle: String? {
-        if notIncluded, InstalledProductAccess.storeURL(productID: product.id) != nil {
-            return InstalledProductAccess.storeActionTitle
-        }
+        if notIncluded { return nil }
         if checksTitleAccess {
             if titleAccess.checking { return nil }
-            return session.nativeLifecycleConfiguration == nil ? "Account settings" : "Check access for this game"
+            if session.nativeLifecycleConfiguration == nil { return "Account settings" }
+            return titleAccess.errors[product.id] != nil ? InstalledProductAccess.tryAgainTitle : "Check access for this game"
         }
         return installRecovery.title
     }

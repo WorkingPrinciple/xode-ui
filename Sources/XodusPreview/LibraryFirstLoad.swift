@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import OSLog
 import SwiftUI
+import XodusManagement
 
 /// REQ-119: copy for the first library load after a cold sign-in.
 enum FirstLoadCopy {
@@ -10,7 +11,7 @@ enum FirstLoadCopy {
     static let fetchingArtwork = "Fetching artwork"
     static let slow = "This is taking longer than usual. You can open your library now, and games will keep appearing."
     static let showNow = "Show library now"
-    static let failedTitle = "Your library couldn't load"
+    static let failedTitle = "Library setup stopped"
     static let tryAgain = "Try Again"
     static let ready = "Library ready"
     /// Light lines under the steps. Never announced; the steps carry the real progress.
@@ -19,7 +20,7 @@ enum FirstLoadCopy {
         "Stacking game discs…",
         "Dusting off the box art…",
         "Lining up your shelf…",
-        "Polishing the cover art…",
+        "Reading the manuals…",
         "Counting save points…",
         "Warming up the controllers…",
         "Blowing on the cartridges…",
@@ -72,10 +73,15 @@ enum LibraryFirstLoadStep: Int, CaseIterable, Comparable {
 struct LibraryFirstLoad: Equatable {
     enum Handover: Equatable { case ready, showNow, accountAction }
     enum Phase: Equatable {
+        /// Waiting out the grace delay; nothing covers the window yet.
+        case pending
         case inactive, loading, slow, failed(String), finished(Handover)
     }
 
-    static let firstScreenSize = 12
+    /// The first viewport: the hero plus the top rows of tiles.
+    static let firstScreenSize = 8
+    /// COR-213: fast loads never flash the setup view.
+    static let graceDelay: Duration = .milliseconds(400)
     static let slowAfter: Duration = .seconds(20)
 
     private(set) var phase: Phase = .inactive
@@ -86,19 +92,21 @@ struct LibraryFirstLoad: Equatable {
     var covers: Bool {
         switch phase {
         case .loading, .slow, .failed: true
-        case .inactive, .finished: false
+        case .pending, .inactive, .finished: false
         }
     }
+    /// Covering, or still inside the grace delay.
+    var active: Bool { covers || phase == .pending }
     var failure: String? { if case let .failed(message) = phase { message } else { nil } }
     var offersShowNow: Bool { phase == .slow || failure != nil }
 
-    /// Cold means this run's own sign-in finished and there is no library to show yet.
-    static func shouldBegin(interactiveSignIn: Bool, signedIn: Bool, hasLibrary: Bool) -> Bool {
-        interactiveSignIn && signedIn && !hasLibrary
-    }
+    /// COR-213: every confirmed sign-in, cold or restored, starts in the grace delay; nothing is
+    /// cached between launches, so whether it ever covers depends only on how fast the library arrives.
+    static func shouldBegin(signedIn: Bool) -> Bool { signedIn }
 
     static func gamesReady(_ inputs: LibraryFirstLoadInputs) -> Bool {
-        inputs.gamesFound >= firstScreenSize || (inputs.libraryComplete && !inputs.loading)
+        // A complete snapshot counts even while a background revalidation keeps the library busy.
+        inputs.gamesFound >= firstScreenSize || inputs.libraryComplete
     }
 
     static func firstScreenReady(_ inputs: LibraryFirstLoadInputs) -> Bool {
@@ -106,21 +114,26 @@ struct LibraryFirstLoad: Equatable {
             || (inputs.artworkTotal > 0 && inputs.artworkReady >= inputs.artworkTotal))
     }
 
-    mutating func begin(at now: ContinuousClock.Instant) {
-        phase = .loading
+    /// `immediate` right after this run's own sign-in: the setup view covers at once, without the
+    /// grace delay that only restored launches use.
+    mutating func begin(at now: ContinuousClock.Instant, immediate: Bool = false) {
+        phase = immediate ? .loading : .pending
         step = .findingGames
         startedAt = now
         awaitingRetry = false
     }
 
     mutating func update(_ inputs: LibraryFirstLoadInputs, now: ContinuousClock.Instant) {
-        guard covers else { return }
+        guard active else { return }
         guard inputs.signedIn else {
             self = Self()
             return
         }
         if awaitingRetry {
-            guard inputs.loading || inputs.error == nil else { return }
+            guard inputs.loading || inputs.error == nil else {
+                applyTimers(now)
+                return
+            }
             awaitingRetry = false
         }
         if inputs.needsAccountAction {
@@ -137,13 +150,18 @@ struct LibraryFirstLoad: Equatable {
             return
         }
         if failure != nil { phase = .loading }
-        if phase == .loading, let startedAt, startedAt.duration(to: now) >= Self.slowAfter {
-            phase = .slow
-        }
+        applyTimers(now)
+    }
+
+    private mutating func applyTimers(_ now: ContinuousClock.Instant) {
+        guard let startedAt else { return }
+        let elapsed = startedAt.duration(to: now)
+        if phase == .pending, elapsed >= Self.graceDelay { phase = .loading }
+        if phase == .loading, elapsed >= Self.slowAfter { phase = .slow }
     }
 
     mutating func showLibraryNow() {
-        guard covers else { return }
+        guard active else { return }
         phase = .finished(.showNow)
     }
 
@@ -160,9 +178,9 @@ struct LibraryFirstLoad: Equatable {
     static func announcement(from old: Self, to new: Self) -> String? {
         if old.phase == new.phase && old.step == new.step { return nil }
         switch new.phase {
-        case .inactive: return nil
+        case .inactive, .pending: return nil
         case .failed(let message): return old.failure == message ? nil : "\(FirstLoadCopy.failedTitle). \(message)"
-        case .finished(.ready): return FirstLoadCopy.ready
+        case .finished(.ready): return old.covers ? FirstLoadCopy.ready : nil
         case .finished: return nil
         case .slow: return old.phase == .slow ? (old.step == new.step ? nil : new.step.title) : FirstLoadCopy.slow
         case .loading:
@@ -192,6 +210,18 @@ enum FirstLoadTimeline {
     private static var marked = Set<String>()
     private static let logger = Logger(subsystem: "io.github.dragoshont.xodus", category: "first-load")
 
+    /// Milliseconds since this process started, for launch-path events before sign-in is confirmed.
+    static func launchMark(_ event: String) {
+        var info = kinfo_proc()
+        var size = MemoryLayout<kinfo_proc>.stride
+        var name: [Int32] = [CTL_KERN, KERN_PROC, KERN_PROC_PID, getpid()]
+        guard sysctl(&name, 4, &info, &size, nil, 0) == 0 else { return }
+        let started = info.kp_proc.p_starttime
+        let launch = Double(started.tv_sec) + Double(started.tv_usec) / 1_000_000
+        let milliseconds = Int((Date().timeIntervalSince1970 - launch) * 1000)
+        logger.notice("first-load \(event, privacy: .public) sinceLaunchMs=\(milliseconds)")
+    }
+
     static func begin(_ kind: String) {
         start = .now
         marked = []
@@ -206,11 +236,53 @@ enum FirstLoadTimeline {
     }
 }
 
-/// Progress for the first screen's cover artwork, prefetched while the overlay shows.
+/// Progress for the first viewport's artwork: the hero image (also the backdrop) and the top tiles'
+/// covers, in the grid's display order. Settled images are kept per image, so a changing first
+/// screen only fetches what's new, and a superseded run can't count toward the current one.
 struct FirstScreenArtwork: Equatable {
-    var total = 0
-    var ready = 0
-    var settled = false
+    struct Item: Hashable {
+        enum Kind: String { case hero, cover }
+        let kind: Kind
+        let id: String
+        let reference: CatalogArtworkReference?
+        /// Whether the descriptor read for this game has finished, so a missing reference is final.
+        var resolved = true
+        var key: String { "\(kind.rawValue):\(reference?.url ?? id)" }
+    }
+
+    /// A game's descriptor is final once loaded, failed, or requested and no longer pending — a
+    /// dropped (e.g. PACKAGE_UNAVAILABLE) descriptor counts as resolved and uses fallback art.
+    static func resolved(loaded: Bool, failed: Bool, requested: Bool, pending: Bool) -> Bool {
+        loaded || failed || (requested && !pending)
+    }
+
+    private(set) var items: [Item] = []
+    private(set) var settledKeys = Set<String>()
+    private(set) var generation = 0
+    private(set) var targeted = false
+
+    var total: Int { items.count }
+    var ready: Int { items.filter { settledKeys.contains($0.key) }.count }
+    var settled: Bool { targeted && ready == total && items.allSatisfy { $0.reference != nil || $0.resolved } }
+    /// Items still to fetch for the current first screen.
+    var pending: [Item] { items.filter { $0.reference != nil && !settledKeys.contains($0.key) } }
+
+    /// Sets the current first screen and returns the generation that may settle it.
+    mutating func target(_ next: [Item]) -> Int {
+        var seen = Set<String>()
+        items = next.filter { seen.insert($0.key).inserted }
+        for item in items where item.reference == nil && item.resolved { settledKeys.insert(item.key) }
+        targeted = true
+        generation &+= 1
+        return generation
+    }
+
+    /// Records a finished image; a result from a superseded run is ignored.
+    @discardableResult
+    mutating func settle(_ item: Item, generation token: Int) -> Bool {
+        guard token == generation, items.contains(item) else { return false }
+        return settledKeys.insert(item.key).inserted
+    }
 }
 
 struct LibraryFirstLoadView: View {
@@ -221,6 +293,7 @@ struct LibraryFirstLoadView: View {
     var lineIndex: Int? = nil
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var rotation = 0
+    @AccessibilityFocusState private var titleFocused: Bool
 
     private var motion: LibraryFirstLoadMotion { LibraryFirstLoadMotion(reduceMotion: reduceMotion) }
     private var line: String { FirstLoadCopy.lines[(lineIndex ?? rotation) % FirstLoadCopy.lines.count] }
@@ -240,6 +313,8 @@ struct LibraryFirstLoadView: View {
         .background(Color(nsColor: .windowBackgroundColor))
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("xodus.firstLoad")
+        // VoiceOver lands on the setup view, not the library it covers.
+        .onAppear { titleFocused = true }
         .task(id: reduceMotion) {
             guard lineIndex == nil else { return }
             while !Task.isCancelled {
@@ -256,6 +331,7 @@ struct LibraryFirstLoadView: View {
                 .frame(maxWidth: .infinity, alignment: .center)
                 .accessibilityAddTraits(.isHeader)
                 .accessibilityIdentifier("xodus.firstLoad.title")
+                .accessibilityFocused($titleFocused)
             VStack(alignment: .leading, spacing: 12) {
                 stepRow(.signedIn, detail: nil)
                 stepRow(.findingGames, detail: FirstLoadCopy.found(inputs.gamesFound))

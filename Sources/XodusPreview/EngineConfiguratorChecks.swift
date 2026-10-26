@@ -87,20 +87,35 @@ enum EngineConfiguratorChecks {
         let suggestions = EngineLocationDetector.suggestions(excluding: [plain], locations: [folder, app, fake, app])
         check(suggestions.map(\.location) == [app.path],
               "COR154: Detection suggests valid unadded locations once, skipping added and invalid ones")
-        var engines = try UserEngineStore.adding(plain, to: [])
-        engines = try UserEngineStore.adding(UserEngine(id: UUID(), name: "Renamed", version: "2", location: plain.location,
-                                                        wine: plain.wine, wineserver: plain.wineserver), to: engines)
-        check(engines.count == 1 && engines[0].id == plain.id && engines[0].name == "Renamed",
-              "REQ109: Re-adding a location updates its record instead of duplicating it")
-        let full = (0..<UserEngineStore.limit).map {
-            UserEngine(id: UUID(), name: "E\($0)", version: nil, location: "/e/\($0)", wine: "w", wineserver: "s")
+        let engines = try UserEngineStore.adding(plain, to: [])
+        var duplicates: [UserEngineStore.StoreError] = []
+        for again in [plain.location, plain.location + "/", plain.location + "/.",
+                      (plain.location as NSString).deletingLastPathComponent + "/./" + (plain.location as NSString).lastPathComponent] {
+            do {
+                _ = try UserEngineStore.adding(UserEngine(id: UUID(), name: "Again", version: "2", location: again,
+                                                          wine: plain.wine, wineserver: plain.wineserver), to: engines)
+            } catch { duplicates.append(error) }
         }
-        let overflow = UserEngine(id: UUID(), name: "Extra", version: nil, location: "/e/extra", wine: "w", wineserver: "s")
+        var sameWine: UserEngineStore.StoreError?
+        do {
+            _ = try UserEngineStore.adding(UserEngine(id: UUID(), name: "Other folder", version: nil, location: "/elsewhere",
+                                                      wine: plain.wine, wineserver: plain.wineserver), to: engines)
+        } catch { sameWine = error }
+        check(engines.count == 1 && duplicates == Array(repeating: .duplicate, count: 4) && sameWine == .duplicate
+              && UserEngineStore.StoreError.duplicate.message == "This engine is already added.",
+              "QA E8: Adding the same engine again, by any spelling of its folder or by the same Wine binary, is refused with \"This engine is already added.\"")
+        let full = (0..<UserEngineStore.limit).map {
+            UserEngine(id: UUID(), name: "E\($0)", version: nil, location: "/e/\($0)", wine: "/e/\($0)/bin/wine", wineserver: "s")
+        }
+        let overflow = UserEngine(id: UUID(), name: "Extra", version: nil, location: "/e/extra", wine: "/e/extra/bin/wine", wineserver: "s")
         var rejected = false
         do { _ = try UserEngineStore.adding(overflow, to: full) } catch { rejected = error == .full }
-        let replaced = try? UserEngineStore.adding(UserEngine(id: UUID(), name: "Same", version: nil,
-            location: "/e/0", wine: "w", wineserver: "s"), to: full)
-        check(rejected && replaced?.count == UserEngineStore.limit && replaced?.first?.name == "Same",
+        var fullDuplicate: UserEngineStore.StoreError?
+        do {
+            _ = try UserEngineStore.adding(UserEngine(id: UUID(), name: "Same", version: nil,
+                location: "/e/0", wine: "/e/0/bin/wine", wineserver: "s"), to: full)
+        } catch { fullDuplicate = error }
+        check(rejected && fullDuplicate == .duplicate,
               "REQ109: A full engine list rejects a new engine with a capacity error instead of silently dropping it")
         let suite = "XodusEngineConfigurator-\(UUID().uuidString)"
         if let defaults = UserDefaults(suiteName: suite) {
@@ -242,7 +257,7 @@ extension EngineConfiguratorChecks {
         let state = AppState(settingsDefaults: settingsDefaults)
         let session = LiveSession()
         SettingsPaneSelection.select(.engines, defaults: settingsDefaults)
-        let host = NSHostingView(rootView: LiveSettingsView(engineModel: model)
+        let host = NSHostingView(rootView: LiveSettingsView(engineModel: model, allowsUpdateChecks: false)
             .environmentObject(state)
             .environmentObject(session)
             .defaultAppStorage(settingsDefaults)
@@ -264,10 +279,7 @@ extension EngineConfiguratorChecks {
             }
             host.cacheDisplay(in: host.bounds, to: bitmap)
             guard let image = bitmap.cgImage else { throw EngineLayoutError.unreadable }
-            let request = VNRecognizeTextRequest()
-            request.recognitionLevel = .fast
-            try VNImageRequestHandler(cgImage: image).perform([request])
-            return (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }
+            return try NativeCheckOCR.recognize(image, level: .fast)
         }
         check(selectedPane() == .engines,
               "COR174: The retained engine model is mounted in the selected Engines pane")

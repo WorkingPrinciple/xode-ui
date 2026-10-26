@@ -22,6 +22,25 @@ enum InstalledProductAccessChecks {
             return try JSONDecoder().decode(OdeAccountRead.self,
                 from: JSONSerialization.data(withJSONObject: payload))
         }
+        let pendingAccess = InstalledProductAccess()
+        let pendingIDs = (0..<20).map { String(format: "9PEND%07d", $0) }
+        let unchecked = pendingAccess.pending(product, account: account) && !pendingAccess.pending(product, account: nil)
+        let started = ContinuousClock.now
+        await pendingAccess.refresh(account: account, installedIDs: pendingIDs + [product], now: now) { id in
+            if id == product { return try response(id) }
+            throw ManagementError.disconnected
+        }
+        let elapsed = started.duration(to: .now)
+        check(unchecked && !pendingAccess.pending(product, account: account)
+              && pendingAccess.permits(product, account: account, now: now)
+              && !pendingAccess.pending(pendingIDs[0], account: account)
+              && !pendingAccess.permits(pendingIDs[0], account: account, now: now)
+              && !pendingAccess.pending(product, account: other),
+              "REQ-119 F1: An installed game is pending only until its own check answers; a failed check isn't pending or permitted, and another account never inherits it")
+        check(elapsed < .milliseconds(1_500),
+              "REQ-119 F1: Access checks run back to back with no fixed 100 ms gap (21 synthetic checks took \(elapsed))")
+        pendingAccess.retire()
+
         let controller = InstalledProductAccess()
         defer { controller.retire() }
         var requests: [String] = []
@@ -42,17 +61,16 @@ enum InstalledProductAccessChecks {
               && !controller.permitsReview(denied, account: account, pcCandidate: true, now: now)
               && controller.reviewNotice(for: denied, account: account, now: now)?.contains("didn't grant access") == true
               && !controller.permitsReview(unknown, account: account, pcCandidate: true, now: now)
-              && controller.reviewNotice(for: unknown, account: account, now: now)?.contains("unconfirmed") == true,
+              && controller.reviewNotice(for: unknown, account: account, now: now) == InstalledProductAccess.notIncludedNotice,
               "COR89: Selected account access permits review only; denial/unknown explain exact outcome without inventing ownership")
-        check(controller.reviewNotice(for: unknown, account: account, publicGamePassExcludes: true, now: now)
-                == "Not included in your Game Pass or purchases."
+        let settledNotice = controller.reviewNotice(for: unknown, account: account, publicGamePassExcludes: true, now: now) ?? ""
+        check(settledNotice == "Not included with your account. This game isn't in your Microsoft account's games or your PC Game Pass plan. If you own it, check that you're signed in with the right account."
               && controller.notIncluded(unknown, account: account, publicGamePassExcludes: true, now: now)
-              && InstalledProductAccess.storeURL(productID: unknown)?.absoluteString
-                == "https://apps.microsoft.com/detail/\(unknown)"
-              && InstalledProductAccess.storeURL(productID: "not a product") == nil,
-              "COR186 A1: An unlisted license answer for a title outside the complete public PC Game Pass list says it isn't included, with a Microsoft Store page")
-        check(controller.reviewNotice(for: unknown, account: account, now: now)?.contains("unconfirmed") == true
-              && !controller.notIncluded(unknown, account: account, publicGamePassExcludes: false, now: now)
+              && controller.notIncluded(unknown, account: account, publicGamePassExcludes: false, now: now)
+              && !settledNotice.contains("account response") && !settledNotice.contains("unconfirmed")
+              && !settledNotice.localizedCaseInsensitiveContains("store") && !settledNotice.localizedCaseInsensitiveContains("buy"),
+              "QA A1: A settled answer without this game says plainly it isn't included with the account, with no internal wording and no store or purchase link")
+        check(controller.notIncluded(unknown, account: account, publicGamePassExcludes: false, now: now)
               && !controller.notIncluded(denied, account: account, publicGamePassExcludes: true, now: now)
               && !controller.notIncluded(product, account: account, publicGamePassExcludes: true, now: now)
               && !controller.notIncluded(unknown, account: other, publicGamePassExcludes: true, now: now)
@@ -113,10 +131,12 @@ enum InstalledProductAccessChecks {
         check(controller.errors[product] != nil && !controller.permits(product, account: account,
             now: now.addingTimeInterval(301)), "Transport failure cannot extend a stale permission or become denial")
         check(!controller.permitsReview(product, account: account, pcCandidate: true, now: now.addingTimeInterval(301))
-              && controller.reviewNotice(for: product, account: account, now: now.addingTimeInterval(301))?.contains("couldn't be checked") == true
+              && controller.reviewNotice(for: product, account: account, now: now.addingTimeInterval(301))
+                == InstalledProductAccess.unavailableNotice
               && controller.reviewNotice(for: product, account: account, publicGamePassExcludes: true,
-                                         now: now.addingTimeInterval(301))?.contains("couldn't be checked") == true,
-              "COR89/COR186 A1: Failed selected-title read keeps the couldn't-check copy, never a denial, 'not included' or successful review")
+                                         now: now.addingTimeInterval(301)) == "Couldn't confirm access right now. Try again."
+              && InstalledProductAccess.tryAgainTitle == "Try Again",
+              "QA A1: A failed or timed-out access read says \"Couldn't confirm access right now. Try again.\" with Try Again, never 'not included', a denial or a successful review")
         check(controller.facts[denied] == nil && controller.facts[unknown] == nil,
               "Removed installed IDs leave the access cache")
         await controller.refresh(account: other, installedIDs: [product], now: now) { id in

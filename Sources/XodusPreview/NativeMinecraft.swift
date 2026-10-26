@@ -10,6 +10,10 @@ struct NativeMinecraftInstallation: Equatable, Sendable {
     var version: String? = nil
     var problem: String? = nil
 
+    /// QA REQ-64: only an installed launcher counts toward "Installed games"; the card can still
+    /// appear in All to offer it.
+    var countsAsInstalled: Bool { state == .ready || state == .repair }
+
     func appears(in filter: LibraryFilter, query: String) -> Bool {
         guard filter == .all || (filter == .installed && (state == .ready || state == .repair)) else {
             return false

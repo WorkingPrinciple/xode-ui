@@ -315,6 +315,9 @@ actor InstalledGameStore {
             updated.engineOverrideV2 = game.engineOverrideV2 ?? previous.engineOverrideV2
             updated.storageVolume = game.storageVolume ?? previous.storageVolume
         }
+        for previous in games where previous.folder == game.folder && previous.id != game.id {
+            try rememberPrefixInstallation(previous)
+        }
         games.removeAll { $0.folder == game.folder }
         games.append(updated)
         try save(games)
@@ -323,9 +326,43 @@ actor InstalledGameStore {
 
     func remove(id: UUID) throws -> [InstalledGame] {
         var games = try load()
+        if let game = games.first(where: { $0.id == id }) { try rememberPrefixInstallation(game) }
         games.removeAll { $0.id == id }
         try save(games)
         return games
+    }
+
+    func prefixInstallationIDs(productID: String) throws -> [UUID] {
+        try prefixIdentities()[productID] ?? []
+    }
+
+    private func prefixIdentities() throws -> [String: [UUID]] {
+        let history = file.appendingPathExtension("prefix-identities-v1.json")
+        var info = stat()
+        if lstat(history.path, &info) != 0 {
+            guard errno == ENOENT else { throw InstalledGameError.invalidRegistry }
+            return [:]
+        }
+        let bytes = try InstalledGameFiles.readRegular(history, maximumBytes: 1_048_576, privateFile: true)
+        let records = try JSONDecoder().decode([String: [UUID]].self, from: bytes)
+        guard records.count <= 1024, records.allSatisfy({
+            PCGamesClient.validProductID($0.key) && $0.value.count <= 64
+                && Set($0.value).count == $0.value.count
+        }) else { throw InstalledGameError.invalidRegistry }
+        return records
+    }
+
+    private func rememberPrefixInstallation(_ game: InstalledGame) throws {
+        guard PCGamesClient.validProductID(game.storeId) else { return }
+        var records = try prefixIdentities()
+        var ids = records[game.storeId] ?? []
+        if !ids.contains(game.id) { ids.append(game.id) }
+        guard ids.count <= 64, records.count < 1024 || records[game.storeId] != nil else {
+            throw InstalledGameError.invalidRegistry
+        }
+        records[game.storeId] = ids
+        try GameScriptFiles.writePrivate(JSONEncoder().encode(records),
+            to: file.appendingPathExtension("prefix-identities-v1.json"))
     }
 
     func recordSession(id: UUID, startedAt: Date, seconds: Double?) throws {
@@ -387,6 +424,25 @@ actor InstalledGameStore {
             try selection.validate(registryPath: selection.registryPath, engineName: name, registryDigest: digest)
         }
         games[index].engineOverrideV2 = selection.map { GameEngineOverride(selection: $0) }
+        try save(games)
+        return games
+    }
+
+    func retargetCalimochoTitles(_ selection: AdmittedEngineSelection, replacing oldEngine: String) throws -> [InstalledGame] {
+        var games = try load()
+        for index in games.indices where ["9P9VNSQK1W3K", "9NMNMS626R59"].contains(games[index].storeId) {
+            let legacyMatches = games[index].engineOverride == .calimocho
+                && games[index].engineSelection?.inspection.admittedProvider == "calimocho"
+                && games[index].engineSelection?.inspection.engineName == oldEngine
+            let currentMatches = games[index].engineOverrideV2?.selection.inspection.admittedProvider == "calimocho"
+                && games[index].engineOverrideV2?.selection.inspection.engineName == oldEngine
+                && (games[index].engineOverride == nil || games[index].engineOverride == .calimocho)
+            if legacyMatches || currentMatches {
+                try NativeLaunchConfiguration.validateOverride(selection, game: games[index])
+            }
+            if legacyMatches { games[index].engineSelection = selection }
+            if currentMatches { games[index].engineOverrideV2 = GameEngineOverride(selection: selection) }
+        }
         try save(games)
         return games
     }

@@ -4,12 +4,13 @@ import SwiftUI
 /// The login screen is the X Ode lockup, Sign in with Microsoft and one line about the technology.
 enum WelcomeCopy {
     static let signIn = "Sign in with Microsoft"
-    static var technology: String {
-        "\(AppBrand.displayName) runs Windows games with Wine and other open-source libraries."
-    }
-    static let acknowledgments = "Acknowledgments"
-    static let acknowledgmentsAccessibility = "Open-source acknowledgments"
+    static var technology: String { FeaturedCredits.signInLine }
+    static var credits: String { FeaturedCredits.whereToFind }
+    static var acknowledgments: String { FeaturedCredits.creditsLinkTitle }
+    static let acknowledgmentsAccessibility = "Open-source acknowledgments and licences"
     static let checking = "Checking your Microsoft account"
+    /// While a saved sign-in is restored at launch; "needs to be reconnected" only after it fails.
+    static let restoring = "Checking your sign-in…"
     /// Shown only while a check runs, when macOS may ask for Keychain access.
     static var keychain: String {
         "If macOS asks about Keychain access, it's \(AppBrand.displayName) checking or saving your sign-in on this Mac."
@@ -69,10 +70,11 @@ struct LiveWelcomeView: View {
                         .buttonStyle(.borderedProminent)
                         .controlSize(.large)
                         .keyboardShortcut(.defaultAction)
-                        .disabled(session.connectionTransitioning || session.accountBusy || session.hasConfirmedSignIn)
+                        .disabled(session.connectionTransitioning || session.accountBusy || session.hasConfirmedSignIn
+                                  || session.restoringSignIn)
                         .accessibilityIdentifier("xodus.welcome.signIn")
                     }
-                    if session.connectionTransitioning || session.accountBusy {
+                    if session.connectionTransitioning || session.accountBusy || session.restoringSignIn {
                         OdeLoadingStatus(title: WelcomeCopy.checking, message: WelcomeCopy.keychain)
                             .frame(maxWidth: 360)
                     }
@@ -82,14 +84,21 @@ struct LiveWelcomeView: View {
                     }
                     VStack(spacing: 4) {
                         Text(WelcomeCopy.technology)
-                            .font(.footnote).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                            .font(.callout).multilineTextAlignment(.center)
                             .fixedSize(horizontal: false, vertical: true)
                             .accessibilityIdentifier("xodus.welcome.technology")
-                        // Works signed out and offline: the notices ship with the app.
-                        Button(WelcomeCopy.acknowledgments, action: openAcknowledgmentsAction)
-                            .buttonStyle(.link).font(.footnote)
-                            .accessibilityLabel(WelcomeCopy.acknowledgmentsAccessibility)
-                            .accessibilityIdentifier("xodus.welcome.acknowledgments")
+                        // One line: the link, then where else to find it. Works signed out and offline.
+                        HStack(spacing: 3) {
+                            Button(WelcomeCopy.acknowledgments, action: openAcknowledgmentsAction)
+                                .buttonStyle(.link)
+                                .accessibilityLabel(WelcomeCopy.acknowledgmentsAccessibility)
+                                .accessibilityHint("Also in the \(AppBrand.displayName) menu")
+                                .accessibilityIdentifier("xodus.welcome.acknowledgments")
+                            Text(WelcomeCopy.credits).foregroundStyle(.secondary)
+                                .accessibilityHidden(true)
+                                .accessibilityIdentifier("xodus.welcome.credits")
+                        }
+                        .font(.footnote)
                     }
                     .frame(maxWidth: 360)
                     Spacer(minLength: 24)

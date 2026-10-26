@@ -29,6 +29,12 @@ final class InstalledProductAccess: ObservableObject {
     private var generation = UUID()
     private let logger = Logger(subsystem: "io.github.dragoshont.xodus", category: "product-access")
 
+    /// REQ-119: not checked yet for this account (no result and no error); the tile shows, Play waits.
+    func pending(_ productID: String, account: String?) -> Bool {
+        guard let account, accountHash == nil || accountHash == account else { return false }
+        return facts[productID] == nil && errors[productID] == nil
+    }
+
     func permits(_ productID: String, account: String?, now: Date = Date()) -> Bool {
         guard let account, accountHash == account, let fact = facts[productID],
               now.timeIntervalSince(fact.checkedAt) >= 0,
@@ -41,24 +47,25 @@ final class InstalledProductAccess: ObservableObject {
         pcCandidate && !checking && errors[productID] == nil && permits(productID, account: account, now: now)
     }
 
-    static let notIncludedNotice = "Not included in your Game Pass or purchases."
-    static let storeActionTitle = "View in Microsoft Store"
+    /// QA A1: the one source for settled "not in this account" and service-failure access copy, used by
+    /// the game page, its install control and any tile or tooltip. No store or purchase links (REQ-22/26/61).
+    static let notIncludedTitle = "Not included with your account"
+    static let notIncludedDetail = "This game isn't in your Microsoft account's games or your PC Game Pass plan. If you own it, check that you're signed in with the right account."
+    static var notIncludedNotice: String { "\(notIncludedTitle). \(notIncludedDetail)" }
+    static let unavailableNotice = "Couldn't confirm access right now. Try again."
+    static let tryAgainTitle = "Try Again"
 
-    static func storeURL(productID: String) -> URL? {
-        guard PCGamesClient.validProductID(productID) else { return nil }
-        return URL(string: "https://apps.microsoft.com/detail/\(productID)")
-    }
-
-    /// True only for a current, error-free check whose license answer is missing or unknown while the
-    /// complete public PC Game Pass list also excludes the game. Transport errors never qualify.
+    /// True for a current, error-free check that settled without this game: the account response didn't
+    /// list it, or its answer is unknown while the complete public PC Game Pass list also excludes it.
+    /// Transport errors never qualify.
     func notIncluded(_ productID: String, account: String?, publicGamePassExcludes: Bool,
                      now: Date = Date()) -> Bool {
-        guard publicGamePassExcludes, let account, accountHash == account, !checking,
+        guard let account, accountHash == account, !checking,
               errors[productID] == nil, let fact = facts[productID],
               !permits(productID, account: account, now: now),
               now.timeIntervalSince(fact.checkedAt) >= 0, now.timeIntervalSince(fact.checkedAt) < 300,
               fact.expiresAt.map({ $0 <= now }) != true else { return false }
-        return fact.value.reason == .productNotListed || fact.value.reason == nil
+        return fact.value.reason == .productNotListed || (fact.value.reason == nil && publicGamePassExcludes)
     }
 
     func reviewNotice(for productID: String, account: String?, publicGamePassExcludes: Bool = false,
@@ -70,7 +77,7 @@ final class InstalledProductAccess: ObservableObject {
             return "Access for this account hasn't been checked for this game."
         }
         if checking { return "Checking access for this game." }
-        if let error = errors[productID] { return "Access for this game couldn't be checked. \(error)" }
+        if errors[productID] != nil { return Self.unavailableNotice }
         if permits(productID, account: account, now: now) { return nil }
         guard let fact = facts[productID] else { return "Access for this game hasn't been checked." }
         if now.timeIntervalSince(fact.checkedAt) < 0 || now.timeIntervalSince(fact.checkedAt) >= 300
@@ -79,7 +86,7 @@ final class InstalledProductAccess: ObservableObject {
         }
         switch fact.value.reason {
         case .providerDenied: return "The account provider didn't grant access to this game."
-        case .productNotListed: return "The account response didn't include this game. Access is unconfirmed."
+        case .productNotListed: return Self.notIncludedNotice
         case .validityUnavailable: return "The account provider couldn't confirm a valid access period for this game."
         case .grantExpired: return "The access grant returned for this game has expired."
         case .grantNotStarted: return "The access grant returned for this game isn't active yet."
@@ -198,8 +205,7 @@ final class InstalledProductAccess: ObservableObject {
                     errors[id] = LiveSession.describe(error)
                     logger.error("Product access \(id, privacy: .public) failed: \(LiveSession.describe(error), privacy: .public)")
                 }
-                do { try await Task.sleep(for: .milliseconds(100)) }
-                catch { return }
+                await Task.yield()
             }
         }
         await operation?.value

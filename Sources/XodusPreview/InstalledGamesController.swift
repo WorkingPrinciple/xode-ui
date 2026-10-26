@@ -1113,6 +1113,7 @@ final class InstalledGamesController: ObservableObject {
             guard launch.admittedSelection != nil else { throw NativeLaunchError.providerPolicy }
             let arguments = try await launch.arguments()
             let prefixNotice = try await launch.prefixNotice()
+            let legacyPrefixIDs = try await store.prefixInstallationIDs(productID: game.storeId) + [game.id]
             if preparation.isCancelled { throw CancellationError() }
             let executables = config.executables
             let existingWindows = NativeGameForeground.windowIDs()
@@ -1133,7 +1134,13 @@ final class InstalledGamesController: ObservableObject {
                         gameDirectory: URL(fileURLWithPath: game.folder), runID: runID,
                         launchArguments: arguments, launchEnvironment: launch.profile?.launchEnvironment ?? [:],
                         unsetLaunchEnvironment: launch.profile?.unsetEnvironment ?? [],
-                        engineSelection: launch.admittedSelection, onStarted: {
+                        engineSelection: launch.admittedSelection, prepareAdmittedPrefix: {
+                            guard let selection = launch.admittedSelection else { throw NativeLaunchError.providerNotAdmitted }
+                            try await Task.detached {
+                                try CalimochoPrefixContinuity.prepare(prefix: launch.prefix, selection: selection,
+                                    productID: game.storeId, legacyIDs: legacyPrefixIDs)
+                            }.value
+                        }, onStarted: {
                             Self.launchLog.notice("Launcher started: \(game.storeId, privacy: .public), engine \(launch.engine, privacy: .public)")
                             launchStarted = true
                             playState = .playing
@@ -1389,10 +1396,47 @@ final class InstalledGamesController: ObservableObject {
     func refreshEngineOverrides(force: Bool = true, retryFailed: Bool = false) async {
         guard loaded, force || !checkingEngineOverrides, !applicationTerminating,
               force || !engineOverridesChecked || (retryFailed && !failedEngineOverrides.isEmpty),
-              let configuration = unifiedSession?.nativeLifecycleConfiguration else { return }
+              unifiedSession?.nativeLifecycleConfiguration != nil else { return }
         await withEngineOverrideCheck {
-            guard !applicationTerminating, !Task.isCancelled else { return }
+            guard !applicationTerminating, !accountDisconnecting, !Task.isCancelled,
+                  let configuration = unifiedSession?.nativeLifecycleConfiguration else { return }
             await inspectEngineOverrides(configuration: configuration, force: force)
+        }
+    }
+
+    func activateCalimochoUpdate(_ selection: AdmittedEngineSelection,
+                                replacing oldEngine: String,
+                                defaults: UserDefaults = .standard) async throws {
+        guard loaded, mutationActive, !applicationTerminating, !accountDisconnecting,
+              runningGameID == nil, let pin = CalimochoReleasePin.all.last,
+              selection.inspection.engineName == pin.engineName,
+              selection.inspection.wineSha256 == pin.wineSha256,
+              selection.inspection.wineserverSha256 == pin.wineserverSha256 else {
+            throw CalimochoUpdateError.admission
+        }
+        for product in ["9P9VNSQK1W3K", "9NMNMS626R59"] {
+            guard let profile = try NativeTitleLaunchProfile.read(productID: product, defaults: defaults,
+                                                                  provider: .calimocho),
+                  profile.engine == pin.engineName, profile.wineSha256 == pin.wineSha256,
+                  profile.wineserverSha256 == pin.wineserverSha256 else { throw NativeLaunchError.invalidProfile }
+        }
+        let previous = defaults.object(forKey: NativeEngineDefaults.preferenceKey)
+        let previousProvider = defaults.object(forKey: EngineDefaults.defaultEngineKey)
+        do {
+            if EngineDefaults.defaultEngine(defaults).map({ $0 == .calimocho }) ?? true,
+               let bytes = defaults.data(forKey: NativeEngineDefaults.preferenceKey) {
+                let saved = try JSONDecoder().decode(AdmittedEngineSelection.self, from: bytes)
+                if saved.inspection.admittedProvider == "calimocho", saved.inspection.engineName == oldEngine {
+                    try NativeEngineSettings.persistDefaultAdmission(selection, defaults: defaults)
+                }
+            }
+            applySavedGames(try await store.retargetCalimochoTitles(selection, replacing: oldEngine))
+        } catch {
+            if let previous { defaults.set(previous, forKey: NativeEngineDefaults.preferenceKey) }
+            else { defaults.removeObject(forKey: NativeEngineDefaults.preferenceKey) }
+            if let previousProvider { defaults.set(previousProvider, forKey: EngineDefaults.defaultEngineKey) }
+            else { defaults.removeObject(forKey: EngineDefaults.defaultEngineKey) }
+            throw error
         }
     }
 

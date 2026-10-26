@@ -285,7 +285,10 @@ final class LiveSession: ObservableObject {
             return accountCountryChecking ? "Checking Xbox account" : "Not confirmed"
         }
         let name = Locale.current.localizedString(forRegionCode: market) ?? market
-        return "\(name) (\(market)) — \(accountCountryVerified ? "verified by Xbox" : "confirmed by you")"
+        return "\(name) (\(market)) — \(Self.countrySource(verified: accountCountryVerified, provisional: accountCountryProvisional))"
+    }
+    static func countrySource(verified: Bool, provisional: Bool) -> String {
+        verified ? "verified by Xbox" : provisional ? "last confirmed by Xbox" : "confirmed by you"
     }
 
     func refreshAccountCountry() async {
@@ -309,8 +312,59 @@ final class LiveSession: ObservableObject {
         }
     }
 
+    /// REQ-121: the last Xbox-verified country for an account, as a bare country code keyed by the
+    /// account hash. Applied provisionally at launch so artwork draws at once; re-confirmed in the
+    /// background; removed on sign-out.
+    static func lastVerifiedCountryKey(_ account: String) -> String { "Xodus.accountCountry.lastVerified.\(account)" }
+    @Published private(set) var accountCountryProvisional = false
+    /// REQ-121: after a confirmed sign-out, saved artwork and saved public descriptors (whose product IDs
+    /// reflect the library and whose market reflects the country) are removed. Injectable for checks.
+    var signOutCleanup: @MainActor () async -> Void = {
+        try? await CatalogArtworkStore.shared.clearForSignOut()
+    }
+
+    /// Uses the last verified country for this account until the profile read confirms it.
+    func applyProvisionalAccountCountry() {
+        guard hasConfirmedSignIn, let account = accountHash, countryAccountHash != account,
+              let code = countryDefaults.string(forKey: Self.lastVerifiedCountryKey(account))
+                .flatMap(XboxAccountCountry.normalized) else { return }
+        countryAccountHash = account
+        countryCode = code
+        market = code
+        accountCountryVerified = false
+        accountCountryNeedsConfirmation = false
+        accountCountryError = nil
+        accountCountryProvisional = true
+        let token = countryGeneration
+        Task { [weak self] in
+            // Behind the library read; a different country re-scopes and refetches the library.
+            guard let self, token == self.countryGeneration else { return }
+            for _ in 0..<300 where self.yieldsToLibraryRead || self.accountBusy {
+                try? await Task.sleep(for: .milliseconds(100))
+                guard token == self.countryGeneration else { return }
+            }
+            await self.refreshAccountCountry()
+            // One later retry if the re-check failed and the country is still provisional.
+            guard token == self.countryGeneration, self.accountCountryProvisional else { return }
+            try? await Task.sleep(for: .seconds(Self.provisionalCountryRetry))
+            guard token == self.countryGeneration, self.accountCountryProvisional, !self.accountBusy else { return }
+            await self.refreshAccountCountry()
+        }
+    }
+    static let provisionalCountryRetry: TimeInterval = 60
+
+    /// Forgets the saved countries for an account; part of signing out.
+    func forgetAccountCountry(_ account: String) {
+        countryDefaults.removeObject(forKey: Self.lastVerifiedCountryKey(account))
+        countryDefaults.removeObject(forKey: "Xodus.accountCountry.\(account)")
+    }
+
     func applyAccountCountry(_ value: XboxAccountCountry?, account: String) {
         guard hasConfirmedSignIn, accountHash == account else { return }
+        accountCountryProvisional = false
+        if let verified = value?.countryCode.flatMap(XboxAccountCountry.normalized) {
+            countryDefaults.set(verified, forKey: Self.lastVerifiedCountryKey(account))
+        }
         countryAccountHash = account
         accountCountryVerified = value?.countryCode != nil
         accountCountryNeedsConfirmation = !accountCountryVerified
@@ -332,6 +386,7 @@ final class LiveSession: ObservableObject {
 
     private func retireAccountCountry() {
         countryGeneration = UUID()
+        accountCountryProvisional = false
         countryAccountHash = nil
         countryCode = nil
         accountCountryChecking = false
@@ -343,6 +398,13 @@ final class LiveSession: ObservableObject {
     private var licenseReadGeneration: Int?
     private var licenseReadInFlight: Bool { licenseReadGeneration == generation }
     private var waitingInteractiveAccountReads = 0
+    /// The first status read on this connection finished, successfully or not.
+    @Published private(set) var initialStatusSettled = false
+    @Published private(set) var unverifiedCredentialSince: Date?
+    /// Set when a launch connect will read the saved sign-in; a plain reconnect never enters restoring.
+    @Published private(set) var restoreExpectedSince: Date?
+    @Published private var restoreTick = 0
+    private var restoreRereadDone = false
     /// REQ-119: a library collection read waiting to dispatch. License and recent-activity reads hold
     /// back for it, so the cold library isn't queued behind background reads.
     @Published private(set) var libraryReadsWaiting = 0
@@ -427,7 +489,7 @@ final class LiveSession: ObservableObject {
             || connectionFailedAfterAdmission
             || !isReady || !nativeSignInHostAdmitted || !supports(.authBegin)
             || !supports(.authCancel) || !supports(.authStatus) || signInPending
-            || accountError != nil || needsAccountDisconnect
+            || accountError != nil || needsAccountDisconnect || restoringSignIn
             || authentication?.flow?.state == .failed || authentication?.flow?.state == .cancelled
             || (appSignOutComplete && authentication?.state == .signedOut && accountStatusCurrent) {
             return welcomeMessage
@@ -450,6 +512,7 @@ final class LiveSession: ObservableObject {
         if accountError != nil {
             return "Your sign-in couldn't be confirmed. Try again. If macOS asks for Keychain access, respond in its permission window."
         }
+        if restoringSignIn { return WelcomeCopy.restoring }
         if needsAccountDisconnect { return "Your saved sign-in needs to be reconnected." }
         if authentication?.flow?.state == .failed { return "Sign-in didn't finish. Try again when you're ready." }
         if authentication?.flow?.state == .cancelled { return "Sign-in was cancelled. Your games stay hidden until you sign in." }
@@ -464,7 +527,10 @@ final class LiveSession: ObservableObject {
 
     func prepareWelcome() async {
         guard !connectionTransitioning, !accountBusy, !signInPending else { return }
-        if !isReady { await connect() }
+        if !isReady {
+            await connect(readingAccountFirst: true)
+            if isReady, initialStatusSettled { return }
+        }
         if isReady { await refreshAccount() }
     }
     func revalidateAccountOnForeground() async {
@@ -582,6 +648,12 @@ final class LiveSession: ObservableObject {
         if let operation = recentLibraryBootstrap {
             await operation.task.value
             return
+        }
+        // REQ-119: queued, not skipped, while the library's collection read goes first.
+        let generationAtEntry = generation
+        for _ in 0..<300 where yieldsToLibraryRead {
+            do { try await Task.sleep(for: .milliseconds(100)) } catch { return }
+            guard generation == generationAtEntry else { return }
         }
         guard !applicationTerminating, canLoadRecentLibrary,
               !automatically || recentLibraryEntryGeneration != generation else { return }
@@ -701,6 +773,45 @@ final class LiveSession: ObservableObject {
         }
         if query.isEmpty { return "Find your next game with Discover or search." }
         return "Try a different title or a shorter search."
+    }
+    /// REQ-119: a stored sign-in is still being restored — the launch's first status read hasn't
+    /// settled, or the saved credential's identity isn't verified yet. Neutral, never "reconnect".
+    static let restoreGrace: TimeInterval = 15
+    /// Bounded: an expected first read that hasn't settled, or an unverified credential, for at most
+    /// `restoreGrace`. A plain reconnect that reads nothing is never "restoring".
+    static func signInRestoring(statusSettled: Bool, restoreExpected: Bool, restoringFor: TimeInterval?,
+                                state: CredentialState?, hashValid: Bool, unverifiedFor: TimeInterval?) -> Bool {
+        guard statusSettled else { return restoreExpected && (restoringFor ?? 0) < restoreGrace }
+        return state == .credentialPresent && !hashValid && (unverifiedFor ?? 0) < restoreGrace
+    }
+    /// At the end of the wait, read status once more before showing reconnect copy.
+    static func rereadsStatusAtGrace(state: CredentialState?, hashValid: Bool, alreadyReread: Bool) -> Bool {
+        state == .credentialPresent && !hashValid && !alreadyReread
+    }
+    var restoringSignIn: Bool {
+        guard isReady, supports(.authStatus), !signInPending, !signingOut, accountError == nil,
+              !hasConfirmedSignIn else { return false }
+        _ = restoreTick
+        return Self.signInRestoring(statusSettled: initialStatusSettled, restoreExpected: restoreExpectedSince != nil,
+            restoringFor: restoreExpectedSince.map { Date().timeIntervalSince($0) },
+            state: authentication?.state,
+            hashValid: authentication?.accountHash.map(XboxAccountBinding.valid) == true,
+            unverifiedFor: unverifiedCredentialSince.map { Date().timeIntervalSince($0) })
+    }
+    private func scheduleRestoreBound() {
+        let token = generation
+        Task { [weak self] in
+            try? await Task.sleep(for: .seconds(Self.restoreGrace))
+            guard let self, token == self.generation else { return }
+            if Self.rereadsStatusAtGrace(state: self.authentication?.state,
+                    hashValid: self.authentication?.accountHash.map(XboxAccountBinding.valid) == true,
+                    alreadyReread: self.restoreRereadDone), !self.accountBusy, !self.signInPending {
+                self.restoreRereadDone = true
+                await self.refreshAccount()
+            }
+            guard token == self.generation else { return }
+            self.restoreTick &+= 1
+        }
     }
     var needsAccountDisconnect: Bool {
         guard let state = authentication?.state else { return false }
@@ -1076,7 +1187,7 @@ final class LiveSession: ObservableObject {
     }
 #endif
 
-    func connect() async {
+    func connect(readingAccountFirst: Bool = false) async {
         guard !applicationTerminating else { return }
         guard !connectionTransitioning, !backendPath.isEmpty else {
             if backendPath.isEmpty { errorMessage = "Choose your trusted app engine in Settings first." }
@@ -1141,7 +1252,14 @@ final class LiveSession: ObservableObject {
                     await self.connectionFailed(error)
                 }
             }
-            // Connection setup stays anonymous; explicit Recent activity entry owns its saved-status read.
+            // REQ-119: the launch's sign-in check runs before installed and catalogue reads, so the
+            // welcome screen resolves first. Plain reconnects stay anonymous.
+            if readingAccountFirst {
+                restoreExpectedSince = Date()
+                scheduleRestoreBound()
+                await refreshAccount()
+                guard token == generation, revision == lifecycleRevision, client === connection else { return }
+            }
             await refreshInstalled()
             guard token == generation, revision == lifecycleRevision, client === connection else { return }
             if queryGeneration == startupQueryRevision { await search("") }
@@ -1197,6 +1315,10 @@ final class LiveSession: ObservableObject {
         hello = nil
         if authentication != nil || countryAccountHash != nil { retireAccountCountry() }
         authentication = nil
+        initialStatusSettled = false
+        unverifiedCredentialSince = nil
+        restoreExpectedSince = nil
+        restoreRereadDone = false
         accountStatusCurrent = false
         nativeSignInHostAdmitted = false
         connectionFailedAfterAdmission = false
@@ -1304,6 +1426,9 @@ final class LiveSession: ObservableObject {
 
     private func refreshAccountState() async {
         guard isReady, supports(.authStatus), let client, !accountOperationBusy else { return }
+        let firstCheck = !initialStatusSettled
+        if firstCheck { FirstLoadTimeline.launchMark("signInCheckStart") }
+        defer { if firstCheck, initialStatusSettled { FirstLoadTimeline.launchMark("signInCheckDone") } }
         let token = generation
         clearRecentLibrary()
         authenticationGeneration += 1
@@ -1315,8 +1440,13 @@ final class LiveSession: ObservableObject {
             accountError = nil
             failedAccountAction = nil
             errorMessage = nil
+            initialStatusSettled = true
+            applyProvisionalAccountCountry()
+            restoreExpectedSince = nil
         } catch {
             guard token == generation, authToken == authenticationGeneration else { return }
+            initialStatusSettled = true
+            restoreExpectedSince = nil
             clearRecentLibrary()
             accountStatusCurrent = false
             accountStatusError = error as? ManagementError
@@ -1356,6 +1486,14 @@ final class LiveSession: ObservableObject {
             retireAccountCountry()
         }
         authentication = status
+        if status.state == .credentialPresent, status.accountHash.map(XboxAccountBinding.valid) != true {
+            if unverifiedCredentialSince == nil {
+                unverifiedCredentialSince = Date()
+                scheduleRestoreBound()
+            }
+        } else {
+            unverifiedCredentialSince = nil
+        }
         if status.state != .signedOut { appSignOutComplete = false }
         if status.flow?.state != .pending {
             MicrosoftSignInGate.shared.release(signInOwner)
@@ -1564,6 +1702,7 @@ final class LiveSession: ObservableObject {
     @discardableResult
     func signOut(beforeDisconnect: @MainActor () async -> String? = { nil }) async -> Bool {
         guard !signingOut else { return false }
+        let signedOutAccount = accountHash
         guard let client, canDisconnectAccount else {
             errorMessage = "Check the current saved sign-in before disconnecting. No credentials were removed."
             accountError = errorMessage
@@ -1611,6 +1750,8 @@ final class LiveSession: ObservableObject {
             }
             accountStatusCurrent = true
             diagnosticPreview = nil
+            if let signedOutAccount { forgetAccountCountry(signedOutAccount) }
+            await signOutCleanup()
             return true
         } catch {
             guard token == generation else { return false }

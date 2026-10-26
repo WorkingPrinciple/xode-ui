@@ -92,6 +92,8 @@ enum AccountCountryChecks {
 
         for scenario in ["odecountryunknown", "odemismatch", "odecountryslow"] {
             let next = configuration(scenario)
+            // These scenarios start without a last verified country, so no provisional re-check races them.
+            defaults.removeObject(forKey: LiveSession.lastVerifiedCountryKey(account))
             let nextSession = LiveSession(configuration: next, countryDefaults: defaults)
             await nextSession.connect()
             await nextSession.refreshAccount()

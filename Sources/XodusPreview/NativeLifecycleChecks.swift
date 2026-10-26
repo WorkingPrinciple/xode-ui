@@ -786,7 +786,7 @@ enum NativeLifecycleChecks {
 
     private static func installCalimochoRouteFixture(root: URL, defaults: UserDefaults,
                                                      fileName: String) throws -> URL {
-        let pin = CalimochoReleasePin.release04
+        let pin = CalimochoReleasePin.release06
         let executable = "/usr/bin/true"
         let registryURL = root.appendingPathComponent(fileName)
         let bytes = try JSONSerialization.data(withJSONObject: ["engines": [[
@@ -830,7 +830,7 @@ enum NativeLifecycleChecks {
         check(Set(rows.filter(\.admitted).map(\.store_id)) == Set(expected.keys)
               && NativeCandidateLaunchCatalogue.issue(productID: "9NMNMS626R59") == nil
               && NativeCandidateLaunchCatalogue.issue(productID: "UNKNOWN00001") == nil,
-              "Exactly eleven S1 candidates remain admitted; Halls uses its release-pinned -04 profile without Apple4 evidence")
+              "Exactly eleven S1 candidates remain admitted; Halls uses its release-pinned -06 profile without Apple4 evidence")
         for row in rows where row.admitted {
             let profile = try NativeTitleLaunchProfile.read(productID: row.store_id, defaults: defaults,
                                                            provider: .standaloneWine)
@@ -844,11 +844,11 @@ enum NativeLifecycleChecks {
         let hallsProfileWithoutEvidence = try? NativeTitleLaunchProfile.read(
             productID: "9NMNMS626R59", defaults: defaults, provider: .standaloneWine)
         check(hallsProfileWithoutEvidence?.engine == CalimochoRelease.engineID
-              && hallsProfileWithoutEvidence?.wineSha256 == CalimochoReleasePin.release04.wineSha256
-              && hallsProfileWithoutEvidence?.wineserverSha256 == CalimochoReleasePin.release04.wineserverSha256
+              && hallsProfileWithoutEvidence?.wineSha256 == CalimochoReleasePin.release06.wineSha256
+              && hallsProfileWithoutEvidence?.wineserverSha256 == CalimochoReleasePin.release06.wineserverSha256
               && NativeLaunchSupport.evaluate(productID: "9NMNMS626R59", defaults: defaults,
                     engineDefaults: { try NativeEngineDefaults.read() }, releaseStatus: { _ in nil }) == .supported,
-              "Halls resolves and reports supported from its pinned Calimocho -04 sweep without Apple4 evidence")
+              "Halls resolves and reports supported from its pinned Calimocho -06 sweep without Apple4 evidence")
         let hallsDocument: [String: Any] = [
             "schemaVersion": 1, "updatedAt": "2026-10-22T00:00:00Z",
             "games": [[
@@ -867,10 +867,10 @@ enum NativeLifecycleChecks {
         check(NativeCandidateLaunchCatalogue.issue(productID: "9NMNMS626R59", evidence: hallsEvidence) == nil
               && hallsEvidence.verifiedWorkingEvidence != nil && hallsEvidence.engine == "apple-gptk-4.0b3"
               && hallsProfile?.engine == CalimochoRelease.engineID
-              && hallsProfile?.wineSha256 == CalimochoReleasePin.release04.wineSha256
-              && hallsProfile?.wineserverSha256 == CalimochoReleasePin.release04.wineserverSha256
+              && hallsProfile?.wineSha256 == CalimochoReleasePin.release06.wineSha256
+              && hallsProfile?.wineserverSha256 == CalimochoReleasePin.release06.wineserverSha256
               && hallsProfile?.arguments == ["--exe", "Halls of Torment.exe", "--timeout-seconds", "300", "--no-auto-dismiss"],
-              "Halls' Apple4 WORKING evidence remains distinct from the pinned Calimocho -04 launch profile")
+              "Halls' Apple4 WORKING evidence remains distinct from the pinned Calimocho -06 launch profile")
         let hallsRegistry = root.appendingPathComponent("halls-registry.json")
         let hallsRegistryBytes = try JSONSerialization.data(withJSONObject: ["engines": [[
             "name": "apple-gptk-4.0b3", "kind": "free", "wine": "/usr/bin/true",
@@ -894,20 +894,20 @@ enum NativeLifecycleChecks {
         do {
             resolvedHalls = try NativeLaunchConfiguration.resolve(game: hallsGame, provider: .standaloneWine,
                 defaults: defaults)
-            check(true, "Halls resolves on admitted Calimocho -04 without Apple4 evidence or retained-prefix proof")
+            check(true, "Halls resolves on admitted Calimocho -06 without Apple4 evidence or retained-prefix proof")
         } catch {
-            check(false, "Halls resolves on admitted Calimocho -04 without Apple4 evidence or retained-prefix proof")
+            check(false, "Halls resolves on admitted Calimocho -06 without Apple4 evidence or retained-prefix proof")
             resolvedHalls = try NativeLaunchConfiguration.resolve(game: hallsGame, provider: .standaloneWine,
                 defaults: defaults, evidence: hallsEvidence)
         }
         check(resolvedHalls.engine == CalimochoRelease.engineID
-              && resolvedHalls.prefix.path.hasSuffix("/\(hallsGame.id.uuidString)/\(CalimochoRelease.engineID)")
+              && resolvedHalls.prefix.path.hasSuffix("/\(hallsGame.storeId)/calimocho-11.20")
               && resolvedHalls.admittedSelection?.inspection.engineName == CalimochoRelease.engineID
               && resolvedHalls.admittedSelection?.inspection.qualified == false
               && resolvedHalls.profile?.environment.isEmpty == true
               && resolvedHalls.profile?.preservedPrefixPath == nil
               && resolvedHalls.profile?.runtime?.primarySHA256 == "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8",
-              "Halls resolves on admitted Calimocho -04 without Apple4 evidence or retained-prefix proof")
+              "Halls resolves on admitted Calimocho -06 without Apple4 evidence or retained-prefix proof")
         let mismatchedSelection = AdmittedEngineSelection(registryPath: resolvedHalls.admittedSelection!.registryPath,
             inspection: EngineInspection(schemaVersion: 1, capability: "engineAdmissionV1",
                 registrySha256: resolvedHalls.admittedSelection!.inspection.registrySha256,
@@ -921,9 +921,9 @@ enum NativeLifecycleChecks {
         do {
             _ = try NativeLaunchConfiguration.resolve(game: mismatchedHallsGame, provider: .calimocho,
                 defaults: defaults, evidence: hallsEvidence)
-            check(false, "A selection named -04 with different Wine and wineserver digests cannot satisfy Halls' profile pin")
+            check(false, "A selection named -06 with different Wine and wineserver digests cannot satisfy Halls' profile pin")
         } catch NativeLaunchError.configurationConflict {
-            check(true, "A selection named -04 with different Wine and wineserver digests cannot satisfy Halls' profile pin")
+            check(true, "A selection named -06 with different Wine and wineserver digests cannot satisfy Halls' profile pin")
         }
         let unpinnedSelectionProfile = NativeTitleLaunchProfile(version: 1, productID: hallsGame.storeId, engine: nil,
             shimDirectory: nil, environment: [:])
@@ -943,15 +943,15 @@ enum NativeLifecycleChecks {
         let mismatchedProfile = NativeTitleLaunchProfile(version: 1, productID: "UNKNOWN00002",
             engine: CalimochoRelease.engineID, shimDirectory: nil, environment: [:],
             wineSha256: String(repeating: "0", count: 64),
-            wineserverSha256: CalimochoReleasePin.release04.wineserverSha256)
+            wineserverSha256: CalimochoReleasePin.release06.wineserverSha256)
         try JSONEncoder().encode(mismatchedProfile)
             .write(to: mismatchedProfileDirectory.appendingPathComponent("UNKNOWN00002.json"))
         defaults.set(mismatchedProfileDirectory.path, forKey: "Xodus.lifecycle.profileDirectory")
         do {
             _ = try NativeTitleLaunchProfile.read(productID: "UNKNOWN00002", defaults: defaults)
-            check(false, "A profile whose release pin differs from -04 is rejected")
+            check(false, "A profile whose release pin differs from -06 is rejected")
         } catch NativeLaunchError.invalidProfile {
-            check(true, "A profile whose release pin differs from -04 is rejected")
+            check(true, "A profile whose release pin differs from -06 is rejected")
         }
         defaults.removeObject(forKey: "Xodus.lifecycle.profileDirectory")
         let unboundProfileDirectory = root.appendingPathComponent("unbound-profile")
@@ -972,7 +972,7 @@ enum NativeLifecycleChecks {
         check(resolvedUnbound.engine == CalimochoRelease.engineID
               && NativeLaunchSupport.evaluate(productID: unboundProductID, defaults: defaults,
                     engineDefaults: { try NativeEngineDefaults.read() }, releaseStatus: { _ in nil }) == .supported,
-              "A profile without an engine preserves selected -04 routing and agrees with launch support")
+              "A profile without an engine preserves selected -06 routing and agrees with launch support")
         defaults.removeObject(forKey: "Xodus.lifecycle.profileDirectory")
 
         #if !XODUS_SHIPPING
@@ -1251,12 +1251,12 @@ enum NativeLifecycleChecks {
                     "XODUS_PRIVATE_RUNTIME_COM_STA", "XODUS_PRIVATE_CALLER_OWNS_COM", "CX_APPLEGPTK_LIBD3DSHARED_PATH"])
                   && launch.profile?.runtime?.primarySHA256 == "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8"
                   && launch.profile?.runtime?.legacySHA256 == "cfe7e5f837fabc51b8066809ca69c2ee0a7852512afbb1979190ec495b0b8b96"
-                  && launch.profile?.wineSha256 == CalimochoReleasePin.release04.wineSha256
-                  && launch.profile?.wineserverSha256 == CalimochoReleasePin.release04.wineserverSha256
+                  && launch.profile?.wineSha256 == CalimochoReleasePin.release06.wineSha256
+                  && launch.profile?.wineserverSha256 == CalimochoReleasePin.release06.wineserverSha256
                   && launch.shims.directory.path.hasSuffix("/Ode to X/Engines/profiles/native-web-shims-v1")
-                  && launch.prefix.path.hasSuffix("/\(brotato.id.uuidString)/\(CalimochoRelease.engineID)")
+                  && launch.prefix.path.hasSuffix("/\(brotato.storeId)/calimocho-11.20")
                   && launch.admittedSelection?.inspection.engineName == CalimochoRelease.engineID,
-                  "Brotato selects admitted Calimocho -04 with exact Wine/server pins, not a conflicting default provider")
+                  "Brotato selects admitted Calimocho -06 with exact Wine/server pins, not a conflicting default provider")
         }
         let observedAbiotic = try NativeTitleLaunchProfile.read(productID: "9P4NV23Q6QC2", defaults: defaults)
         check(observedAbiotic?.launchEnvironment["XODUS_PRIVATE_RUNTIME_COM_STA"] == "1"
