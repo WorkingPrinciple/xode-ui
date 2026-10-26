@@ -538,6 +538,10 @@ struct LiveLibraryView: View {
                             .focusable()
                             .focused($focusedGameID, equals: "installed-\(game.id)")
                             .focusEffectDisabled()
+                            .onKeyPress(.return) {
+                                open(recentGame(game), focusID: "installed-\(game.id)")
+                                return .handled
+                            }
                             .modifier(SearchResultFocusRing(focused: focusedGameID == "installed-\(game.id)"))
                             .accessibilityLabel("View \(game.title)")
                             .contextMenu {
@@ -683,7 +687,8 @@ struct LiveLibraryView: View {
 
     private func restoreDetailFocus() {
         guard let detailFocusReturnID else { return }
-        let available = Set((visible + visibleLocalRecords).map(\.id) + continuing.map { "recent-\($0.id)" })
+        let available = Set((visible + visibleLocalRecords).map(\.id) + continuing.map { "recent-\($0.id)" }
+            + recentlyInstalled.map { "installed-\($0.id)" })
         focusedGameID = GameSearchPresentation.focusReturnTarget(preferred: detailFocusReturnID,
                                                                   available: available)
         self.detailFocusReturnID = nil

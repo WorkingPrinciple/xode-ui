@@ -202,7 +202,9 @@ final class LibraryCatalogArtwork: ObservableObject {
                         start(&group)
                     }
                 }
-                guard generation == epoch else { return }
+                // Review M4: `error` is the foreground outcome; a background warmup keeps per-ID
+                // detail errors only, so it can't clear or raise the library's recovery state.
+                guard generation == epoch, priority == .foreground else { return }
                 if let failure {
                     self.error = Self.message(failure)
                 } else {
@@ -213,7 +215,7 @@ final class LibraryCatalogArtwork: ObservableObject {
                 }
             } catch is CancellationError { }
             catch {
-                guard generation == epoch else { return }
+                guard generation == epoch, priority == .foreground else { return }
                 self.error = Self.message(error)
             }
         }

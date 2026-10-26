@@ -1195,6 +1195,18 @@ enum BrandUXChecks {
         check(installedFailure.failure == "Installed failed" && quietRetry.failure == nil && quietRetry.covers
               && PCGamesController.surfacedError("Library failed", retryPending: false) == "Library failed",
               "REQ-75/P0: Setup fails visibly on an installed-games error, but stays quiet while a silent library retry is scheduled")
+        let faultFile = FileManager.default.temporaryDirectory.appendingPathComponent("xodus-fault-\(UUID().uuidString)")
+        let faultEnvironment = ["XODUS_DEBUG_FAULT_FILE": faultFile.path]
+        let faultAbsent = !DebugFaultInjection.active(.catalog, environment: faultEnvironment)
+        try? "catalog\n".write(to: faultFile, atomically: true, encoding: .utf8)
+        let catalogOnly = DebugFaultInjection.active(.catalog, environment: faultEnvironment)
+            && !DebugFaultInjection.active(.account, environment: faultEnvironment)
+        try? "all\n".write(to: faultFile, atomically: true, encoding: .utf8)
+        let allSeams = DebugFaultInjection.active(.descriptors, environment: faultEnvironment)
+        try? FileManager.default.removeItem(at: faultFile)
+        check(faultAbsent && catalogOnly && allSeams && !DebugFaultInjection.active(.catalog, environment: faultEnvironment)
+              && !DebugFaultInjection.active(.catalog, environment: [:]),
+              "REQ-12 debug fault injection: only named seams fail while the file exists; removing it restores requests; unset is inert")
         let windowState = AppState()
         let windowA = UUID(), windowB = UUID()
         windowState.setFirstLoadCovering(true, window: windowA)

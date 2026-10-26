@@ -157,7 +157,7 @@ struct LiveRootView: View {
                                                               busy: library.busy,
                                                               retriesLeft: library.detailRetriesLeft),
             error: LibraryFirstLoad.surfacedError(library: library.surfacedError,
-                                                  installed: state.installedGames.error,
+                                                  installed: state.installedGames.loadError,
                                                   hasGames: !library.representedGames.isEmpty),
             needsAccountAction: library.needsSignIn || library.needsKeychainApproval
                 || (library.error != nil && !session.accountCountryReady),
@@ -224,7 +224,8 @@ struct LiveRootView: View {
                                                 priority: .foreground)
         guard !Task.isCancelled else { return }
         firstScreenRequested.formUnion(ids)
-        let token = firstScreenArtwork.target(items)
+        // Review L5: target what the first screen shows now that its descriptors have loaded.
+        let token = firstScreenArtwork.target(firstScreenItems)
         let work = firstScreenArtwork.pending
         let reads = work.map { item in
             Task { () -> (FirstScreenArtwork.Item, Bool) in
@@ -288,7 +289,10 @@ struct LiveRootView: View {
                                      showNow: { applyFirstLoad { $0.showLibraryNow() } },
                                      tryAgain: {
                                          applyFirstLoad { $0.retry(at: .now) }
-                                         Task { await state.pcGames.retryLibraryLoad() }
+                                         Task {
+                                             if state.installedGames.loadError != nil { await state.installedGames.load() }
+                                             await state.pcGames.retryLibraryLoad()
+                                         }
                                      })
                     .transition(.opacity)
             }

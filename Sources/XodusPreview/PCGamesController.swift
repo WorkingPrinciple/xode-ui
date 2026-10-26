@@ -105,27 +105,41 @@ final class PCGamesController: ObservableObject {
     }
     @Published private(set) var detailRetriesLeft = PCGamesController.detailRetryDelays.count
     private var detailRetry: Task<Void, Never>?
-    var detailRetryPending: Bool { detailRetry != nil }
+    private var detailRetryToken: UUID?
+    /// True only while a silent retry is actually waiting to fire; cleared however that task ends.
+    @Published private(set) var detailRetryPending = false
     /// P0: a read error stays quiet while a silent retry is scheduled; it shows once the retries are used up.
     var surfacedError: String? { Self.surfacedError(error, retryPending: detailRetryPending) }
     static func surfacedError(_ error: String?, retryPending: Bool) -> String? { retryPending ? nil : error }
 
     /// Re-reads the library after a backoff while some details failed; bounded, cancelled by sign-out.
     func scheduleDetailRetry(account: String) {
-        detailRetry?.cancel()
+        cancelDetailRetry()
         let attempt = Self.detailRetryDelays.count - detailRetriesLeft
         guard attempt >= 0, attempt < Self.detailRetryDelays.count else { return }
         let delay = Self.detailRetryDelays[attempt]
+        let token = UUID()
+        detailRetryToken = token
+        detailRetryPending = true
         detailRetry = Task { [weak self] in
             try? await Task.sleep(for: delay)
-            guard let self, !Task.isCancelled, !self.busy, !self.terminating, !self.accountDisconnecting,
+            guard let self else { return }
+            // Review M1: a retry that exits without firing must not keep the error hidden.
+            if self.detailRetryToken == token { self.cancelDetailRetry() }
+            guard !Task.isCancelled, !self.busy, !self.terminating, !self.accountDisconnecting,
                   self.unifiedSession?.accountHash == account else { return }
-            self.detailRetry = nil
             self.detailRetriesLeft -= 1
             self.logger.notice("Retrying unavailable game details silently; \(self.detailRetriesLeft) retries left")
             self.refreshUnifiedAccount()
         }
     }
+    private func cancelDetailRetry() {
+        detailRetry?.cancel()
+        detailRetry = nil
+        detailRetryToken = nil
+        if detailRetryPending { detailRetryPending = false }
+    }
+
     var retainedLibraryNotice: String? {
         guard error != nil, let snapshot else { return nil }
         return snapshot.isComplete ? "Showing the last complete library."
@@ -230,8 +244,7 @@ final class PCGamesController: ObservableObject {
 
     /// A user, explicit or foreground refresh restarts the bounded silent-retry budget (review M3).
     func resetDetailRetries() {
-        detailRetry?.cancel()
-        detailRetry = nil
+        cancelDetailRetry()
         detailRetriesLeft = Self.detailRetryDelays.count
     }
 
@@ -461,8 +474,7 @@ final class PCGamesController: ObservableObject {
         snapshotScope = nil
         collectionReadStarted = false
         lastAutomaticAttempt = nil
-        detailRetry?.cancel()
-        detailRetry = nil
+        cancelDetailRetry()
         detailRetriesLeft = Self.detailRetryDelays.count
         hasSavedSignIn = false
         restored = false
