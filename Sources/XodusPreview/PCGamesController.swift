@@ -91,9 +91,35 @@ final class PCGamesController: ObservableObject {
     }
     var representedGames: [PCGame] { representedSnapshot?.games ?? [] }
     var accountHash: String? { snapshot?.boundAccountHash ?? snapshot?.accountID.flatMap(XboxAccountBinding.hash) }
+    /// P0 (owner): missing game details recover silently. Nothing shows while any game is usable; a quiet,
+    /// non-actionable line shows only after the automatic retries are used up and no game could be shown.
     var resolutionNotice: String? {
-        guard !busy, let snapshot, snapshot.detailFailureCount > 0 else { return nil }
-        return "Some game details are unavailable. Your available games are still here."
+        Self.detailNotice(busy: busy, detailFailures: snapshot?.detailFailureCount ?? 0,
+                          usableGames: representedGames.count, retriesLeft: detailRetriesLeft)
+    }
+    static let detailUnavailableNotice = "Game details are still loading from Microsoft."
+    static let detailRetryDelays: [Duration] = [.seconds(4), .seconds(15), .seconds(60)]
+    static func detailNotice(busy: Bool, detailFailures: Int, usableGames: Int, retriesLeft: Int) -> String? {
+        guard !busy, detailFailures > 0, usableGames == 0, retriesLeft == 0 else { return nil }
+        return detailUnavailableNotice
+    }
+    @Published private(set) var detailRetriesLeft = PCGamesController.detailRetryDelays.count
+    private var detailRetry: Task<Void, Never>?
+
+    /// Re-reads the library after a backoff while some details failed; bounded, cancelled by sign-out.
+    private func scheduleDetailRetry(account: String) {
+        detailRetry?.cancel()
+        let attempt = Self.detailRetryDelays.count - detailRetriesLeft
+        guard attempt >= 0, attempt < Self.detailRetryDelays.count else { return }
+        let delay = Self.detailRetryDelays[attempt]
+        detailRetry = Task { [weak self] in
+            try? await Task.sleep(for: delay)
+            guard let self, !Task.isCancelled, !self.busy, !self.terminating, !self.accountDisconnecting,
+                  self.unifiedSession?.accountHash == account else { return }
+            self.detailRetriesLeft -= 1
+            self.logger.notice("Retrying unavailable game details silently; \(self.detailRetriesLeft) retries left")
+            self.refreshUnifiedAccount()
+        }
     }
     var retainedLibraryNotice: String? {
         guard error != nil, let snapshot else { return nil }
@@ -381,6 +407,11 @@ final class PCGamesController: ObservableObject {
                 snapshot = result.retainingUnresolved(from: snapshot)
                 FirstLoadTimeline.mark("libraryResolved", "games=\(result.games.count)")
                 logger.notice("Account PC resolution: \(result.games.count) games, \(result.excludedCount) excluded, \(result.unresolvedCount) unresolved")
+                if result.detailFailureCount > 0, detailRetriesLeft > 0 {
+                    scheduleDetailRetry(account: read.accountHash)
+                } else if result.detailFailureCount == 0 {
+                    detailRetriesLeft = Self.detailRetryDelays.count
+                }
                 hasSavedSignIn = true
                 needsSignIn = false
             } catch is CancellationError { }
@@ -411,6 +442,9 @@ final class PCGamesController: ObservableObject {
         snapshotScope = nil
         collectionReadStarted = false
         lastAutomaticAttempt = nil
+        detailRetry?.cancel()
+        detailRetry = nil
+        detailRetriesLeft = Self.detailRetryDelays.count
         hasSavedSignIn = false
         restored = false
         attemptedAutomaticLoad = false

@@ -13,6 +13,7 @@ struct NativeMinecraftInstallation: Equatable, Sendable {
     /// QA REQ-64: only an installed launcher counts toward "Installed games"; the card can still
     /// appear in All to offer it.
     var countsAsInstalled: Bool { state == .ready || state == .repair }
+    static let productID = "9PJ8266BHFWN"
 
     func appears(in filter: LibraryFilter, query: String) -> Bool {
         guard filter == .all || (filter == .installed && (state == .ready || state == .repair)) else {

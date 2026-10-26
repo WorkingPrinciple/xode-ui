@@ -2,19 +2,14 @@
 import SwiftUI
 import XodusManagement
 
+/// A quiet, non-actionable line; recovery is automatic (P0: no Retry button to babysit).
 struct LibraryDetailsRecoveryNotice: View {
     let message: String
-    let retry: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(message).font(.callout).foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-                .accessibilityIdentifier("xodus.pcGames.partialResolution")
-            Button("Retry game details", action: retry)
-                .accessibilityIdentifier("xodus.pcGames.retryDetails")
-        }
-        .accessibilityElement(children: .contain)
+        Text(message).font(.callout).foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityIdentifier("xodus.pcGames.partialResolution")
     }
 }
 
@@ -60,7 +55,7 @@ struct PCGamesView: View {
                     .accessibilityIdentifier("xodus.pcGames.legacyKeychainRetained")
             }
             if let notice = library.resolutionNotice {
-                LibraryDetailsRecoveryNotice(message: notice, retry: { library.refresh() })
+                LibraryDetailsRecoveryNotice(message: notice)
                     .disabled(library.busy || library.restoringPresence || library.needsKeychainApproval)
             }
             if library.presenceUnavailable {
@@ -148,7 +143,8 @@ struct PCGamesView: View {
                         .accessibilityIdentifier("xodus.library.openRecentActivity")
                 } }
             }
-            if let error = library.error {
+            // P0: a library-read error is only shown when no game can be shown; otherwise it retries silently.
+            if let error = library.error, library.representedGames.isEmpty {
                 Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("xodus.pcGames.error")

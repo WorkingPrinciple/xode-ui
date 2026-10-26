@@ -236,6 +236,12 @@ struct LibraryGame: Identifiable {
     static func displayedCount(qualified: [Self], local: [Self], native: Bool) -> Int {
         qualified.count + installedCount(local: local, native: native)
     }
+    /// QA LC: one card per product. When the native Minecraft card shows, a registry record for the same
+    /// product isn't shown or counted a second time.
+    static func uniqueInstalled(_ local: [Self], nativeShown: Bool) -> [Self] {
+        guard nativeShown else { return local }
+        return local.filter { ($0.installed?.storeId ?? $0.id) != NativeMinecraftInstallation.productID }
+    }
     static func installedCount(local: [Self], native: Bool) -> Int {
         local.count + (native ? 1 : 0)
     }
@@ -971,6 +977,8 @@ struct GameCard<Artwork: View, Status: View>: View {
     let open: () -> Void
     @ViewBuilder let artwork: () -> Artwork
     @ViewBuilder let status: () -> Status
+    static var titleHeight: CGFloat { 40 }
+    static var statusHeight: CGFloat { 34 }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -987,8 +995,15 @@ struct GameCard<Artwork: View, Status: View>: View {
             } else {
                 artworkButton
             }
-            Text(title).font(.headline).lineLimit(2).frame(minHeight: 36, alignment: .topLeading)
-            status().font(.subheadline).foregroundStyle(.primary)
+            Text(title).font(.headline).lineLimit(2)
+                .frame(height: Self.titleHeight, alignment: .topLeading)
+            // P1: every card reserves the same status slot, so "Installed" or progress never shrinks the art.
+            ZStack(alignment: .topLeading) {
+                Color.clear
+                status().font(.subheadline).foregroundStyle(.primary)
+            }
+            .frame(maxWidth: .infinity, minHeight: Self.statusHeight, maxHeight: Self.statusHeight,
+                   alignment: .topLeading)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .contain)

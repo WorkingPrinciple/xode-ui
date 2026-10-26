@@ -14,6 +14,11 @@ extension FocusedValues {
     }
 }
 
+/// Silent, bounded artwork/details retry after a failed load (P0).
+enum LibraryArtworkRetry {
+    static let delays: [Duration] = [.seconds(3), .seconds(12), .seconds(45)]
+}
+
 enum LibraryAccessCopy {
     static let checking = "Checking access…"
 }
@@ -73,7 +78,8 @@ struct LiveLibraryView: View {
         nativeMinecraft.installation.appears(in: filter, query: query)
     }
     private var visibleLocalRecords: [LibraryGame] {
-        LibraryGame.visible(localRecords, query: "", filter: filter, sort: sort).filter(isVisible)
+        LibraryGame.uniqueInstalled(LibraryGame.visible(localRecords, query: "", filter: filter, sort: sort).filter(isVisible),
+                                    nativeShown: showsNativeMinecraft)
     }
     private var accountCollectionIncomplete: Bool {
         !library.accessIsCurrent || library.snapshot?.isComplete != true
@@ -252,9 +258,7 @@ struct LiveLibraryView: View {
                     }
                     .scrollTargetLayout()
                 }
-                if let error = art.error {
-                    Label(error, systemImage: "photo.badge.exclamationmark").font(.callout).foregroundStyle(.secondary)
-                }
+                // P0 (owner): missing artwork or details degrade silently and retry; no inline error text.
                 if let error = xboxStats.error {
                     Label(error, systemImage: "exclamationmark.circle").font(.callout).foregroundStyle(.secondary)
                 }
@@ -280,10 +284,14 @@ struct LiveLibraryView: View {
             .task(id: (heroGames.map(\.id) + collection.map(\.id) + localRecords.map(\.id) + visible.map(\.id))
                 .sorted().joined(separator: ",") + ":\(presentationActive)") {
                 guard artworkAllowed, presentationActive else { return }
-                await art.load(ids: heroGames.map { $0.installed?.storeId ?? $0.id } + collection.map(\.id) + localRecords.compactMap { $0.installed?.storeId }
+                let ids = heroGames.map { $0.installed?.storeId ?? $0.id } + collection.map(\.id) + localRecords.compactMap { $0.installed?.storeId }
                     .filter(PCGamesClient.validProductID) + visible.map(\.id).filter(PCGamesClient.validProductID)
-                    + ["9PJ8266BHFWN"],
-                    market: session.market, language: session.language)
+                    + ["9PJ8266BHFWN"]
+                await art.load(ids: ids, market: session.market, language: session.language)
+                for delay in LibraryArtworkRetry.delays where art.error != nil {
+                    do { try await Task.sleep(for: delay) } catch { return }
+                    await art.load(ids: ids, market: session.market, language: session.language, refresh: true)
+                }
                 for game in heroGames {
                     guard !Task.isCancelled else { return }
                     await art.loadDetail(id: game.installed?.storeId ?? game.id, market: session.market, language: session.language)

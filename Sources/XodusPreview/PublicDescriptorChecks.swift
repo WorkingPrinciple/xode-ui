@@ -711,10 +711,10 @@ enum PublicDescriptorChecks {
         await failedController.loadOnAppear()
         check(failedController.error != nil && failedController.snapshot?.isComplete == false
               && failedController.retainedLibraryNotice == "Showing available details from an incomplete library."
-              && failedController.resolutionNotice?.contains("available games are still here") == true
-              && failedController.resolutionNotice?.contains("classification") == false
+              && failedController.resolutionNotice == nil
+              && failedController.detailRetriesLeft == PCGamesController.detailRetryDelays.count
               && !failedController.accessIsCurrent,
-              "Total public metadata failure reports incomplete Library details, never a last-complete or genuine-zero claim")
+              "Total public metadata failure reports incomplete Library details, never a last-complete or genuine-zero claim; P0: it retries silently before any notice")
         check(await session.disconnect(), "Descriptor retirement check joins its isolated management child")
 
         let invalidTransport = DescriptorTransport()
@@ -803,6 +803,17 @@ enum PublicDescriptorChecks {
         }
         check(orders.count == 2 && orders[0] == orders[1] && orders[0] == orders[0].sorted(),
               "REQ-119 review L4: Games with equal titles keep the same display order whichever batch finishes first")
+
+        let tolerantIDs = ids(3, offset: 50_000)
+        func product(_ id: String) -> [String: Any] {
+            ["ProductId": id, "ProductType": "Game", "LocalizedProperties": [["ProductTitle": "Game \(id)"]]]
+        }
+        let mixed = try JSONSerialization.data(withJSONObject: ["Products": [
+            product(tolerantIDs[0]), ["ProductId": 42, "LocalizedProperties": "broken"],
+            product("FIXTURE99999"), product(tolerantIDs[0]), product(tolerantIDs[2])]])
+        let tolerant = try PCGamesClient.tolerantProducts(mixed, batch: tolerantIDs)
+        check(tolerant.map(\.ProductId) == [tolerantIDs[0], tolerantIDs[2]],
+              "P0: One unreadable, foreign or duplicate product is dropped on its own; the rest of the batch still resolves")
 
         for count in [36, 300, 512] {
             let baselineTransport = DescriptorTransport()

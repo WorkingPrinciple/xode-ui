@@ -720,6 +720,27 @@ struct PCGamesClient: Sendable {
             candidateCount: candidateIDs.count, market: market, language: language, accountID: xid, progress: progress)
     }
 
+    static func tolerantProducts(_ data: Data, batch: [String]) throws -> [PCGamesCatalog.Product] {
+        if let products = try? JSONDecoder().decode(PCGamesCatalog.self, from: data).Products,
+           products.count <= batch.count, Set(products.map(\.ProductId)).count == products.count,
+           products.allSatisfy({ batch.contains($0.ProductId) }) { return products }
+        guard let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let items = root["Products"] as? [Any] else { throw PCGamesError.invalidResponse }
+        var seen = Set<String>(), kept: [PCGamesCatalog.Product] = [], dropped = 0
+        for item in items {
+            guard let one = try? JSONSerialization.data(withJSONObject: ["Products": [item]]),
+                  let product = try? JSONDecoder().decode(PCGamesCatalog.self, from: one).Products.first,
+                  batch.contains(product.ProductId), seen.insert(product.ProductId).inserted else { dropped += 1; continue }
+            kept.append(product)
+        }
+        let strictError: String
+        do { _ = try JSONDecoder().decode(PCGamesCatalog.self, from: data); strictError = "foreign, duplicate or excess products" }
+        catch { strictError = String(describing: error).prefix(300).description }
+        Logger(subsystem: "io.github.dragoshont.xodus", category: "pc-library")
+            .warning("Public PC descriptor batch kept \(kept.count) products and dropped \(dropped); strict decode: \(strictError, privacy: .public)")
+        return kept
+    }
+
     static let descriptorConcurrency = 2
 
     func resolveCollection(ids: [String], kinds: [String: PCGameAcquisitionKind], candidateCount: Int,
@@ -760,12 +781,10 @@ struct PCGamesClient: Sendable {
                 unresolvedKinds: kinds.filter { unresolved.contains($0.key) },
                 detailFailureCount: detailFailures.count)
         }
+        // P0: one unreadable, duplicate or foreign product never fails its whole batch. Valid products are
+        // kept; the rest stay unresolved and are retried.
         func products(_ data: Data, batch: [String]) throws -> [PCGamesCatalog.Product] {
-            let products = try decode(PCGamesCatalog.self, data).Products
-            guard products.count <= batch.count,
-                  Set(products.map(\.ProductId)).count == products.count,
-                  products.allSatisfy({ batch.contains($0.ProductId) }) else { throw PCGamesError.invalidResponse }
-            return products
+            try Self.tolerantProducts(data, batch: batch)
         }
         if !ids.isEmpty { await progress?(snapshot()) }
         let batches = stride(from: 0, to: ids.count, by: 20).map { Array(ids[$0..<min($0 + 20, ids.count)]) }
@@ -797,7 +816,7 @@ struct PCGamesClient: Sendable {
                 catch {
                     failed[index] = Set(batch)
                     Logger(subsystem: "io.github.dragoshont.xodus", category: "pc-library")
-                        .warning("Public PC descriptor batch failed; \(batch.count) candidates remain unresolved")
+                        .warning("Public PC descriptor batch failed; \(batch.count) candidates remain unresolved: \(String(describing: error), privacy: .public)")
                 }
                 try Task.checkCancellation()
                 await progress?(snapshot())

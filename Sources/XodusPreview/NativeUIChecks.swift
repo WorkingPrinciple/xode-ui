@@ -315,12 +315,16 @@ enum NativeUIChecks {
     }
 
     static func run(check: (Bool, String) -> Void) {
-        var retried = false
-        let recovery = LibraryDetailsRecoveryNotice(
-            message: "Some game details are unavailable. Your available games are still here.",
-            retry: { retried = true })
-        recovery.retry()
-        check(retried, "REQ98 Library recovery has a real retry action independent of the hidden collection header")
+        let recovery = LibraryDetailsRecoveryNotice(message: PCGamesController.detailUnavailableNotice)
+        let recoveryHost = NSHostingView(rootView: recovery.frame(width: 380))
+        recoveryHost.layoutSubtreeIfNeeded()
+        check(!descendants(of: recoveryHost).contains { $0 is NSButton }
+              && PCGamesController.detailNotice(busy: false, detailFailures: 4, usableGames: 13, retriesLeft: 0) == nil
+              && PCGamesController.detailNotice(busy: false, detailFailures: 4, usableGames: 0, retriesLeft: 2) == nil
+              && PCGamesController.detailNotice(busy: false, detailFailures: 4, usableGames: 0, retriesLeft: 0)
+                == PCGamesController.detailUnavailableNotice
+              && PCGamesController.detailRetryDelays.count == 3,
+              "P0: Missing game details recover silently (3 bounded retries); while any game is usable nothing shows; afterwards only a quiet line with no Retry button")
         for width in [CGFloat(220), 380] {
             let renderer = ImageRenderer(content: recovery.frame(width: width, alignment: .leading)
                 .fixedSize(horizontal: false, vertical: true))

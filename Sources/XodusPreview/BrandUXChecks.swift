@@ -1129,6 +1129,27 @@ enum BrandUXChecks {
               && LibraryGame.installedCount(local: localFixtures, native: readyLauncher.countsAsInstalled) == 4
               && !NativeMinecraftInstallation(state: .checking).countsAsInstalled,
               "QA REQ-64: \"Installed games\" counts only completed installs; the Minecraft card offered in All while its launcher is missing or still checking isn't counted, and partial downloads stay in the resume journal")
+        let javaRecord = InstalledGame(id: UUID(), title: "Minecraft: Java Edition", identityName: "Fixture.Minecraft",
+            version: "1.0.0.0", storeId: NativeMinecraftInstallation.productID, folder: "/tmp/minecraft", launcher: "",
+            importedAt: Date(), usesNativeLifecycle: true)
+        let withJava = LibraryGame.localRecords(installed: installedFixtures + [javaRecord], qualified: [], query: "", sort: .title)
+        let shown = LibraryGame.uniqueInstalled(withJava, nativeShown: true)
+        check(shown.count == 3 && LibraryGame.installedCount(local: shown, native: true) == 4
+              && LibraryGame.uniqueInstalled(withJava, nativeShown: false).count == 4,
+              "QA LC: With the native Minecraft card shown, its registry record for the same product isn't shown or counted again; the count equals the visible cards")
+        func cardSize(_ installed: Bool) -> CGSize {
+            let card = GameCard(title: "Hogwarts Legacy", open: {}) {
+                Color.gray
+            } status: {
+                if installed { Label("Installed", systemImage: "internaldrive").font(.caption) }
+            }
+            let host = NSHostingView(rootView: card.frame(width: 180))
+            host.layoutSubtreeIfNeeded()
+            return host.fittingSize
+        }
+        let installedCard = cardSize(true), plainCard = cardSize(false)
+        check(installedCard == plainCard && installedCard.height > 0,
+              "P1: An Installed card and a plain card have the same size, so artwork and title baselines line up (\(installedCard) vs \(plainCard))")
         let windowState = AppState()
         let windowA = UUID(), windowB = UUID()
         windowState.setFirstLoadCovering(true, window: windowA)

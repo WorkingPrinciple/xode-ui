@@ -272,9 +272,8 @@ final class LibraryCatalogArtwork: ObservableObject {
     nonisolated static func normalizeResponse(_ data: Data, batch: [String], market: String,
                                              language: String) throws -> ParsedResponse {
         try Task.checkCancellation()
-        let products = try JSONDecoder().decode(PCGamesCatalog.self, from: data).Products
-        guard products.count <= batch.count, Set(products.map(\.ProductId)).count == products.count,
-              products.allSatisfy({ batch.contains($0.ProductId) }) else { throw PCGamesError.invalidResponse }
+        // P0: per-item tolerance; an unreadable product skips only itself.
+        let products = try PCGamesClient.tolerantProducts(data, batch: batch)
         var details: [String: CatalogDetailPayload.Product] = [:]
         var rejectedDetailPayload = false
         do {
@@ -284,6 +283,16 @@ final class LibraryCatalogArtwork: ObservableObject {
             details = Dictionary(uniqueKeysWithValues: values.map { ($0.ProductId, $0) })
         } catch {
             rejectedDetailPayload = true
+            // Keep each product's readable details rather than dropping the whole batch.
+            if let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let items = root["Products"] as? [Any] {
+                for item in items {
+                    guard let one = try? JSONSerialization.data(withJSONObject: ["Products": [item]]),
+                          let value = try? JSONDecoder().decode(CatalogDetailPayload.self, from: one).Products.first,
+                          batch.contains(value.ProductId), details[value.ProductId] == nil else { continue }
+                    details[value.ProductId] = value
+                }
+            }
         }
         var batchImages: [String: Images] = [:]
         var batchErrors: [String: String] = [:]
@@ -311,10 +320,10 @@ final class LibraryCatalogArtwork: ObservableObject {
             var unique: [CatalogArtworkReference] = []
             for value in landscape where !unique.contains(value) { unique.append(value) }
             let title = product.LocalizedProperties?.first?.ProductTitle ?? product.ProductId
-            let detail = try LibraryGame.details(id: product.ProductId, title: title,
+            guard let detail = try? LibraryGame.details(id: product.ProductId, title: title,
                 artwork: (heroes.first.map { [$0] } ?? []) + (cover.map { [$0] } ?? []),
                 market: market, language: language, source: "MicrosoftDisplayCatalog:v7",
-                pcCandidate: product.isBaseGame == true && product.isPC)
+                pcCandidate: product.isBaseGame == true && product.isPC) else { continue }
             var detailFacts: CatalogDetailFacts?
             do {
                 guard let value = details[product.ProductId] else { throw PCGamesError.invalidResponse }
