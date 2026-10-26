@@ -26,6 +26,7 @@ enum BrandUXChecks {
         toolbarAccessibility(check: check)
         welcome(check: check)
         readiness(check: check)
+        firstLoad(check: check)
         support(check: check)
         acknowledgments(check: check)
         permissions(check: check)
@@ -831,6 +832,149 @@ enum BrandUXChecks {
               && LibraryPackageFormatLabel.plainName("Win32") == "Windows game"
               && LibraryPackageFormatLabel.help(format: "MSIXVC").contains("MSIXVC"),
               "COR186 minor 7: Package type uses plain words; the technical name stays in the tooltip")
+    }
+
+    // MARK: First library load (REQ-119)
+
+    static func firstLoad(check: (Bool, String) -> Void) {
+        typealias Inputs = LibraryFirstLoadInputs
+        let t0 = ContinuousClock.now
+        check(LibraryFirstLoad.shouldBegin(interactiveSignIn: true, signedIn: true, hasLibrary: false)
+              && !LibraryFirstLoad.shouldBegin(interactiveSignIn: false, signedIn: true, hasLibrary: false)
+              && !LibraryFirstLoad.shouldBegin(interactiveSignIn: true, signedIn: true, hasLibrary: true)
+              && !LibraryFirstLoad.shouldBegin(interactiveSignIn: true, signedIn: false, hasLibrary: false)
+              && !LibraryFirstLoad().covers,
+              "REQ-119 warm: Only this run's own sign-in with no library covers the window; restored sessions and a loaded library go straight in")
+
+        var cold = LibraryFirstLoad()
+        cold.begin(at: t0)
+        let started = cold
+        cold.update(Inputs(loading: true), now: t0)
+        let finding = cold.covers && cold.step == .findingGames && !cold.offersShowNow
+        cold.update(Inputs(loading: true, gamesFound: 5), now: t0 + .seconds(2))
+        let stillFinding = cold.covers && cold.step == .findingGames
+        cold.update(Inputs(loading: true, gamesFound: 12, artworkTotal: 12, artworkReady: 3), now: t0 + .seconds(4))
+        let fetching = cold.covers && cold.step == .fetchingArtwork
+        let artworkStep = cold
+        cold.update(Inputs(loading: true, gamesFound: 40, artworkTotal: 12, artworkReady: 12), now: t0 + .seconds(5))
+        check(finding && stillFinding && fetching && cold.phase == .finished(.ready) && !cold.covers,
+              "REQ-119 cold: Signed in, then finding games with a live count, then artwork; hands over once the first screen and its artwork are ready, while the rest still loads")
+        var small = LibraryFirstLoad()
+        small.begin(at: t0)
+        small.update(Inputs(gamesFound: 3, libraryComplete: true, artworkTotal: 3, artworkReady: 1, artworkSettled: true), now: t0)
+        var empty = LibraryFirstLoad()
+        empty.begin(at: t0)
+        empty.update(Inputs(libraryComplete: true), now: t0)
+        check(small.phase == .finished(.ready) && empty.phase == .finished(.ready),
+              "REQ-119 cold: A small library hands over once its artwork settles, even with failed covers; an empty library opens straight away")
+
+        var slow = LibraryFirstLoad()
+        slow.begin(at: t0)
+        slow.update(Inputs(loading: true, gamesFound: 2), now: t0 + .seconds(19))
+        let notYet = slow.phase == .loading && !slow.offersShowNow
+        slow.update(Inputs(loading: true, gamesFound: 2), now: t0 + LibraryFirstLoad.slowAfter)
+        let offered = slow.phase == .slow && slow.offersShowNow && slow.covers
+        var readyLate = slow
+        readyLate.update(Inputs(loading: true, gamesFound: 12, artworkTotal: 12, artworkReady: 12), now: t0 + .seconds(25))
+        slow.showLibraryNow()
+        check(notYet && offered && slow.phase == .finished(.showNow) && !slow.covers
+              && readyLate.phase == .finished(.ready),
+              "REQ-119 slow: After 20 s it offers Show library now and never blocks; reaching the first screen later still hands over")
+
+        var failing = LibraryFirstLoad()
+        failing.begin(at: t0)
+        failing.update(Inputs(loading: true), now: t0)
+        failing.update(Inputs(error: "Your PC library couldn't load. The request timed out."), now: t0 + .seconds(3))
+        let failed = failing.failure == "Your PC library couldn't load. The request timed out." && failing.covers
+            && failing.offersShowNow
+        var retried = failing
+        retried.retry(at: t0 + .seconds(4))
+        retried.update(Inputs(error: "Your PC library couldn't load. The request timed out."), now: t0 + .seconds(4))
+        let waitsForRetry = retried.phase == .loading
+        retried.update(Inputs(loading: true), now: t0 + .seconds(5))
+        let reloading = retried.phase == .loading
+        retried.update(Inputs(gamesFound: 3, libraryComplete: true, artworkSettled: true), now: t0 + .seconds(7))
+        var partial = LibraryFirstLoad()
+        partial.begin(at: t0)
+        partial.update(Inputs(gamesFound: 4, libraryComplete: true, error: "Some games didn't load.",
+                              artworkSettled: true), now: t0)
+        check(failed && waitsForRetry && reloading && retried.phase == .finished(.ready)
+              && partial.phase == .finished(.ready),
+              "REQ-119 failure: A load error shows its specific message with Try Again; Try Again ignores the stale error until the reload starts; a partial library still opens")
+
+        var account = LibraryFirstLoad()
+        account.begin(at: t0)
+        account.update(Inputs(error: "Confirm your account country to load your PC library.", needsAccountAction: true), now: t0)
+        var signedOut = LibraryFirstLoad()
+        signedOut.begin(at: t0)
+        signedOut.update(Inputs(signedIn: false, loading: true), now: t0)
+        check(account.phase == .finished(.accountAction) && !signedOut.covers && signedOut.phase == .inactive,
+              "REQ-119: Account country, sign-in or Keychain actions hand over to the library that asks for them; signing out removes the overlay")
+
+        let priority = LiveSession()
+        priority.beginLibraryReadPriority()
+        let yields = priority.yieldsToLibraryRead && !priority.canLoadRecentLibrary
+        priority.endLibraryReadPriority()
+        priority.endLibraryReadPriority()
+        check(yields && !priority.yieldsToLibraryRead && priority.libraryReadsWaiting == 0,
+              "REQ-119 quick win: Recent-activity and license reads hold back while the cold library read waits to dispatch, and the hold always clears")
+
+        let still = LibraryFirstLoadMotion(reduceMotion: true)
+        let moving = LibraryFirstLoadMotion(reduceMotion: false)
+        check(still.lineChange == .crossfade && !still.showsSpinner && moving.lineChange == .slide && moving.showsSpinner,
+              "REQ-119 Reduce Motion: No spinner or sliding text, at most a crossfade between lines")
+
+        let announced = [LibraryFirstLoad.announcement(from: LibraryFirstLoad(), to: started),
+                         LibraryFirstLoad.announcement(from: started, to: artworkStep),
+                         LibraryFirstLoad.announcement(from: artworkStep, to: cold)]
+        var counted = started
+        counted.update(Inputs(loading: true, gamesFound: 7), now: t0)
+        var slowAgain = LibraryFirstLoad()
+        slowAgain.begin(at: t0)
+        let beforeSlow = slowAgain
+        slowAgain.update(Inputs(loading: true), now: t0 + .seconds(21))
+        check(announced == [FirstLoadCopy.findingGames, FirstLoadCopy.fetchingArtwork, FirstLoadCopy.ready]
+              && LibraryFirstLoad.announcement(from: started, to: counted) == nil
+              && LibraryFirstLoad.announcement(from: beforeSlow, to: slowAgain) == FirstLoadCopy.slow
+              && LibraryFirstLoad.announcement(from: started, to: failing)?.hasPrefix(FirstLoadCopy.failedTitle) == true
+              && LibraryFirstLoad.announcement(from: failing, to: retried) == FirstLoadCopy.ready,
+              "REQ-119 VoiceOver: Step and state changes are announced; count changes and the rotating lines are not")
+
+        let lines = FirstLoadCopy.lines
+        check(lines.count == 8 && Set(lines).count == 8
+              && lines.allSatisfy { $0.hasSuffix("…") && $0.count <= 30 && !$0.contains("!") && !$0.contains("—") }
+              && !(lines + [FirstLoadCopy.title, FirstLoadCopy.slow, FirstLoadCopy.failedTitle]).contains { text in
+                  AppBrand.retiredNames.contains { text.contains($0) } },
+              "REQ-119 copy: Eight short, distinct lines in X Ode's voice, without exclamation marks or retired names: \(lines)")
+
+        for scheme in [ColorScheme.light, .dark] {
+            let suffix = scheme == .dark ? "dark" : "light"
+            let loading = render(LibraryFirstLoadView(state: artworkStep,
+                    inputs: Inputs(loading: true, gamesFound: 13, artworkTotal: 12, artworkReady: 5),
+                    showNow: {}, tryAgain: {}, lineIndex: 0),
+                size: CGSize(width: 900, height: 620), scheme: scheme, name: "req119-first-load-\(suffix)")
+            let joined = loading.joined(separator: " ")
+            check(joined.contains(FirstLoadCopy.title) && joined.contains("Signed in") && joined.contains("Found 13 games")
+                  && joined.contains("Fetching artwork") && joined.contains("5 of 12")
+                  && joined.contains("Unboxing your games") && !joined.contains(FirstLoadCopy.showNow),
+                  "REQ-119 render (\(suffix)): Setting up your library shows the three steps, the live count and a line, with no placeholder tiles: \(loading)")
+            var slowState = LibraryFirstLoad()
+            slowState.begin(at: t0)
+            slowState.update(Inputs(loading: true, gamesFound: 4), now: t0 + .seconds(21))
+            let slowText = render(LibraryFirstLoadView(state: slowState, inputs: Inputs(loading: true, gamesFound: 4),
+                    showNow: {}, tryAgain: {}, lineIndex: 1),
+                size: CGSize(width: 900, height: 620), scheme: scheme, name: "req119-first-load-slow-\(suffix)")
+                .joined(separator: " ")
+            check(slowText.contains(FirstLoadCopy.showNow) && slowText.contains("Found 4 games"),
+                  "REQ-119 render (\(suffix)): After the wait, Show library now appears under the live progress")
+            let failure = render(LibraryFirstLoadView(state: failing, inputs: Inputs(error: failing.failure),
+                    showNow: {}, tryAgain: {}, lineIndex: 2),
+                size: CGSize(width: 900, height: 620), scheme: scheme, name: "req119-first-load-failed-\(suffix)")
+                .joined(separator: " ")
+            check(failure.contains(FirstLoadCopy.failedTitle) && failure.contains("request timed out")
+                  && failure.contains(FirstLoadCopy.tryAgain) && failure.contains(FirstLoadCopy.showNow),
+                  "REQ-119 render (\(suffix)): A failure shows its specific error with Try Again and Show library now")
+        }
     }
 
     // MARK: Rendering

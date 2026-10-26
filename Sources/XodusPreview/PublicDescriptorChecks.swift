@@ -691,6 +691,31 @@ enum PublicDescriptorChecks {
             check(true, "Public descriptor reuse cannot bypass the 20-product transport batch bound")
         }
 
+        let concurrencyTransport = DescriptorTransport()
+        await concurrencyTransport.configure(blocked: Set(0..<5))
+        let boundedIDs = ids(100, offset: 9_000)
+        let concurrentResolution = Task {
+            try await PCGamesClient(transport: concurrencyTransport, descriptors: PublicCatalogDescriptors(transport: concurrencyTransport))
+                .resolveCollection(ids: boundedIDs, kinds: [:], candidateCount: 100, market: "US", language: "en-US")
+        }
+        try await wait(concurrencyTransport, count: PCGamesClient.descriptorConcurrency)
+        try await Task.sleep(for: .milliseconds(50))
+        let inFlight = await concurrencyTransport.requests.count
+        await concurrencyTransport.release(1)
+        try await wait(concurrencyTransport, count: 3)
+        try await Task.sleep(for: .milliseconds(30))
+        let afterOne = await concurrencyTransport.requests.count
+        for index in [0, 2, 3, 4] {
+            await concurrencyTransport.release(index)
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        let boundedResult = try await concurrentResolution.value
+        let totalRequests = await concurrencyTransport.requests.count
+        check(PCGamesClient.descriptorConcurrency == 2 && inFlight == 2 && afterOne == 3
+              && boundedResult.games.count == 100 && boundedResult.isComplete
+              && totalRequests == 5,
+              "REQ-119: Collection resolution reads two descriptor batches at a time, inside the producer's four-operation limit, and merges out-of-order results completely")
+
         for count in [36, 300, 512] {
             let baselineTransport = DescriptorTransport()
             let baselineSnapshot = try await PCGamesClient(transport: baselineTransport)

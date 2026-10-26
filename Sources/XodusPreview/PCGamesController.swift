@@ -325,6 +325,9 @@ final class PCGamesController: ObservableObject {
                 if snapshotScope != scope { snapshot = nil }
                 snapshotScope = scope
                 // This task has not entered readUnifiedAccount yet, so accountBusy cannot include itself.
+                session.beginLibraryReadPriority()
+                var prioritized = true
+                defer { if prioritized { session.endLibraryReadPriority() } }
                 let deadline = ContinuousClock.now.advanced(by: .seconds(30))
                 while session.accountBusy {
                     try current(token)
@@ -343,12 +346,16 @@ final class PCGamesController: ObservableObject {
                     throw PCGamesError.identityMismatch
                 }
                 guard session.accountCatalogScope == scope else { throw CancellationError() }
+                session.endLibraryReadPriority()
+                prioritized = false
                 logger.notice("Account collection dispatch")
+                FirstLoadTimeline.mark("collectionDispatch")
                 let read = try await session.readUnifiedAccount(.library, market: market, language: language)
                 let collection = try read.payload.decode(OdeAccountCollection.self)
                 try collection.validate()
                 try current(token)
                 logger.notice("Account collection candidates: \(collection.items.count), purchased: \(collection.items.filter { $0.acquisitionKind == .purchased }.count), subscription: \(collection.items.filter { $0.acquisitionKind == .subscription }.count), unknown: \(collection.items.filter { $0.acquisitionKind == .unknown }.count)")
+                FirstLoadTimeline.mark("collectionCandidates", "count=\(collection.items.count)")
                 let kinds = Dictionary(uniqueKeysWithValues: collection.items.map { ($0.productID, $0.acquisitionKind) })
                 let result = try await client.resolveCollection(
                     ids: collection.items.map(\.productID), kinds: kinds,
@@ -359,6 +366,7 @@ final class PCGamesController: ObservableObject {
                               session.hasConfirmedSignIn, session.accountHash == read.accountHash,
                               session.accountCatalogScope == scope else { return }
                         self.snapshot = partial.retainingUnresolved(from: self.snapshot)
+                        if !partial.games.isEmpty { FirstLoadTimeline.mark("firstGames", "count=\(partial.games.count)") }
                     }
                 try current(token)
                 guard session.hasConfirmedSignIn, session.accountHash == read.accountHash else {
@@ -366,6 +374,7 @@ final class PCGamesController: ObservableObject {
                 }
                 guard session.accountCatalogScope == scope else { throw CancellationError() }
                 snapshot = result.retainingUnresolved(from: snapshot)
+                FirstLoadTimeline.mark("libraryResolved", "games=\(result.games.count)")
                 logger.notice("Account PC resolution: \(result.games.count) games, \(result.excludedCount) excluded, \(result.unresolvedCount) unresolved")
                 hasSavedSignIn = true
                 needsSignIn = false

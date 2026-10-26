@@ -113,7 +113,7 @@ final class InstalledProductAccess: ObservableObject {
         guard account == nil || session.nativeLifecycleConfiguration != nil else { return }
         await refresh(account: account, installedIDs: installedIDs, now: now, force: force,
                       selectedProductID: selectedProductID) { id in
-            for _ in 0..<100 where session.accountBusy {
+            for _ in 0..<100 where session.accountBusy || session.yieldsToLibraryRead {
                 try await Task.sleep(for: .milliseconds(100))
             }
             guard session.accountCatalogScope == scope else { throw CancellationError() }

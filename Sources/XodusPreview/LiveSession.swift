@@ -343,6 +343,12 @@ final class LiveSession: ObservableObject {
     private var licenseReadGeneration: Int?
     private var licenseReadInFlight: Bool { licenseReadGeneration == generation }
     private var waitingInteractiveAccountReads = 0
+    /// REQ-119: a library collection read waiting to dispatch. License and recent-activity reads hold
+    /// back for it, so the cold library isn't queued behind background reads.
+    @Published private(set) var libraryReadsWaiting = 0
+    var yieldsToLibraryRead: Bool { libraryReadsWaiting > 0 }
+    func beginLibraryReadPriority() { libraryReadsWaiting += 1 }
+    func endLibraryReadPriority() { libraryReadsWaiting = max(0, libraryReadsWaiting - 1) }
     var accountBusy: Bool {
         accountOperationBusy || recentLibraryBootstrapRunning || accountRuntimeStarting
             || waitingInteractiveAccountReads > 0
@@ -527,7 +533,7 @@ final class LiveSession: ObservableObject {
         isReady && !connectionTransitioning && supports(.libraryRecent)
             && (accountStatusCurrent || supports(.authStatus))
             && (!accountStatusCurrent || currentCredentialState == .credentialPresent)
-            && !signInPending && !accountBusy && !recentLibraryLoading
+            && !signInPending && !accountBusy && !recentLibraryLoading && !yieldsToLibraryRead
     }
     var recentLibraryLoadingTitle: String {
         accountStatusChecking || (recentLibraryBootstrapRunning && !accountStatusCurrent)
