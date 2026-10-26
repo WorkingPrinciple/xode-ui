@@ -5,6 +5,25 @@ import Darwin
 import Foundation
 import SwiftUI
 
+private final class CalimochoExtractionRecovery: @unchecked Sendable {
+    static let shared = CalimochoExtractionRecovery()
+    private let lock = NSLock()
+    private var survivors: [Process] = []
+
+    func retain(_ process: Process) {
+        lock.lock()
+        defer { lock.unlock() }
+        survivors.append(process)
+    }
+
+    func hasLiveProcess() -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        survivors.removeAll { !$0.isRunning }
+        return !survivors.isEmpty
+    }
+}
+
 enum CalimochoInstallProgress: Equatable, Sendable {
     case preparing
     case downloading(received: Int64, total: Int64)
@@ -321,7 +340,10 @@ struct CalimochoReleaseInstallService: Sendable {
                 while process.isRunning, ContinuousClock.now < killDeadline {
                     await Task.detached { try? await Task.sleep(for: .milliseconds(10)) }.value
                 }
-                guard !process.isRunning else { throw CalimochoInstallError.extractionShutdownFailed }
+                guard !process.isRunning else {
+                    CalimochoExtractionRecovery.shared.retain(process)
+                    throw CalimochoInstallError.extractionShutdownFailed
+                }
             }
             if Task.isCancelled { throw CancellationError() }
             throw error
@@ -575,6 +597,7 @@ final class CalimochoReleaseInstallController: ObservableObject {
     private var task: Task<Void, Never>?
     private var terminating = false
     private var extractionShutdownFailed = false
+    private let extractionStillRunning: @MainActor () -> Bool
     private let releaseCheck: CalimochoReleaseCheck
     private let updateDefaults: UserDefaults
     private let now: () -> Date
@@ -582,14 +605,20 @@ final class CalimochoReleaseInstallController: ObservableObject {
     private var latestCheckedVersion: CalimochoVersion?
     static let lastUpdateCheckKey = "Xodus.calimocho.lastUpdateCheck.v1"
     static let lastUpdateVersionKey = "Xodus.calimocho.lastUpdateVersion.v1"
+    static let pendingUpdateKey = "Xodus.calimocho.pendingUpdate.v1"
+    static let pendingRemovalKey = "Xodus.calimocho.pendingRemoval.v1"
 
     init(service: CalimochoReleaseInstallService = CalimochoReleaseInstallService(),
          releaseCheck: CalimochoReleaseCheck = CalimochoReleaseCheck(),
-         updateDefaults: UserDefaults = .standard, now: @escaping () -> Date = Date.init) {
+         updateDefaults: UserDefaults = .standard, now: @escaping () -> Date = Date.init,
+         extractionStillRunning: @escaping @MainActor () -> Bool = {
+             CalimochoExtractionRecovery.shared.hasLiveProcess()
+         }) {
         self.service = service
         self.releaseCheck = releaseCheck
         self.updateDefaults = updateDefaults
         self.now = now
+        self.extractionStillRunning = extractionStillRunning
         self.latestCheckedVersion = updateDefaults.string(forKey: Self.lastUpdateVersionKey).flatMap(CalimochoVersion.init)
     }
 
@@ -598,6 +627,7 @@ final class CalimochoReleaseInstallController: ObservableObject {
     var engineURL: URL { service.engineURL }
     var offersPinnedUpdate: Bool {
         if case .pinnedUpdate = updateOutcome { return true }
+        if case .finishUpdate = updateOutcome { return true }
         return false
     }
     var hasEngineFolder: Bool {
@@ -643,6 +673,7 @@ final class CalimochoReleaseInstallController: ObservableObject {
         let pending = task
         pending?.cancel()
         await pending?.value
+        if extractionShutdownFailed && !extractionStillRunning() { extractionShutdownFailed = false }
         return !extractionShutdownFailed
     }
 
@@ -656,6 +687,8 @@ final class CalimochoReleaseInstallController: ObservableObject {
             updateMessage = CalimochoUpdateError.invalidResponse.localizedDescription
             return
         }
+        do { try restoreUpdateRecovery(pinned: pinned) }
+        catch { updateMessage = "Calimocho update recovery couldn't be read: \(error.localizedDescription)"; return }
         if let latest = latestCheckedVersion {
             updateOutcome = .decide(installed: installedReleases, pinned: pinned, latest: latest)
             updateMessage = updateOutcome?.message
@@ -663,9 +696,10 @@ final class CalimochoReleaseInstallController: ObservableObject {
             updateOutcome = .pinnedUpdate(old)
             updateMessage = updateOutcome?.message
         }
+        applyPendingUpdateOutcome()
         let date = now()
         if automatic, let previous = updateDefaults.object(forKey: Self.lastUpdateCheckKey) as? Date,
-           date.timeIntervalSince(previous) < 86_400 { return }
+           (0..<86_400).contains(date.timeIntervalSince(previous)) { return }
         updateDefaults.set(date, forKey: Self.lastUpdateCheckKey)
         checkingUpdates = true
         updateMessage = nil
@@ -679,6 +713,7 @@ final class CalimochoReleaseInstallController: ObservableObject {
                 updateDefaults.set(latest.description, forKey: Self.lastUpdateVersionKey)
                 updateOutcome = outcome
                 updateMessage = outcome.message
+                applyPendingUpdateOutcome()
             } catch is CancellationError {
                 updateMessage = nil
             } catch {
@@ -687,6 +722,40 @@ final class CalimochoReleaseInstallController: ObservableObject {
         }
         checkTask = pending
         await pending.value
+    }
+
+    private var pendingUpdate: LocalCalimochoRelease?
+
+    private func restoreUpdateRecovery(pinned: CalimochoVersion) throws {
+        pendingUpdate = nil
+        if let bytes = updateDefaults.data(forKey: Self.pendingUpdateKey) {
+            let old = try JSONDecoder().decode(LocalCalimochoRelease.self, from: bytes)
+            if old.version < pinned, installedReleases.contains(old), hasEngineFolder { pendingUpdate = old }
+        }
+        if pendingUpdate == nil, hasEngineFolder,
+           EngineDefaults.defaultEngine(updateDefaults).map({ $0 == .calimocho }) ?? true,
+           let bytes = updateDefaults.data(forKey: NativeEngineDefaults.preferenceKey) {
+            let selection = try JSONDecoder().decode(AdmittedEngineSelection.self, from: bytes)
+            if selection.inspection.admittedProvider == "calimocho",
+               let old = installedReleases.first(where: {
+                   $0.engineName == selection.inspection.engineName && $0.version < pinned
+               }) { pendingUpdate = old }
+        }
+        removableOldRelease = nil
+        if let bytes = updateDefaults.data(forKey: Self.pendingRemovalKey) {
+            let old = try JSONDecoder().decode(LocalCalimochoRelease.self, from: bytes)
+            let selected = try NativeEngineSettings.defaultAdmissionName(defaults: updateDefaults)
+            if old.version < pinned, installedReleases.contains(old), selected != old.engineName {
+                removableOldRelease = old
+            }
+        }
+    }
+
+    private func applyPendingUpdateOutcome() {
+        if let pendingUpdate {
+            updateOutcome = .finishUpdate(pendingUpdate)
+            updateMessage = updateOutcome?.message
+        }
     }
 
     func update(from old: LocalCalimochoRelease,
@@ -698,9 +767,11 @@ final class CalimochoReleaseInstallController: ObservableObject {
         guard task == nil, !terminating, !checkingUpdates else { return }
         do {
             guard !isBusy(), let version = service.pin.releaseVersion, old.version < version,
-                  !hasEngineFolder,
                   try LocalCalimochoRelease.installed(root: enginesRoot).contains(old) else {
                 throw CalimochoUpdateError.busy
+            }
+            if hasEngineFolder {
+                guard pendingUpdate == old else { throw CalimochoInstallError.engineAlreadyExists }
             }
             try reserve()
         } catch { errorMessage = error.localizedDescription; return }
@@ -710,19 +781,27 @@ final class CalimochoReleaseInstallController: ObservableObject {
         task = Task { [self] in
             defer { release(); progress = nil; task = nil }
             var installedNew = false
+            let finishing = hasEngineFolder
             do {
-                _ = try await service.install { [weak self] value in
-                    await MainActor.run { self?.progress = value }
+                updateDefaults.set(try JSONEncoder().encode(old), forKey: Self.pendingUpdateKey)
+                if !finishing {
+                    _ = try await service.install { [weak self] value in
+                        await MainActor.run { self?.progress = value }
+                    }
+                    installedNew = true
                 }
-                installedNew = true
                 try Task.checkCancellation()
                 progress = .checkingAdmission
                 guard await admit() else { throw CalimochoUpdateError.admission }
                 try Task.checkCancellation()
                 let refreshedReleases = try LocalCalimochoRelease.installed(root: enginesRoot)
+                let removalRecord = try JSONEncoder().encode(old)
                 try await activate()
-                removableOldRelease = old
+                updateDefaults.set(removalRecord, forKey: Self.pendingRemovalKey)
+                updateDefaults.removeObject(forKey: Self.pendingUpdateKey)
+                pendingUpdate = nil
                 installedReleases = refreshedReleases
+                removableOldRelease = old
                 if let pinned = service.pin.releaseVersion, let latest = latestCheckedVersion {
                     updateOutcome = .decide(installed: refreshedReleases, pinned: pinned, latest: latest)
                 } else { updateOutcome = .upToDate }
@@ -742,6 +821,10 @@ final class CalimochoReleaseInstallController: ObservableObject {
                         return
                     }
                 }
+                if !finishing {
+                    updateDefaults.removeObject(forKey: Self.pendingUpdateKey)
+                    pendingUpdate = nil
+                }
                 if failure is CancellationError {
                     noticeSymbol = "info.circle"
                     notice = "Update canceled. The previous engine and default were kept."
@@ -757,7 +840,8 @@ final class CalimochoReleaseInstallController: ObservableObject {
         guard let old = removableOldRelease, !isWorking, !terminating else { return }
         do {
             guard !isBusy(), let pinned = service.pin.releaseVersion, old.version < pinned,
-                  try LocalCalimochoRelease.installed(root: enginesRoot).contains(old) else {
+                  try LocalCalimochoRelease.installed(root: enginesRoot).contains(old),
+                  try NativeEngineSettings.defaultAdmissionName(defaults: updateDefaults) != old.engineName else {
                 throw CalimochoUpdateError.busy
             }
             try reserve()
@@ -772,6 +856,7 @@ final class CalimochoReleaseInstallController: ObservableObject {
                 }
                 try await recycle(target)
                 removableOldRelease = nil
+                updateDefaults.removeObject(forKey: Self.pendingRemovalKey)
                 installedReleases = try LocalCalimochoRelease.installed(root: enginesRoot)
                 updateMessage = "The previous Calimocho engine was moved to the Trash."
             } catch { errorMessage = error.localizedDescription }

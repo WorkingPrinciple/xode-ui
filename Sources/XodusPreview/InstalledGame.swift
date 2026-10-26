@@ -384,13 +384,20 @@ actor InstalledGameStore {
         return games
     }
 
-    func retargetCalimochoTitles(_ selection: AdmittedEngineSelection) throws -> [InstalledGame] {
+    func retargetCalimochoTitles(_ selection: AdmittedEngineSelection, replacing oldEngine: String) throws -> [InstalledGame] {
         var games = try load()
         for index in games.indices where ["9P9VNSQK1W3K", "9NMNMS626R59"].contains(games[index].storeId) {
-            try NativeLaunchConfiguration.validateOverride(selection, game: games[index])
-            games[index].engineOverride = .calimocho
-            games[index].engineSelection = selection
-            games[index].engineOverrideV2 = GameEngineOverride(selection: selection)
+            let legacyMatches = games[index].engineOverride == .calimocho
+                && games[index].engineSelection?.inspection.admittedProvider == "calimocho"
+                && games[index].engineSelection?.inspection.engineName == oldEngine
+            let currentMatches = games[index].engineOverrideV2?.selection.inspection.admittedProvider == "calimocho"
+                && games[index].engineOverrideV2?.selection.inspection.engineName == oldEngine
+                && (games[index].engineOverride == nil || games[index].engineOverride == .calimocho)
+            if legacyMatches || currentMatches {
+                try NativeLaunchConfiguration.validateOverride(selection, game: games[index])
+            }
+            if legacyMatches { games[index].engineSelection = selection }
+            if currentMatches { games[index].engineOverrideV2 = GameEngineOverride(selection: selection) }
         }
         try save(games)
         return games

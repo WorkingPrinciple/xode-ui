@@ -1398,6 +1398,7 @@ final class InstalledGamesController: ObservableObject {
     }
 
     func activateCalimochoUpdate(_ selection: AdmittedEngineSelection,
+                                replacing oldEngine: String,
                                 defaults: UserDefaults = .standard) async throws {
         guard loaded, mutationActive, !applicationTerminating, !accountDisconnecting,
               runningGameID == nil, let pin = CalimochoReleasePin.all.last,
@@ -1415,8 +1416,14 @@ final class InstalledGamesController: ObservableObject {
         let previous = defaults.object(forKey: NativeEngineDefaults.preferenceKey)
         let previousProvider = defaults.object(forKey: EngineDefaults.defaultEngineKey)
         do {
-            try NativeEngineSettings.persistDefaultAdmission(selection, defaults: defaults)
-            applySavedGames(try await store.retargetCalimochoTitles(selection))
+            if EngineDefaults.defaultEngine(defaults).map({ $0 == .calimocho }) ?? true,
+               let bytes = defaults.data(forKey: NativeEngineDefaults.preferenceKey) {
+                let saved = try JSONDecoder().decode(AdmittedEngineSelection.self, from: bytes)
+                if saved.inspection.admittedProvider == "calimocho", saved.inspection.engineName == oldEngine {
+                    try NativeEngineSettings.persistDefaultAdmission(selection, defaults: defaults)
+                }
+            }
+            applySavedGames(try await store.retargetCalimochoTitles(selection, replacing: oldEngine))
         } catch {
             if let previous { defaults.set(previous, forKey: NativeEngineDefaults.preferenceKey) }
             else { defaults.removeObject(forKey: NativeEngineDefaults.preferenceKey) }

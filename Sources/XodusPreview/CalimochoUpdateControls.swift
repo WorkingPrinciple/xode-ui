@@ -35,6 +35,11 @@ struct CalimochoUpdateControls: View {
                     .disabled(installer.isWorking || installer.checkingUpdates || isBusy())
                     .accessibilityIdentifier("xodus.engines.calimocho.update")
             }
+            if case .finishUpdate(let old) = installer.updateOutcome {
+                Button("Finish Update") { beginUpdate(old) }
+                    .disabled(installer.isWorking || installer.checkingUpdates || isBusy())
+                    .accessibilityIdentifier("xodus.engines.calimocho.finishUpdate")
+            }
             if let url = installer.updateOutcome?.releaseNotes {
                 Link("Release Notes", destination: url)
                     .accessibilityIdentifier("xodus.engines.calimocho.releaseNotes")

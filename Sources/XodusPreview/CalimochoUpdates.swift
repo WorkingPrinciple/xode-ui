@@ -2,7 +2,7 @@
 import Foundation
 import Darwin
 
-struct CalimochoVersion: Comparable, Equatable, Sendable, CustomStringConvertible {
+struct CalimochoVersion: Comparable, Equatable, Codable, Sendable, CustomStringConvertible {
     let revision: Int
     init?(_ value: String) {
         let parts = value.split(separator: ".", omittingEmptySubsequences: false)
@@ -22,7 +22,7 @@ extension CalimochoReleasePin {
     }
 }
 
-struct LocalCalimochoRelease: Equatable, Sendable {
+struct LocalCalimochoRelease: Equatable, Codable, Sendable {
     let engineName: String
     let version: CalimochoVersion
 
@@ -119,6 +119,7 @@ struct CalimochoReleaseCheck: Sendable {
 enum CalimochoUpdateOutcome: Equatable {
     case upToDate
     case pinnedUpdate(LocalCalimochoRelease)
+    case finishUpdate(LocalCalimochoRelease)
     case appUpdate(CalimochoVersion)
     case notInstalled
 
@@ -133,6 +134,7 @@ enum CalimochoUpdateOutcome: Equatable {
         switch self {
         case .upToDate: "Calimocho is up to date."
         case .pinnedUpdate: "This \(AppBrand.displayName) version includes a newer pinned Calimocho release. The old engine is kept until the update is verified."
+        case .finishUpdate: "The pinned Calimocho release is downloaded. Finish the update to verify and activate it."
         case .appUpdate(let version): "Calimocho \(version) is available and will come with the next \(AppBrand.displayName) update."
         case .notInstalled: "Calimocho isn't installed. Get the release pinned by this \(AppBrand.displayName) version."
         }
