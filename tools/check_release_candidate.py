@@ -17,8 +17,11 @@ import refresh_local_candidate as refresh_tool
 import shipping_pair as pins
 
 PRODUCER_NOTICES_SHA256 = "a" * 64
+PRODUCER_NOTICES_EVIDENCE_SHA256 = "b" * 64
 package_beta.PRODUCER_NOTICES_SHA256 = PRODUCER_NOTICES_SHA256
+package_beta.PRODUCER_NOTICES_EVIDENCE_SHA256 = PRODUCER_NOTICES_EVIDENCE_SHA256
 release.PRODUCER_NOTICES_SHA256 = PRODUCER_NOTICES_SHA256
+release.PRODUCER_NOTICES_EVIDENCE_SHA256 = PRODUCER_NOTICES_EVIDENCE_SHA256
 
 
 class ReleaseCandidateChecks(unittest.TestCase):
@@ -237,10 +240,12 @@ class ReleaseCandidateChecks(unittest.TestCase):
                   "app-gatekeeper", "distribution-app-signature", "dmg-sign",
                   "dmg-stapler-staple", "dmg-stapler-validate", "dmg-signature",
                   "stapled-dmg-signature", "dmg-gatekeeper")
-        for failure in (None, "app", "dmg", *labels):
+        for failure in (None, "notice-evidence-pin", "app", "dmg", *labels):
             with self.subTest(failure=failure), tempfile.TemporaryDirectory() as temporary:
                 root = Path(temporary).resolve()
-                receipt = {"commands": [], "artifacts": {}, "notarized": False}
+                receipt = {"commands": [], "artifacts": {}, "notarized": False,
+                           "producerNoticesSHA256": PRODUCER_NOTICES_SHA256,
+                           "producerNoticesEvidenceSHA256": PRODUCER_NOTICES_EVIDENCE_SHA256}
                 app = self.neutral_app(root)
                 background = root / "background.tiff"
                 background.write_bytes(b"II*\x00neutral background")
@@ -259,6 +264,8 @@ class ReleaseCandidateChecks(unittest.TestCase):
                     **source_identity,
                     "distribution": "separate draft-release asset and DMG sidecar",
                 }
+                if failure == "notice-evidence-pin":
+                    receipt["producerNoticesEvidenceSHA256"] = "f" * 64
                 def execute(arguments, stage, receipt, path, label):
                     if label == failure:
                         raise ValueError("Required check failed")
@@ -403,6 +410,8 @@ class ReleaseCandidateChecks(unittest.TestCase):
                                  (args.producer_notices_sha256, args.engine_notice))
                 self.assertEqual(blockers.call_args.args[-1], args.producer_notices_sha256)
                 self.assertEqual(receipt["producerNoticesSHA256"], args.producer_notices_sha256)
+                self.assertEqual(receipt["producerNoticesEvidenceSHA256"],
+                                 PRODUCER_NOTICES_EVIDENCE_SHA256)
                 self.assertEqual(receipt["producerSourceArchive"], {
                     "file": release.PRODUCER_SOURCE_ARCHIVE_NAME,
                     "sourceCommit": release.PRODUCER_COMMIT,
@@ -458,6 +467,8 @@ class ReleaseCandidateChecks(unittest.TestCase):
                 "notarized": False, "installed": False, "activated": False, "notaryProfile": "notary",
                 "commands": [], "certificateSHA1": "c" * 40, "producer": {},
                 "appSource": {"commit": "a" * 40, "tree": "b" * 40},
+                "producerNoticesSHA256": PRODUCER_NOTICES_SHA256,
+                "producerNoticesEvidenceSHA256": PRODUCER_NOTICES_EVIDENCE_SHA256,
                 "producerSourceArchive": {
                     "file": release.PRODUCER_SOURCE_ARCHIVE_NAME,
                     "sourceCommit": release.PRODUCER_COMMIT,
@@ -493,6 +504,14 @@ class ReleaseCandidateChecks(unittest.TestCase):
                 self.assertEqual(distribute.call_args.args[-2], root / "background.tiff")
                 self.assertEqual(distribute.call_args.args[-1], root / "source.tar")
                 refresh.assert_not_called()
+                receipt["state"], receipt["dryRun"] = "signed_dry_run_complete", True
+                receipt["producerNoticesEvidenceSHA256"] = "f" * 64
+                with self.assertRaisesRegex(ValueError, "approval pins differ"):
+                    release.resume(root / "release-receipt.json", "notary",
+                                   producer_notices_sha256=PRODUCER_NOTICES_SHA256,
+                                   dmg_background=root / "background.tiff",
+                                   producer_source_archive=root / "source.tar")
+                self.assertEqual(distribute.call_count, 1)
                 receipt["state"] = "failed"
                 with self.assertRaises(ValueError):
                     release.resume(root / "release-receipt.json", "notary")

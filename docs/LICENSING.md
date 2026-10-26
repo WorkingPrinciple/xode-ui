@@ -49,32 +49,32 @@ The output records the metadata superset and distinguishes compiler-artifact
 packages, including host/build/proc-macro dependencies. It is not a claim that
 every recorded package is linked into the shipping executable.
 
-For the current beta producer (`99e20addf88932de7796fc966fe09e00b71e4981`,
-tree `7f9e8cc5bd10f696ea508f0ff9f2da3a7eaf2e91`), the generated inventory is
-SHA-256 `ec3d8e79fe0472c84356cbc2285fa3ff2fb1ea65c481d58bc6e190cc27b15066`.
-It covers 479 package identities, 462 compiler-artifact identities and 326
-content-addressed notice texts, and retains 14 explicit unresolved obligations.
-The corresponding-source archive is SHA-256
+For the beta producer (`99e20addf88932de7796fc966fe09e00b71e4981`, tree
+`7f9e8cc5bd10f696ea508f0ff9f2da3a7eaf2e91`), the initial generated inventory
+was SHA-256 `ec3d8e79fe0472c84356cbc2285fa3ff2fb1ea65c481d58bc6e190cc27b15066`.
+It covered 479 package identities, 462 compiler-artifact identities and 326
+content-addressed notice texts, with 14 unresolved obligations. That baseline
+was superseded by the reviewed successor below. The corresponding-source
+archive is SHA-256
 `d67b903137c96479298a139374d5bdf988db4f64ee971588183584bf520e4fdd` (9,574,400
 bytes; 589 members); it is from that exact commit and omits
-`docs/private-ai/` and `docs/private-checkpoints/`. These generated artifacts
-were independently approved by Ode as exact producer evidence. Their hashes
-and contents are not a rights opinion or a claim that the 14 unresolved
-obligations are cleared. The source tar contains `DO_NOT_UPSTREAM` and is
-private-tester-only; the builder binds its exact hash and refuses a substituted
-archive. The approved notice inventory is copied into the app only after the
-builder verifies its exact digest.
+`docs/private-ai/` and `docs/private-checkpoints/`. The source tar contains
+`DO_NOT_UPSTREAM` and is private-tester-only; the builder binds its exact hash
+and refuses a substituted archive.
 
-A successor notice candidate for the same producer commit is SHA-256
+A successor notice inventory for the same producer commit is SHA-256
 `5c27f9e24c78f7499fc5cf230b4a9e053c8e079f7880f4ddbfcc9f7a155d457e`. It
-retains the 479 package and 462 compiler-artifact identities and now has one
-unresolved obligation: exact corresponding-source delivery and applicable
-licence/notice review for distributed components. The private-tester ZIP and
-DMG builders bind the source archive, but its GitHub draft-release asset is
-still pending because no draft release/tag target is present. This candidate
-has not been independently approved or pinned by the builders; it is not
-release evidence or legal clearance. Keep the earlier approved digest separate
-until the exact draft target and its source asset are verified.
+retains the 479 package and 462 compiler-artifact identities and has one
+unresolved obligation covering final corresponding-source delivery and
+applicable licence/notice review. The private-tester ZIP and DMG builders bind
+the source archive, but its GitHub draft-release asset is still pending the
+frozen integrated commit for tag `v0.2.0-beta.1`. The inventory and its supplemental evidence
+(`77601f7da9cb9298973e568c0882230f1059e233b5118089ad3535bfed25d5a2`) were
+independently approved by Ode and are pinned by the beta and release builders;
+both package and release receipts record these pins. The inventory and
+evidence establish provenance and notice-text identity, not legal clearance.
+Do not publish the draft or source archive before the source asset is attached
+and the owner makes the publication decision.
 
 For r7, the bound metadata identifies 479 packages, 462 with compiler artifacts,
 and 472 package-level licence declarations. The seven undeclared manifests are

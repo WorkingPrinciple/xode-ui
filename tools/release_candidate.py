@@ -21,7 +21,8 @@ from shipping_pair import (CLI_SHA256, WINDOWS_HELPER_SHA256 as HELPER_SHA256,
                            hex_value, owned_bytes, require, unique_object)
 from signing_identity import verify_designated_requirement
 from distribution_manifest import require_distribution_ready, distribution_blockers
-from package_beta import (PRODUCER_NOTICES_SHA256, PRODUCER_SOURCE_ARCHIVE_BYTES,
+from package_beta import (PRODUCER_NOTICES_EVIDENCE_SHA256, PRODUCER_NOTICES_SHA256,
+                          PRODUCER_SOURCE_ARCHIVE_BYTES,
                           PRODUCER_SOURCE_ARCHIVE_SHA256, PRODUCER_SOURCE_COMMIT,
                           PRODUCER_SOURCE_TREE, PUBLIC_RELEASE_NOTES,
                           RELEASE_INSTALL_NOTE, create_installer_dmg,
@@ -162,6 +163,9 @@ def distribute(app, stage, receipt, receipt_path, identity, profile, producer_no
             and re.fullmatch(r"[0-9a-f]{64}", PRODUCER_NOTICES_SHA256) is not None
             and producer_notices_sha256 == PRODUCER_NOTICES_SHA256,
             "No current producer-notice inventory is pinned; await the admitted producer rebuild")
+    require(receipt.get("producerNoticesSHA256") == PRODUCER_NOTICES_SHA256
+            and receipt.get("producerNoticesEvidenceSHA256") == PRODUCER_NOTICES_EVIDENCE_SHA256,
+            "Producer-notice approval pins differ from the signed dry-run receipt")
     require_distribution_ready(app, producer_notices_sha256)
     source_identity, source_bytes = validate_producer_source_archive(producer_source_archive)
     require(receipt.get("producerSourceArchive") == {
@@ -278,6 +282,9 @@ def resume(receipt_path, profile, approved_unnotarized_cli=None, producer_notice
             and receipt["installed"] is False and receipt["activated"] is False,
             "Only an untouched successful signed dry-run can be submitted; reconcile partial submissions explicitly")
     require(profile == receipt["notaryProfile"], "Use the dry-run's admitted notary profile")
+    require(receipt.get("producerNoticesSHA256") == PRODUCER_NOTICES_SHA256
+            and receipt.get("producerNoticesEvidenceSHA256") == PRODUCER_NOTICES_EVIDENCE_SHA256,
+            "Producer-notice approval pins differ from the signed dry-run receipt")
     source_identity, _ = validate_producer_source_archive(producer_source_archive)
     require(receipt.get("producerSourceArchive") == {
         "file": PRODUCER_SOURCE_ARCHIVE_NAME,
@@ -344,6 +351,9 @@ def build(args):
             and re.fullmatch(r"[0-9a-f]{64}", PRODUCER_NOTICES_SHA256) is not None
             and args.producer_notices_sha256 == PRODUCER_NOTICES_SHA256,
             "No current producer-notice inventory is pinned; await the admitted producer rebuild")
+    require(isinstance(PRODUCER_NOTICES_EVIDENCE_SHA256, str)
+            and re.fullmatch(r"[0-9a-f]{64}", PRODUCER_NOTICES_EVIDENCE_SHA256) is not None,
+            "No current producer-notice evidence digest is pinned")
     root = args.output_root.resolve(strict=True)
     info = root.stat()
     require(root == args.output_root and info.st_uid == os.getuid() and info.st_mode & 0o022 == 0,
@@ -359,6 +369,8 @@ def build(args):
     receipt_path = stage / "release-receipt.json"
     receipt = {"version": 1, "state": "building", "dryRun": args.dry_run,
                "appSource": source, "producer": producer, "commands": [], "artifacts": {},
+               "producerNoticesSHA256": PRODUCER_NOTICES_SHA256,
+               "producerNoticesEvidenceSHA256": PRODUCER_NOTICES_EVIDENCE_SHA256,
                "producerSourceArchive": {
                    "file": PRODUCER_SOURCE_ARCHIVE_NAME,
                    "sourceCommit": PRODUCER_COMMIT,
@@ -383,7 +395,9 @@ def build(args):
                        "dmgBackground": str(args.dmg_background),
                        "dmgBackgroundSHA256": background_identity["sha256"],
                        "engineNotice": str(args.engine_notice),
-                       "engineNoticeSHA256": engine_notice_identity["sha256"]}}
+                       "engineNoticeSHA256": engine_notice_identity["sha256"],
+                       "producerNoticesSHA256": PRODUCER_NOTICES_SHA256,
+                       "producerNoticesEvidenceSHA256": PRODUCER_NOTICES_EVIDENCE_SHA256}}
         write_receipt(receipt_path, receipt)
         app, build_receipt = refresh(args.installed_app, stage, args.identity, cli,
                                      args.producer_source, PRODUCER_COMMIT, helper, notices, notices_sha,
@@ -401,6 +415,7 @@ def build(args):
                         "releaseChannel": release_channel,
                         "releaseTag": f"v{app_version}-{release_channel.lower()}.1"})
         receipt["producerNoticesSHA256"] = notices_sha
+        receipt["producerNoticesEvidenceSHA256"] = PRODUCER_NOTICES_EVIDENCE_SHA256
         receipt["buildInvocation"]["completed"] = True
         receipt["candidateBuildReceipt"] = {"path": str(build_receipt), **owned_bytes(build_receipt)[0]}
         receipt["candidateBuild"] = read_json(build_receipt)

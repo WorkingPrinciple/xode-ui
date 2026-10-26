@@ -22,7 +22,8 @@ IDENTITY = "410914520BCC840C0125D3826CCF0F247F603321"
 TEAM_ID = "M62Z4M5EUY"
 APP_BUNDLE_IDENTIFIER = "io.github.dragoshont.xodus.development"
 APP_SIGNING_IDENTIFIER = IDENTIFIERS["app"]
-PRODUCER_NOTICES_SHA256 = "ec3d8e79fe0472c84356cbc2285fa3ff2fb1ea65c481d58bc6e190cc27b15066"
+PRODUCER_NOTICES_SHA256 = "5c27f9e24c78f7499fc5cf230b4a9e053c8e079f7880f4ddbfcc9f7a155d457e"
+PRODUCER_NOTICES_EVIDENCE_SHA256 = "77601f7da9cb9298973e568c0882230f1059e233b5118089ad3535bfed25d5a2"
 PRODUCER_SOURCE_COMMIT = "99e20addf88932de7796fc966fe09e00b71e4981"
 PRODUCER_SOURCE_TREE = "7f9e8cc5bd10f696ea508f0ff9f2da3a7eaf2e91"
 PRODUCER_SOURCE_ARCHIVE_SHA256 = "d67b903137c96479298a139374d5bdf988db4f64ee971588183584bf520e4fdd"
@@ -258,6 +259,9 @@ def package_beta(app, output_root, package_format, source, identity=IDENTITY,
             and re.fullmatch(r"[0-9a-f]{64}", PRODUCER_NOTICES_SHA256) is not None
             and producer_notices_sha256 == PRODUCER_NOTICES_SHA256,
             "Producer-notice inventory digest differs from the independently approved pin")
+    require(isinstance(PRODUCER_NOTICES_EVIDENCE_SHA256, str)
+            and re.fullmatch(r"[0-9a-f]{64}", PRODUCER_NOTICES_EVIDENCE_SHA256) is not None,
+            "Producer-notice evidence digest is not pinned")
     require(isinstance(PRODUCER_SOURCE_ARCHIVE_SHA256, str)
             and re.fullmatch(r"[0-9a-f]{64}", PRODUCER_SOURCE_ARCHIVE_SHA256) is not None
             and isinstance(PRODUCER_SOURCE_ARCHIVE_BYTES, int)
@@ -305,6 +309,7 @@ def package_beta(app, output_root, package_format, source, identity=IDENTITY,
         "publicUpload": False,
         "appSource": source_identity,
         "producerNoticesSHA256": producer_notices_sha256,
+        "producerNoticesEvidenceSHA256": PRODUCER_NOTICES_EVIDENCE_SHA256,
         "producerSourceArchive": {
             "file": "PRIVATE-TESTER-SOURCE.tar",
             "sourceCommit": PRODUCER_SOURCE_COMMIT,

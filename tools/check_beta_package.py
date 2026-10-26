@@ -16,16 +16,20 @@ from package_beta import (IDENTITY, TEAM_ID,
                          package_beta as create_beta_package)
 
 PRODUCER_NOTICES_SHA256 = "a" * 64
+PRODUCER_NOTICES_EVIDENCE_SHA256 = "b" * 64
 PRODUCER_SOURCE_ARCHIVE_BYTES = b"Neutral private tester source archive"
 PRODUCER_SOURCE_ARCHIVE_SHA256 = hashlib.sha256(PRODUCER_SOURCE_ARCHIVE_BYTES).hexdigest()
 assert beta.PRODUCER_NOTICES_SHA256 == (
-    "ec3d8e79fe0472c84356cbc2285fa3ff2fb1ea65c481d58bc6e190cc27b15066")
+    "5c27f9e24c78f7499fc5cf230b4a9e053c8e079f7880f4ddbfcc9f7a155d457e")
+assert beta.PRODUCER_NOTICES_EVIDENCE_SHA256 == (
+    "77601f7da9cb9298973e568c0882230f1059e233b5118089ad3535bfed25d5a2")
 assert beta.PRODUCER_SOURCE_COMMIT == "99e20addf88932de7796fc966fe09e00b71e4981"
 assert beta.PRODUCER_SOURCE_TREE == "7f9e8cc5bd10f696ea508f0ff9f2da3a7eaf2e91"
 assert beta.PRODUCER_SOURCE_ARCHIVE_SHA256 == (
     "d67b903137c96479298a139374d5bdf988db4f64ee971588183584bf520e4fdd")
 assert beta.PRODUCER_SOURCE_ARCHIVE_BYTES == 9_574_400
 beta.PRODUCER_NOTICES_SHA256 = PRODUCER_NOTICES_SHA256
+beta.PRODUCER_NOTICES_EVIDENCE_SHA256 = PRODUCER_NOTICES_EVIDENCE_SHA256
 beta.PRODUCER_SOURCE_ARCHIVE_SHA256 = PRODUCER_SOURCE_ARCHIVE_SHA256
 beta.PRODUCER_SOURCE_ARCHIVE_BYTES = len(PRODUCER_SOURCE_ARCHIVE_BYTES)
 
@@ -157,6 +161,7 @@ with tempfile.TemporaryDirectory(prefix="xodus-beta-package-") as temporary:
     assert receipt["notarization"] == "NOT_SUBMITTED"
     assert receipt["installed"] is False and receipt["launched"] is False
     assert receipt["producerNoticesSHA256"] == PRODUCER_NOTICES_SHA256
+    assert receipt["producerNoticesEvidenceSHA256"] == PRODUCER_NOTICES_EVIDENCE_SHA256
     assert receipt["producerSourceArchive"] == {
         "file": "PRIVATE-TESTER-SOURCE.tar",
         "sourceCommit": beta.PRODUCER_SOURCE_COMMIT,

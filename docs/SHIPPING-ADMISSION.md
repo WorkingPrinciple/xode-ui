@@ -44,18 +44,22 @@ approved. The signed build manifest is
 paired CLI and Windows helper hashes are `ae36f62c63ffbd371ce104559c29d2a5f1c8fa5170de5bc83e520ce9516defc9`
 and `6564914f1219364fb236eda37bba4d280e6115c2b8f23c20097dc19b8692f929`.
 The app lane generated the matching producer-notice inventory
-(`ec3d8e79fe0472c84356cbc2285fa3ff2fb1ea65c481d58bc6e190cc27b15066`) and
+(`5c27f9e24c78f7499fc5cf230b4a9e053c8e079f7880f4ddbfcc9f7a155d457e`) and
 corresponding-source archive
 (`d67b903137c96479298a139374d5bdf988db4f64ee971588183584bf520e4fdd`, 9,574,400
 bytes, 589 members, from the exact commit). The archive excludes
-`docs/private-ai/` and `docs/private-checkpoints/`. The inventory has 14
-explicit unresolved obligations; neither artifact is rights clearance. Ode
-independently approved both digests. `package_beta.py` now pins the inventory,
-source commit/tree, and exact source archive bytes, and labels its output and
-paired source as private-tester-only. The source tar contains `DO_NOT_UPSTREAM`;
-neither artifact is for public upload. Packaging/build remains held for the UX
-PASS, the 135c `-04` pin freeze, and resolution of the inventory's remaining
-obligations.
+`docs/private-ai/` and `docs/private-checkpoints/`. The inventory covers 479
+packages and 462 compiler-artifact identities; its one unresolved obligation
+covers final corresponding-source delivery and applicable licence/notice
+review. The source asset is pending the integrated commit for the GitHub draft
+release. The matching supplemental evidence digest is
+`77601f7da9cb9298973e568c0882230f1059e233b5118089ad3535bfed25d5a2`. Ode
+independently approved both digests. `package_beta.py` pins both notice
+digests, the source commit/tree, and exact source archive bytes; package and
+release receipts record both notice digests. The source tar contains
+`DO_NOT_UPSTREAM`; it is private-tester-only. The GitHub draft asset remains
+pending the final integrated target commit for tag `v0.2.0-beta.1`. Do not
+publish the draft or source archive.
 Do not use `-03` descriptor/manifest pins or the earlier backend
 `1fd1341` / `84682aa8…` tuple.
 
