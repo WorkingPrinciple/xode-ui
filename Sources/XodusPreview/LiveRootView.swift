@@ -156,7 +156,9 @@ struct LiveRootView: View {
             libraryComplete: LibraryFirstLoad.libraryComplete(snapshot: library.representedSnapshot,
                                                               busy: library.busy,
                                                               retriesLeft: library.detailRetriesLeft),
-            error: library.error,
+            error: LibraryFirstLoad.surfacedError(library: library.surfacedError,
+                                                  installed: state.installedGames.error,
+                                                  hasGames: !library.representedGames.isEmpty),
             needsAccountAction: library.needsSignIn || library.needsKeychainApproval
                 || (library.error != nil && !session.accountCountryReady),
             artworkTotal: firstScreenArtwork.total, artworkReady: firstScreenArtwork.ready,
@@ -207,11 +209,22 @@ struct LiveRootView: View {
     /// Fetches the first viewport's artwork while the setup view waits, so the library opens with it.
     /// A superseded run can't count: settling is tied to the generation `target` returned.
     private func prefetchFirstScreenArtwork() async {
-        let ids = firstScreenItems.map(\.id).filter(PCGamesClient.validProductID)
-        await LibraryCatalogArtwork.shared.load(ids: ids, market: session.market, language: session.language)
+        let items = firstScreenItems
+        let heroCount = items.filter { $0.kind == .hero }.count
+        let topTileCount = items.filter { $0.kind == .cover }.count
+        let span = LoadSignposts.begin("HeroTop8ViewTask",
+            "heroItems=\(heroCount) topTileItems=\(topTileCount)")
+        var outcome = "cancelled"
+        defer {
+            LoadSignposts.end("HeroTop8ViewTask", span,
+                "outcome=\(outcome) ready=\(firstScreenArtwork.ready) total=\(firstScreenArtwork.total)")
+        }
+        let ids = items.map(\.id).filter(PCGamesClient.validProductID)
+        await LibraryCatalogArtwork.shared.load(ids: ids, market: session.market, language: session.language,
+                                                priority: .foreground)
         guard !Task.isCancelled else { return }
         firstScreenRequested.formUnion(ids)
-        let token = firstScreenArtwork.target(firstScreenItems)
+        let token = firstScreenArtwork.target(items)
         let work = firstScreenArtwork.pending
         let reads = work.map { item in
             Task { () -> (FirstScreenArtwork.Item, Bool) in
@@ -232,6 +245,7 @@ struct LiveRootView: View {
         if firstScreenArtwork.settled {
             FirstLoadTimeline.mark("firstScreenArtwork", "ready=\(firstScreenArtwork.ready) of=\(firstScreenArtwork.total)")
         }
+        outcome = Task.isCancelled ? "cancelled" : "completed"
     }
 
     var body: some View {
@@ -475,7 +489,7 @@ struct LiveRootView: View {
             await session.loadCatalogOnEntry("")
             guard !Task.isCancelled, session.catalogMatches(query: "") else { return }
             await LibraryCatalogArtwork.shared.load(ids: Array(session.products.prefix(16).map(\.id)),
-                market: session.market, language: session.language)
+                market: session.market, language: session.language, priority: .background)
         }
         .onChange(of: session.hasConfirmedSignIn) { _, confirmed in
             if confirmed {

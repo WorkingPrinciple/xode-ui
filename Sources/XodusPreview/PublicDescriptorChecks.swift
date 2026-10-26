@@ -333,6 +333,29 @@ enum PublicDescriptorChecks {
               && delayedRequests == 1,
               "A cancelled consumer cannot cancel another consumer's same-ID shared public read")
 
+        let priorityTransport = DescriptorTransport()
+        await priorityTransport.configure(blocked: [0])
+        let priorityStore = PublicCatalogDescriptors(transport: priorityTransport)
+        let priorityArtwork = LibraryCatalogArtwork(descriptors: priorityStore)
+        let warmupIDs = ids(16, offset: 6_000)
+        let foregroundID = ids(1, offset: 7_000)[0]
+        let warmup = Task {
+            await priorityArtwork.load(ids: warmupIDs, market: "US", language: "en-US", priority: .background)
+        }
+        try await wait(priorityTransport, count: 1)
+        let foreground = Task {
+            await priorityArtwork.load(ids: [foregroundID], market: "US", language: "en-US")
+        }
+        try await wait(priorityTransport, count: 2)
+        await foreground.value
+        let foregroundIDs = await priorityTransport.requestedIDs(1)
+        let warmupStillBlocked = await priorityTransport.inFlight == 1
+        let foregroundPublished = priorityArtwork.images[foregroundID] != nil
+        await priorityTransport.release(0)
+        await warmup.value
+        check(foregroundIDs == [foregroundID] && warmupStillBlocked && foregroundPublished,
+              "REQ-121: Foreground artwork completes while the 16-ID background warmup remains blocked")
+
         let refreshTransport = DescriptorTransport()
         await refreshTransport.configure(blocked: [0])
         let refreshStore = PublicCatalogDescriptors(transport: refreshTransport)
@@ -715,6 +738,12 @@ enum PublicDescriptorChecks {
               && failedController.detailRetriesLeft == PCGamesController.detailRetryDelays.count
               && !failedController.accessIsCurrent,
               "Total public metadata failure reports incomplete Library details, never a last-complete or genuine-zero claim; P0: it retries silently before any notice")
+        let retryScheduled = failedController.detailRetryPending
+            && failedController.detailRetriesLeft == PCGamesController.detailRetryDelays.count
+        await failedController.retireUnifiedAccount()
+        check(retryScheduled && !failedController.detailRetryPending
+              && failedController.detailRetriesLeft == PCGamesController.detailRetryDelays.count,
+              "Review Low: A failed library read schedules one bounded silent retry, and sign-out cancels it and restores the budget")
         check(await session.disconnect(), "Descriptor retirement check joins its isolated management child")
 
         let invalidTransport = DescriptorTransport()
@@ -1277,6 +1306,46 @@ extension PublicDescriptorChecks {
         check(fixtureArtwork.images.count == 12 && fixtureLibrary.games.count == 140 && fixtureStale >= 140,
               "REQ-121: A 140-title restart resolves the library and first screen from saved descriptors")
         print("DESCRIPTOR_RESTART_FIXTURE titles=140 first_screen_descriptors=\(firstScreen) library_resolved=\(resolved) network_before_display=0 synthetic_transport=true")
+
+        let signOutDirectory = root.appendingPathComponent("sign-out")
+        let signOutDisk = disk(signOutDirectory)
+        let signOutTransport = DescriptorTransport()
+        let signOutDescriptors = store(signOutTransport, signOutDisk)
+        let warmID = ids(1, offset: 11_000)[0]
+        let pendingID = ids(1, offset: 11_001)[0]
+        _ = try await signOutDescriptors.load(ids: [warmID], market: "US", language: "en-US")
+        await signOutDescriptors.flushPersistence()
+        let memoryBeforeSignOut = await signOutDescriptors.cachedCount
+        let keySet = [
+            PublicDescriptorDiskCache.Key(id: warmID, market: "US", language: "en-us"),
+            PublicDescriptorDiskCache.Key(id: pendingID, market: "US", language: "en-us")
+        ]
+        let diskBeforeSignOut = await signOutDisk.read(keySet)
+        check(memoryBeforeSignOut == 1 && diskBeforeSignOut.count == 1,
+              "REQ-82: The sign-out regression starts with one in-memory and persisted public descriptor")
+        await signOutTransport.configure(blocked: [1])
+        let pendingRead = Task {
+            try await signOutDescriptors.load(ids: [pendingID], market: "US", language: "en-US")
+        }
+        try await wait(signOutTransport, count: 2)
+        let signOutArtwork = CatalogArtworkStore(diskCache: nil, descriptors: signOutDescriptors)
+        try await signOutArtwork.clearForSignOut()
+        let memoryAfterSignOut = await signOutDescriptors.cachedCount
+        let diskAfterSignOut = await signOutDisk.read(keySet)
+        await signOutTransport.release(1)
+        let cancelledRead: Bool
+        do {
+            _ = try await pendingRead.value
+            cancelledRead = false
+        } catch is CancellationError {
+            cancelledRead = true
+        } catch {
+            cancelledRead = false
+        }
+        await signOutDescriptors.flushPersistence()
+        let diskAfterLateRead = await signOutDisk.read(keySet)
+        check(memoryAfterSignOut == 0 && diskAfterSignOut.isEmpty && cancelledRead && diskAfterLateRead.isEmpty,
+              "REQ-82: Sign-out clears public descriptors in memory and on disk, cancels in-flight reads, and fences late writes")
     }
 }
 #endif

@@ -144,7 +144,7 @@ struct PCGamesView: View {
                 } }
             }
             // P0: a library-read error is only shown when no game can be shown; otherwise it retries silently.
-            if let error = library.error, library.representedGames.isEmpty {
+            if let error = library.surfacedError, library.representedGames.isEmpty {
                 Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("xodus.pcGames.error")

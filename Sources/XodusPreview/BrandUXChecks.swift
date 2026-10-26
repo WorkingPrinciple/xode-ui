@@ -1166,6 +1166,36 @@ enum BrandUXChecks {
               && LibraryFirstLoad.libraryComplete(snapshot: clean, busy: true, retriesLeft: 3)
               && partialLoad.covers,
               "Review 2: A 4-game snapshot with failed reads pending retry isn't ready, so setup keeps covering (Show library now after 20 s); genuinely unlisted items don't block")
+        func installedGame(_ title: String, installedOn: Date?) -> InstalledGame {
+            var game = InstalledGame(id: UUID(), title: title, identityName: "Fixture.\(title)", version: "1.0.0.0",
+                                     storeId: "FIXTURE00020", folder: "/tmp/\(title)", launcher: "", importedAt: Date(),
+                                     usesNativeLifecycle: true)
+            game.installedOn = installedOn
+            return game
+        }
+        let older = installedGame("Older", installedOn: Date(timeIntervalSince1970: 1_800_000_000))
+        let newer = installedGame("Newer", installedOn: Date(timeIntervalSince1970: 1_800_100_000))
+        let legacy = installedGame("Legacy", installedOn: nil)
+        check(LibraryGame.recentlyInstalled([older, legacy, newer]).map(\.title) == ["Newer", "Older"]
+              && LibraryGame.recentlyInstalled([legacy]).isEmpty,
+              "REQ-66: Recently Installed lists only games with a recorded install-completion date, newest first; without any, the shelf is absent")
+        check(LibraryFirstLoad.surfacedError(library: nil, installed: "Installed failed", hasGames: false) == "Installed failed"
+              && LibraryFirstLoad.surfacedError(library: nil, installed: "Installed failed", hasGames: true) == nil
+              && LibraryFirstLoad.surfacedError(library: "Library failed", installed: "Installed failed", hasGames: false) == "Library failed"
+              && LibraryFirstLoad.surfacedError(library: nil, installed: nil, hasGames: false) == nil,
+              "REQ-75: An installed-games load failure reaches the setup view when no game can be shown; a library error takes precedence")
+        var installedFailure = LibraryFirstLoad()
+        installedFailure.begin(at: t0, immediate: true)
+        installedFailure.update(LibraryFirstLoadInputs(loading: false,
+            error: LibraryFirstLoad.surfacedError(library: nil, installed: "Installed failed", hasGames: false)), now: t0 + .seconds(1))
+        var quietRetry = LibraryFirstLoad()
+        quietRetry.begin(at: t0, immediate: true)
+        quietRetry.update(LibraryFirstLoadInputs(loading: false,
+            error: LibraryFirstLoad.surfacedError(library: PCGamesController.surfacedError("Library failed", retryPending: true),
+                                                  installed: nil, hasGames: false)), now: t0 + .seconds(1))
+        check(installedFailure.failure == "Installed failed" && quietRetry.failure == nil && quietRetry.covers
+              && PCGamesController.surfacedError("Library failed", retryPending: false) == "Library failed",
+              "REQ-75/P0: Setup fails visibly on an installed-games error, but stays quiet while a silent library retry is scheduled")
         let windowState = AppState()
         let windowA = UUID(), windowB = UUID()
         windowState.setFirstLoadCovering(true, window: windowA)

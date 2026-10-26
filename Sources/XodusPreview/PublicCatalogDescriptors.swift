@@ -64,6 +64,7 @@ actor PublicCatalogDescriptors {
     private var client: ManagementClient?
     private var owner: UUID?
     private var generation = UUID()
+    private var clearingForSignOut = false
     private var entries: [Key: Entry] = [:]
     private var errors: [Key: String] = [:]
     private var pending: [Key: Pending] = [:]
@@ -134,6 +135,16 @@ actor PublicCatalogDescriptors {
         try await persistence?.clear()
     }
 
+    /// Retires account-scoped public reads before removing the saved records, so cancelled work
+    /// cannot repopulate the disk cache after sign-out.
+    func clearForSignOut() async throws {
+        clearingForSignOut = true
+        defer { clearingForSignOut = false }
+        reset()
+        await flushPersistence()
+        try await persistence?.clear()
+    }
+
     func failures(ids: [String], market: String, language: String) -> [String: String] {
         guard let market = PCGamesClient.market(market) else {
             return Dictionary(uniqueKeysWithValues: Set(ids).map { ($0, "Confirm your account country before loading game details.") })
@@ -159,14 +170,16 @@ actor PublicCatalogDescriptors {
     /// Fresh in-memory descriptors are hits; with persistence, a saved descriptor is served at once and
     /// revalidated in the background (stale-while-revalidate); anything else is read from the network.
     /// `refresh` always reads the network.
-    func read(ids: [String], market: String, language: String, refresh: Bool = false) async throws -> Read {
-        let signpost = LoadSignposts.signposter.beginInterval("DescriptorBatch",
-            id: LoadSignposts.signposter.makeSignpostID(), "ids=\(ids.count) refresh=\(refresh)")
+    func read(ids: [String], market: String, language: String, refresh: Bool = false,
+              background: Bool = false) async throws -> Read {
+        guard !clearingForSignOut else { throw CancellationError() }
+        let signpost = LoadSignposts.begin("DescriptorBatch",
+            "requestedIDs=\(ids.count) refresh=\(refresh) background=\(background)")
         var outcome = "failed"
         var counts = (hit: 0, stale: 0, network: 0)
         defer {
-            LoadSignposts.signposter.endInterval("DescriptorBatch", signpost,
-                "outcome=\(outcome, privacy: .public) hit=\(counts.hit) stale=\(counts.stale) network=\(counts.network)")
+            LoadSignposts.end("DescriptorBatch", signpost,
+                "outcome=\(outcome) requestedIDs=\(ids.count) hit=\(counts.hit) stale=\(counts.stale) network=\(counts.network)")
         }
         try Task.checkCancellation()
         guard !ids.isEmpty, ids.count <= 20, Set(ids).count == ids.count,
@@ -240,7 +253,7 @@ actor PublicCatalogDescriptors {
                 defer { batches[batchID] = nil }
                 let batch = try await recovering(ids: missing.map(\.id), market: market,
                     language: client == nil ? language : wireLanguage, client: client, refresh: refresh,
-                    epoch: epoch, background: false)
+                    epoch: epoch, background: background)
                 if generation == epoch { persist(batch.entries, market: market, language: language) }
                 return batch
             }
@@ -417,9 +430,9 @@ actor PublicCatalogDescriptors {
                     releaseNetwork()
                     throw CancellationError()
                 }
-                let signpost = LoadSignposts.signposter.beginInterval("DescriptorFetch",
-                    id: LoadSignposts.signposter.makeSignpostID(),
-                    "ids=\(remaining.count) background=\(background) attempt=\(attempt)")
+                let retryCount = attempt == 0 ? 0 : remaining.count
+                let signpost = LoadSignposts.begin("DescriptorFetch",
+                    "requestedIDs=\(remaining.count) background=\(background) attempt=\(attempt) retriedIDs=\(retryCount)")
                 let fetched: Result<Batch, any Error>
                 do {
                     if let client {
@@ -430,8 +443,11 @@ actor PublicCatalogDescriptors {
                     }
                 } catch { fetched = .failure(error) }
                 releaseNetwork()
-                LoadSignposts.signposter.endInterval("DescriptorFetch", signpost,
-                    "succeeded=\((try? fetched.get()) != nil)")
+                LoadSignposts.end("DescriptorFetch", signpost,
+                    "succeeded=\((try? fetched.get()) != nil) requestedIDs=\(remaining.count) attempt=\(attempt) retriedIDs=\(retryCount)")
+                if retryCount > 0 {
+                    LoadSignposts.event("descriptorRetry", "requestedIDs=\(ids.count) retriedIDs=\(retryCount) attempt=\(attempt)")
+                }
                 let next = try fetched.get()
                 result.entries.merge(next.entries, uniquingKeysWith: { _, new in new })
                 for id in remaining { result.failures[id] = next.failures[id] }

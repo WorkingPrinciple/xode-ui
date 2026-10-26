@@ -229,7 +229,18 @@ final class CatalogArtworkStore {
 
     /// Sign-out cleanup: removes saved artwork and, for the shared store, saved public descriptors, whose
     /// product IDs reflect the library and whose market reflects the account country.
-    func clearForSignOut() async throws { try await clearCache() }
+    func clearForSignOut() async throws {
+        generation += 1
+        cache.removeAllObjects()
+        expires.removeAll()
+        LibraryCatalogArtwork.shared.retireScope()
+        var artworkFailure: (any Error)?
+        do { try await disk?.clear() }
+        catch { artworkFailure = error }
+        do { try await descriptors?.clearForSignOut() }
+        catch { throw error }
+        if let artworkFailure { throw artworkFailure }
+    }
 
     #if DEBUG
     func peakConcurrentWork() async -> Int { await admission.peak }

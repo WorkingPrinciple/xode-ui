@@ -105,9 +105,13 @@ final class PCGamesController: ObservableObject {
     }
     @Published private(set) var detailRetriesLeft = PCGamesController.detailRetryDelays.count
     private var detailRetry: Task<Void, Never>?
+    var detailRetryPending: Bool { detailRetry != nil }
+    /// P0: a read error stays quiet while a silent retry is scheduled; it shows once the retries are used up.
+    var surfacedError: String? { Self.surfacedError(error, retryPending: detailRetryPending) }
+    static func surfacedError(_ error: String?, retryPending: Bool) -> String? { retryPending ? nil : error }
 
     /// Re-reads the library after a backoff while some details failed; bounded, cancelled by sign-out.
-    private func scheduleDetailRetry(account: String) {
+    func scheduleDetailRetry(account: String) {
         detailRetry?.cancel()
         let attempt = Self.detailRetryDelays.count - detailRetriesLeft
         guard attempt >= 0, attempt < Self.detailRetryDelays.count else { return }
@@ -116,6 +120,7 @@ final class PCGamesController: ObservableObject {
             try? await Task.sleep(for: delay)
             guard let self, !Task.isCancelled, !self.busy, !self.terminating, !self.accountDisconnecting,
                   self.unifiedSession?.accountHash == account else { return }
+            self.detailRetry = nil
             self.detailRetriesLeft -= 1
             self.logger.notice("Retrying unavailable game details silently; \(self.detailRetriesLeft) retries left")
             self.refreshUnifiedAccount()
@@ -435,6 +440,10 @@ final class PCGamesController: ObservableObject {
                     self.error = "Your account library couldn't be read completely. Your installed games are still available."
                 } else {
                     self.error = "Your PC library couldn't load. \(LiveSession.describe(error))"
+                }
+                // Transient read failures also recover silently within the bounded budget.
+                if session.hasConfirmedSignIn, session.accountHash == account, detailRetriesLeft > 0 {
+                    scheduleDetailRetry(account: account)
                 }
             }
         }

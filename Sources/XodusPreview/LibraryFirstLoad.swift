@@ -113,6 +113,12 @@ struct LibraryFirstLoad: Equatable {
         return !busy && retriesLeft == 0
     }
 
+    /// REQ-75: the setup view shows a library error once its silent retries are used up, and an installed-games
+    /// load failure when no game could be shown, so neither hides behind an indefinite setup view.
+    static func surfacedError(library: String?, installed: String?, hasGames: Bool) -> String? {
+        library ?? (hasGames ? nil : installed)
+    }
+
     static func gamesReady(_ inputs: LibraryFirstLoadInputs) -> Bool {
         // A complete snapshot counts even while a background revalidation keeps the library busy.
         inputs.gamesFound >= firstScreenSize || inputs.libraryComplete
