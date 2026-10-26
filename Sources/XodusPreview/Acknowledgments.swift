@@ -406,6 +406,9 @@ struct AppAcknowledgmentsView: View {
 
     var body: some View {
         NavigationSplitView {
+            VStack(spacing: 0) {
+            AcknowledgmentsSearchField(query: $query)
+                .padding(.horizontal, 10).padding(.vertical, 8)
             List(selection: $selection) {
                 Label(KeyOpenSourceProjects.header, systemImage: "heart.text.square")
                     .tag(Selection.overview)
@@ -436,14 +439,12 @@ struct AppAcknowledgmentsView: View {
                     Text("No components match “\(query)”.").foregroundStyle(.secondary)
                 }
             }
-            .navigationSplitViewColumnWidth(min: 220, ideal: 260)
             .accessibilityIdentifier("xodus.acknowledgments.list")
+            }
+            .navigationSplitViewColumnWidth(min: 220, ideal: 260)
         } detail: {
             detail
         }
-        .searchable(text: $query, placement: .sidebar,
-                    prompt: Text("Search components and licences")
-                        .foregroundStyle(Color(nsColor: AccessiblePalette.placeholder)))
         .onChange(of: navigation.request, initial: true) { _, request in
             guard let request else { return }
             selection = Self.selection(for: request)
@@ -655,5 +656,40 @@ private struct ComponentNoticeView: View {
             }.value
             texts = loaded
         }
+    }
+}
+
+/// REQ-19: the system search field draws its prompt in the system placeholder colour (2.6:1), so the
+/// Acknowledgments sidebar uses its own field with a placeholder in X Ode's accessible placeholder colour.
+struct AcknowledgmentsSearchField: View {
+    @Binding var query: String
+    static let prompt = "Search components and licences"
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "magnifyingglass").foregroundStyle(Color(nsColor: AccessiblePalette.placeholder))
+                .accessibilityHidden(true)
+            TextField(Self.prompt, text: $query, prompt: Text(""))
+                .textFieldStyle(.plain)
+                .labelsHidden()
+                .overlay(alignment: .leading) {
+                    if query.isEmpty {
+                        Text(Self.prompt).foregroundStyle(Color(nsColor: AccessiblePalette.placeholder))
+                            .lineLimit(1).allowsHitTesting(false).accessibilityHidden(true)
+                    }
+                }
+                .onExitCommand { query = "" }
+            if !query.isEmpty {
+                Button { query = "" } label: { Image(systemName: "xmark.circle.fill") }
+                    .buttonStyle(.plain).foregroundStyle(Color(nsColor: AccessiblePalette.placeholder))
+                    .accessibilityLabel("Clear search")
+            }
+        }
+        .padding(.horizontal, 8).padding(.vertical, 5)
+        .background(RoundedRectangle(cornerRadius: 7).fill(Color(nsColor: .textBackgroundColor)))
+        .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(Color(nsColor: .separatorColor)))
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(Self.prompt)
+        .accessibilityIdentifier("xodus.acknowledgments.search")
     }
 }

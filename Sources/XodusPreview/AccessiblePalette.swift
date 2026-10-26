@@ -13,7 +13,7 @@ enum AccessiblePalette {
         }
     }
 
-    static let linkLight = RGB(red: 0x00, green: 0x58, blue: 0xC4)
+    static let linkLight = RGB(red: 0x00, green: 0x4A, blue: 0x9F)
     static let linkDark = RGB(red: 0x6C, green: 0xB4, blue: 0xFF)
     static let placeholderLight = RGB(red: 0x59, green: 0x59, blue: 0x59)
     static let placeholderDark = RGB(red: 0xB8, green: 0xB8, blue: 0xB8)
