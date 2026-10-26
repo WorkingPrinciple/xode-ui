@@ -4,7 +4,7 @@ import PackageDescription
 import Foundation
 
 let shipping = ProcessInfo.processInfo.environment["XODUS_SHIPPING"] == "1"
-let previewOnly = ["NativeCheckOCR.swift", "Artwork.swift", "RootView.swift", "FixtureLibraryView.swift", "DetailView.swift", "DownloadsView.swift",
+let previewOnly = ["NativeCheckOCR.swift", "SearchPresentationChecks.swift", "Artwork.swift", "RootView.swift", "FixtureLibraryView.swift", "DetailView.swift", "DownloadsView.swift",
                    "PreviewExporter.swift", "LibraryPreviewExporter.swift", "PreviewChecks.swift", "NativeChecks.swift",
                    "NativeUIChecks.swift", "CalimochoReleaseInstallerChecks.swift", "AccountCountryChecks.swift", "ApplicationTerminationChecks.swift", "CrossOverDependencyChecks.swift", "LaunchAssociationChecks.swift",
                    "OdeRuntimeChecks.swift", "RecentLibraryChecks.swift", "CatalogMediaChecks.swift", "LibraryStatsChecks.swift", "LibraryAccessChecks.swift", "InstalledGameChecks.swift", "PCGamesChecks.swift", "GameOperationChecks.swift", "DownloadQueueChecks.swift", "InstalledGameUpdateChecks.swift", "EngineManagementChecks.swift", "EngineConfiguratorChecks.swift", "CatalogDetailLoadingChecks.swift", "PresentationPerformanceChecks.swift", "SearchPerformanceChecks.swift", "PublicDescriptorChecks.swift", "BrandUXChecks.swift", "Resources"]
