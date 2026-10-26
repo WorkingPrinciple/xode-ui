@@ -385,6 +385,15 @@ enum NativeUIChecks {
               && LibraryPackageFormatLabel.help(format: "MSIXVC").contains("Package type: MSIXVC")
               && LibraryPackageFormatLabel.help(format: "MSIXVC").contains("doesn't confirm account access or Mac compatibility"),
               "Hero ratings retain their scale/count and package hover help never implies account or Mac clearance")
+        let detailPackageBlocker = GameSupportPolicy.issues(packageFormat: "EAppx", antiCheat: nil)
+        let detailAntiCheatBlocker = GameSupportPolicy.issues(packageFormat: nil, antiCheat: "Easy Anti-Cheat")
+        let detailInstallBlocker = GameDetailFacetCopy.unsupportedInstallMessage(detailPackageBlocker + detailAntiCheatBlocker)
+        check(detailInstallBlocker?.hasPrefix("Installation isn't available.") == true
+              && detailInstallBlocker?.contains("can't run") == true
+              && detailInstallBlocker?.contains("Easy Anti-Cheat") == true
+              && detailInstallBlocker?.localizedCaseInsensitiveContains("EAppx") == false
+              && GameDetailFacetCopy.unsupportedInstallMessage([]) == nil,
+              "REQ88/62: Detail explains unsupported installation in plain language, retains named anti-cheat blockers, and omits package jargon from blocker copy")
         check(GameDetailFacetCopy.installation(installed: false) == "Not installed"
               && GameDetailFacetCopy.installation(installed: true) == "Installed on this Mac"
               && GameDetailFacetCopy.precheckStatus(productID: "FIXTURE00001", installed: false,
