@@ -39,6 +39,11 @@ struct GameInstallLocationSettings: View {
         .onDisappear { generation = UUID() }
     }
 
+    /// The error shown after a games folder couldn't be used, and the settings link when macOS privacy blocked it.
+    static func problem(for error: Error, access: PrivacyDenial.FolderAccess) -> (message: String, permission: PrivacyPermission?) {
+        PrivacyDenial.installFolderProblem(access, fallback: "The install folder couldn't be selected. \(error.localizedDescription)")
+    }
+
     private var locationLabel: String {
         do {
             return try GameInstallLocation.decode(savedLocation)?.folder ?? GameScriptPaths.production.games.path
@@ -66,14 +71,11 @@ struct GameInstallLocationSettings: View {
             deniedPermission = nil
         } catch {
             guard generation == token else { return }
-            if PrivacyDenial.isFolderDenial(error) {
-                let permission = PrivacyDenial.folderPermission(for: root.path)
-                deniedPermission = permission
-                self.error = "macOS hasn't allowed \(AppBrand.displayName) to use this folder. Allow \(permission.title) in System Settings ▸ Privacy & Security ▸ Files and Folders, then choose it again."
-            } else {
-                deniedPermission = nil
-                self.error = "The install folder couldn't be selected. \(error.localizedDescription)"
-            }
+            // GameInstallLocation reports any permission failure as one error, so probe the raw cause.
+            let access = (try? await probe.read { PrivacyDenial.probe(root) }) ?? .other
+            let problem = Self.problem(for: error, access: access)
+            deniedPermission = problem.permission
+            self.error = problem.message
         }
     }
 }

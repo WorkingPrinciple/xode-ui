@@ -622,29 +622,108 @@ enum BrandUXChecks {
         check(usage.map(\.key) == ["NSLocalNetworkUsageDescription", "NSRemovableVolumesUsageDescription",
                                     "NSNetworkVolumesUsageDescription", "NSDocumentsFolderUsageDescription",
                                     "NSDownloadsFolderUsageDescription", "NSDesktopFolderUsageDescription"]
-              && usage.allSatisfy { $0.text.contains("X Ode") && !$0.text.contains("Xode") && $0.text.hasSuffix(".") }
-              && PrivacyPermission.keychain.usageDescription == nil,
-              "REQ-118: Every privacy prompt X Ode can trigger has a clear 'X Ode' usage string (Keychain uses macOS's own prompt)")
-        check(PrivacyPermission.allCases.allSatisfy { $0.settingsURL.scheme == "x-apple.systempreferences" }
-              && PrivacyPermission.localNetwork.settingsURL.absoluteString.hasSuffix("Privacy_LocalNetwork")
-              && PrivacyPermission.removableVolumes.settingsURL.absoluteString.hasSuffix("Privacy_FilesAndFolders"),
-              "REQ-118: Each denial opens its own Privacy & Security pane")
+              && usage.allSatisfy { $0.text.hasPrefix("X Ode") && $0.text.contains("games it runs") && !$0.text.contains("Xode") }
+              && PrivacyPermission.localNetwork.usageDescription?.text.contains("multiplayer") == true
+              && !(PrivacyPermission.localNetwork.usageDescription?.text.contains("Find consoles") ?? true)
+              && PrivacyPermission.notifications.usageDescription == nil && PrivacyPermission.keychain.usageDescription == nil,
+              "REQ-118 M3: Every usage string names X Ode and covers the games it runs; local network covers multiplayer")
+        // Review H: the packaged Info.plist must carry every catalog usage string exactly.
+        if let data = FileManager.default.contents(atPath: "tools/Info.plist"),
+           let plist = (try? PropertyListSerialization.propertyList(from: data, format: nil)) as? [String: Any] {
+            let missing = usage.filter { plist[$0.key] as? String != $0.text }
+            func strings(_ value: Any) -> [String] {
+                if let string = value as? String { return [string] }
+                if let array = value as? [Any] { return array.flatMap(strings) }
+                if let dictionary = value as? [String: Any] { return dictionary.values.flatMap(strings) }
+                return []
+            }
+            let retired = strings(plist).filter { $0.contains("Ode to X") || $0.contains("Xode") }
+            check(missing.isEmpty && retired.isEmpty
+                  && plist["NSMicrophoneUsageDescription"] == nil && plist["NSCameraUsageDescription"] == nil,
+                  "REQ-118 review H: tools/Info.plist carries every catalog usage string exactly, no retired names, no microphone/camera (missing \(missing.map(\.key)), retired \(retired))")
+        } else {
+            check(false, "REQ-118 review H: tools/Info.plist is readable")
+        }
+        check(PrivacyPermission.localNetwork.settingsURL?.absoluteString.hasSuffix("Privacy_LocalNetwork") == true
+              && PrivacyPermission.documents.settingsURL?.absoluteString.hasSuffix("Privacy_FilesAndFolders") == true
+              && PrivacyPermission.notifications.settingsURL?.absoluteString.contains("Notifications-Settings") == true
+              && PrivacyPermission.notifications.settingsLocation == "System Settings ▸ Notifications"
+              && PrivacyPermission.keychain.settingsURL == nil && PrivacyPermission.keychainNote.contains("no System Settings switch"),
+              "REQ-118 M4: Notifications open the Notifications pane; Keychain has no pane and is explained in text")
+        // M2: an early policy error waits and retries; only a repeated one after the retry, while active, is "off".
+        var allowedLater = LocalNetworkPermissionTracker()
+        allowedLater.start()
+        let firstRetry = allowedLater.searchFailed(code: LocalNetworkPermissionTracker.policyDenied, appActive: true)
+        let waiting = allowedLater.state
+        allowedLater.retrying()
+        allowedLater.searchSucceeded()
+        var deniedLater = LocalNetworkPermissionTracker()
+        deniedLater.start()
+        _ = deniedLater.searchFailed(code: LocalNetworkPermissionTracker.policyDenied, appActive: true)
+        deniedLater.retrying()
+        let inactive = deniedLater.searchFailed(code: LocalNetworkPermissionTracker.policyDenied, appActive: false)
+        let stillWaiting = deniedLater.state
+        _ = deniedLater.searchFailed(code: LocalNetworkPermissionTracker.policyDenied, appActive: true)
+        check(firstRetry && waiting == .waitingForAnswer && allowedLater.state == .allowed
+              && inactive && stillWaiting == .waitingForAnswer && deniedLater.state == .denied,
+              "REQ-118 M2: An initial -65570 waits and retries (allowed afterwards stays allowed); only a repeat after a retry while active is a denial")
         let discovery = LocalNetworkDiscovery()
-        discovery.didNotSearch(code: -65570)
+        discovery.isAppActive = { true }
+        discovery.didNotSearch(code: LocalNetworkPermissionTracker.policyDenied)
+        let firstStatus = discovery.status
+        discovery.retryNow()
+        discovery.didFind()
         let other = LocalNetworkDiscovery()
         other.didNotSearch(code: -72000)
-        check(discovery.denied && discovery.status == LocalNetworkDiscovery.deniedStatus
-              && discovery.status.contains("System Settings") && !other.denied,
-              "REQ-118: A local-network privacy denial is recognised and explained with a way to fix it; other errors aren't called denials")
-        let home = FileManager.default.homeDirectoryForCurrentUser.path
-        check(PrivacyDenial.isFolderDenial(CocoaError(.fileReadNoPermission))
-              && PrivacyDenial.isFolderDenial(NSError(domain: NSPOSIXErrorDomain, code: Int(EPERM)))
-              && !PrivacyDenial.isFolderDenial(CocoaError(.fileNoSuchFile))
-              && PrivacyDenial.folderPermission(for: home + "/Documents/Games") == .documents
-              && PrivacyDenial.folderPermission(for: home + "/Desktop") == .desktop
-              && PrivacyDenial.folderPermission(for: "/Volumes/Games/Xode") != .documents
-              && InstalledGameError.folderPermission.localizedDescription.contains("Files and Folders"),
-              "REQ-118: Folder denials are told apart from other errors and point to Files and Folders")
+        check(firstStatus == LocalNetworkDiscovery.waitingStatus && !discovery.denied
+              && discovery.status.contains("Found") && !other.denied,
+              "REQ-118 M2: Discovery shows a neutral wait after the first policy error and is allowed once the retry finds a console")
+        let denying = LocalNetworkDiscovery()
+        denying.isAppActive = { true }
+        denying.didNotSearch(code: LocalNetworkPermissionTracker.policyDenied)
+        denying.retryNow()
+        denying.didNotSearch(code: LocalNetworkPermissionTracker.policyDenied)
+        check(denying.denied && denying.status == LocalNetworkDiscovery.deniedStatus
+              && denying.status.contains("Privacy & Security ▸ Local Network"),
+              "REQ-118 M2: A policy error that persists after the retry is reported as off, with where to turn it on")
+        // M1: privacy (EPERM) vs folder permissions (EACCES), component-safe locations, volume traits.
+        let home = "/Users/example"
+        let internalDisk: (String) -> (removable: Bool, local: Bool)? = { _ in (false, true) }
+        check(PrivacyDenial.folderPermission(for: home + "/Documents", home: home, volume: internalDisk) == .documents
+              && PrivacyDenial.folderPermission(for: home + "/Documents/Games", home: home, volume: internalDisk) == .documents
+              && PrivacyDenial.folderPermission(for: home + "/DocumentsOld", home: home, volume: internalDisk) == nil
+              && PrivacyDenial.folderPermission(for: home + "/Desktopper/x", home: home, volume: internalDisk) == nil
+              && PrivacyDenial.folderPermission(for: home + "/Games/Xode", home: home, volume: internalDisk) == nil
+              && PrivacyDenial.folderPermission(for: "/Volumes/USB/Games", home: home, volume: { _ in (true, true) }) == .removableVolumes
+              && PrivacyDenial.folderPermission(for: "/Volumes/NAS/Games", home: home, volume: { _ in (false, false) }) == .networkVolumes,
+              "REQ-118 M1: Locations match whole path components; unprotected internal folders get no privacy pane")
+        let eperm = NSError(domain: NSCocoaErrorDomain, code: NSFileReadNoPermissionError,
+                            userInfo: [NSUnderlyingErrorKey: NSError(domain: NSPOSIXErrorDomain, code: Int(EPERM))])
+        let eacces = NSError(domain: NSPOSIXErrorDomain, code: Int(EACCES))
+        let documents = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Documents/Games").path
+        check(PrivacyDenial.classify(eperm, path: documents) == .privacyDenied(.documents)
+              && PrivacyDenial.classify(eacces, path: documents) == .notPermitted
+              && PrivacyDenial.classify(CocoaError(.fileNoSuchFile), path: documents) == .other,
+              "REQ-118 M1: EPERM is a privacy denial, EACCES is ordinary folder permissions")
+        let cause = InstalledGameError.folderPermission
+        let privacy = GameInstallLocationSettings.problem(for: cause, access: .privacyDenied(.documents))
+        let ordinary = GameInstallLocationSettings.problem(for: cause, access: .notPermitted)
+        let unprotected = GameInstallLocationSettings.problem(for: cause, access: .privacyDenied(nil))
+        check(privacy.permission == .documents && privacy.message.contains("Files and Folders")
+              && ordinary.permission == nil && !ordinary.message.contains("Files and Folders") && ordinary.message.contains("Get Info")
+              && unprotected.permission == nil && !unprotected.message.contains("Files and Folders")
+              && !cause.localizedDescription.contains("Files and Folders"),
+              "REQ-118 M1: The games-folder error path offers Files and Folders only for a privacy denial in a protected place")
+        let locked = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+            .appendingPathComponent(".build/XodusLockedFolder-\(UUID().uuidString)")
+        try? FileManager.default.createDirectory(at: locked, withIntermediateDirectories: true)
+        chmod(locked.path, 0o000)
+        let lockedAccess = PrivacyDenial.probe(locked)
+        chmod(locked.path, 0o700)
+        try? FileManager.default.removeItem(at: locked)
+        check(lockedAccess == .notPermitted
+              && GameInstallLocationSettings.problem(for: cause, access: lockedAccess).permission == nil,
+              "REQ-118 L1: A real folder without read permission (EACCES) is ordinary permissions end to end, with no privacy button")
         // Notifications are requested only when an install or repair finishes (GameReadyNotifier.post), never at launch.
         let sources = (try? FileManager.default.subpathsOfDirectory(atPath: "Sources")) ?? []
         let requesters = sources.filter { $0.hasSuffix(".swift") && !$0.hasSuffix("BrandUXChecks.swift") }.filter {
@@ -654,23 +733,24 @@ enum BrandUXChecks {
         let postBody = notifier.range(of: "func post(").map { String(notifier[$0.lowerBound...]) } ?? ""
         let beforePost = notifier.range(of: "func post(").map { String(notifier[..<$0.lowerBound]) } ?? notifier
         check(!sources.isEmpty && requesters == ["XodusPreview/GameReadyNotifier.swift"]
-              && postBody.contains("requestAuthorization") && !beforePost.contains("requestAuthorization")
-              && PrivacyPermission.notifications.usageDescription == nil,
+              && postBody.contains("requestAuthorization") && !beforePost.contains("requestAuthorization"),
               "REQ-118: Notification permission is asked only when a finished install posts its ready notice, never at launch")
-        if let readme = try? String(contentsOfFile: "README.md", encoding: .utf8) {
-            check(readme.contains("## " + PrivacyPermission.installNotesTitle)
-                  && PrivacyPermission.allCases.allSatisfy { readme.contains("| \($0.title) | \($0.reason) |") }
-                  && readme.contains(PrivacyPermission.microphoneKnownIssue)
-                  && !readme.contains("| Microphone |"),
-                  "REQ-118: The install notes list every permission with the same words the app uses")
-        }
+        let readme = (try? String(contentsOfFile: "README.md", encoding: .utf8)) ?? ""
+        check(readme.contains("## " + PrivacyPermission.installNotesTitle)
+              && PrivacyPermission.allCases.allSatisfy { readme.contains("| \($0.title) | \($0.reason) |") }
+              && readme.contains(PrivacyPermission.gamesNote) && readme.contains(PrivacyPermission.keychainNote)
+              && readme.contains(PrivacyPermission.microphoneKnownIssue)
+              && readme.contains("System Settings ▸ Notifications") && readme.contains("Developer ID")
+              && !readme.contains("| Microphone |"),
+              "REQ-118 L1: The install notes exist and list every permission with the app's exact words (fails if README.md is missing)")
         for scheme in [ColorScheme.light, .dark] {
             let labels = render(Form { PrivacyPermissionsSection() }.formStyle(.grouped),
-                                size: CGSize(width: 600, height: 760), scheme: scheme,
+                                size: CGSize(width: 600, height: 860), scheme: scheme,
                                 name: "permissions-\(scheme == .dark ? "dark" : "light")")
             let joined = labels.joined(separator: " ")
-            check(joined.contains("Permissions") && joined.contains("Local network") && joined.contains("Open Privacy"),
-                  "REQ-118: Settings ▸ General lists permissions with a way to change them (\(scheme)): \(labels)")
+            check(joined.contains("Permissions") && joined.contains("Local network") && joined.contains("Open Notifications")
+                  && joined.contains("Open Privacy"),
+                  "REQ-118: Settings ▸ General lists permissions with Notifications and Privacy & Security links (\(scheme)): \(labels)")
         }
     }
 

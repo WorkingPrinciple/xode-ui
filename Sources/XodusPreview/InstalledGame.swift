@@ -46,7 +46,7 @@ enum InstalledGameError: Error, LocalizedError {
         case .invalidConfig: "This folder doesn't contain a valid MicrosoftGame.config. Choose the installed Xbox game folder."
         case .missingFolder: "The game folder is no longer available. Reconnect its drive or import the game again."
         case .folderUnavailable: "The installation couldn't be checked. Try again."
-        case .folderPermission: "\(AppBrand.displayName) can't read this folder. Allow access in System Settings ▸ Privacy & Security ▸ Files and Folders, then try again."
+        case .folderPermission: "\(AppBrand.displayName) doesn't have permission to read this folder. Check the folder's permissions, then try again."
         case .missingLauncher: "The launch script is missing or isn't an executable file. Import the game again to choose its script."
         case .placeholderContent: "This installation contains only Minecraft's placeholder, not a playable game. Install the full Minecraft Launcher package before playing. Signing in again won't replace these files."
         case .invalidRegistry: "The installed games list couldn't be read. Your game files haven't been changed."

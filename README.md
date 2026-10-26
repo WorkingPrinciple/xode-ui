@@ -114,20 +114,22 @@ claims. Documentation does not hide or disable existing controls.
 
 ## What X Ode may ask permission for, and why
 
-macOS asks the first time each one is needed. If you said no, open System Settings ▸ Privacy & Security, or use the Open System Settings button X Ode shows next to the problem.
+macOS asks the first time each one is needed. Windows games run through X Ode, so a prompt a game triggers names X Ode.
 
 | Permission | When and why |
 |---|---|
-| Local network | Only when you choose Find consoles, so X Ode can look for Xbox consoles on your network. |
-| External drives | When your games folder or an installed game is on an external drive. |
-| Network drives | When your games folder or an installed game is on a network drive. |
-| Documents folder | When a game you play saves or reads files there. Games run through X Ode, so macOS asks on its behalf. |
-| Downloads folder | When a game you play saves or reads files there. Games run through X Ode, so macOS asks on its behalf. |
-| Desktop folder | When a game you play saves or reads files there. Games run through X Ode, so macOS asks on its behalf. |
+| Local network | X Ode and the games it runs use your local network to find Xbox consoles and for multiplayer features. |
+| External drives | When X Ode stores games on an external drive, or a game it runs reads or saves files there. |
+| Network drives | When X Ode stores games on a network drive, or a game it runs reads or saves files there. |
+| Documents folder | When X Ode stores games in your Documents folder, or a game it runs reads or saves files there. |
+| Downloads folder | When X Ode stores games in your Downloads folder, or a game it runs reads or saves files there. |
+| Desktop folder | When X Ode stores games on your Desktop, or a game it runs reads or saves files there. |
 | Notifications | After a game finishes installing, so X Ode can tell you it's ready to play. Never at launch. |
 | Keychain | When X Ode checks or saves your Microsoft sign-in on this Mac. |
 
-In-game voice chat and microphone input aren't supported in this beta. Updates keep the same app identity, so permissions you already granted and your saved sign-in carry over.
+To change an answer, use System Settings ▸ Privacy & Security for local network and folders, and System Settings ▸ Notifications for notifications. X Ode also shows an Open System Settings button next to a problem it can fix. Keychain asks separately for each saved sign-in; there's no System Settings switch for it.
+
+In-game voice chat and microphone input aren't supported in this beta. Developer ID–signed releases keep the same app identity, so permissions you already granted and your saved sign-in carry over between them.
 
 ## Scope and credits
 
