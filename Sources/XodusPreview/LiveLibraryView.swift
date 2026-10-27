@@ -41,6 +41,8 @@ struct LiveLibraryView: View {
     var positionCollection: (String?) -> Void = { _ in }
     @ObservedObject var selection = LibrarySelection()
     @ObservedObject private var art = LibraryCatalogArtwork.shared
+    @StateObject private var freeToPlay = GamePassCollections(artwork: .shared,
+        keys: [DiscoverGamePassShelf.freeToPlay.rawValue], loadsProductDetails: false)
     @ObservedObject private var xboxStats = LibraryXboxStats.shared
     @ObservedObject private var macEvidence = MacGameEvidenceStore.shared
     @ObservedObject private var nativeMinecraft = NativeMinecraft.shared
@@ -338,6 +340,10 @@ struct LiveLibraryView: View {
             selection.heroHovered = false
             selection.heroPlaying = false
             selection.localDetail = nil
+        }
+        .task(id: "\(allowsStartupTasks):\(session.accountCatalogScope)") {
+            guard allowsStartupTasks, session.accountCountryReady else { return }
+            await freeToPlay.load(market: session.market, language: session.language)
         }
         .task(id: "\(allowsStartupTasks):\(countryUnresolved)") {
             if allowsStartupTasks && !countryUnresolved { await library.loadOnAppear() }

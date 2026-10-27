@@ -113,12 +113,14 @@ final class GamePassCollections: ObservableObject {
     private let transport: any PCGamesTransport
     private let artwork: LibraryCatalogArtwork
     private let keys: [String]?
+    private let loadsProductDetails: Bool
     /// `keys` limits loading to those official collections, in that order; nil loads every PC collection.
     init(transport: any PCGamesTransport = PCGamesHTTP(), artwork: LibraryCatalogArtwork? = nil,
-         keys: [String]? = nil) {
+         keys: [String]? = nil, loadsProductDetails: Bool = true) {
         self.transport = transport
         self.artwork = artwork ?? LibraryCatalogArtwork(transport: transport)
         self.keys = keys
+        self.loadsProductDetails = loadsProductDetails
     }
 
     /// Restricts official definitions to the requested keys, retaining previously loaded members so a
@@ -224,6 +226,11 @@ final class GamePassCollections: ObservableObject {
             guard revision == owner else { return }
             if key == DiscoverGamePassShelf.freeToPlay.rawValue {
                 artwork.recordFreeToPlay(ids, market: market, language: language)
+            }
+            if !loadsProductDetails {
+                collections[index].productIDs = ids
+                collections[index].loadedCount = ids.count
+                return
             }
             let limit = min(ids.count, more ? definition.loadedCount + 24 : 12)
             await artwork.load(ids: Array(ids.prefix(limit)), market: market, language: language)
