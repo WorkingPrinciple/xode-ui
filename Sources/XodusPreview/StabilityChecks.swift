@@ -335,6 +335,7 @@ import Foundation
         try write(config, game.appendingPathComponent("MicrosoftGame.config"))
         try write("exe", game.appendingPathComponent("game.exe"))
         try write("data", game.appendingPathComponent("Content/data.pck"))
+        try FileManager.default.createDirectory(at: game.appendingPathComponent("Content/Paks"), withIntermediateDirectories: true)
         try Data(count: 4_096).write(to: game.appendingPathComponent("Content/Paks/big.pak"))
         try write("changed!!", game.appendingPathComponent("Content/changed.pak"))
         try write("grown after the inventory", game.appendingPathComponent("Content/toctou.pak"))
