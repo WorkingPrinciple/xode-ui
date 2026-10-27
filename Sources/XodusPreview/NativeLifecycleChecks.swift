@@ -225,7 +225,8 @@ enum NativeLifecycleChecks {
 
     /// L6 game recipes (602): a profile names one reviewed recipe for its own title on a release engine only.
     static func gameRecipeChecks(check: (Bool, String) -> Void) throws {
-        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("game-recipe-\(UUID().uuidString)")
+        let directory = URL(fileURLWithPath: FileManager.default.currentDirectoryPath).resolvingSymlinksInPath()
+            .appendingPathComponent(".build/game-recipe-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: directory) }
         let suite = "game-recipe-\(UUID().uuidString)"
@@ -241,7 +242,8 @@ enum NativeLifecycleChecks {
             if let recipe { value["gameRecipe"] = recipe }
             try JSONSerialization.data(withJSONObject: value)
                 .write(to: directory.appendingPathComponent(product + ".json"))
-            return try? NativeTitleLaunchProfile.read(productID: product, defaults: defaults)
+            do { return try NativeTitleLaunchProfile.read(productID: product, defaults: defaults) }
+            catch { print("game-recipe fixture \(product) \(recipe ?? "-"): \(error)"); return nil }
         }
         let hades = try profile("9P8DL6W0JBB8", recipe: "hades-mscoree-v1")
         check(hades?.playArguments == ["--exe", "Hades.exe", "--no-auto-dismiss", "--game-recipe", "hades-mscoree-v1"]
