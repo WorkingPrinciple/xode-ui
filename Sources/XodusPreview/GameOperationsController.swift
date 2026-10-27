@@ -1372,16 +1372,24 @@ final class GameOperationsController: ObservableObject {
         for case let url as URL in walker {
             count += 1
             guard count <= entryLimit,
-                  (try? url.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) != true else {
+                  (try? url.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) == false else {
                 return .unsafe(uninstallUnsafeMessage)
             }
             // F2: save and prefix names are refused at any depth (Unreal keeps saves under …/Saved).
             let name = url.lastPathComponent.lowercased()
-            if saveMarkers.contains(name) || prefixMarkers.contains(name) {
+            if saveMarkers.contains(name) || prefixMarkers.contains(name) || looksLikeSave(name) {
                 return .unsafe(uninstallUnsafeMessage)
             }
         }
         return walkFailed.failed ? .unsafe(uninstallUnsafeMessage) : .safe
+    }
+
+    /// Review fc2f17d1 M1: until the producer's package inventory is available (#8 install-inventory), any
+    /// name containing "save" or a common save extension makes the folder unsafe; false positives only keep files.
+    nonisolated static let saveExtensions: Set<String> = ["sav", "save", "sl2", "ess", "savegame", "sv"]
+    nonisolated static func looksLikeSave(_ lowercasedName: String) -> Bool {
+        lowercasedName.contains("save") || lowercasedName.contains("profile")
+            || saveExtensions.contains((lowercasedName as NSString).pathExtension)
     }
 
     private final class WalkFailure: @unchecked Sendable { var failed = false }

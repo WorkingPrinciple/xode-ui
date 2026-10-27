@@ -62,17 +62,30 @@ struct NativeGameResult: Codable, Equatable, Sendable {
         }
     }
 
-    static let failureCodes: Set<String> = [
+    static let failureCodes: Set<String> = Set<String>([
         "ACCOUNT_UNAVAILABLE", "ACCOUNT_MISMATCH", "ACCOUNT_CHANGED", "TIMEOUT", "CANCELLED", "OPERATION_FAILED",
         "RESOURCE_BUSY", "DISK_SPACE_FLOOR", "DISK_SPACE_FLOOR_INVALID",
         "UNINSTALL_PERMISSION_DENIED", "UNINSTALL_NOT_A_GAME", "UNINSTALL_UNSAFE_TREE", "UNINSTALL_FAILED",
-        "PREFIX_MISSING_RESTORE_REQUIRED"
+        "PREFIX_MISSING_RESTORE_REQUIRED", "TITLE_RECIPE_REJECTED"
+    ]).union(installVerdictCodes)
+
+    /// Review fc2f17d1 H1 (REQ-141): producer #7's installation verdicts arrive as a lifecycle error_code. They
+    /// are ordinary failures that point at Repair or Remove; they never put the app into recovery.
+    static let installVerdictCodes: Set<String> = [
+        NativeInstallationStatus.repairRequiredCode, NativeInstallationStatus.identityUnprovenCode,
+        NativeInstallationStatus.productMismatchCode
     ]
+
+    var installVerdict: NativeInstallationStatus.Action? {
+        guard !success, let errorCode, Self.installVerdictCodes.contains(errorCode) else { return nil }
+        return errorCode == NativeInstallationStatus.repairRequiredCode ? .repair : .remove
+    }
 
     /// The backend refused uninstall because the folder no longer proves it is this installed game.
     var damagedInstallation: Bool { !success && errorCode == "UNINSTALL_NOT_A_GAME" }
 
     var failureMessage: String {
+        if let verdict = installVerdictMessage { return verdict }
         if operation == "launch" { return InstalledGameActionCopy.launchUnavailable }
         return operationFailureMessage
     }
@@ -144,8 +157,18 @@ struct NativeGameResult: Codable, Equatable, Sendable {
         }
     }
 
+    var installVerdictMessage: String? {
+        switch success ? nil : errorCode {
+        case NativeInstallationStatus.repairRequiredCode: NativeInstallationStatus.repairRequiredExplanation
+        case NativeInstallationStatus.identityUnprovenCode: NativeInstallationStatus.identityUnprovenExplanation
+        case NativeInstallationStatus.productMismatchCode: NativeInstallationStatus.productMismatchExplanation
+        default: nil
+        }
+    }
+
     func launchFailureMessage(stoppedByUser: Bool) -> String? {
         guard operation == "launch" else { return success ? nil : failureMessage }
+        if let verdict = installVerdictMessage { return verdict }
         if stoppedByUser, errorCode == "CANCELLED" || errorCode == "OPERATION_FAILED" { return nil }
         if errorCode == "OPERATION_FAILED", error == "Account broker did not shut down cleanly",
            wineExitCode == 0, wineTerminationSignal == nil { return nil }

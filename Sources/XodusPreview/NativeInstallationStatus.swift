@@ -13,6 +13,7 @@ struct NativeInstallationStatus: Codable, Equatable, Sendable {
     static let identityUnprovenCode = "INSTALL_IDENTITY_UNPROVEN"
     static let productMismatchCode = "INSTALL_PRODUCT_MISMATCH"
     static let productMismatchExplanation = "This folder holds a different game than the one in your library, so X Ode won't repair or play it. Remove it from the Library (its files are kept), then download the game again."
+    static let repairRequiredExplanation = "This installation needs repair before it can be played. Use Repair; your saves aren't touched."
     static let identityUnprovenExplanation = "X Ode can't prove this folder holds your copy of the game, so it won't repair or play it. Remove it from the Library (its files are kept), then download the game again."
 
     let version: Int
@@ -47,15 +48,17 @@ struct NativeInstallationStatus: Codable, Equatable, Sendable {
         case .complete: .play
         case .missing: .install
         case .partial:
-            ["MANIFEST_INVALID", "PRODUCT_MISMATCH", "PACKAGE_METADATA_INVALID"].contains(reasonCode ?? "")
-                ? .repair : .resume
+            reasonCode == "PRODUCT_MISMATCH" ? .remove
+                : ["MANIFEST_INVALID", "PACKAGE_METADATA_INVALID"].contains(reasonCode ?? "") ? .repair : .resume
         case nil: .check
         }
     }
 
     var explanation: String? {
         if (reasonCode ?? errorCode) == Self.identityUnprovenCode { return Self.identityUnprovenExplanation }
-        if (reasonCode ?? errorCode) == Self.productMismatchCode { return Self.productMismatchExplanation }
+        if [Self.productMismatchCode, "PRODUCT_MISMATCH"].contains(reasonCode ?? errorCode ?? "") {
+            return Self.productMismatchExplanation
+        }
         if errorCode == "RESOURCE_BUSY" {
             return "This installation is in use. Wait for its current operation to finish, then check again."
         }

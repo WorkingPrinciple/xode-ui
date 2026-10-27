@@ -299,7 +299,7 @@ struct InstalledPlayButton: View {
 
     private var nativeAction: NativeInstallationStatus.Action {
         if library.packageErrors[game.id] != nil || library.unavailableDriveIDs.contains(game.id) { return .check }
-        return library.installationStatuses[game.id]?.action ?? .check
+        return library.launchVerdicts[game.id] ?? library.installationStatuses[game.id]?.action ?? .check
     }
 
     var nativeActionTitle: String {

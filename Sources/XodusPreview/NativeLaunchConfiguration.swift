@@ -941,9 +941,9 @@ enum QualificationDiagnostics {
     static let releasePrimarySHA256 = "21171669a4c2b8b72addd923127587feba9b924fdae2337f679e83bb9ed31913"
     static let releaseLegacySHA256 = "e81010448dbea50a1957dafbf5bd2543dbb353b11d60da7e5223c05157d9deb5"
     #if XODUS_QUALIFICATION
-    /// Qualification builds only: L12 e0c0038 (0fec3d7 plus the review df65659a fixes; FH6 Gaming Services and E:0-17-4 fixed) over the release pair.
-    static let pinnedPrimarySHA256 = "338380cbca3ed5ebc296d62704bd04cb41f679092980af9c3be81a8bed78e214"
-    static let pinnedLegacySHA256 = "32a3dc2e07bb8d4775deb6e8cfb4c7818371d52bb41a20f71f06d880beeae9de"
+    /// Qualification builds only: L12 8e39d8f (e0c0038 plus leftover-key handling; review 03e02ca4 PASS; FH6 Gaming Services and E:0-17-4 fixed) over the release pair.
+    static let pinnedPrimarySHA256 = "c25283c4143923e9c0f8568ae08e1ad3604e4cf2ceaf014ff4e7d1cf58bbe8f1"
+    static let pinnedLegacySHA256 = "9cddad398fc692658d763933bf34240c420f1c3f19d38703acbdaf15de46e3ec"
     #else
     static let pinnedPrimarySHA256 = releasePrimarySHA256
     static let pinnedLegacySHA256 = releaseLegacySHA256

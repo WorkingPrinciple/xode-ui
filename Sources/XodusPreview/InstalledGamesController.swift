@@ -32,6 +32,8 @@ final class InstalledGamesController: ObservableObject {
     @Published private(set) var packageErrors: [UUID: String] = [:]
     @Published private(set) var checkingInstallations = Set<UUID>()
     @Published private(set) var installationStatuses: [UUID: NativeInstallationStatus] = [:]
+    /// fc2f17d1 H1: a launch's installation verdict (Repair or Remove) until the next installation check.
+    @Published private(set) var launchVerdicts: [UUID: NativeInstallationStatus.Action] = [:]
     @Published private(set) var installationErrors: [UUID: String] = [:]
     @Published private(set) var playLogs: [UUID: URL] = [:]
     @Published private(set) var playNotices: [UUID: String] = [:]
@@ -588,6 +590,7 @@ final class InstalledGamesController: ObservableObject {
             playLogs[game.id] = nil
             runIDs[game.id] = nil
             nativeInspectionTasks[game.id]?.cancel()
+            launchVerdicts[game.id] = nil
             installationStatuses[game.id] = nil
             installationErrors[game.id] = nil
             nativeInspectionDates[game.id] = nil
@@ -825,6 +828,7 @@ final class InstalledGamesController: ObservableObject {
         automaticReadinessAttempts = [:]
         discoveredVerificationErrors = [:]
         installationStatuses = [:]
+        launchVerdicts = [:]
         installationErrors = [:]
         nativeInspectionDates = [:]
         loaded = false
@@ -1085,6 +1089,7 @@ final class InstalledGamesController: ObservableObject {
             throw GameScriptError.invalidReceipt
         }
         installationStatuses[game.id] = status
+        launchVerdicts[game.id] = nil
         installationErrors[game.id] = status.success ? nil : status.explanation
         nativeInspectionDates[game.id] = ContinuousClock.now
         invalidateLaunchSupport()
@@ -1290,6 +1295,7 @@ final class InstalledGamesController: ObservableObject {
                     finished(token: token, gameID: game.id, status: result.exitCode)
                     playLogs[game.id] = URL(fileURLWithPath: result.logDirectory)
                     playErrors[game.id] = result.launchFailureMessage(stoppedByUser: stoppedByUser)
+                    launchVerdicts[game.id] = result.installVerdict
                     if !result.success {
                         Self.launchLog.error("Launch terminal result: \(game.storeId, privacy: .public); code=\(result.errorCode ?? "unknown", privacy: .public); error=\(result.error ?? "none", privacy: .public)")
                     }

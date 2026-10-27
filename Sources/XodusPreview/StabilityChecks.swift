@@ -16,12 +16,81 @@ import Foundation
         catch { check(false, "REQ-135 action fixture: \(error)") }
         do { try await twoProcessChecks(root: root.appendingPathComponent("two-process"), check: check) }
         catch { check(false, "REQ-136 two-process fixture: \(error)") }
+        do { try await contentionChecks(root: root.appendingPathComponent("contention"), check: check) }
+        catch { check(false, "fc2f17d1 contention fixture: \(error)") }
         try await journalChecks(root: root.appendingPathComponent("journal"), check: check)
         do { try await registryChecks(root: root.appendingPathComponent("registry"), check: check) }
         catch { check(false, "REQ-136 registry fixture: \(error)") }
         do { try await discardChecks(root: root.appendingPathComponent("discard"), check: check) }
         catch { check(false, "REQ-137 discard fixture: \(error)") }
         gatingChecks(check: check)
+        do { try await installVerdictChecks(root: root.appendingPathComponent("verdicts"), check: check) }
+        catch { check(false, "fc2f17d1 H1 fixture: \(error)") }
+        heuristicChecks(check: check)
+    }
+
+    /// Review fc2f17d1 H1: producer #7 sends installation verdicts as a lifecycle error_code. Each is a receipt,
+    /// maps to Repair or Remove with its reason, and never locks the app in recovery.
+    static func installVerdictChecks(root: URL, check: (Bool, String) -> Void) async throws {
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+        let state = root.appendingPathComponent("state"), game = root.appendingPathComponent("Game")
+        try FileManager.default.createDirectory(at: game, withIntermediateDirectories: true)
+        func producerResult(_ operation: String, _ code: String) throws -> NativeGameResult {
+            let runID = UUID().uuidString.lowercased()
+            let log = state.appendingPathComponent("runs/\(runID)").path
+            let json = """
+                {"version":1,"operation":"\(operation)","product":"FIXTURE00130","run_id":"\(runID)","success":false,\
+                "exit_code":1,"error_code":"\(code)","error":"\(code): fixture","game_dir":"\(game.path)",\
+                "log_dir":"\(log)","result_path":"\(log)/result.json","progress_path":"\(log)/progress.jsonl"}
+                """
+            let result = try JSONDecoder().decode(NativeGameResult.self, from: Data(json.utf8))
+            try result.validate(operation: operation, product: "FIXTURE00130", gameDirectory: game,
+                                stateDirectory: state, exitCode: 1)
+            return result
+        }
+        let expected: [(String, NativeInstallationStatus.Action, String)] = [
+            ("INSTALL_REPAIR_REQUIRED", .repair, NativeInstallationStatus.repairRequiredExplanation),
+            ("INSTALL_IDENTITY_UNPROVEN", .remove, NativeInstallationStatus.identityUnprovenExplanation),
+            ("INSTALL_PRODUCT_MISMATCH", .remove, NativeInstallationStatus.productMismatchExplanation)]
+        for (code, action, message) in expected {
+            let launch = try producerResult("launch", code), repair = try producerResult("repair", code)
+            check(launch.installVerdict == action && launch.launchFailureMessage(stoppedByUser: false) == message
+                  && repair.installVerdict == action && repair.failureMessage == message,
+                  "fc2f17d1 H1: a producer \(code) launch or repair result is a valid receipt that offers \(action) with its reason")
+        }
+        let recipe = try producerResult("launch", "TITLE_RECIPE_REJECTED")
+        check(recipe.installVerdict == nil && recipe.launchFailureMessage(stoppedByUser: false) == InstalledGameActionCopy.launchUnavailable,
+              "fc2f17d1 H1: TITLE_RECIPE_REJECTED is a valid launch receipt, not a broken one")
+        // The controller path: a repair that ends INSTALL_PRODUCT_MISMATCH finishes without recovery.
+        let paths = GameScriptPaths(scripts: root.appendingPathComponent("scripts"),
+            processed: root.appendingPathComponent("processed"), logs: root.appendingPathComponent("logs"),
+            games: root.appendingPathComponent("Games"), journal: root.appendingPathComponent("private/operation.json"))
+        let library = InstalledGamesController(store: InstalledGameStore(file: root.appendingPathComponent("games.json")))
+        await library.load()
+        let record = GameOperationRecord(id: InstalledGamesController.runID(), kind: .repair, productID: "FIXTURE00130",
+            title: "Verdict", destination: game.path, installedID: UUID(), nativeAccountHash: String(repeating: "a", count: 64))
+        try await GameOperationJournal(file: paths.journal).save(record)
+        let controller = GameOperationsController(installed: library, paths: paths)
+        await controller.restore()
+        try await controller.completeNative(record, result: try producerResult("repair", "INSTALL_PRODUCT_MISMATCH"))
+        check(!controller.recoveryRequired && controller.operation == nil
+              && controller.error == NativeInstallationStatus.productMismatchExplanation,
+              "fc2f17d1 H1: a repair refused as INSTALL_PRODUCT_MISMATCH shows Remove's reason and never locks the app in recovery")
+        let partialMismatch = NativeInstallationStatus(version: 1, operation: "install-status", product: "FIXTURE00130",
+            runID: UUID().uuidString, gameDirectory: game.path, logDirectory: "/fixture/log",
+            resultPath: "/fixture/log/result.json", success: true, exitCode: 0, errorCode: nil, status: .partial,
+            reasonCode: "PRODUCT_MISMATCH", detail: nil, filesTotal: nil, contentID: nil)
+        check(partialMismatch.action == .remove && partialMismatch.explanation == NativeInstallationStatus.productMismatchExplanation,
+              "fc2f17d1 H1: install-status PRODUCT_MISMATCH offers Remove (Keep Files), not Repair")
+    }
+
+    /// Review fc2f17d1 M1: save-like names and extensions anywhere in the folder refuse Delete Game Files.
+    static func heuristicChecks(check: (Bool, String) -> Void) {
+        typealias Ops = GameOperationsController
+        let saves = ["autosave_03.bin", "mysavedata", "slot1.sav", "game.sl2", "quick.ess", "player.profile.json", "world.save"]
+        let content = ["data.pck", "game.exe", "microsoftgame.config", "textures.bin", "level01.pak"]
+        check(saves.allSatisfy(Ops.looksLikeSave) && !content.contains(where: Ops.looksLikeSave),
+              "fc2f17d1 M1: save-like names and extensions are recognised; ordinary package files are not")
     }
 
     // MARK: REQ-135 Uninstall
@@ -158,6 +227,55 @@ import Foundation
         let survivor = try? await journal.load()
         check(refused && survivor == foreign,
               "REQ-136 F3: while another process holds the journal lease, this process waits, then refuses rather than overwriting its run")
+    }
+
+    /// Review fc2f17d1 LOW: another process holds each lock; the engine override and the resumable record wait
+    /// for it instead of writing underneath it.
+    static func contentionChecks(root: URL, check: (Bool, String) -> Void) async throws {
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+        func holding(_ lock: URL, during body: () async throws -> Void) async throws -> Duration {
+            let ready = root.appendingPathComponent("ready-\(UUID().uuidString)")
+            let helper = Process()
+            helper.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
+            helper.arguments = ["-c", """
+                import fcntl, sys, time
+                lock = open(sys.argv[1], "a"); fcntl.flock(lock, fcntl.LOCK_EX)
+                open(sys.argv[2], "w").write("ready"); time.sleep(0.6); fcntl.flock(lock, fcntl.LOCK_UN)
+                """, lock.path, ready.path]
+            try helper.run()
+            let deadline = ContinuousClock.now.advanced(by: .seconds(5))
+            while !FileManager.default.fileExists(atPath: ready.path), ContinuousClock.now < deadline {
+                try await Task.sleep(for: .milliseconds(10))
+            }
+            let start = ContinuousClock.now
+            try await body()
+            let waited = start.duration(to: .now)
+            helper.waitUntilExit()
+            return waited
+        }
+        let registry = root.appendingPathComponent("installed-games.json")
+        let folder = root.appendingPathComponent("Game")
+        try game(folder)
+        let entry = InstalledGame(id: UUID(), title: "Contended", identityName: "Fixture.Game", version: "1.0.0.0",
+                                  storeId: "FIXTURE00077", folder: folder.path, launcher: "", importedAt: Date(),
+                                  usesNativeLifecycle: true)
+        let store = InstalledGameStore(file: registry)
+        try await store.save([entry])
+        var games: [InstalledGame] = []
+        let overrideWait = try await holding(registry.appendingPathExtension("lock")) {
+            games = try await store.setEngineOverride(id: entry.id, override: nil)
+        }
+        check(overrideWait >= .milliseconds(400) && games.map(\.id) == [entry.id],
+              "fc2f17d1 LOW: setEngineOverride waits for another process's registry lock (\(overrideWait)) and keeps the entry")
+        let journalFile = root.appendingPathComponent("game-operation.json")
+        let journal = GameOperationJournal(file: journalFile)
+        let partial = record("xodus-20261027T210000Z-000000cc", product: "FIXTURE00131", destination: root.path + "/partial")
+        let resumableWait = try await holding(journalFile.appendingPathExtension("lock")) {
+            try await journal.retainResumable(partial)
+        }
+        let retained = try await journal.loadResumable()
+        check(resumableWait >= .milliseconds(400) && retained.values.contains { $0.id == partial.id },
+              "fc2f17d1 LOW: retainResumable waits for another process's journal lock (\(resumableWait)) and then records the run")
     }
 
     // MARK: REQ-136 journal and registry

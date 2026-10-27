@@ -1202,7 +1202,7 @@ enum EngineManagementChecks {
         check(try NativeTitleLaunchProfile.bundledProfiles().filter { $0.runtime?.primarySHA256 == QualificationDiagnostics.pinnedPrimarySHA256 }
                 .map(\.productID).sorted() == ["9NR1R1XWLCNB", "9P8DL6W0JBB8", "9PDC8J1BSV8B"]
               && QualificationDiagnostics.pinnedPrimarySHA256 != QualificationDiagnostics.releasePrimarySHA256,
-              "REQ32 qualification build runs FH6, Hades and EDC on the e0c0038 outcome-lines pair")
+              "REQ32 qualification build runs FH6, Hades and EDC on the 8e39d8f outcome-lines pair")
         do {
             let ordinary = "io.github.xodus.qual-import-check.\(UUID().uuidString)"
             let suite = "io.github.xodus.qual-target-check.\(UUID().uuidString)"
