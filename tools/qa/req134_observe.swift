@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // REQ-134 on-screen observer for an installed X Ode build. Reads accessibility trees, captures windows,
 // measures rendered contrast and collects load signposts. It never synthesizes key or mouse events: the only
-// state changes are allow-listed AX actions (AXPress, AXValue on the search field or a scroll bar, AXSize on
-// the main window), each refused unless the owner has been idle (COR-272). It never presses Play, Install,
+// state changes are allow-listed AX actions (AXPress, AXValue on the search field, AXScrollByPage, AXSize on
+// the main window, AXRaise plus activation when the owner is idle), each refused unless the owner has been idle (COR-272). It never presses Play, Install,
 // Download, Uninstall, Remove, Repair, Update, Sign in/out, Approve, Delete, Stop or Cancel.
 //
 //   swift tools/qa/req134_observe.swift preflight OUT
 //   swift tools/qa/req134_observe.swift snapshot OUT LABEL
 //   swift tools/qa/req134_observe.swift press OUT IDENTIFIER|label:TEXT|menu:Item
 //   swift tools/qa/req134_observe.swift set-search OUT TEXT
-//   swift tools/qa/req134_observe.swift scroll OUT FRACTION          (0 = top, 1 = bottom of the main scroll area)
+//   swift tools/qa/req134_observe.swift scroll OUT up|down PAGES     (AXScrollUp/DownByPage on the main scroll area)
 //   swift tools/qa/req134_observe.swift resize OUT WIDTH HEIGHT
 //   swift tools/qa/req134_observe.swift contrast OUT PNG
 //   swift tools/qa/req134_observe.swift signposts OUT MINUTES
@@ -48,7 +48,21 @@ let command = arguments.removeFirst()
 let outDirectory = URL(fileURLWithPath: arguments.removeFirst(), isDirectory: true)
 try? FileManager.default.createDirectory(at: outDirectory, withIntermediateDirectories: true)
 
-func write(_ object: Any, _ name: String) {
+/// AX can report NaN or infinite geometry for offscreen or collapsed elements; JSON has no such numbers.
+func sanitized(_ value: Any) -> Any {
+    switch value {
+    case let number as Double: return number.isFinite ? number : NSNull()
+    case let number as CGFloat: return Double(number).isFinite ? Double(number) : NSNull()
+    case let dictionary as [String: Any]: return dictionary.mapValues(sanitized)
+    case let array as [Any]: return array.map(sanitized)
+    case is String, is Bool, is Int, is NSNull: return value
+    case let number as NSNumber: return number.doubleValue.isFinite ? number : NSNull()
+    default: return String(describing: value)
+    }
+}
+
+func write(_ raw: Any, _ name: String) {
+    let object = sanitized(raw)
     guard JSONSerialization.isValidJSONObject(object),
           let data = try? JSONSerialization.data(withJSONObject: object, options: [.prettyPrinted, .sortedKeys])
     else { fail("could not encode \(name)") }
@@ -256,11 +270,12 @@ let forbidden: [(String, String)] = [
     (#"\b\d+(\.\d+)?\s?(GB|MB)\b"#, "size (allowed only in detail and real progress)"),
     (#"/Users/|/private/|\.json\b|\.log\b"#, "filesystem path"),
     (#"\b(WORKING|CLI-only|session [0-9a-f]{6,}|run[0-9a-f]{6,})\b"#, "QA journal text"),
-    (#"\b[0-9a-f]{12,}\b"#, "raw identifier or hash")
+    (#"(?<![0-9.,])\b(?=[0-9a-f]*[a-f])[0-9a-f]{12,}\b"#, "raw identifier or hash")
 ]
 
 func scan(_ nodes: [Node]) -> [[String: Any]] {
-    nodes.flatMap { node -> [[String: Any]] in
+    nodes.filter { !["AXScrollBar", "AXValueIndicator"].contains($0.record["role"] as? String ?? "") }
+        .flatMap { node -> [[String: Any]] in
         let text = ["title", "description", "value", "help"].compactMap { node.record[$0] as? String }.joined(separator: " | ")
         return forbidden.compactMap { pattern, kind in
             guard let range = text.range(of: pattern, options: .regularExpression) else { return nil }
@@ -304,7 +319,7 @@ func snapshot(_ label: String) -> [Node] {
     let focused = axElement(attribute(ax, kAXFocusedUIElementAttribute)).flatMap { walk($0, limit: 1).first?.record } ?? [:]
     let captures = capture(pid: app.processIdentifier, label: label)
     let findings = scan(allNodes)
-    write(["label": label, "at": stamp, "pid": Int(app.processIdentifier), "identity": identity(),
+    write(["label": label, "at": stamp, "pid": Int(app.processIdentifier), "appActive": app.isActive, "identity": identity(),
            "preferences": preferences(), "windows": windowsRecord, "captures": captures,
            "focused": focused, "contentFindings": findings], "\(label)-snapshot.json")
     print("\(label): \(windowsRecord.count) windows, \(allNodes.count) AX elements, \(captures.count) captures, \(findings.count) content findings")
@@ -319,7 +334,7 @@ let allowedIdentifiers: Set<String> = [
     "xodus.account", "xodus.catalog.openSearch", "xodus.library.continuePlaying.showAll", "xodus.library.back",
     "xodus.discover.hero.details", "xodus.welcome.acknowledgments", "xodus.library.openRecentActivity",
     "xodus.game.description.expand", "xodus.catalog.loadMore", "xodus.settings.general", "xodus.settings.engines",
-    "xodus.settings.account", "xodus.support"
+    "xodus.settings.account", "xodus.support", "xodus.account.close"
 ]
 let allowedMenuItems: Set<String> = ["Acknowledgments…", "Open-Source Licences…", "Settings…", "About X Ode",
                                      "Acknowledgments and Licences"]
@@ -365,9 +380,12 @@ func press(_ target: String) {
             candidates = nodes.filter { ($0.record["identifier"] as? String) == target }
         }
     }
-    guard candidates.count == 1, let node = candidates.first else {
+    // A card can appear on a shelf and in the grid; identical labels open the same detail, so take the first.
+    let duplicateLabels = target.hasPrefix("label:") && candidates.count > 1
+    guard candidates.count == 1 || duplicateLabels, let node = candidates.first else {
         fail("expected exactly one AX match for \(target), found \(candidates.count)")
     }
+    if duplicateLabels { appendLog("press target=\(target) matched \(candidates.count) identical labels; using \(node.path)") }
     let text = label(node.element)
     if !target.hasPrefix("menu:"), !text.hasPrefix("View "), isDenied(text) { refuse("matched control '\(text)' is on the deny list") }
     let result = AXUIElementPerformAction(node.element, kAXPressAction as CFString)
@@ -389,20 +407,24 @@ func setSearch(_ text: String) {
     snapshot("after-search-" + text.replacingOccurrences(of: "[^A-Za-z0-9]+", with: "-", options: .regularExpression))
 }
 
-func scroll(_ fraction: Double) {
+/// Scrolls the tallest scroll area of the main window by pages with AXScrollDownByPage/AXScrollUpByPage.
+/// SwiftUI scroll views with hidden indicators (REQ-91) expose no scroll bar, so AXValue cannot be used.
+func scroll(_ direction: String, pages: Int) {
     requireIdle()
     let ax = application(runningApp())
     func height(_ node: Node) -> Double { (node.record["frame"] as? [String: Double])?["height"] ?? 0 }
-    let areas = walk(mainWindow(ax)).filter { ($0.record["role"] as? String) == kAXScrollAreaRole }
-        .sorted { height($0) > height($1) }
-    guard let area = areas.first, let bar = axElement(attribute(area.element, kAXVerticalScrollBarAttribute)) else {
-        fail("no vertical scroll area in the main window")
+    let action = direction == "up" ? "AXScrollUpByPage" : "AXScrollDownByPage"
+    let areas = walk(mainWindow(ax)).filter {
+        ($0.record["role"] as? String) == kAXScrollAreaRole && (($0.record["actions"] as? [String])?.contains(action) ?? false)
+    }.sorted { height($0) > height($1) }
+    guard let area = areas.first else { fail("no scroll area with \(action) in the main window") }
+    for _ in 0..<max(1, pages) {
+        let result = AXUIElementPerformAction(area.element, action as CFString)
+        appendLog("scroll \(action) area=\(area.path) result=\(result.rawValue)")
+        guard result == .success else { fail("\(action) failed (\(result.rawValue))") }
+        Thread.sleep(forTimeInterval: 0.6)
     }
-    let result = AXUIElementSetAttributeValue(bar, kAXValueAttribute as CFString, NSNumber(value: fraction))
-    appendLog("scroll fraction=\(fraction) area=\(area.path) result=\(result.rawValue)")
-    guard result == .success else { fail("scroll bar AXValue failed (\(result.rawValue))") }
-    Thread.sleep(forTimeInterval: 1.0)
-    snapshot("after-scroll-\(Int(fraction * 100))")
+    snapshot("after-scroll-\(direction)-\(pages)")
 }
 
 func resize(_ width: Double, _ height: Double) {
@@ -502,10 +524,35 @@ case "preflight":
         "ownerIdleSeconds": ["keyboard": now.keyboard, "pointer": now.pointer], "idleRequired": idleSeconds,
         "preferences": preferences()
     ]
-    write(report, "preflight.json")
-    let ready = !screenLocked() && AXIsProcessTrusted() && CGPreflightScreenCaptureAccess() && running.count == 1
-    print(ready ? "READY" : "NOT READY: see preflight.json (locked/AX trust/screen recording/exactly one running app)")
+    var clean = false
+    var windowSummary: [[String: Any]] = []
+    if running.count == 1, AXIsProcessTrusted(), let app = NSRunningApplication.runningApplications(withBundleIdentifier: bundleIdentifier).first {
+        let ax = application(app)
+        let all = windows(ax)
+        windowSummary = all.map { window in
+            let sheets = (attribute(window, kAXChildrenAttribute) as? [AXUIElement] ?? [])
+                .filter { string($0, kAXRoleAttribute) == kAXSheetRole }.count
+            return ["title": string(window, kAXTitleAttribute) ?? "", "sheets": sheets]
+        }
+        // A clean start is one main window with no sheet; leftovers from an earlier pass dim and cover captures.
+        clean = all.count == 1 && (windowSummary.first?["sheets"] as? Int) == 0
+    }
+    var updated = report
+    updated["windows"] = windowSummary
+    updated["cleanStart"] = clean
+    write(updated, "preflight.json")
+    let ready = !screenLocked() && AXIsProcessTrusted() && CGPreflightScreenCaptureAccess() && running.count == 1 && clean
+    print(ready ? "READY" : "NOT READY: see preflight.json (locked, AX trust, screen recording, one running app, one window without sheets)")
     exit(ready ? 0 : 3)
+case "activate":
+    requireIdle()
+    let app = runningApp()
+    let window = mainWindow(application(app))
+    AXUIElementPerformAction(window, kAXRaiseAction as CFString)
+    let activated = app.activate()
+    appendLog("activate result=\(activated)")
+    Thread.sleep(forTimeInterval: 1.0)
+    guard activated else { fail("could not activate X Ode") }
 case "snapshot":
     guard let label = arguments.first else { fail("snapshot needs LABEL") }
     snapshot(label)
@@ -516,8 +563,9 @@ case "set-search":
     guard let text = arguments.first else { fail("set-search needs TEXT") }
     setSearch(text)
 case "scroll":
-    guard let value = arguments.first.flatMap(Double.init), (0...1).contains(value) else { fail("scroll needs 0...1") }
-    scroll(value)
+    guard arguments.count == 2, ["up", "down"].contains(arguments[0]), let pages = Int(arguments[1]), (1...20).contains(pages)
+    else { fail("scroll needs up|down PAGES (1...20)") }
+    scroll(arguments[0], pages: pages)
 case "resize":
     guard arguments.count == 2, let w = Double(arguments[0]), let h = Double(arguments[1]) else { fail("resize needs W H") }
     resize(w, h)

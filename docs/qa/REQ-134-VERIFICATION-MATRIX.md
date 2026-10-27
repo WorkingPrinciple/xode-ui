@@ -8,8 +8,7 @@ binary.
 
 Build 624 is a shipping build, so the only command-line entry points are `--play-game PRODUCTID` and
 `--open-native-minecraft`. Both start a game and need a Wine slot, so the pass uses neither. Every screen below is
-reached through allow-listed AX actions on the running app (AXPress, the search field's AXValue, a scroll bar's
-AXValue, the main window's AXSize). The observer never synthesizes key or mouse events, and every action waits
+reached through allow-listed AX actions on the running app (AXPress, the search field's AXValue, AXScrollByPage on the main scroll area, the main window's AXSize, and activating X Ode while the owner is idle). The observer never synthesizes key or mouse events, and every action waits
 for the owner to be idle (default 20 s, COR-272).
 
 Evidence types: **AX** = accessibility-tree JSON (`*-ax-window*.json`) with identifiers, labels, frames, focus
@@ -61,7 +60,8 @@ Steps are those in `tools/qa/req134_run.sh` (`steps.tsv` records each one's exit
 ## Running
 
 1. The owner unlocks the screen and opens build 624 from Finder (signed in), then leaves the keyboard and mouse.
-2. `tools/qa/req134_run.sh ~/xode-qa/req134-$(date +%Y%m%d-%H%M)`. It refuses to start unless exactly one build
+2. Close any X Ode sheet and extra window first: preflight refuses unless there is exactly one window and no
+   sheet, because a leftover sheet dims every capture. Then run `tools/qa/req134_run.sh ~/xode-qa/req134-$(date +%Y%m%d-%H%M)`. It refuses to start unless exactly one build
    624 process is running and this terminal has Accessibility and Screen Recording access. It waits whenever the
    owner touches the keyboard or pointer.
 3. `summary.json` lists the steps that did not complete, content-scan findings and contrast gaps. `manifest.json`
