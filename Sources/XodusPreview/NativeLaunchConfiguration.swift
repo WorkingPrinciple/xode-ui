@@ -229,6 +229,8 @@ struct NativeTitleLaunchProfile: Codable {
     var dllOverrideEvidence: DLLOverrideEvidence? = nil
     var preservedPrefixPath: String? = nil
     var registrySHA256: String? = nil
+    /// Reviewed backend game-only recipe (L6 `--game-recipe`, producer 01b333e7+); never a free-form override.
+    var gameRecipe: String? = nil
 
     func enginePinsMatch(_ inspection: EngineInspection) -> Bool {
         guard let engine else { return true }
@@ -381,6 +383,14 @@ struct NativeTitleLaunchProfile: Codable {
                 throw NativeLaunchError.invalidProfile
             }
         }
+        if let gameRecipe {
+            guard NativeGameRecipe.productID(for: gameRecipe) == productID, let engine,
+                  engine != NativeFH6Recipe.engineName, CalimochoReleasePin.named(engine) != nil,
+                  wineSha256 != nil, wineserverSha256 != nil,
+                  dllOverrides == nil, environment["WINEDLLOVERRIDES"] == nil,
+                  prefixRegistryImports == nil, prefixOverlays == nil, preservedPrefixPath == nil,
+                  registrySHA256 == nil else { throw NativeLaunchError.invalidProfile }
+        }
         guard version == 1, self.productID == productID, PCGamesClient.validProductID(productID),
               environment.count <= 64, mirrored.count <= 64,
               environment.merging(mirrored, uniquingKeysWith: { first, _ in first }).allSatisfy({ key, value in
@@ -433,6 +443,7 @@ struct NativeTitleLaunchProfile: Codable {
         if let executable { result += ["--exe", executable] }
         if let timeoutSeconds { result += ["--timeout-seconds", String(timeoutSeconds)] }
         if noAutoDismiss == true { result += ["--no-auto-dismiss"] }
+        if let gameRecipe { result += ["--game-recipe", gameRecipe] }
         return result
     }
 
@@ -441,6 +452,7 @@ struct NativeTitleLaunchProfile: Codable {
         var result: [String] = []
         if let executable { result += ["--exe", executable] }
         if noAutoDismiss == true { result += ["--no-auto-dismiss"] }
+        if let gameRecipe { result += ["--game-recipe", gameRecipe] }
         return result
     }
 
@@ -881,4 +893,11 @@ enum NativeLaunchError: Error, LocalizedError {
             "This installation isn't verified complete. Check it, download it again or repair it before playing."
         }
     }
+}
+
+/// Reviewed backend game recipes: each changes only its own title's game process (never prefix setup) and is
+/// admitted by the backend only on an exact production release engine.
+enum NativeGameRecipe {
+    static let known: [String: String] = ["hades-mscoree-v1": "9P8DL6W0JBB8"]
+    static func productID(for recipe: String) -> String? { known[recipe] }
 }

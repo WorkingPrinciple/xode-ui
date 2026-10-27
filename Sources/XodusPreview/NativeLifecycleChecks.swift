@@ -223,7 +223,40 @@ enum NativeLifecycleChecks {
               "REQ114 M7: Uninstall requires the same drive identity (mount path and recorded volume UUID)")
     }
 
+    /// L6 game recipes (602): a profile names one reviewed recipe for its own title on a release engine only.
+    static func gameRecipeChecks(check: (Bool, String) -> Void) throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("game-recipe-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let suite = "game-recipe-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        defaults.set(directory.path, forKey: "Xodus.lifecycle.profileDirectory")
+        let pin = CalimochoReleasePin.release06
+        func profile(_ product: String, recipe: String?, engine: String = CalimochoReleasePin.release06.engineName,
+                     environment: [String: String] = [:]) throws -> NativeTitleLaunchProfile? {
+            var value: [String: Any] = ["version": 1, "productID": product, "engine": engine,
+                "wineSha256": pin.wineSha256, "wineserverSha256": pin.wineserverSha256,
+                "executable": "Hades.exe", "noAutoDismiss": true, "environment": environment]
+            if let recipe { value["gameRecipe"] = recipe }
+            try JSONSerialization.data(withJSONObject: value)
+                .write(to: directory.appendingPathComponent(product + ".json"))
+            return try? NativeTitleLaunchProfile.read(productID: product, defaults: defaults)
+        }
+        let hades = try profile("9P8DL6W0JBB8", recipe: "hades-mscoree-v1")
+        check(hades?.playArguments == ["--exe", "Hades.exe", "--no-auto-dismiss", "--game-recipe", "hades-mscoree-v1"]
+              && hades?.arguments.suffix(2) == ["--game-recipe", "hades-mscoree-v1"],
+              "602 Hades: a reviewed game recipe reaches user Play as --game-recipe, with no free-form override")
+        check(try profile("9TESTRECIPE0", recipe: "hades-mscoree-v1") == nil
+              && profile("9P8DL6W0JBB8", recipe: "unknown-recipe-v1") == nil
+              && profile("9P8DL6W0JBB8", recipe: "hades-mscoree-v1", engine: "calimocho-wine11.20-gptk4b3-tls-vulkan-private") == nil
+              && profile("9P8DL6W0JBB8", recipe: "hades-mscoree-v1", environment: ["WINEDLLOVERRIDES": "mscoree=b"]) == nil
+              && profile("9P8DL6W0JBB8", recipe: nil)?.playArguments.contains("--game-recipe") == false,
+              "602 Hades: a recipe for another title, an unknown recipe, a non-release engine or a free-form WINEDLLOVERRIDES is refused")
+    }
+
     static func run(check: (Bool, String) -> Void) async throws {
+        try gameRecipeChecks(check: check)
         let missingPrefix = "PREFIX_MISSING_RESTORE_REQUIRED: the Wine prefix is missing but its owner record survives. Launch was stopped without recreating it."
         check(NativePlayerFailure.message(errorCode: "OPERATION_FAILED", error: missingPrefix, diagnostic: "",
                   windowRecorded: nil, monitorReliable: true, success: false) == NativePrefixCopy.missingRestoreRequired
