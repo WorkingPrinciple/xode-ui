@@ -66,8 +66,8 @@ struct NativeGameResult: Codable, Equatable, Sendable {
         "ACCOUNT_UNAVAILABLE", "ACCOUNT_MISMATCH", "ACCOUNT_CHANGED", "TIMEOUT", "CANCELLED", "OPERATION_FAILED",
         "RESOURCE_BUSY", "DISK_SPACE_FLOOR", "DISK_SPACE_FLOOR_INVALID",
         "UNINSTALL_PERMISSION_DENIED", "UNINSTALL_NOT_A_GAME", "UNINSTALL_UNSAFE_TREE", "UNINSTALL_FAILED",
-        "PREFIX_MISSING_RESTORE_REQUIRED", "TITLE_RECIPE_REJECTED"
-    ]).union(installVerdictCodes)
+        "PREFIX_MISSING_RESTORE_REQUIRED", "TITLE_RECIPE_REJECTED", "TITLE_RECIPE_REQUIRED"
+    ]).union(installVerdictCodes).union(launchPreflightCodes)
 
     /// Review fc2f17d1 H1 (REQ-141): producer #7's installation verdicts arrive as a lifecycle error_code. They
     /// are ordinary failures that point at Repair or Remove; they never put the app into recovery.
@@ -75,6 +75,32 @@ struct NativeGameResult: Codable, Equatable, Sendable {
         NativeInstallationStatus.repairRequiredCode, NativeInstallationStatus.identityUnprovenCode,
         NativeInstallationStatus.productMismatchCode
     ]
+
+    /// L15 COR-318 (producer #8) and L12 REQ-151: a launch refused before Wine starts. Each is an ordinary
+    /// receipt with its own explanation; none puts the app into recovery.
+    static let launchPreflightCodes: Set<String> = [
+        "PREFIX_OS_UNSUPPORTED", "PREFIX_OS_TOO_OLD", "PREFIX_OS_UNREADABLE",
+        "PACKAGE_OS_REQUIREMENT_INVALID", "PACKAGE_COMMAND_LINE_INVALID",
+        "RUNTIME_CAPABILITY_MISSING", "EXECUTABLE_AMBIGUOUS"
+    ]
+
+    var preflightMessage: String? {
+        switch success ? nil : errorCode {
+        case "PREFIX_OS_TOO_OLD":
+            "This game needs a newer Windows version than its Wine prefix reports, so it wasn't started. Nothing was changed. Choose an engine that supports it; the game then gets a new prefix."
+        case "PREFIX_OS_UNSUPPORTED":
+            "This game needs a newer Windows version than the selected engine can provide, so it wasn't started. Nothing was changed. Choose another engine, or update X Ode when one becomes available."
+        case "PREFIX_OS_UNREADABLE":
+            "X Ode couldn't read which Windows version this game's prefix reports, so the game wasn't started. Nothing was changed. Open the launch log for details."
+        case "PACKAGE_OS_REQUIREMENT_INVALID", "PACKAGE_COMMAND_LINE_INVALID":
+            "This game's package information is damaged, so it wasn't started. Nothing was changed. Repair the installation, then play again."
+        case "RUNTIME_CAPABILITY_MISSING":
+            "This game needs a newer runtime than this version of X Ode includes, so it wasn't started. Update X Ode to play this game. Use Copy Diagnostics to share the details."
+        case "EXECUTABLE_AMBIGUOUS":
+            "This game's package lists more than one program, and X Ode can't tell which one to start, so the game wasn't started. Nothing was changed."
+        default: nil
+        }
+    }
 
     var installVerdict: NativeInstallationStatus.Action? {
         guard !success, let errorCode, Self.installVerdictCodes.contains(errorCode) else { return nil }
@@ -86,6 +112,7 @@ struct NativeGameResult: Codable, Equatable, Sendable {
 
     var failureMessage: String {
         if let verdict = installVerdictMessage { return verdict }
+        if let preflight = preflightMessage { return preflight }
         if operation == "launch" { return InstalledGameActionCopy.launchUnavailable }
         return operationFailureMessage
     }
@@ -169,12 +196,16 @@ struct NativeGameResult: Codable, Equatable, Sendable {
     func launchFailureMessage(stoppedByUser: Bool) -> String? {
         guard operation == "launch" else { return success ? nil : failureMessage }
         if let verdict = installVerdictMessage { return verdict }
+        if let preflight = preflightMessage { return preflight }
         if stoppedByUser, errorCode == "CANCELLED" || errorCode == "OPERATION_FAILED" { return nil }
         if errorCode == "OPERATION_FAILED", error == "Account broker did not shut down cleanly",
            wineExitCode == 0, wineTerminationSignal == nil { return nil }
         if !success, errorCode == "PREFIX_MISSING_RESTORE_REQUIRED"
             || (error ?? "").hasPrefix("PREFIX_MISSING_RESTORE_REQUIRED:") {
             return NativePrefixCopy.missingRestoreRequired
+        }
+        if !success, errorCode == "TITLE_RECIPE_REQUIRED" || (error ?? "").hasPrefix("TITLE_RECIPE_REQUIRED") {
+            return InstalledGameActionCopy.titleRecipeRequired
         }
         return success ? nil : InstalledGameActionCopy.launchUnavailable
     }

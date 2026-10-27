@@ -11,6 +11,13 @@ enum CalimochoPrefixContinuity {
         return root.appendingPathComponent(installationID.uuidString).appendingPathComponent(engine)
     }
 
+    /// REQ-153: a per-game engine that differs from the title's tested profile gets its own fresh prefix per
+    /// title and engine, never the profiled prefix, its continuity family or its saves.
+    static func genericLocation(productID: String, installationID: UUID, engine: String, root: URL) -> URL {
+        let owner = PCGamesClient.validProductID(productID) ? productID : installationID.uuidString
+        return root.appendingPathComponent(owner).appendingPathComponent("generic-\(engine)")
+    }
+
     static func family(_ pin: CalimochoReleasePin) -> String {
         pin.engineName.split(separator: "-").prefix(2).joined(separator: "-")
     }

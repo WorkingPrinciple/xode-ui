@@ -454,7 +454,7 @@ actor InstalledGameStore {
                 try NativeFH6Recipe.requireEnabled(productID: games[index].storeId)
                 guard let name = selection.inspection.engineName,
                       let digest = selection.inspection.registrySha256 else { throw NativeLaunchError.engineUnavailable }
-                try NativeFH6Recipe.validate(game: games[index], engine: name)
+                try NativeFH6Recipe.validate(game: games[index], engine: name, explicitChoice: true)
                 try selection.validate(registryPath: selection.registryPath, engineName: name, registryDigest: digest)
             }
             games[index].engineOverrideV2 = selection.map { GameEngineOverride(selection: $0) }
