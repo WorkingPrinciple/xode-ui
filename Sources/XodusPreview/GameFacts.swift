@@ -99,6 +99,8 @@ struct GameFacts: Equatable {
             }
             if subscriptionAcquisition { labels.append("Subscription (plan unknown)") }
         }
+        // Absence from the library is inconclusive (REQ-7), so never claim "Not owned".
+        if labels.isEmpty { labels.append("Ownership not confirmed") }
         for plan in Plan.allCases where memberships.contains(where: { $0.plan == plan }) {
             labels.append("In \(plan == .pcGamePass ? "PC Game Pass" : plan.label) catalog")
         }

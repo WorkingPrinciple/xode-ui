@@ -614,7 +614,7 @@ struct LibraryHero<Artwork: View, Poster: View, Information: View, Actions: View
                 .init(color: .black.opacity(0.40), location: 0.90),
                 .init(color: .clear, location: 1)
             ], startPoint: .top, endPoint: .bottom))
-            HStack(alignment: .bottom, spacing: 24) {
+            HStack(alignment: .top, spacing: 24) {
                 poster().frame(width: 100, height: 150).clipped()
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                     .shadow(color: .black.opacity(0.18), radius: 10, x: 0, y: 5)

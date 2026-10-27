@@ -270,7 +270,7 @@ struct LiveProductView: View {
                 .init(color: .black.opacity(0.34), location: 0.78),
                 .init(color: .clear, location: 1)
             ], startPoint: .top, endPoint: .bottom)
-            HStack(alignment: .bottom, spacing: 24) {
+            HStack(alignment: .top, spacing: 24) {
                 if let cover = art?.cover ?? CatalogArtworkReference.preferred(in: product.artwork, roles: [.boxArt, .poster]) {
                     CatalogArtworkView(reference: allowsArtworkLoading ? cover : nil, status: .available)
                         .frame(width: 100, height: 150).clipped()
