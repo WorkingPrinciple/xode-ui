@@ -437,8 +437,13 @@ struct GameInstallAction: View {
             ? operations.existingInstallationError(productID: game.id) == nil ? "Checking…" : "Retry"
             : failed ? "Retry" : "Download"
     }
+    /// REQ-153: known-blocked titles show why instead of Download or Add to queue.
+    var blockingIssues: [LibraryCompatibilityIssue] {
+        operations.supportIssues(productID: game.id, includeRuntime: false)
+    }
     var canInstall: Bool {
-        operations.installationCheckRequired(for: game)
+        guard blockingIssues.isEmpty else { return false }
+        return operations.installationCheckRequired(for: game)
             ? operations.canCheckExistingInstallation : enabled && operations.canStartMutation
     }
     var unavailableReason: String? {
@@ -450,7 +455,7 @@ struct GameInstallAction: View {
     /// One download runs at a time; while the slot is held by another game, or earlier queued
     /// games are still waiting, this game joins the queue instead of showing a dead Download.
     var queueOffered: Bool {
-        guard let queue else { return false }
+        guard let queue, blockingIssues.isEmpty else { return false }
         return Self.offersQueue(enabled: enabled, checkRequired: operations.installationCheckRequired(for: game),
             active: active, preparing: preparing, canQueue: operations.canQueueInstall,
             slotHeldByAnotherGame: operations.slotHeldByAnotherGame(productID: game.id),
@@ -515,6 +520,9 @@ struct GameInstallAction: View {
                     .disabled(operations.cancelling || operations.directInstallCancelled)
                     .accessibilityLabel(preparing ? "Cancel installation of \(game.title)" : "Stop downloading \(game.title)")
                 }
+            } else if !blockingIssues.isEmpty {
+                LibraryCompatibilityIndicators(issues: blockingIssues, heroStyle: false)
+                    .accessibilityIdentifier("xodus.pcGames.downloadBlocked")
             } else if let queue, queueOffered {
                 QueueInstallButton(game: game, operations: operations, queue: queue, primary: primary)
             } else {
@@ -581,6 +589,10 @@ struct QueueInstallButton: View {
     }
 
     private func add() async {
+        if let blocked = operations.downloadBlockedReason(productID: game.id) {
+            error = blocked
+            return
+        }
         adding = true
         defer { adding = false }
         do {

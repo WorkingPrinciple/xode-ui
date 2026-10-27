@@ -27,8 +27,13 @@ protocol InstallQueueDriver: Sendable {
 @MainActor
 final class DownloadQueueController: ObservableObject {
     @Published private(set) var queue: InstallQueue
+    /// REQ-153: the honest reason a job failed before downloading (e.g. a known-blocked title).
+    @Published private(set) var failureReasons: [UUID: String] = [:]
+    static let blockedFailureCode = 12
 
     private let driver: InstallQueueDriver
+    /// Returns why a product must not be downloaded, checked again each time a job is promoted.
+    private let blockedReason: (String) -> String?
     private let makeRunID: @Sendable () -> String
     /// Per-job payload needed to (re)launch a run. Retained until the job is pruned.
     private var destinations: [UUID: String] = [:]
@@ -38,9 +43,11 @@ final class DownloadQueueController: ObservableObject {
     private var runTasks: [UUID: Task<Void, Never>] = [:]
 
     init(driver: InstallQueueDriver, maxConcurrent: Int = 1,
+         blockedReason: @escaping (String) -> String? = { _ in nil },
          makeRunID: @escaping @Sendable () -> String = { InstalledGamesController.runID() }) {
         self.queue = InstallQueue(maxConcurrent: maxConcurrent)
         self.driver = driver
+        self.blockedReason = blockedReason
         self.makeRunID = makeRunID
     }
 
@@ -102,6 +109,12 @@ final class DownloadQueueController: ObservableObject {
     private func launch(_ started: [InstallJob]) {
         for job in started {
             guard let destination = destinations[job.id] else { continue }
+            if let reason = blockedReason(job.productID) {
+                // Never download a known-blocked title; fail it with the reason and move on.
+                failureReasons[job.id] = reason
+                launch(queue.apply(.fail(code: Self.blockedFailureCode), to: job.id))
+                continue
+            }
             let runID = makeRunID()
             activeRunID[job.id] = runID
             let snapshot = job
@@ -148,5 +161,6 @@ final class DownloadQueueController: ObservableObject {
         runTasks[id] = nil
         activeRunID[id] = nil
         destinations[id] = nil
+        failureReasons[id] = nil
     }
 }
