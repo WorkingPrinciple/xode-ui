@@ -5,7 +5,7 @@ import OSLog
 import XodusManagement
 
 enum NativeLifecyclePins {
-    static let cliSHA256 = "146a71689aa450c45ac5f0d17e9e980adfe759cc86a06070aa76d07bd65a38b3"
+    static let cliSHA256 = "ba193c0ac12765e354ec514ec156b7cf6462854f73e1bc0d398423cd1cbbda99"
 }
 
 struct NativeGameResult: Codable, Equatable, Sendable {
@@ -35,10 +35,12 @@ struct NativeGameResult: Codable, Equatable, Sendable {
     var wineExitCode: Int32? = nil
     var wineTerminationSignal: Int32? = nil
     var downloadResume: DownloadResume? = nil
+    var titleRecipe: NativeTitleRecipeReceipt? = nil
 
     private enum CodingKeys: String, CodingKey {
         case version, operation, product, success, error, warnings
         case downloadResume = "download_resume"
+        case titleRecipe = "title_recipe"
         case popupMonitorError = "popup_monitor_error"
         case wineExitCode = "wine_exit_code", wineTerminationSignal = "wine_termination_signal"
         case runID = "run_id", exitCode = "exit_code", errorCode = "error_code"
@@ -63,7 +65,8 @@ struct NativeGameResult: Codable, Equatable, Sendable {
     static let failureCodes: Set<String> = [
         "ACCOUNT_UNAVAILABLE", "ACCOUNT_MISMATCH", "ACCOUNT_CHANGED", "TIMEOUT", "CANCELLED", "OPERATION_FAILED",
         "RESOURCE_BUSY", "DISK_SPACE_FLOOR", "DISK_SPACE_FLOOR_INVALID",
-        "UNINSTALL_PERMISSION_DENIED", "UNINSTALL_NOT_A_GAME", "UNINSTALL_UNSAFE_TREE"
+        "UNINSTALL_PERMISSION_DENIED", "UNINSTALL_NOT_A_GAME", "UNINSTALL_UNSAFE_TREE",
+        "PREFIX_MISSING_RESTORE_REQUIRED"
     ]
 
     /// The backend refused uninstall because the folder no longer proves it is this installed game.
@@ -144,6 +147,10 @@ struct NativeGameResult: Codable, Equatable, Sendable {
         if stoppedByUser, errorCode == "CANCELLED" || errorCode == "OPERATION_FAILED" { return nil }
         if errorCode == "OPERATION_FAILED", error == "Account broker did not shut down cleanly",
            wineExitCode == 0, wineTerminationSignal == nil { return nil }
+        if !success, errorCode == "PREFIX_MISSING_RESTORE_REQUIRED"
+            || (error ?? "").hasPrefix("PREFIX_MISSING_RESTORE_REQUIRED:") {
+            return NativePrefixCopy.missingRestoreRequired
+        }
         return success ? nil : InstalledGameActionCopy.launchUnavailable
     }
 
@@ -186,11 +193,20 @@ enum NativeLifecycleCancellation: Error {
     }
 }
 
+/// REQ-46: a game's Wine prefix is gone but its owner record survives, so its saves may be lost.
+enum NativePrefixCopy {
+    static let missingRestoreRequired = "This game's Wine prefix is missing, so the game wasn't started. Its saves may have been in it. Restore the prefix folder from your backup to the same place, then play again. \(AppBrand.displayName) didn't create a new one, because a new prefix wouldn't bring your saves back. Nothing was changed."
+}
+
 enum NativePlayerFailure {
     static func message(errorCode: String?, error: String?, diagnostic: String,
                         windowRecorded: Bool?, monitorReliable: Bool, success: Bool) -> String? {
         if errorCode == "TIMEOUT" {
             return "The launcher took too long and was stopped before a playable game appeared. Open the launch log to see what happened."
+        }
+        if errorCode == "PREFIX_MISSING_RESTORE_REQUIRED"
+            || (error ?? "").hasPrefix("PREFIX_MISSING_RESTORE_REQUIRED:") {
+            return NativePrefixCopy.missingRestoreRequired
         }
         guard errorCode == nil || errorCode == "OPERATION_FAILED" else { return nil }
         let text = (error ?? "") + "\n" + diagnostic
@@ -300,9 +316,13 @@ final class NativeGameLifecycle {
         }
         try NativeLifecycleCancellation.check(operation: operation,
             cancelled: cancellationRequested || Task.isCancelled)
+        if operation == "launch", product == NativeFH6Recipe.productID,
+           !launchArguments.contains("--expected-registry-sha256") {
+            throw NativeLaunchError.titleRecipeUnavailable
+        }
         if launchArguments.contains("--expected-registry-sha256") {
             try await EngineInspectionClient().validateLaunch(configuration: configuration,
-                arguments: launchArguments, selection: engineSelection)
+                arguments: launchArguments, selection: engineSelection, product: product)
             try NativeLifecycleCancellation.check(operation: operation,
                 cancelled: cancellationRequested || Task.isCancelled)
             if operation == "launch" {
@@ -370,6 +390,24 @@ final class NativeGameLifecycle {
         try output.synchronize()
         let result = try Self.readResult(state: state, operation: operation, product: product,
                                         gameDirectory: gameDirectory, exitCode: child.terminationStatus)
+        if launchArguments.contains("--title-recipe"), result.success {
+            guard product == NativeFH6Recipe.productID, let receipt = result.titleRecipe,
+                  let engineSelection,
+                  receipt.registrySha256 == engineSelection.inspection.registrySha256,
+                  let prefixIndex = launchArguments.firstIndex(of: "--prefix"), prefixIndex + 1 < launchArguments.count,
+                  receipt.destinationPath == URL(fileURLWithPath: launchArguments[prefixIndex + 1])
+                    .appendingPathComponent(NativeFH6Recipe.overlayDestination).path else {
+                throw GameScriptError.invalidReceipt
+            }
+            let registry = try NativeEngineRegistry.read(URL(fileURLWithPath: engineSelection.registryPath))
+            guard let entry = registry.engines.first(where: { $0.name == NativeFH6Recipe.engineName }),
+                  receipt.sourcePath == URL(fileURLWithPath: entry.wine).deletingLastPathComponent()
+                    .deletingLastPathComponent().appendingPathComponent(NativeFH6Recipe.overlaySource).path else {
+                throw GameScriptError.invalidReceipt
+            }
+        } else if !launchArguments.contains("--title-recipe"), result.titleRecipe != nil {
+            throw GameScriptError.invalidReceipt
+        }
         completedResult = result
         try NativeLifecycleCancellation.check(operation: operation,
             cancelled: cancellationRequested || Task.isCancelled)
@@ -381,6 +419,24 @@ final class NativeGameLifecycle {
         let bytes = try InstalledGameFiles.readRegular(state.appendingPathComponent("launcher-result.json"),
                                                        maximumBytes: 1_048_576, privateFile: true)
         let value = try JSONDecoder().decode(NativeGameResult.self, from: bytes)
+        let document = try JSONValue.decodeUnique(bytes, maximumBytes: 1_048_576)
+        if document["title_recipe"] != nil, value.titleRecipe == nil { throw GameScriptError.invalidReceipt }
+        if let receipt = value.titleRecipe {
+            guard operation == "launch", product == NativeFH6Recipe.productID else {
+                throw GameScriptError.invalidReceipt
+            }
+            guard let titleReceipt = document["title_recipe"] else { throw GameScriptError.invalidReceipt }
+            try NativeTitleRecipeReceipt.validateShape(titleReceipt, includesPath: true)
+            try receipt.validate(logDirectory: value.logDirectory)
+            guard let path = receipt.receiptPath else { throw GameScriptError.invalidReceipt }
+            try GameScriptFiles.checkPath(URL(fileURLWithPath: path))
+            let file = try InstalledGameFiles.readRegular(URL(fileURLWithPath: path), maximumBytes: 32_768, privateFile: true)
+            let json = try JSONValue.decodeUnique(file, maximumBytes: 32_768)
+            try NativeTitleRecipeReceipt.validateShape(json, includesPath: false)
+            var persistedReceipt = try json.decode(NativeTitleRecipeReceipt.self)
+            persistedReceipt.receiptPath = path
+            guard persistedReceipt == receipt else { throw GameScriptError.statusMismatch }
+        }
         try value.validate(operation: operation, product: product, gameDirectory: gameDirectory,
                            stateDirectory: state, exitCode: exitCode ?? value.exitCode)
         try GameScriptFiles.checkPath(URL(fileURLWithPath: value.resultPath))

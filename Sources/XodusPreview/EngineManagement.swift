@@ -51,8 +51,8 @@ enum EngineManagementPolicy {
         guard entry.wine.hasPrefix("/") else { return .error }
         guard executableExists(URL(fileURLWithPath: entry.wine)) else { return .missing }
         guard entry.presentation_validation?.status != "failed",
-              entry.smoke_test.status != "failed" else { return .unsupported }
-        return entry.smoke_test.status == "pass" ? .usable : .detected
+              entry.smoke_test?.status != "failed" else { return .unsupported }
+        return entry.smoke_test?.status == "pass" ? .usable : .detected
     }
 }
 

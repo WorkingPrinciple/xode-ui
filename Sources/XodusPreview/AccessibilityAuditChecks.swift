@@ -156,11 +156,11 @@ enum AccessibilityAuditChecks {
     /// silently. Increase Contrast is not simulated here: an injected high-contrast appearance does not reproduce
     /// the system setting, so it stays a live REQ-20 step.
     /// Native search-field placeholders still in the system placeholder colour, reported as gaps rather than
-    /// failed. None: the Acknowledgments search prompt uses AccessiblePalette.placeholder.
+    /// failed. None: the Acknowledgments search field draws its own prompt in AccessiblePalette.placeholder.
     static let systemPlaceholders: [String] = []
 
-    /// Files owned by the Library/Discover lane keep the system link colour until that lane adopts the palette.
-    static let routedLinkFiles: Set<String> = ["LibraryPresentation.swift", "LiveCatalogView.swift"]
+    /// No file is exempt: Library/Discover links adopted the palette at integration.
+    static let routedLinkFiles: Set<String> = []
 
     static func ownedColours(check: (Bool, String) -> Void) {
         func ratio(_ a: AccessiblePalette.RGB, _ b: AccessiblePalette.RGB) -> Double {
@@ -186,7 +186,7 @@ enum AccessibilityAuditChecks {
                     .contains { $0.text.contains(".accessibleLink()") }
         }
         check(bare.isEmpty,
-              "REQ-19: Every link outside the routed Library/Discover files uses the accessible link colour (bare: \(bare.map { "\($0.file):\($0.line)" }))")
+              "REQ-19: Every link uses the accessible link colour (bare: \(bare.map { "\($0.file):\($0.line)" }))")
     }
 
     static func renderedContrast(check: (Bool, String) -> Void) {
@@ -286,7 +286,11 @@ enum AccessibilityAuditChecks {
     static func lifecycleConsent(check: (Bool, String) -> Void) {
         let view = (try? String(contentsOfFile: "Sources/XodusPreview/GameOperationsView.swift", encoding: .utf8)) ?? ""
         let attention = (try? String(contentsOfFile: "Sources/XodusPreview/InstalledGameAttentionView.swift", encoding: .utf8)) ?? ""
-        let management = view.range(of: "struct InstalledGameManagement").map { String(view[$0.lowerBound...]) } ?? ""
+        let management = view.range(of: "struct InstalledGameManagement").map { start -> String in
+            let rest = view[start.lowerBound...]
+            let end = rest.dropFirst().range(of: "\nstruct ")?.lowerBound ?? rest.endIndex
+            return String(rest[..<end])
+        } ?? ""
         let host = view.range(of: "struct GameOperationPresentation").map { String(view[$0.lowerBound...].prefix(2_400)) } ?? ""
         let controller = (try? String(contentsOfFile: "Sources/XodusPreview/GameOperationsController.swift", encoding: .utf8)) ?? ""
         let message = InstalledGameActionCopy.removeKeepingFilesMessage(folder: "/Volumes/Games/Halls")

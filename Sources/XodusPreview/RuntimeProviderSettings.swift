@@ -17,6 +17,7 @@ final class RuntimeProviderSettings: ObservableObject {
     private let detectCrossOver: @Sendable () async -> CrossOverDependencyState
     private let client = RuntimePlanClient()
     let providerInspector = EngineInspectionClient()
+    let highballInspector = EngineInspectionClient()
     private var task: Task<Void, Never>?
     private var revision = UUID()
 
@@ -174,8 +175,10 @@ final class RuntimeProviderSettings: ObservableObject {
         do {
             try await client.closeOwnedProcess()
             try await providerInspector.closeOwnedProcess()
+            try await highballInspector.closeOwnedProcess()
             guard !(await client.hasOwnedProcess) else { throw RuntimePlanningError.shutdownFailed }
             guard !(await providerInspector.hasOwnedProcess) else { throw RuntimePlanningError.shutdownFailed }
+            guard !(await highballInspector.hasOwnedProcess) else { throw RuntimePlanningError.shutdownFailed }
             return true
         } catch {
             errorMessage = RuntimePlanningError.shutdownFailed.localizedDescription
@@ -184,6 +187,23 @@ final class RuntimeProviderSettings: ObservableObject {
     }
 
     func resumeAfterTerminationRefusal() { applicationTerminating = false }
+
+    /// Read-only backend Highball verdict; nil when no backend, no approved pair or no contract.
+    func inspectHighball(backendPath: String) async -> HighballState? {
+        guard !backendPath.isEmpty, !applicationTerminating else { return nil }
+        let executable = URL(fileURLWithPath: backendPath)
+        let identity: NativeAuthHostBinding?
+#if XODUS_SHIPPING
+        guard let pair = try? ShippingPairAdmission.configuration(
+                  bundle: .main, stateDirectory: URL(fileURLWithPath: NSHomeDirectory()),
+                  pins: ShippingPairPins.approved),
+              pair.executable == executable else { return nil }
+        identity = pair.executableIdentity
+#else
+        identity = nil
+#endif
+        return await highballInspector.highball(executable: executable, executableIdentity: identity)
+    }
 }
 
 struct RuntimeProviderSection: View {

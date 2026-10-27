@@ -320,6 +320,7 @@ final class LiveSession: ObservableObject {
     /// REQ-121: after a confirmed sign-out, saved artwork and saved public descriptors (whose product IDs
     /// reflect the library and whose market reflects the country) are removed. Injectable for checks.
     var signOutCleanup: @MainActor () async -> Void = {
+        LibrarySnapshotStore.production?.clear()
         try? await CatalogArtworkStore.shared.clearForSignOut()
     }
 
@@ -1100,6 +1101,7 @@ final class LiveSession: ObservableObject {
             "titleID": titleID.map(JSONValue.string) ?? .null
         ]
         if let productID { params["productID"] = .string(productID) }
+        try DebugFaultInjection.check(.account)
         let result = try await client.request(command, params: params).decode(OdeAccountRead.self)
         try Task.checkCancellation()
         guard token == generation, authToken == authenticationGeneration,
@@ -1832,6 +1834,7 @@ final class LiveSession: ObservableObject {
         guard let client, request.generation == generation else { return }
         defer { if isCurrent(request) { searching = false } }
         do {
+            try DebugFaultInjection.check(.catalog)
             let result = try await client.request(.search, params: [
                 "query": .string(request.query), "market": .string(request.market), "language": .string(request.language),
                 "platform": .string("pc"), "limit": .integer(100), "cursor": request.cursor.map(JSONValue.string) ?? .null
@@ -2015,6 +2018,7 @@ final class LiveSession: ObservableObject {
         guard let client, request.generation == generation else { return }
         defer { if isCurrent(request) { searching = false } }
         do {
+            try DebugFaultInjection.check(.catalog)
             let page = try await client.request(.query, params: [
                 "query": .string(request.query), "market": .string(request.market), "language": .string(request.language),
                 "limit": .integer(8), "cursor": request.cursor.map(JSONValue.string) ?? .null
@@ -2076,6 +2080,7 @@ final class LiveSession: ObservableObject {
             if isCurrent(request) { searching = false }
         }
         do {
+            try DebugFaultInjection.check(.catalog)
             let page = try await client.request(.discover, params: [
                 "market": .string(request.market), "language": .string(request.language), "limit": .integer(16),
                 "cursor": request.cursor.map(JSONValue.string) ?? .null

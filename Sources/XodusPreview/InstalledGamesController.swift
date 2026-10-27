@@ -21,6 +21,8 @@ final class InstalledGamesController: ObservableObject {
     @Published private(set) var choosing = false
     @Published private(set) var loaded = false
     @Published private(set) var error: String?
+    /// Set only when the installed-games registry itself couldn't be read, unlike `error`, which other work shares.
+    @Published private(set) var loadError: String?
     @Published private(set) var discoveryError: String?
     @Published private(set) var runningGameID: UUID?
     @Published private(set) var playState: InstalledGamePlayState?
@@ -87,6 +89,8 @@ final class InstalledGamesController: ObservableObject {
     private let detectAvailability: @Sendable () async -> RunnerAvailability
     private let inspectPackage: @Sendable (URL) throws -> PackageType
     private let mountedStorageRoots: @Sendable () -> [String]?
+    /// Home whose `Mounts` folder holds network library mountpoints.
+    private let mountHome: String
     private let discoveryProbe = GameStorageProbe()
     private var candidateVerificationProbes: [String: GameStorageProbe] = [:]
     private var installationVolumeProbes: [UUID: GameStorageProbe] = [:]
@@ -147,7 +151,9 @@ final class InstalledGamesController: ObservableObject {
          installLocation: @escaping @Sendable () throws -> GameInstallLocation? = {
              try GameInstallLocation.load(.standard)
          },
-         discoveryCompleteness: (@MainActor (String, URL) async throws -> Bool)? = nil) {
+         discoveryCompleteness: (@MainActor (String, URL) async throws -> Bool)? = nil,
+         mountHome: String = NSHomeDirectory()) {
+        self.mountHome = mountHome
         self.store = store
         self.launchingDuration = launchingDuration
         self.logDirectory = logDirectory
@@ -169,8 +175,12 @@ final class InstalledGamesController: ObservableObject {
             games = try await store.load()
             loaded = true
             error = nil
+            loadError = nil
             await refreshLaunchableGames()
-        } catch { self.error = InstalledGameError.invalidRegistry.localizedDescription }
+        } catch {
+            self.error = InstalledGameError.invalidRegistry.localizedDescription
+            loadError = self.error
+        }
     }
 
     func importGame(folder: URL, launcher: URL) async {
@@ -250,10 +260,11 @@ final class InstalledGamesController: ObservableObject {
             }
             discoveringMounts = false
             if let volumes {
-                let mounted = Set(GameInstallationDiscovery.mountedLibraryRoots(volumes).map(\.path))
+                let mounted = Set(Self.mountedDiscoveryRoots(volumes, home: mountHome).map(\.path))
                 pendingDiscoveryRoots.formIntersection(mounted)
                 if root == nil { pendingDiscoveryRoots.formUnion(mounted) }
-                undiscoveredInstallations = Self.retainingMountedCandidates(undiscoveredInstallations, volumes: volumes)
+                undiscoveredInstallations = Self.retainingMountedCandidates(undiscoveredInstallations, volumes: volumes,
+                                                                            home: mountHome)
             }
             var observation = try await discoveryProbe.read {
                 try GameInstallationDiscovery.scan(originalRoot: directory,
@@ -262,7 +273,7 @@ final class InstalledGamesController: ObservableObject {
             }
             pendingDiscoveryRoots.subtract(observation.scannedRoots)
             if root == nil {
-                for library in GameInstallationDiscovery.mountedLibraryRoots(volumes) {
+                for library in Self.mountedDiscoveryRoots(volumes, home: mountHome) {
                     try Task.checkCancellation()
                     guard loaded, !accountDisconnecting, !applicationTerminating,
                           unifiedSession?.accountHash == account else { return }
@@ -532,13 +543,26 @@ final class InstalledGamesController: ObservableObject {
 
     static func retainingMountedCandidates(_ candidates: [String: String], volumes: [String],
                                           home: String = NSHomeDirectory()) -> [String: String] {
-        let mounted = Set(GameInstallationDiscovery.mountedLibraryRoots(volumes, home: home).map(\.path))
+        let mounted = Set(mountedDiscoveryRoots(volumes, home: home).map(\.path))
         return candidates.filter { folder, _ in
             let parent = URL(fileURLWithPath: folder).deletingLastPathComponent()
-            let possible = GameInstallationDiscovery.mountedLibraryRoots(
+            let possible = mountedDiscoveryRoots(
                 [parent.deletingLastPathComponent().path], home: home).map(\.path)
             return !possible.contains(parent.path) || mounted.contains(parent.path)
         }
+    }
+
+    static func mountedDiscoveryRoots(_ volumes: [String]?, home: String = NSHomeDirectory()) -> [URL] {
+        var roots = Set(GameInstallationDiscovery.mountedLibraryRoots(volumes, home: home).map(\.path))
+        let mountDirectory = URL(fileURLWithPath: home).appendingPathComponent("Mounts").standardizedFileURL.path
+        for path in volumes ?? [] {
+            let volume = URL(fileURLWithPath: path, isDirectory: true).standardizedFileURL
+            guard volume.path == path,
+                  (path.hasPrefix(mountDirectory + "/") || path.hasPrefix("/Volumes/")),
+                  ["Xode", "Xodus"].contains(volume.lastPathComponent) else { continue }
+            roots.insert(path)
+        }
+        return roots.sorted().map { URL(fileURLWithPath: $0, isDirectory: true) }
     }
 
     func remove(_ game: InstalledGame) async {
@@ -675,6 +699,84 @@ final class InstalledGamesController: ObservableObject {
     func canRequestPlay(_ productID: String) -> Bool {
         guard accountAccessAllowed else { return false }
         return !usesUnifiedAccount || productAccess.permits(productID, account: unifiedSession?.accountHash)
+    }
+
+    /// Whether the access check for this product has an answer (permitted, denied or failed) for the
+    /// current account. Until then a deep-link Play waits instead of failing.
+    func productAccessSettled(_ productID: String) -> Bool {
+        guard accountAccessAllowed else { return false }
+        if canRequestPlay(productID) { return true }
+        guard !usesUnifiedAccount || unifiedSession?.accountHash != nil else { return false }
+        return !productAccess.checking && !productAccess.pending(productID, account: unifiedSession?.accountHash)
+            && productAccess.accountHash == unifiedSession?.accountHash
+    }
+
+    /// Bounded wait for a condition, polled on the main actor; false on timeout or cancellation.
+    static func waitUntil(timeout: Duration, interval: Duration = .milliseconds(250),
+                          clock: ContinuousClock = .init(), _ condition: () -> Bool) async -> Bool {
+        let deadline = clock.now.advanced(by: timeout)
+        while !condition() {
+            guard clock.now < deadline, !Task.isCancelled else { return false }
+            try? await Task.sleep(for: interval)
+        }
+        return true
+    }
+
+    /// Deep-link Play (`--play-game`): waits up to `timeout` for the access check, then plays or reports
+    /// the actual reason. An explicit engine is applied exactly like the per-game Engine menu.
+    func playFromLaunchRequest(_ game: InstalledGame, engine: String?,
+                               timeout: Duration = .seconds(60)) async -> String? {
+        let message = await launchRequestOutcome(game, engine: engine, timeout: timeout)
+        if let message {
+            Self.launchLog.error("Launch request not started: \(game.storeId, privacy: .public): \(message, privacy: .public)")
+        }
+        return message
+    }
+
+    private func launchRequestOutcome(_ game: InstalledGame, engine: String?, timeout: Duration) async -> String? {
+        if !canRequestPlay(game.storeId), let session = unifiedSession {
+            // A just-registered game shouldn't wait behind the full background access sweep.
+            Task { @MainActor in
+                await productAccess.prioritize(game.storeId, session: session, installedIDs: games.map(\.storeId))
+            }
+        }
+        let settled = await Self.waitUntil(timeout: timeout) { productAccessSettled(game.storeId) }
+        guard canRequestPlay(game.storeId) else {
+            return settled ? (productAccessNotice(for: game) ?? "Access to this game hasn't been confirmed for your Xbox account.")
+                : "Access to this game wasn't confirmed within \(timeout.components.seconds) seconds. Open the game and try again."
+        }
+        if let engine {
+            // Engine admission needs the backend lifecycle; a check already in flight is awaited, not skipped.
+            _ = await Self.waitUntil(timeout: timeout) { unifiedSession?.nativeLifecycleConfiguration != nil }
+            await refreshEngineOverrides(force: true)
+            guard let selection = engineOverrides(for: game).first(where: { $0.inspection.engineName == engine }) else {
+                return "\(Self.readableEngineName(engine)) isn't available for \(game.title) on this Mac. No other engine was used."
+            }
+            await setEngineOverrideV2(selection, for: game)
+            guard let current = games.first(where: { $0.id == game.id }),
+                  current.engineOverrideV2?.selection == selection else {
+                return playErrors[game.id] ?? error ?? "\(Self.readableEngineName(engine)) couldn't be selected for \(game.title)."
+            }
+        }
+        guard let current = games.first(where: { $0.id == game.id }) else {
+            return "The requested game isn't registered as installed on this Mac."
+        }
+        await play(current)
+        return runningGameID == current.id ? nil
+            : playErrors[current.id] ?? "The requested game couldn't start. Check its installation and runtime settings."
+    }
+
+    /// Deep link for a game installed on disk but not yet registered: waits (bounded) for discovery, then runs
+    /// the same existing-installation verification as opening its page. Never registers unverified files.
+    func registeredGameForLaunchRequest(productID: String, timeout: Duration = .seconds(60)) async -> InstalledGame? {
+        if let game = games.first(where: { $0.storeId == productID }) { return game }
+        guard await Self.waitUntil(timeout: timeout, { hasUnverifiedInstallation(productID: productID)
+                || games.contains(where: { $0.storeId == productID }) }) else { return nil }
+        if let game = games.first(where: { $0.storeId == productID }) { return game }
+        await automaticallyVerifyDiscoveredInstallation(productID: productID)
+        if let game = games.first(where: { $0.storeId == productID }) { return game }
+        Self.launchLog.error("Launch request not started: \(productID, privacy: .public): installation not verified: \(self.discoveredVerificationErrors[productID] ?? "unknown", privacy: .public)")
+        return nil
     }
 
     func productAccessNotice(for game: InstalledGame) -> String? {
@@ -1458,11 +1560,15 @@ final class InstalledGamesController: ObservableObject {
     private func inspectEngineOverrides(configuration: BackendConfiguration, force: Bool) async {
         do {
             let catalog = try NativeEngineDefaults.read()
-            let names = Self.engineInspectionNames(all: Set(catalog.bindings.map(\.engineName)),
+            let bindings = catalog.bindings.filter { !$0.isFH6Recipe || NativeFH6Recipe.enabled }
+            let names = Self.engineInspectionNames(all: Set(bindings.map(\.engineName)),
                 failed: failedEngineOverrides, checked: engineOverridesChecked, force: force)
-            var choices = availableEngineOverrides.filter { !names.contains($0.inspection.engineName ?? "") }
+            var choices = availableEngineOverrides.filter {
+                !names.contains($0.inspection.engineName ?? "")
+                    && (NativeFH6Recipe.enabled || $0.inspection.engineName != NativeFH6Recipe.engineName)
+            }
             var failures = failedEngineOverrides.subtracting(names)
-            for binding in catalog.bindings where names.contains(binding.engineName) {
+            for binding in bindings where names.contains(binding.engineName) {
                 do { choices.append(try await binding.inspect(configuration: configuration)) }
                 catch {
                     failures.insert(binding.engineName)
@@ -1521,7 +1627,8 @@ final class InstalledGamesController: ObservableObject {
                       let digest = selection.inspection.registrySha256 else { throw NativeLaunchError.engineUnavailable }
                 try await EngineInspectionClient().validateLaunch(configuration: configuration, arguments: [
                     "--registry", selection.registryPath, "--engine", name, "--expected-registry-sha256", digest
-                ], selection: selection)
+                ] + (name == NativeFH6Recipe.engineName ? NativeFH6Recipe.arguments : []),
+                    selection: selection, product: game.storeId)
             }
             guard !applicationTerminating, !accountDisconnecting else { throw GameScriptError.busy }
             applySavedGames(try await store.setEngineOverrideV2(id: game.id, selection: selection))

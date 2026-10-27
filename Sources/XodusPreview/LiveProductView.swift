@@ -77,6 +77,11 @@ enum GameDetailFacetCopy {
         installed ? "Installed on this Mac" : "Not installed"
     }
 
+    static func unsupportedInstallMessage(_ issues: [LibraryCompatibilityIssue]) -> String? {
+        guard !issues.isEmpty else { return nil }
+        return "Installation isn't available. " + issues.map(\.browseDetail).joined(separator: " ")
+    }
+
     static func precheckStatus(productID: String, installed: Bool, precheckingProductID: String?) -> String? {
         guard !installed, precheckingProductID == productID else { return nil }
         return "Checking installation requirements"
@@ -375,10 +380,12 @@ struct LiveProductView: View {
                     }
                     LibraryGlassCluster {
                         if !unsupportedIssues.isEmpty {
-                            LibraryCompatibilityIndicators(issues: unsupportedIssues, heroStyle: true)
                             if let installed {
+                                LibraryCompatibilityIndicators(issues: unsupportedIssues, heroStyle: true)
                                 InstalledGameActions(library: installedLibrary, operations: operations,
                                                      game: installed, usesGlass: true)
+                            } else if let message = GameDetailFacetCopy.unsupportedInstallMessage(unsupportedIssues) {
+                                InstallUnavailableNotice(message: message)
                             }
                         } else if let installed {
                             if installedLibrary.placeholderIDs.contains(installed.id), let owned {

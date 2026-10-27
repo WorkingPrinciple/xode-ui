@@ -13,7 +13,7 @@
       "required": ["kind", "provenance", "version", "artifactSha256"],
       "properties": {
         "kind": {"const": "wine"},
-        "provenance": {"enum": ["appleToolkit", "userInstalledCrossOver", "userSelectedWine", "userSelectedSourceBuild"]},
+        "provenance": {"enum": ["appleToolkit", "userInstalledCrossOver", "userInstalledHighball", "userSelectedWine", "userSelectedSourceBuild"]},
         "version": {"$ref": "#/$defs/version"}, "artifactSha256": {"$ref": "#/$defs/digest"}
       }
     },
@@ -34,13 +34,14 @@
       "required": ["version", "provider", "providerVersion", "engine", "graphics"],
       "properties": {
         "version": {"const": 1},
-        "provider": {"enum": ["gptk3", "gptk4", "crossover", "standaloneWine"]},
+        "provider": {"enum": ["gptk3", "gptk4", "crossover", "highball", "standaloneWine"]},
         "providerVersion": {"$ref": "#/$defs/version"},
         "engine": {"$ref": "#/$defs/engine"}, "graphics": {"$ref": "#/$defs/graphics"}
       },
       "allOf": [
         {"if": {"properties": {"provider": {"enum": ["gptk3", "gptk4"]}}}, "then": {"properties": {"engine": {"properties": {"provenance": {"const": "appleToolkit"}}}}}},
         {"if": {"properties": {"provider": {"const": "crossover"}}}, "then": {"properties": {"engine": {"properties": {"provenance": {"const": "userInstalledCrossOver"}}}}}},
+        {"if": {"properties": {"provider": {"const": "highball"}}}, "then": {"properties": {"engine": {"properties": {"provenance": {"const": "userInstalledHighball"}}}}}},
         {"if": {"properties": {"provider": {"const": "standaloneWine"}}}, "then": {"properties": {"engine": {"properties": {"provenance": {"enum": ["userSelectedWine", "userSelectedSourceBuild"]}}}}}}
       ]
     },

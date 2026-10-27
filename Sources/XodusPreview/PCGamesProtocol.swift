@@ -176,6 +176,7 @@ struct PCGamesHTTP: PCGamesTransport {
     func send(_ request: URLRequest) async throws -> PCGamesHTTPResponse {
         do {
             try Task.checkCancellation()
+            try DebugFaultInjection.checkHTTP()
             let (bytes, response) = try await session.bytes(for: request)
             defer { bytes.task.cancel() }
             guard let http = response as? HTTPURLResponse, response.url == request.url else {
@@ -240,6 +241,8 @@ struct PCGamesSnapshot: Sendable {
     let unresolvedCount: Int
     let unresolvedKinds: [String: PCGameAcquisitionKind]
     let detailFailureCount: Int
+    /// REQ-119: drawn from the saved last library at launch, not read from the account in this run.
+    let restored: Bool
     var isComplete: Bool { unresolvedCount == 0 }
     func hasResolvedGame(_ productID: String) -> Bool {
         !unresolvedIDs.contains(productID) && games.contains { $0.id == productID }
@@ -247,7 +250,8 @@ struct PCGamesSnapshot: Sendable {
 
     init(games: [PCGame], excludedCount: Int, updatedAt: Date, accountID: String? = nil,
          boundAccountHash: String? = nil, unresolvedIDs: Set<String> = [], unresolvedCount: Int = 0,
-         unresolvedKinds: [String: PCGameAcquisitionKind] = [:], detailFailureCount: Int? = nil) {
+         unresolvedKinds: [String: PCGameAcquisitionKind] = [:], detailFailureCount: Int? = nil,
+         restored: Bool = false) {
         self.games = games
         self.excludedCount = excludedCount
         self.updatedAt = updatedAt
@@ -257,6 +261,7 @@ struct PCGamesSnapshot: Sendable {
         self.unresolvedCount = unresolvedCount
         self.unresolvedKinds = unresolvedKinds
         self.detailFailureCount = detailFailureCount ?? unresolvedCount
+        self.restored = restored
     }
 
     func retainingUnresolved(from previous: Self?) -> Self {
@@ -347,7 +352,15 @@ struct PCGamesCatalog: Decodable {
                                 ?? (try? values.decode(String.self, forKey: .MaxDownloadSizeInBytes)).flatMap(Int64.init)
                         }
                     }
+                    struct Bundled: Decodable { let BigId: String? }
                     let Packages: [Package]?
+                    let BundledSkus: [Bundled]?
+                    private enum CodingKeys: String, CodingKey { case Packages, BundledSkus }
+                    init(from decoder: Decoder) throws {
+                        let values = try decoder.container(keyedBy: CodingKeys.self)
+                        Packages = try values.decodeIfPresent([Package].self, forKey: .Packages)
+                        BundledSkus = try? values.decode([Bundled].self, forKey: .BundledSkus)
+                    }
                 }
                 let Properties: PropertiesDTO?
             }
@@ -425,6 +438,18 @@ struct PCGamesCatalog: Decodable {
                 }
             }
         }
+
+        /// Products a bundle edition contains (public catalogue IDs), for bundles that list no packages themselves.
+        var bundledProductIDs: [String] {
+            var seen = Set<String>()
+            return (DisplaySkuAvailabilities ?? []).flatMap { $0.Sku?.Properties?.BundledSkus ?? [] }
+                .compactMap(\.BigId)
+                .filter { PCGamesClient.validProductID($0) && $0 != ProductId && seen.insert($0).inserted }
+                .prefix(PCGamesClient.maximumBundledProducts).map { $0 }
+        }
+
+        /// A base game whose PC availability the catalogue can't state (no packages listed for any SKU).
+        var unclassifiedBaseGame: Bool { game == nil && isBaseGame == true && pcPackageListing == nil }
 
         var pcPackageListing: Bool? {
             if isPC { return true }
@@ -731,10 +756,19 @@ struct PCGamesClient: Sendable {
               let items = root["Products"] as? [Any] else { throw PCGamesError.invalidResponse }
         var seen = Set<String>(), kept: [PCGamesCatalog.Product] = [], dropped = 0
         var droppedIDs = Set<String>()
+        // REQ-121 diagnosis: why items drop. Product IDs are public catalogue identifiers.
+        var undecodable = 0, duplicates = 0, foreign: [String] = []
         for item in items {
             guard let one = try? JSONSerialization.data(withJSONObject: ["Products": [item]]),
-                  let product = try? JSONDecoder().decode(PCGamesCatalog.self, from: one).Products.first,
-                  batch.contains(product.ProductId), seen.insert(product.ProductId).inserted else {
+                  let product = try? JSONDecoder().decode(PCGamesCatalog.self, from: one).Products.first else {
+                undecodable += 1
+                dropped += 1
+                if let id = (item as? [String: Any])?["ProductId"] as? String, batch.contains(id) { droppedIDs.insert(id) }
+                continue
+            }
+            if !batch.contains(product.ProductId) { foreign.append(product.ProductId) }
+            else if seen.contains(product.ProductId) { duplicates += 1 }
+            guard batch.contains(product.ProductId), seen.insert(product.ProductId).inserted else {
                 dropped += 1
                 if let id = (item as? [String: Any])?["ProductId"] as? String, batch.contains(id) { droppedIDs.insert(id) }
                 continue
@@ -746,12 +780,44 @@ struct PCGamesClient: Sendable {
         do { _ = try JSONDecoder().decode(PCGamesCatalog.self, from: data); strictError = "foreign, duplicate or excess products" }
         catch { strictError = String(describing: error).prefix(300).description }
         Logger(subsystem: "io.github.dragoshont.xodus", category: "pc-library")
-            .warning("Public PC descriptor batch kept \(kept.count) products and dropped \(dropped); strict decode: \(strictError, privacy: .public)")
+            .warning("Public PC descriptor batch kept \(kept.count) products and dropped \(dropped); strict decode: \(strictError, privacy: .public); batch=\(batch.count) items=\(items.count) undecodable=\(undecodable) duplicates=\(duplicates) foreign=\(foreign.count) foreignSample=\(foreign.prefix(3).joined(separator: "/"), privacy: .public) batchSample=\(batch.prefix(3).joined(separator: "/"), privacy: .public)")
         guard !kept.isEmpty || items.isEmpty else { throw PCGamesError.invalidResponse }
         return (kept, droppedIDs)
     }
 
     static let descriptorConcurrency = 2
+    static let maximumBundledProducts = 32
+    static let maximumBundleReads = 200
+
+    /// Why an owned candidate stays unresolved, for the load log (public product IDs only).
+    static func unresolvedReason(_ product: PCGamesCatalog.Product?, failed: Bool, bundleRead: Bool) -> String {
+        if failed { return "detailsUnavailable" }
+        guard let product else { return "notInCatalogue" }
+        if product.isBaseGame == nil { return "unclassifiedProductType" }
+        if !product.bundledProductIDs.isEmpty {
+            return bundleRead ? "bundleWithoutPCGame" : "bundleContentsUnread"
+        }
+        return "noPCPackageListing"
+    }
+
+    typealias DescriptorBatchResult = (index: Int, batch: [String], result: Result<PublicCatalogDescriptors.Read, any Error>)
+
+    /// P1: starts one bounded descriptor read. Every input is an explicit parameter copied into the task's
+    /// capture list, and the IDs come back with the result, so each result is validated against the batch it
+    /// actually read. (A nested function capturing a mutable `next` counter paired results with the wrong
+    /// batch in optimized builds: only 4 of 91 owned games resolved.)
+    static func addDescriptorRead(_ group: inout ThrowingTaskGroup<DescriptorBatchResult, any Error>,
+                                  index: Int, batch: [String], descriptors: PublicCatalogDescriptors,
+                                  market: String, language: String, refresh: Bool = false,
+                                  background: Bool = false) {
+        group.addTask { [index, batch, descriptors, market, language, refresh, background] in
+            do {
+                let read = try await descriptors.read(ids: batch, market: market, language: language,
+                                                      refresh: refresh, background: background)
+                return (index, batch, .success(read))
+            } catch { return (index, batch, .failure(error)) }
+        }
+    }
 
     func resolveCollection(ids: [String], kinds: [String: PCGameAcquisitionKind], candidateCount: Int,
                            market: String, language: String, accountID: String? = nil,
@@ -763,15 +829,26 @@ struct PCGamesClient: Sendable {
         var failed: [Int: Set<String>] = [:]
         var revalidations: [Int: Task<PublicCatalogDescriptors.Revalidated, Never>] = [:]
         var completedBatches = 0
+        /// Owned bundle editions that list no packages, resolved to the PC base games they contain.
+        var bundleGames: [String: [PCGame]] = [:]
         func snapshot() -> PCGamesSnapshot {
             var games: [PCGame] = []
+            var shown = Set<String>()
             var unresolved = Set(ids)
             var excluded = 0
+            func show(_ game: PCGame, kind: PCGameAcquisitionKind) {
+                guard shown.insert(game.id).inserted else { return }
+                games.append(PCGame(id: game.id, title: game.title, artwork: game.artwork, acquisitionKind: kind))
+            }
             for index in resolved.keys.sorted() {
                 for product in resolved[index] ?? [] {
                     if let game = product.game {
-                        games.append(PCGame(id: game.id, title: game.title, artwork: game.artwork,
-                                            acquisitionKind: kinds[game.id] ?? .unknown))
+                        show(PCGame(id: game.id, title: game.title, artwork: game.artwork),
+                             kind: kinds[game.id] ?? .unknown)
+                        unresolved.remove(product.ProductId)
+                    } else if let contained = bundleGames[product.ProductId], !contained.isEmpty {
+                        // P1 follow-up: an owned bundle shows the PC game it contains, once.
+                        for game in contained { show(game, kind: kinds[product.ProductId] ?? .unknown) }
                         unresolved.remove(product.ProductId)
                     } else if product.isBaseGame == false
                         || (product.isBaseGame == true && product.pcPackageListing == false) {
@@ -802,20 +879,14 @@ struct PCGamesClient: Sendable {
         // REQ-119: two independent descriptor reads at a time, inside the producer's four-operation limit;
         // LIMIT_EXCEEDED stays a retried descriptor failure. Results are merged as they arrive.
         // REQ-121: saved descriptors resolve at once and are revalidated before the final snapshot.
-        try await withThrowingTaskGroup(of: (Int, Result<PublicCatalogDescriptors.Read, any Error>).self) { group in
-            var next = 0
-            func start(_ group: inout ThrowingTaskGroup<(Int, Result<PublicCatalogDescriptors.Read, any Error>), any Error>) {
-                guard next < batches.count else { return }
-                let index = next, batch = batches[index]
-                next += 1
-                group.addTask {
-                    do { return (index, .success(try await descriptors.read(ids: batch, market: market, language: language))) }
-                    catch { return (index, .failure(error)) }
-                }
+        try await withThrowingTaskGroup(of: DescriptorBatchResult.self) { group in
+            var started = 0
+            while started < min(Self.descriptorConcurrency, batches.count) {
+                Self.addDescriptorRead(&group, index: started, batch: batches[started], descriptors: descriptors,
+                                       market: market, language: language)
+                started += 1
             }
-            for _ in 0..<Self.descriptorConcurrency { start(&group) }
-            while let (index, result) = try await group.next() {
-                let batch = batches[index]
+            while let (index, batch, result) = try await group.next() {
                 do {
                     let read = try result.get()
                     let readable = try products(read.data, batch: batch)
@@ -833,7 +904,11 @@ struct PCGamesClient: Sendable {
                 }
                 try Task.checkCancellation()
                 await progress?(snapshot())
-                start(&group)
+                if started < batches.count {
+                    Self.addDescriptorRead(&group, index: started, batch: batches[started], descriptors: descriptors,
+                                       market: market, language: language)
+                    started += 1
+                }
             }
         }
         guard ids.isEmpty || completedBatches > 0 else { throw PCGamesError.incompleteCatalog(0) }
@@ -861,9 +936,69 @@ struct PCGamesClient: Sendable {
                     .warning("Revalidated PC descriptors couldn't be read; saved details remain")
             }
         }
+        // P1 follow-up: bundle editions list no packages; read the products they contain (bounded) and show
+        // the PC base game an owned bundle includes. Contents that can't be read keep the bundle unresolved.
+        let known = Dictionary(resolved.values.flatMap { $0 }.map { ($0.ProductId, $0) }, uniquingKeysWith: { a, _ in a })
+        let bundles = resolved.values.flatMap { $0 }.filter { $0.unclassifiedBaseGame && !$0.bundledProductIDs.isEmpty }
+        var bundleReadIDs = Set<String>()
+        if !bundles.isEmpty {
+            var contents = known
+            let wanted = Array(Set(bundles.flatMap(\.bundledProductIDs)).subtracting(known.keys).sorted()
+                .prefix(Self.maximumBundleReads))
+            for start in stride(from: 0, to: wanted.count, by: 20) {
+                let batch = Array(wanted[start..<min(start + 20, wanted.count)])
+                do {
+                    let read = try await descriptors.read(ids: batch, market: market, language: language,
+                                                          background: true)
+                    for product in try products(read.data, batch: batch).products { contents[product.ProductId] = product }
+                    bundleReadIDs.formUnion(batch)
+                } catch is CancellationError { throw CancellationError() }
+                catch {
+                    Logger(subsystem: "io.github.dragoshont.xodus", category: "pc-library")
+                        .warning("Bundle contents couldn't be read; \(batch.count) bundled products stay unknown: \(String(describing: error), privacy: .public)")
+                }
+            }
+            bundleReadIDs.formUnion(known.keys)
+            for bundle in bundles {
+                let ids = bundle.bundledProductIDs
+                let games = ids.compactMap { contents[$0]?.game }
+                if !games.isEmpty {
+                    bundleGames[bundle.ProductId] = games
+                    revised = true
+                } else if !ids.allSatisfy(bundleReadIDs.contains) {
+                    bundleReadIDs.remove(bundle.ProductId)
+                } else {
+                    bundleReadIDs.insert(bundle.ProductId)
+                }
+            }
+        }
         try Task.checkCancellation()
         if revised { await progress?(snapshot()) }
-        return snapshot()
+        let final = snapshot()
+        // Owned bundles whose PC game is already shown on its own count as neither game nor excluded; name them
+        // so games + excluded + bundled-duplicates + unresolved adds up to the owned candidates.
+        let directGames = Set(resolved.values.flatMap { $0 }.compactMap { $0.game?.id })
+        let duplicateBundles = bundleGames.filter { $0.value.allSatisfy { directGames.contains($0.id) } }.keys.sorted()
+        if !duplicateBundles.isEmpty {
+            let logger = Logger(subsystem: "io.github.dragoshont.xodus", category: "pc-library")
+            for id in duplicateBundles {
+                logger.notice("Bundle PC candidate \(id, privacy: .public): contains \(bundleGames[id]?.map(\.id).joined(separator: "/") ?? "", privacy: .public), already shown")
+            }
+            logger.notice("Bundled duplicates of shown games: \(duplicateBundles.count)")
+        }
+        if !final.unresolvedIDs.isEmpty {
+            let allFailed = failed.values.reduce(into: Set<String>()) { $0.formUnion($1) }
+            var reasons: [String: Int] = [:]
+            let logger = Logger(subsystem: "io.github.dragoshont.xodus", category: "pc-library")
+            for id in final.unresolvedIDs.sorted() {
+                let reason = Self.unresolvedReason(known[id], failed: allFailed.contains(id),
+                                                   bundleRead: bundleReadIDs.contains(id))
+                reasons[reason, default: 0] += 1
+                logger.notice("Unresolved PC candidate \(id, privacy: .public): reason=\(reason, privacy: .public)")
+            }
+            logger.notice("Unresolved PC candidates: \(reasons.sorted { $0.key < $1.key }.map { "\($0.key)=\($0.value)" }.joined(separator: " "), privacy: .public)")
+        }
+        return final
     }
 }
 

@@ -16,6 +16,7 @@ enum LibraryAccessChecks {
               && GameDetailFacetCopy.gamePassActionStatus(startupAllowed: true, libraryNotice: nil,
                   operationNotice: nil) == nil,
               "COR88: Actual Game Pass action caption covers operation-only, account, startup and ready gates")
+        try DiscoverShelfChecks.run(check: check)
         let utc = TimeZone(secondsFromGMT: 0)!
         func seasonalDate(_ year: Int, _ month: Int, _ day: Int, hour: Int = 0,
                           timeZone: TimeZone = TimeZone(secondsFromGMT: 0)!) -> Date {
@@ -262,6 +263,13 @@ enum LibraryAccessChecks {
               && GameLaunchArguments.parse(["--play-game", "FIXTURE00001", "--fixture"]) == nil
               && GameLaunchArguments.parse(["--open-native-minecraft"]) == .nativeMinecraft,
               "App launch actions accept only exact product IDs/native Minecraft, never an executable or fixture override")
+        check(GameLaunchArguments.parse(["--play-game", "BQVQTL3PCH05", "--engine", "crossover-26.3-mvk142"])
+                == .play("BQVQTL3PCH05", engine: "crossover-26.3-mvk142")
+              && GameLaunchArguments.parse(["--play-game", "BQVQTL3PCH05", "--engine", "/Applications/CrossOver.app"]) == nil
+              && GameLaunchArguments.parse(["--play-game", "BQVQTL3PCH05", "--engine"]) == nil
+              && GameLaunchArguments.parse(["--play-game", "BQVQTL3PCH05", "--wine", "crossover-26.3-mvk142"]) == nil
+              && DevelopmentArguments.accepts(["--play-game", "BQVQTL3PCH05", "--engine", "crossover-26.3-mvk142"]),
+              "L7/L8: A deep-link Play may name one catalogue engine ID, never a path or another flag")
         check(NativeMinecraft.minecraftJavaPID(in: """
             123 501 /usr/bin/java
             124 501 /Users/example/Library/Application Support/minecraft/runtime/java-runtime/bin/java

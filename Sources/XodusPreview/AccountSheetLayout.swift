@@ -140,3 +140,13 @@ struct AccountActionsLayout: Layout {
         }
     }
 }
+
+/// Warm-launch gate timing: the welcome sheet is held while the first sign-in status read is outstanding,
+/// for at most `launchWait`, and never after a connection or status error.
+enum AccountGatePresentation {
+    static let launchWait: Duration = .seconds(3)
+
+    static func defers(statusSettled: Bool, failed: Bool, waitElapsed: Bool) -> Bool {
+        !statusSettled && !failed && !waitElapsed
+    }
+}

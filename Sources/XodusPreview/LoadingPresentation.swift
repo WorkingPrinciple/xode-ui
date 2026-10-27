@@ -10,9 +10,11 @@ enum LibraryLoadingPresentation {
     static func showsPlaceholders(library: PCGamesController, loadingInstalled: Bool = false,
                                   checkingAccess: Bool = false, hasUsableContent: Bool,
                                   query: String = "") -> Bool {
-        showsPlaceholders(pending: library.busy || library.restoringPresence || loadingInstalled || checkingAccess,
+        // Review M2: a scheduled silent retry is still loading; only a surfaced error ends placeholders.
+        showsPlaceholders(pending: library.busy || library.restoringPresence || library.detailRetryPending
+                || loadingInstalled || checkingAccess,
             hasUsableContent: hasUsableContent,
-            failed: library.error != nil || library.presenceUnavailable,
+            failed: library.surfacedError != nil || library.presenceUnavailable,
             requiresAccountAction: library.needsSignIn || library.needsKeychainApproval
                 || (!library.hasSavedSignIn && !library.restoringPresence && !library.busy),
             query: query)

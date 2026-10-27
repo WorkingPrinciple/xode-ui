@@ -42,6 +42,9 @@ struct GameFacts: Equatable {
     var classification: Classification = .unresolved
     var accessIsCurrent = false
     var subscriptionAcquisition = false
+    /// REQ-7/63: an active Game Pass plan covers this PC Game Pass title; not a purchase, never "missing".
+    var availableWithGamePass = false
+    static let availableWithGamePassLabel = "Available with Game Pass"
 
     init(ownership: Ownership = .unknown, memberships: [Membership] = [], accessIsCurrent: Bool = false) {
         self.ownership = ownership
@@ -69,6 +72,12 @@ struct GameFacts: Equatable {
         classification = pc != nil ? .game : .unresolved
     }
 
+    init(pc: PCGame?, gamePass: Bool, installed: InstalledGame? = nil, accessIsCurrent: Bool,
+         availableWithGamePass: Bool) {
+        self.init(pc: pc, gamePass: gamePass, installed: installed, accessIsCurrent: accessIsCurrent)
+        self.availableWithGamePass = availableWithGamePass && gamePass && pc?.acquisitionKind != .purchased
+    }
+
     func badgeLabels(detail: Bool = false) -> [String] {
         var labels: [String] = []
         if accessIsCurrent {
@@ -80,7 +89,11 @@ struct GameFacts: Equatable {
         }
         for plan in Plan.allCases {
             guard let membership = memberships.first(where: { $0.plan == plan }) else { continue }
-            labels.append(detail && plan == .pcGamePass ? "Included with PC Game Pass" : plan.label)
+            if plan == .pcGamePass, availableWithGamePass {
+                labels.append(Self.availableWithGamePassLabel)
+            } else {
+                labels.append(detail && plan == .pcGamePass ? "Included with PC Game Pass" : plan.label)
+            }
             if detail, let date = membership.leavingOn {
                 labels.append("Leaving \(plan.label) on \(date.formatted(date: .abbreviated, time: .omitted))")
             }
@@ -97,10 +110,14 @@ struct GameFacts: Equatable {
                 if !subscriptionAcquisition { labels.append("In your library") }
             case .notInLibrary, .unknown: break
             }
-            if subscriptionAcquisition { labels.append("Subscription (plan unknown)") }
+            if subscriptionAcquisition, !availableWithGamePass { labels.append("Subscription (plan unknown)") }
         }
         for plan in Plan.allCases where memberships.contains(where: { $0.plan == plan }) {
-            labels.append("In \(plan == .pcGamePass ? "PC Game Pass" : plan.label) catalog")
+            if plan == .pcGamePass, availableWithGamePass {
+                labels.append(Self.availableWithGamePassLabel)
+            } else {
+                labels.append("In \(plan == .pcGamePass ? "PC Game Pass" : plan.label) catalog")
+            }
         }
         return labels
     }
@@ -127,7 +144,8 @@ struct GameHeroAccess: View {
 
 extension LibraryGame {
     var facts: GameFacts {
-        GameFacts(pc: pc, gamePass: gamePass, installed: installed, accessIsCurrent: accessIsCurrent)
+        GameFacts(pc: pc, gamePass: gamePass, installed: installed, accessIsCurrent: accessIsCurrent,
+                  availableWithGamePass: availableWithGamePass)
     }
 }
 

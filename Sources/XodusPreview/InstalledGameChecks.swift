@@ -431,6 +431,17 @@ enum InstalledGameChecks {
         }
         check(observed.candidates.count == 1 && observed.candidates.first?.config.storeId == "9NR1R1XWLCNB",
               "REQ106: NFS-style MicrosoftGame.Config casing reaches exact product identity discovery")
+        let nestedMountRoots = InstalledGamesController.mountedDiscoveryRoots([library.path], home: home.path)
+        check(nestedMountRoots.contains(where: { $0.path == library.path }),
+              "REQ106: A nested ~/Mounts/homelab/Xodus mountpoint is scanned as its own named library root")
+        let nestedMountObservation = try await GameStorageProbe().read {
+            try GameInstallationDiscovery.scan(originalRoot: library, location: nil, entries: [],
+                mountedRoots: [library.path], inspectPackage: { _ in .msixvc })
+        }
+        check(nestedMountObservation.candidates.count == 1
+              && nestedMountObservation.candidates.first?.folder.path == folder.path
+              && nestedMountObservation.candidates.first?.config.storeId == "9NR1R1XWLCNB",
+              "REQ106: The nested NFS library root identifies FH6 by its exact StoreID and original folder")
         let refused = try await GameStorageProbe().read {
             try GameInstallationDiscovery.scan(originalRoot: library, location: nil, entries: [],
                 mountedRoots: [volume.path], inspectPackage: { _ in throw InstalledGameError.invalidConfig })
@@ -536,6 +547,31 @@ enum InstalledGameChecks {
         await controller.discoverNativeInstallations(root: library)
         check(controller.games.count == 1,
               "REQ106: Repeated external discovery never creates duplicate installed records")
+        var mountedComplete = false
+        let mountedStore = InstalledGameStore(file: home.appendingPathComponent("mounted-registry/games.json"))
+        let mountedController = InstalledGamesController(store: mountedStore, inspectPackage: { _ in .msixvc },
+            mountedStorageRoots: { [library.path] }, discoveryRoot: home.appendingPathComponent("unrelated-default"),
+            installLocation: { nil }, discoveryCompleteness: { product, candidate in
+                product == "9NR1R1XWLCNB" && candidate.path == folder.path && mountedComplete
+            }, mountHome: home.path)
+        await mountedController.load()
+        mountedController.useUnifiedAccount(session)
+        await mountedController.discoverNativeInstallations()
+        check(mountedController.games.isEmpty
+              && mountedController.hasUnverifiedInstallation(productID: "9NR1R1XWLCNB")
+              && !mountedController.canCreateInstallation(productID: "9NR1R1XWLCNB"),
+              "REQ106: A discovered NFS config remains uninstalled and blocks duplicate Install until package completeness is verified")
+        mountedComplete = true
+        await mountedController.discoverNativeInstallations()
+        check(mountedController.games.count == 1 && mountedController.games.first?.folder == folder.path
+              && mountedController.games.first?.storeId == "9NR1R1XWLCNB"
+              && mountedController.games.first?.storageVolume != nil,
+              "REQ106: The mounted-root discovery registers the exact complete FH6 package at its existing location")
+        let registered = await mountedController.registeredGameForLaunchRequest(productID: "9NR1R1XWLCNB")
+        let absent = await mountedController.registeredGameForLaunchRequest(productID: "9TESTNOTHERE",
+                                                                             timeout: .milliseconds(200))
+        check(registered?.folder == folder.path && absent == nil,
+              "L8 e2e: a deep link resolves a registered game at once and gives up (bounded) on one that isn't on disk")
         try FileManager.default.removeItem(at: folder)
         await controller.discoverNativeInstallations(root: library)
         check(controller.games.count == 1,

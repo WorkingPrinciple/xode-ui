@@ -115,8 +115,36 @@ evidence, installed delivery and product acceptance are separate gates.
 - **Calimocho updates (REQ-123):** Engines Settings shows the installed release version and Check for Updates. Only opening that pane triggers an automatic public GitHub releases check, at most once per 24 hours (manual checks remain available). App launch does not check. The unauthenticated check includes `engine-0.1120.4.N` prereleases; it never trusts release metadata to authorize a binary download. Offline, GitHub rate-limit and other failures are shown without changing the engine.
 - Version discovery accepts only exact release-shaped engine names matching their descriptor version; title-specific folders such as `calimocho-11.20-4.0b3-01-fh6` are ignored. Older release versions remain display-only update sources, never download authorization. Acknowledgments selects the installed active pin, then the newest installed compiled pin, never an unpinned folder.
 - If this app pins a newer release than the installed engine, Update Calimocho uses the same pinned installer alongside the old folder while holding the game-operation reservation. Backend admission must succeed before changing any selections, and only a default or Brotato/Halls override pointing at the old Calimocho release is changed. CrossOver, custom choices and other titles, including FH6 and NMS, are untouched. Admission refusal or cancellation removes the newly installed folder and preserves the old engine and selections. Only after success is a confirmed Move Old Engine to Trash action offered; that offer survives relaunch. An interrupted update with the new folder already installed offers Finish Update when Engines opens, reusing the folder but requiring admission before activation. Refusal in that recovery path preserves the existing folder for retry. Future-dated check timestamps are stale and cannot suppress the daily check. An unpinned newer release instead shows its version, release notes and next-app-update guidance, never an install action. Independently signed engine updates are not implemented.
-- **Temporary developer-local exception:** No Man's Sky keeps its private `calimocho-wine11.20-gptk4b3-tls-vulkan-private` binding (`developerLocal: true`). It resolves only when the exact pinned registry exists and hash-verifies on this Mac. On any other Mac it reports that the tested engine isn't installed, without substitution. NMS moves to the release engine only after a save-backed qualification, which is a separate decision. Release notes for the first beta must state this exception.
-- **FH6 deferred to 0.2.1:** The -06 repin changes only Brotato and Halls. FH6's CLI recipe needs a title-specific `-06-fh6` registry identity and a `d3d12_tsshim.dll` prefix overlay, with no native `windows.web` override. The existing admitted-selection launch path refuses prefix overlays and requires the unchanged admitted registry; supporting that recipe is not configuration-only. FH6's existing app binding and opt-in remain untouched.
+- **Developer-local exception (development builds only):** No Man's Sky's private `calimocho-wine11.20-gptk4b3-tls-vulkan-private` binding points at a source-tree registry, so packaging strips it (REQ-52). Packaged builds report that engine as unavailable and offer No Man's Sky through its admitted CrossOver route. Development builds still resolve it only when the exact pinned registry exists and hash-verifies on this Mac, without substitution.
+  Packaging also drops the No Man's Sky title profile bound to that engine, so its preserved-prefix name and run wording never ship.
+- **CrossOver registry location:** the `crossover-26.3-mvk142` binding reads `XodusCLI/renderers/moltenvk-1.4.2-private-api-x86_64-cor224/` under Application Support. The backend renderer install creates that directory, and the binding pins the registry digest at that path, so the app keeps the name rather than rewriting it at staging. A neutral name needs a backend renderer-install change plus a migration of the installed directory.
+- **FH6 title contract (REQ-125, source candidate):** FH6 requires `calimocho-06-fh6-v1`, Store ID `9NR1R1XWLCNB`, package identity `Microsoft.ForteBaseGame`, executable `forzahorizon6.exe` and the `calimocho-11.20-4.0b3-06-fh6` alias. Plain -06 is refused for FH6; the alias is refused for every other title. The alias is rendered locally only from the fully verified -06 release, with the exact 19-key Forza environment and a single pinned tsshim overlay. Its actual registry digest remains bound at inspection and launch. It cannot become the global default.
+
+FH6 additionally requires the producer's `titleRecipeV1` capability and fresh
+`title-recipe-inspect` evidence, separate from unchanged `engineAdmissionV1`.
+Launch passes `--title-recipe` and `--package-identity`; the producer independently
+checks the installed package, explicitly completes Wine prefix update and server
+synchronization on every launch, then reasserts and verifies
+`d3d12_tsshim.dll` in `drive_c/windows/system32/d3d12.dll` before spawning the game.
+The expected SHA-256 is
+`c72b5cae6d3da617b482086193ffeb99616a07c18383e629f4bbec0a4b16c1f5`.
+Wine update can replace that destination with builtin d3d12; copying only before
+wineboot or only on prefix creation is insufficient. Preparation failures prevent
+game start. The app requires the bounded private `title-recipe.json` evidence
+to agree with the result receipt, registry, prefix, source and final overlay hash.
+This attests staged bytes, not loaded modules or gameplay qualification.
+
+The title prefix is `Prefixes/9NR1R1XWLCNB/calimocho-06-fh6-v1`; existing release,
+private and UUID prefixes are not adopted or changed. No shim directory is passed
+for this recipe, and `windows.web=b` requires Wine's builtin implementation.
+Other titles retain their existing runtime/shim contracts and the blanket refusal
+of arbitrary admitted overlays/imports/DLL overrides. The app-pinned runtime pair
+still needs a70's fresh-prefix sign-in/free-roam and forced-update live checks;
+source/mock checks do not establish that product gate or a signed producer rebind.
+Normal builds keep the FH6 launch gate closed until that live receipt is admitted.
+A separately labelled qualification candidate may be compiled with
+`-Xswiftc -DXODUS_FH6_QUALIFICATION`; this opens only the app feature gate, never
+the engine/title admission or preparation checks. It is not release qualification.
 
 ## Persisted launch selection (M3)
 
@@ -356,3 +384,198 @@ never promote these evidence states. Installed component verification,
 device/backend preflight, exact per-game/version results, authorized content,
 licensed RPS/runtime pairing and supervised launch remain separate release
 gates. No trial certificate transfers across an engine/backend generation.
+
+## FH6-only runtime replacement (REQ-125)
+
+The separate REQ-125 FH6 runtime pin is primary
+`e4c1085b4991e7af50e7e6a06245a7948d9911ae2d12b87e8fc035aacd671cb2`
+and legacy `1fb7b7c81a64c82ca2f4ea1bdc260826fe8ced3b09738e987d836eabb488b768`,
+bound only to FH6. a70's frozen provenance SHA-256 is
+`762ba5431a3c2471f97a6a65892d12e27312ddb1b528549b769b7f0e12992e00`;
+its source-tree manifest is
+`ffce9cbf41b2813cba12602be6bf3a584ac82e3fc638bd50a9f90169d2f54220`
+(untracked `xgr-01` source, not a source Git commit). The reported fresh-prefix
+run reached free roam for roughly 9.5–10 minutes, with a preparation receipt,
+stable overlay digest and no observed asserts/crash reports. This is not
+installed-app or non-FH6 qualification. The app-support candidate path requires
+separate authorized staging; no runtime is copied by this source change.
+The failed `6c9d…/cfe7…` FH6 pair and retracted `da60235f…` primary are not used
+for this recipe. Other titles retain their existing pairs. Ordinary FH6 builds
+remain default-closed pending coordinator acceptance.
+
+## Signed update index verifier (REQ-123/124, isolated candidate)
+
+`CalimochoIndexVerifier` implements the stable verifier contract from Calimocho
+`fc996c3b`: byte-exact DSSE PAE/Ed25519, explicit key-to-epoch trust,
+revoked signing keys, embedded floor, rollback and same-version equivocation
+checks, strict duplicate-free JSON and canonical base64, bounded parsing,
+whole-string patterns, exact release URLs, freshness and strictly-newer
+numeric version eligibility. Errors are explicit; verification has no engine
+mutation or launch-admission side effects.
+
+The Settings integration is **default-closed**. Only an explicitly labelled
+`-DXODUS_SIGNED_ENGINE_INDEX_QUALIFICATION` build uses the signed-index client
+in the existing Engines pane-open/manual check; ordinary builds keep their
+existing pinned-update behavior. The client embeds only the reviewed production
+public anchor from `fc996c3b` (trust blob SHA-256
+`035bf651ddef3b6544f4c8a28f59d8d2e60758215c8df984472d3ec1e59c9d5a`),
+never an RFC or fixture key. No production signed index is asserted to exist.
+The strict state codec keeps `high_water`
+separate from `revoked_engines`: revoking a signer resets only the mark, and a
+revocation union over 1024 fails closed. Verification returns a new state only
+after all checks pass. The client fetches anonymously with an ephemeral session,
+allows at most five HTTPS redirects, enforces envelope bounds while streaming,
+and serializes state updates with a private lock. It writes a private temporary
+state file, synchronizes it and renames it only after verification and eligibility
+checks succeed. An invalid, expired or unavailable index clears the offered
+signed update and reports the reason without mutating installed engines.
+
+The signed index only drives release information. A newer unpinned release gets
+release notes and compatible-app guidance, never an Install action. The existing
+compiled-pin installer and fresh backend admission remain the only activation
+path. No new index-authorized archive extraction is exposed; its stricter
+streaming extraction contract remains a separate gated implementation.
+
+Run the standalone checks against the frozen upstream public test vectors:
+
+```sh
+swiftc Sources/XodusPreview/CalimochoIndexJSON.swift \
+  Sources/XodusPreview/CalimochoIndexVerifier.swift \
+  Tests/EngineIndexChecks/main.swift -o /tmp/calimocho-index-checks
+/tmp/calimocho-index-checks /path/to/frozen/tests/engine-index
+```
+
+The checks exercise the upstream known-answer vectors and local parser,
+state and bounds regressions without network access, installation or activation.
+
+## Highball provider (REQ-127, user-installed)
+
+Highball (`app.highball.Highball`, Team ID `B95M7DARU4`) is a third,
+user-installed provider. X Ode never installs, updates, modifies or launches
+Highball and never accepts its licences (GPL-3.0 app; separately licensed Wine
+and graphics components) on the user's behalf.
+
+Engines Settings shows one of three states:
+
+- **Not Installed** with a Get Highball link to the upstream repository.
+- **Detected** when `/Applications/Highball.app` is a non-writable directory
+  with the exact bundle identifier and a valid publisher signature. This is a
+  read-only check with no execution. Without a backend verdict, the row stays
+  Detected and is never Qualified.
+- **Qualified for Brotato only** when the paired backend answers
+  `highball-inspect --contract-version 1` with `highballAdmissionV1` and
+  `highball-inspect --product 9P9VNSQK1W3K` returns a consistent qualified
+  verdict for that product (exit status 0 only when qualified). Any other
+  product, a disagreeing exit status, an unsupported contract or a missing
+  backend yields no verdict.
+
+Shipping builds run the inspection only through the approved shipping pair
+identity, on a dedicated inspector that is closed on quit. Launch admission and
+the separate Highball prefix are backend responsibilities; this row grants no
+launch.
+
+### Title-scoped provider launch (COR-224, REQ-127)
+
+The app's `engine-inspect` decoder accepts exactly three admitted providers:
+`calimocho`, `crossover` and `highball`, and only when the declared and
+admitted providers match. Any other provider fails closed. Calimocho remains
+the only global default. CrossOver (`crossover-26.3-mvk142`, the reviewed
+signed-renderer registry `c246dd29…` already on this Mac) is offered only in
+No Man's Sky's per-game Engine menu. Highball (`highball-x64-crossover26.3-r27`)
+is offered only for Brotato. Both are developer-local catalogue bindings, and the
+app refuses either one for any other title before launch.
+
+The Highball registry has no fixed bytes. X Ode renders it into its own
+registries folder from a qualified `highball-inspect` verdict whose entry
+matches the pinned engine path and hashes. The backend re-checks it at
+`engine-inspect` and again in its launch gate (managed prefix, never a Highball
+bottle). A title-scoped selection does not apply the title's Calimocho launch
+profile. It launches on a fresh X Ode prefix for that installation and engine.
+
+## FH6 and Hades runtime pair 15e6d1e (REQ-125, REQ-32, REQ-128)
+
+FH6 and Hades now bind L12's runtime from private commit
+`15e6d1ef8f6df24c78e860086b950d4a5a203c50`: primary
+`a64fefb1041c476bf9b064abaf4cad6ea30559fd25b35bbe6e2ff603a23f6257`,
+legacy `dfeea51fb0c59d91f7ad71f43a1263e8318ed89379a672a953954121014196af`.
+It replaces the earlier FH6-only `e4c1085b…`/`1fb7b7c8…` pair above.
+The pair carries the REQ-125 assert-to-warning change, the REQ-32
+`E_GAMEUSER_NO_MSAAPPID` result and the REQ-128 add-on licence path.
+
+Run evidence on this exact pair:
+
+- FH6: run `57a4a57d-e87f-4091-9789-afa3fb1a6c67`, pinned
+  `calimocho-06-fh6-v1` recipe, 688 s, CLI and Wine exit 0, no assert or
+  FH206.
+- Hades: run `136cf1b4-bf79-42e7-ab44-24cb66f6339f`, `hades-mscoree-v1`,
+  title screen, WM_CLOSE exit 0. Sign-in still fails at the RPS ticket
+  bridge with 0x89245115 (REQ-32).
+
+Two build deviations are recorded in `provenance.json`. The snapshot lacked
+`xgameruntime.def`, so a byte-identical upstream copy was used; it is now
+committed in private `af76233`. The `widl` wrapper only added an include path.
+
+Every other title keeps the `7106d07…` candidate (`6c9d97d3…`/`cfe7e5f8…`),
+which its own run evidence used. Runtimes are staged locally under
+`~/Library/Application Support/Ode to X/Runtime/candidates/<primary sha>/`,
+with `SHA256SUMS` and `provenance.json`. They are not bundled in the app.
+
+### Runtime pair be7ad79 (supersedes e63bc66; FH6, Hades and Easy Delivery Co.)
+
+L12 commit `be7ad7931b70da2e55342373a853e4f5a0cad5c2` (tree `b2ba2b18`): primary
+`21171669a4c2b8b72addd923127587feba9b924fdae2337f679e83bb9ed31913`
+(5,062,605 bytes), legacy
+`e81010448dbea50a1957dafbf5bd2543dbb353b11d60da7e5223c05157d9deb5`
+(8,997,260 bytes). Unsigned Windows PE, verified by SHA-256 before launch. Over
+`e63bc66` it masks XUIDs in traced URLs and signs the gamer-picture profile
+request. Easy Delivery Co. (`9PDC8J1BSV8B`) gets a qualification-only profile
+from L12 run `edc-07` on this pair (window up 5-90 s, XGameSave writes `S_OK`,
+WM_CLOSE, exit 0); gameplay isn't claimed. That run used the same
+`native-web-shims-v1` set the app pins. DREDGE waits for a clean run. The pair is
+staged at `Runtime/candidates/21171669…/`.
+
+### Runtime pair e63bc66 (supersedes efcbf2a for FH6 and Hades)
+
+L12 commit `e63bc665c9d2ab276b2dea533bcef538456ce749` (tree `91982592`): primary
+`ce316019739a4f80fb893af64f2e91f77d6de111af70bb260a7b19970d54a360`
+(5,062,605 bytes), legacy
+`3cae73b96d3a38cbef57aa63e4146614cd7e35517a1ce15b1f1877550509c1d1`
+(8,988,323 bytes). Unsigned Windows PE, verified by SHA-256 before launch. It
+contains `efcbf2a`, `073b317` (silent registration for protocol activation and
+audio endpoint changes), and `user_GetAuthorization` now converts with
+`WC_ERR_INVALID_CHARS`, which fixes XSTS token acquisition for every title. The
+qualification runs below were on `efcbf2a`; the coordinator directed this pin.
+The scope is still FH6 and Hades. The pair is staged at `Runtime/candidates/ce316019…/`.
+
+### Runtime pair efcbf2a (supersedes eec6a13 for FH6 and Hades)
+
+L12 commit `efcbf2ac52e07f57099e52b1704fe2e884983e39`: primary
+`b28f3546413cdf3c6629c250bb7752159882183c901ba8efbb88cd1c846fd17e`
+(5,062,605 bytes), legacy
+`e077a50e03ea2f9c1b68f1094d2f273169d78a4d2b22981dc5c66b0cb9198fb5`
+(8,988,287 bytes). Unsigned Windows PE, verified by SHA-256 before launch.
+Over `eec6a13` it accepts a GUID `MSAAppId` for SISU, makes
+`XSystemGetXboxLiveSandboxId`'s `sandboxIdUsed` optional, and resolves `wss`/`ws`
+token URLs through their `https`/`http` endpoint. L12 qualified it on fresh
+prefixes with no input and WM_CLOSE: FH6 run `4efdf51d` (fh6-compat pressed
+"Ignore Warning", sign-in and licence completed, 331 s, no self-exit, exit 0) and
+Hades run `175cb421` (`hades-mscoree-v1`, title window for 75 s, expected
+REQ-32 line, exit 0). L12 also ran DREDGE on the equivalent `848819f` pair, but
+its visual check is pending and DREDGE has no title profile yet, so the scope here
+stays FH6 and Hades. The pair is staged at `Runtime/candidates/b28f3546…/`.
+
+### Runtime pair eec6a13 (supersedes 15e6d1e for FH6 and Hades)
+
+L12 commit `eec6a1390b1af1e037ed0590f9ddbea2c2f629e7`: primary
+`35c1430522b9cf3f9940803512959700418cfc7b3ab3d72958cbafa8e47d139f`
+(5,062,605 bytes), legacy
+`a791b0285988229e7b95702f4611a415e46a25aaeed87f9aa13059956ca77aca`
+(8,987,889 bytes). Unsigned Windows PE, like every earlier runtime pair; the
+app verifies the pair by SHA-256 before launch. Its verified licence catalogue
+now covers FH6 and 44 more titles, so `XStoreQueryGameLicense` succeeds for owned
+full SKUs; trials are excluded. This fixes FH6 quitting about 150 s after going
+online. The `cdd54e5` pair with the same code was live-checked (licence
+validated, FH6 stable for 762 s, exit 0). `eec6a13` adds catalogue entries only
+and was not run again; the coordinator waived that run. The scope is still FH6
+and Hades only. The pair is staged at
+`Runtime/candidates/35c14305…/` with `SHA256SUMS` and `provenance.json`.

@@ -223,7 +223,76 @@ enum NativeLifecycleChecks {
               "REQ114 M7: Uninstall requires the same drive identity (mount path and recorded volume UUID)")
     }
 
+    /// L6 game recipes (602): a profile names one reviewed recipe for its own title on a release engine only.
+    static func gameRecipeChecks(check: (Bool, String) -> Void) throws {
+        let directory = URL(fileURLWithPath: FileManager.default.currentDirectoryPath).resolvingSymlinksInPath()
+            .appendingPathComponent(".build/game-recipe-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let suite = "game-recipe-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        defaults.set(directory.path, forKey: "Xodus.lifecycle.profileDirectory")
+        let pin = CalimochoReleasePin.release06
+        func profile(_ product: String, recipe: String?, engine: String = CalimochoReleasePin.release06.engineName,
+                     environment: [String: String] = [:]) throws -> NativeTitleLaunchProfile? {
+            var value: [String: Any] = ["version": 1, "productID": product, "engine": engine,
+                "wineSha256": pin.wineSha256, "wineserverSha256": pin.wineserverSha256,
+                "executable": "Hades.exe", "noAutoDismiss": true, "environment": environment]
+            if let recipe { value["gameRecipe"] = recipe }
+            try JSONSerialization.data(withJSONObject: value)
+                .write(to: directory.appendingPathComponent(product + ".json"))
+            let data = try Data(contentsOf: directory.appendingPathComponent(product + ".json"))
+            return try? JSONDecoder().decode(NativeTitleLaunchProfile.self, from: data).validatedForChecks()
+        }
+        let hades = try profile("9P8DL6W0JBB8", recipe: "hades-mscoree-v1")
+        check(hades?.playArguments == ["--exe", "Hades.exe", "--no-auto-dismiss", "--game-recipe", "hades-mscoree-v1"]
+              && hades?.arguments.suffix(2) == ["--game-recipe", "hades-mscoree-v1"],
+              "602 Hades: a reviewed game recipe reaches user Play as --game-recipe, with no free-form override")
+        check(try profile("9TESTRECIPE0", recipe: "hades-mscoree-v1") == nil
+              && profile("9P8DL6W0JBB8", recipe: "unknown-recipe-v1") == nil
+              && profile("9P8DL6W0JBB8", recipe: "hades-mscoree-v1", engine: "calimocho-wine11.20-gptk4b3-tls-vulkan-private") == nil
+              && profile("9P8DL6W0JBB8", recipe: "hades-mscoree-v1", environment: ["WINEDLLOVERRIDES": "mscoree=b"]) == nil
+              && profile("9P8DL6W0JBB8", recipe: nil)?.playArguments.contains("--game-recipe") == false,
+              "602 Hades: a recipe for another title, an unknown recipe, a non-release engine or a free-form WINEDLLOVERRIDES is refused")
+        func rules(_ product: String, _ value: String?, noAutoDismiss: Bool?) -> NativeTitleLaunchProfile? {
+            var item: [String: Any] = ["version": 1, "productID": product, "engine": pin.engineName,
+                "wineSha256": pin.wineSha256, "wineserverSha256": pin.wineserverSha256,
+                "executable": "game.exe", "environment": [String: String]()]
+            if let value { item["autoDismissRules"] = value }
+            if let noAutoDismiss { item["noAutoDismiss"] = noAutoDismiss }
+            guard let data = try? JSONSerialization.data(withJSONObject: item),
+                  (try? data.write(to: directory.appendingPathComponent(product + ".json"))) != nil else { return nil }
+            return try? JSONDecoder().decode(NativeTitleLaunchProfile.self, from: data).validatedForChecks()
+        }
+        check(NativeAutoDismissRules.productID(for: "fh6-compat") == NativeFH6Recipe.productID
+              && rules("9TESTRULES00", "fh6-compat", noAutoDismiss: nil) == nil
+              && rules("9TESTRULES00", "anything", noAutoDismiss: nil) == nil
+              && rules("9TESTRULES00", nil, noAutoDismiss: true)?.playArguments.contains("--auto-dismiss-rules") == false,
+              "602 FH6: scoped popup rules are reviewed per title; another title or an unknown rule set is refused")
+    }
+
     static func run(check: (Bool, String) -> Void) async throws {
+        try gameRecipeChecks(check: check)
+        let missingPrefix = "PREFIX_MISSING_RESTORE_REQUIRED: the Wine prefix is missing but its owner record survives. Launch was stopped without recreating it."
+        check(NativePlayerFailure.message(errorCode: "OPERATION_FAILED", error: missingPrefix, diagnostic: "",
+                  windowRecorded: nil, monitorReliable: true, success: false) == NativePrefixCopy.missingRestoreRequired
+              && NativePlayerFailure.message(errorCode: "PREFIX_MISSING_RESTORE_REQUIRED", error: nil, diagnostic: "",
+                  windowRecorded: nil, monitorReliable: true, success: false) == NativePrefixCopy.missingRestoreRequired
+              && NativePrefixCopy.missingRestoreRequired.contains("Restore the prefix folder from your backup")
+              && NativePrefixCopy.missingRestoreRequired.contains("didn't create a new one")
+              && !NativePrefixCopy.missingRestoreRequired.contains("PREFIX_")
+              && NativeGameResult.failureCodes.contains("PREFIX_MISSING_RESTORE_REQUIRED"),
+              "REQ-46: A missing prefix with a surviving owner record tells the player to restore it, says nothing was recreated, and is accepted as a failure code")
+        let missingPrefixResult = try JSONDecoder().decode(NativeGameResult.self, from: Data("""
+            {"version":1,"run_id":"\(UUID().uuidString)","operation":"launch","product":"BQVQTL3PCH05",
+             "game_dir":"/synthetic","success":false,"exit_code":1,"error_code":"OPERATION_FAILED",
+             "error":"\(missingPrefix)","log_dir":"/synthetic/runs/x","result_path":"/synthetic/runs/x/result.json",
+             "progress_path":"/synthetic/runs/x/progress.jsonl","started_at":"2026-10-27T00:00:00Z",
+             "finished_at":"2026-10-27T00:00:01Z","warnings":[],"popups":[]}
+            """.utf8))
+        check(missingPrefixResult.launchFailureMessage(stoppedByUser: false) == NativePrefixCopy.missingRestoreRequired,
+              "REQ-46: Play shows the restore message for a missing prefix instead of the generic launch failure")
         check(NativePlayerFailure.message(errorCode: "TIMEOUT", error: nil, diagnostic: "",
             windowRecorded: nil, monitorReliable: false, success: false)?.contains("Open the launch log") == true,
             "A confirmed launcher timeout has plain-language copy and an actionable log route")
@@ -780,8 +849,241 @@ enum NativeLifecycleChecks {
             check(false, "A changed local legacy DLL requires selecting the updated pair")
         } catch { check(true, "A changed local legacy DLL requires selecting the updated pair") }
         try await installationStatusChecks(root: root, check: check)
+        try await fh6RecipeChecks(root: root, check: check)
         try await titleRecipeChecks(root: root, check: check)
         try await candidateRecipeChecks(root: root, runtime: reference, shims: shims, check: check)
+    }
+
+    private static func fh6RecipeChecks(root: URL, check: (Bool, String) -> Void) async throws {
+        let profile = try NativeTitleLaunchProfile.bundledProfiles().first { $0.productID == NativeFH6Recipe.productID }
+        guard let profile else { throw NativeLaunchError.invalidProfile }
+        try NativeFH6Recipe.validate(profile: profile)
+        check(profile.runtime?.primarySHA256 == "21171669a4c2b8b72addd923127587feba9b924fdae2337f679e83bb9ed31913"
+              && profile.runtime?.legacySHA256 == "e81010448dbea50a1957dafbf5bd2543dbb353b11d60da7e5223c05157d9deb5",
+              "REQ125/32/30: FH6 binds L12 runtime be7ad79 (signed gamer-picture request over e63bc66; efcbf2a run 4efdf51d 331 s, exit 0)")
+        let otherProfiles = try NativeTitleLaunchProfile.bundledProfiles().filter {
+            ![NativeFH6Recipe.productID, "9P8DL6W0JBB8", "9PDC8J1BSV8B"].contains($0.productID) && $0.runtime != nil
+        }
+        let hades = try NativeTitleLaunchProfile.bundledProfiles().first { $0.productID == "9P8DL6W0JBB8" }
+        check(hades?.runtime?.primarySHA256 == "21171669a4c2b8b72addd923127587feba9b924fdae2337f679e83bb9ed31913" && hades?.runtime?.legacySHA256 == "e81010448dbea50a1957dafbf5bd2543dbb353b11d60da7e5223c05157d9deb5"
+              && hades?.gameRecipe == "hades-mscoree-v1",
+              "REQ32/130: Hades binds runtime be7ad79 with its game recipe")
+        let edc = try NativeTitleLaunchProfile.bundledProfiles().first { $0.productID == "9PDC8J1BSV8B" }
+        check(edc?.runtime?.primarySHA256 == hades?.runtime?.primarySHA256
+              && edc?.runtime?.legacySHA256 == hades?.runtime?.legacySHA256
+              && edc?.executable == "EasyDeliveryCo.exe" && edc?.gameRecipe == nil && edc?.engine == hades?.engine,
+              "REQ130: Easy Delivery Co. binds runtime be7ad79 on release Calimocho with its own run (edc-07)")
+        check(!otherProfiles.isEmpty && otherProfiles.allSatisfy {
+            $0.runtime?.primarySHA256 == "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8"
+                && $0.runtime?.legacySHA256 == "cfe7e5f837fabc51b8066809ca69c2ee0a7852512afbb1979190ec495b0b8b96"
+        }, "REQ125: no title other than FH6, Hades and Easy Delivery Co. inherits the be7ad79 pair without its own run")
+        var oldRuntime = profile
+        oldRuntime.runtime = try JSONDecoder().decode(NativeLocalRuntime.self, from: Data("""
+        {"primaryPath":"/synthetic/xgameruntime.dll",
+         "primarySHA256":"6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8",
+         "legacySHA256":"cfe7e5f837fabc51b8066809ca69c2ee0a7852512afbb1979190ec495b0b8b96"}
+        """.utf8))
+        do {
+            try NativeFH6Recipe.validate(profile: oldRuntime)
+            check(false, "REQ125: the failed old FH6 runtime pair cannot be readmitted")
+        } catch { check(true, "REQ125: the failed old FH6 runtime pair cannot be readmitted") }
+        if !NativeFH6Recipe.enabled {
+            do {
+                try NativeFH6Recipe.requireEnabled(productID: NativeFH6Recipe.productID)
+                check(false, "REQ125: ordinary builds keep FH6 gated pending live qualification")
+            } catch { check(true, "REQ125: ordinary builds keep FH6 gated pending live qualification") }
+        }
+        check(profile.engine == NativeFH6Recipe.engineName && profile.prefixOverlays == nil
+              && profile.environment.isEmpty && profile.executable == "forzahorizon6.exe",
+              "REQ125: immutable FH6 profile selects the isolated title contract, never arbitrary admitted overlays")
+        var altered = profile
+        altered.prefixOverlays = []
+        do {
+            try NativeFH6Recipe.validate(profile: altered)
+            check(false, "REQ125: even empty arbitrary overlay declarations are refused")
+        } catch { check(true, "REQ125: even empty arbitrary overlay declarations are refused") }
+        let env = NativeFH6Recipe.environment(root: root)
+        check(env.count == 19 && env["WINEDLLOVERRIDES"] == "mscoree,mshtml=;windows.web=b"
+              && env["D3DM_MTL4"] == "0" && env["CALIMOCHO_FIX_FIBER_GS"] == "1"
+              && env["HB_D3D12_REAL"] == "Z:" + root.path.replacingOccurrences(of: "/", with: "\\")
+                + "\\lib\\wine\\x86_64-windows\\d3d12.dll",
+              "REQ125: exact Forza environment derives relocated paths and keeps windows.web builtin")
+        let game = InstalledGame(id: UUID(), title: "FH6", identityName: NativeFH6Recipe.packageIdentity,
+            version: "1.0.0.0", storeId: NativeFH6Recipe.productID, folder: root.path, launcher: "",
+            importedAt: Date(), usesNativeLifecycle: true)
+        try NativeFH6Recipe.validate(game: game, engine: NativeFH6Recipe.engineName)
+        do {
+            try NativeFH6Recipe.validate(game: game, engine: CalimochoReleasePin.release06.engineName)
+            check(false, "REQ125: plain -06 cannot silently launch FH6")
+        } catch { check(true, "REQ125: plain -06 cannot silently launch FH6") }
+        let other = InstalledGame(id: UUID(), title: "Other", identityName: game.identityName,
+            version: game.version, storeId: "9P9VNSQK1W3K", folder: root.path, launcher: "",
+            importedAt: Date(), usesNativeLifecycle: true)
+        do {
+            try NativeFH6Recipe.validate(game: other, engine: NativeFH6Recipe.engineName)
+            check(false, "REQ125: another product cannot borrow the FH6 alias")
+        } catch { check(true, "REQ125: another product cannot borrow the FH6 alias") }
+        let digest = String(repeating: "a", count: 64)
+        let inspection = EngineInspection(schemaVersion: 1, capability: "engineAdmissionV1",
+            registrySha256: digest, engineName: NativeFH6Recipe.engineName,
+            declaredProvider: "calimocho", admittedProvider: "calimocho", admission: "admitted",
+            ready: true, qualified: false, wineSha256: CalimochoReleasePin.release06.wineSha256,
+            wineserverSha256: CalimochoReleasePin.release06.wineserverSha256, error: nil)
+        let selection = AdmittedEngineSelection(registryPath: root.appendingPathComponent("fh6-registry.json").path,
+                                                inspection: inspection)
+        let title: [String: Any] = [
+            "schemaVersion": 1, "capability": "titleRecipeV1", "recipeID": NativeFH6Recipe.id,
+            "productID": NativeFH6Recipe.productID, "packageIdentity": NativeFH6Recipe.packageIdentity,
+            "engineName": NativeFH6Recipe.engineName, "registrySha256": digest,
+            "wineSha256": CalimochoReleasePin.release06.wineSha256,
+            "wineserverSha256": CalimochoReleasePin.release06.wineserverSha256,
+            "overlaySha256": NativeFH6Recipe.overlaySHA256, "postWinebootPreparation": true,
+            "ready": true, "error": NSNull()
+        ]
+        if NativeFH6Recipe.enabled {
+            _ = try NativeTitleRecipeInspection.decode(JSONSerialization.data(withJSONObject: title),
+                                                       selection: selection, exitCode: 0)
+        } else {
+            do {
+                _ = try NativeTitleRecipeInspection.decode(JSONSerialization.data(withJSONObject: title),
+                                                           selection: selection, exitCode: 0)
+                check(false, "REQ125: ordinary builds cannot admit an unqualified title recipe")
+            } catch NativeLaunchError.titleRecipeUnavailable {
+                check(true, "REQ125: ordinary builds cannot admit an unqualified title recipe")
+            }
+            check(!NativeLaunchSupport.evaluate(productID: game.storeId, hasEngineOverride: true).canPlay
+                  && !NativeLaunchSupport.hasLaunchProfile(productID: game.storeId),
+                  "REQ125: an FH6 override cannot bypass the live-qualification presentation gate")
+            let store = InstalledGameStore(file: root.appendingPathComponent("fh6-overrides/games.json"))
+            try await store.save([game])
+            do {
+                _ = try await store.setEngineOverrideV2(id: game.id, selection: selection)
+                check(false, "REQ125: ordinary builds cannot persist an unqualified FH6 override")
+            } catch NativeLaunchError.titleRecipeUnavailable {
+                check(try await store.load().first?.engineOverrideV2 == nil,
+                      "REQ125: ordinary builds refuse an unqualified FH6 override without changing saved selection")
+            }
+        }
+        let suite = "io.github.xodus.fh6-default-check.\(UUID().uuidString)"
+        guard let defaults = UserDefaults(suiteName: suite) else { throw NativeLaunchError.invalidProfile }
+        defer { defaults.removePersistentDomain(forName: suite) }
+        do {
+            try NativeEngineSettings.persistDefaultAdmission(selection, defaults: defaults)
+            check(false, "REQ125: title-only alias cannot become a global default")
+        } catch NativeLaunchError.titleRecipeUnavailable {
+            check(defaults.data(forKey: NativeEngineDefaults.preferenceKey) == nil
+                  && !NativeEngineDefaults.permitsGlobalDefault(selection),
+                  "REQ125: title-only alias is excluded from global choices and default persistence")
+        }
+        defaults.set(try JSONEncoder().encode(selection), forKey: NativeEngineDefaults.preferenceKey)
+        check(try NativeEngineSettings.defaultAdmissionName(defaults: defaults) == CalimochoReleasePin.release06.engineName
+              && defaults.object(forKey: NativeEngineDefaults.preferenceKey) == nil,
+              "REQ125: an already-persisted title-only default is removed safely without retargeting games")
+        for key in ["productID", "packageIdentity", "engineName", "registrySha256", "overlaySha256",
+                    "postWinebootPreparation", "ready", "extra"] {
+            var invalid = title
+            invalid[key] = ["postWinebootPreparation", "ready"].contains(key) ? false : "wrong"
+            do {
+                _ = try NativeTitleRecipeInspection.decode(JSONSerialization.data(withJSONObject: invalid),
+                                                           selection: selection, exitCode: 0)
+                check(false, "REQ125: title inspection refuses mismatched \(key)")
+            } catch { check(true, "REQ125: title inspection refuses mismatched \(key)") }
+        }
+        let engineJSON = String(decoding: try JSONEncoder().encode(inspection), as: UTF8.self)
+        let titleJSON = String(decoding: try JSONSerialization.data(withJSONObject: title), as: UTF8.self)
+        let mock = root.appendingPathComponent("fh6-inspection-cli")
+        let mockSource = """
+        #!/bin/sh
+        if [ "$1" = "engine-inspect" ]; then
+          if [ "$2" = "--contract-version" ]; then
+            printf '%s\\n' '{"schemaVersion":1,"capability":"engineAdmissionV1","supported":true}'
+          else
+            printf '%s\\n' '\(engineJSON)'
+          fi
+        elif [ "$1" = "title-recipe-inspect" ]; then
+          if [ "$2" = "--contract-version" ]; then
+            printf '%s\\n' '{"schemaVersion":1,"capability":"titleRecipeV1","supported":true}'
+          else
+            printf '%s\\n' '\(titleJSON)'
+          fi
+        else
+          exit 91
+        fi
+
+        """
+        try Data(mockSource.utf8).write(to: mock)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: mock.path)
+        let backend = BackendConfiguration(executable: mock, stateDirectory: root)
+        let arguments = ["--engine", NativeFH6Recipe.engineName, "--registry", selection.registryPath,
+                         "--expected-registry-sha256", digest] + NativeFH6Recipe.arguments
+        do {
+            try await EngineInspectionClient().validateLaunch(configuration: backend, arguments: arguments,
+                selection: selection, product: NativeFH6Recipe.productID)
+            check(NativeFH6Recipe.enabled,
+                  "REQ125: only labelled qualification builds may admit the exact unqualified title for live testing")
+        } catch NativeLaunchError.titleRecipeUnavailable {
+            check(!NativeFH6Recipe.enabled, "REQ125: exact capability cannot bypass the ordinary-build live gate")
+        }
+        do {
+            try await EngineInspectionClient().validateLaunch(configuration: backend,
+                arguments: arguments + ["--shim-dir", root.path], selection: selection, product: NativeFH6Recipe.productID)
+            check(false, "REQ125: title launch refuses the unqualified native shim directory")
+        } catch { check(true, "REQ125: title launch refuses the unqualified native shim directory") }
+        for (label, source) in [
+            ("unsupported capability", mockSource.replacingOccurrences(
+                of: "\"capability\":\"titleRecipeV1\",\"supported\":true",
+                with: "\"capability\":\"titleRecipeV1\",\"supported\":false")),
+            ("unprepared inspection", mockSource.replacingOccurrences(
+                of: "\"postWinebootPreparation\":true", with: "\"postWinebootPreparation\":false"))
+        ] {
+            try Data(source.utf8).write(to: mock)
+            var prepared = false
+            let lifecycle = NativeGameLifecycle()
+            do {
+                _ = try await lifecycle.run(configuration: backend, accountHash: String(repeating: "a", count: 64),
+                    operation: "launch", product: NativeFH6Recipe.productID, gameDirectory: root,
+                    runID: InstalledGamesController.runID(), stateRoot: root.appendingPathComponent(UUID().uuidString),
+                    launchArguments: arguments, engineSelection: selection, prepareAdmittedPrefix: { prepared = true })
+                check(false, "REQ125: \(label) must block before preparation")
+            } catch {
+                check((error is EngineInspectionError || error is NativeLaunchError)
+                      && !prepared && lifecycle.stateDirectory == nil,
+                      "REQ125: \(label) blocks before prefix preparation, state writes or child spawn")
+            }
+        }
+        let receiptFile = root.appendingPathComponent("title-recipe.json")
+        let receipt: [String: Any] = [
+            "schemaVersion": 1, "capability": "titleRecipeV1", "recipeID": NativeFH6Recipe.id,
+            "productID": NativeFH6Recipe.productID, "packageIdentity": NativeFH6Recipe.packageIdentity,
+            "engineName": NativeFH6Recipe.engineName, "registrySha256": digest,
+            "wineSha256": CalimochoReleasePin.release06.wineSha256,
+            "wineserverSha256": CalimochoReleasePin.release06.wineserverSha256,
+            "overlaySha256": NativeFH6Recipe.overlaySHA256,
+            "sourcePath": root.appendingPathComponent(NativeFH6Recipe.overlaySource).path,
+            "destinationRelativePath": NativeFH6Recipe.overlayDestination,
+            "sourceSha256": NativeFH6Recipe.overlaySHA256,
+            "destinationPath": root.appendingPathComponent("prefix").appendingPathComponent(NativeFH6Recipe.overlayDestination).path,
+            "destinationSha256Before": NSNull(),
+            "destinationSha256AfterUpdate": "02aa673497ff8694b41f976e194a920468e54897f3546ed1cd4c1b3a97179735",
+            "destinationSha256BeforeFinalCheck": NativeFH6Recipe.overlaySHA256,
+            "destinationSha256After": NativeFH6Recipe.overlaySHA256,
+            "updateRan": true, "preparationCompleted": true, "status": "pre_exec_verified",
+            "attestation": "staged bytes, not in-memory loaded modules", "receiptPath": receiptFile.path
+        ]
+        let receiptValue = try JSONValue.decodeUnique(JSONSerialization.data(withJSONObject: receipt), maximumBytes: 32_768)
+        try NativeTitleRecipeReceipt.validateShape(receiptValue, includesPath: true)
+        try receiptValue.decode(NativeTitleRecipeReceipt.self).validate(logDirectory: root.path)
+        check(true, "REQ125: preparation receipt distinguishes Wine's builtin overwrite from the final verified shim")
+        for key in ["preparationCompleted", "updateRan", "destinationSha256After", "recipeID", "receiptPath", "extra"] {
+            var invalid = receipt
+            invalid[key] = ["preparationCompleted", "updateRan"].contains(key) ? false : "wrong"
+            do {
+                let value = try JSONValue.decodeUnique(JSONSerialization.data(withJSONObject: invalid), maximumBytes: 32_768)
+                try NativeTitleRecipeReceipt.validateShape(value, includesPath: true)
+                try value.decode(NativeTitleRecipeReceipt.self).validate(logDirectory: root.path)
+                check(false, "REQ125: preparation receipt refuses invalid \(key)")
+            } catch { check(true, "REQ125: preparation receipt refuses invalid \(key)") }
+        }
     }
 
     private static func installCalimochoRouteFixture(root: URL, defaults: UserDefaults,

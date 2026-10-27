@@ -340,6 +340,8 @@ struct LiveCatalogView: View {
     @State private var detailFocusReturnID: String?
     @State private var seasonalDate = Date()
     @StateObject private var halloweenCatalog = HalloweenCatalog()
+    @StateObject private var gamePassShelves = GamePassCollections(artwork: .shared,
+                                                                   keys: DiscoverGamePassShelf.keys)
 
     private var projection: CatalogProjection { selection.projection.current }
     private var results: CatalogSearchResults { projection.index.results }
@@ -447,6 +449,20 @@ struct LiveCatalogView: View {
                                 }
                             }
                             .accessibilityIdentifier("xodus.catalog.halloween")
+                        }
+                        ForEach(DiscoverGamePassShelf.allCases) { shelf in
+                            let products = shelfProducts(shelf)
+                            if !products.isEmpty {
+                                VStack(alignment: .leading, spacing: 16) {
+                                    Text(shelf.title).font(.title2.weight(.semibold))
+                                        .accessibilityAddTraits(.isHeader)
+                                    browseShelf(products, demandLoads: false, shelfID: shelf.rawValue,
+                                                label: "\(shelf.title) games") {
+                                        await loadMoreShelf(shelf)
+                                    }
+                                }
+                                .accessibilityIdentifier("xodus.catalog.shelf.\(shelf.rawValue)")
+                            }
                         }
                     }
                 } else {
@@ -620,7 +636,7 @@ struct LiveCatalogView: View {
                 if query.isEmpty {
                     Link("Game Pass benefits", destination: SubscriberBenefits.officialURL)
                         .font(.callout)
-                        .foregroundStyle(.primary)
+                        .accessibleLink()
                 }
             }
             .padding(.horizontal, 56).padding(.bottom, 32)
@@ -655,6 +671,7 @@ struct LiveCatalogView: View {
         }
         .onExitCommand(perform: exitSearchResults)
         .task(id: halloweenScope) { await loadHalloween() }
+        .task(id: gamePassShelvesScope) { await loadGamePassShelves() }
         .task(id: CatalogArtworkLoadKey(market: session.market, language: session.language,
                                        ids: presentationActive ? metadataIDs : [])) {
             guard allowsArtworkLoading, presentationActive else { return }
@@ -692,6 +709,29 @@ struct LiveCatalogView: View {
             language: session.language, refresh: refresh)
     }
 
+    private var gamePassShelvesScope: String? {
+        guard query.isEmpty, presentationActive, allowsStartupTasks, session.isReady,
+              session.accountCountryReady else { return nil }
+        return session.accountCatalogScope
+    }
+
+    private func loadGamePassShelves() async {
+        guard gamePassShelvesScope != nil else { return }
+        await gamePassShelves.load(market: session.market, language: session.language)
+    }
+
+    private func shelfProducts(_ shelf: DiscoverGamePassShelf) -> [CatalogProduct] {
+        DiscoverGamePassShelf.products(gamePassShelves.collections.first { $0.key == shelf.rawValue },
+            facts: art.images.mapValues(\.facts)) { isVisible(game($0)) }
+    }
+
+    private func loadMoreShelf(_ shelf: DiscoverGamePassShelf) async {
+        guard gamePassShelvesScope != nil,
+              gamePassShelves.collections.first(where: { $0.key == shelf.rawValue })?.hasMore == true else { return }
+        await gamePassShelves.loadCollection(shelf.rawValue, market: session.market,
+                                             language: session.language, more: true)
+    }
+
     private var metadataIDs: [String] {
         DiscoverBrowse.admittedIDs(results.storeProducts,
             limit: query.isEmpty ? selection.browseLimit : 512)
@@ -713,15 +753,20 @@ struct LiveCatalogView: View {
             .opacity(0.22)
     }
 
-    private func browseShelf(_ products: [CatalogProduct], demandLoads: Bool, shelfID: String? = nil) -> some View {
+    private func browseShelf(_ products: [CatalogProduct], demandLoads: Bool, shelfID: String? = nil,
+                             label: String? = nil, reachedEnd: (() async -> Void)? = nil) -> some View {
         ScrollView(.horizontal) {
             LazyHStack(alignment: .top, spacing: 24) {
                 ForEach(products) { product in
                     card(game(product)).frame(width: 196)
                         .id(shelfID.map { "discover-\($0)-card-\(product.id)" } ?? "discover-card-\(product.id)")
                         .modifier(HeroScrollVisibility { visible in
-                            guard visible, demandLoads, selection.genre == nil, products.count >= 8,
-                                  product.id == products.last?.id, presentationActive,
+                            guard visible, product.id == products.last?.id, presentationActive else { return }
+                            if let reachedEnd {
+                                Task { await reachedEnd() }
+                                return
+                            }
+                            guard demandLoads, selection.genre == nil, products.count >= 8,
                                   session.catalogError == nil, !session.catalogStopped else { return }
                             Task { await loadNextBrowsePage() }
                         })
@@ -730,7 +775,7 @@ struct LiveCatalogView: View {
         }
         .scrollIndicators(.never)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel((shelfID ?? selection.genre).map { "\($0) games" }
+        .accessibilityLabel(label ?? (shelfID ?? selection.genre).map { "\($0) games" }
             ?? (session.supports(.discover) ? "Loaded PC Game Pass games" : "Loaded games"))
     }
 
@@ -836,7 +881,8 @@ struct LiveCatalogView: View {
 
     private func restoreDetailFocus() {
         guard let detailFocusReturnID else { return }
-        let available = Set(ownedMatches.map(\.id) + visible.map(\.id)).subtracting(retainedPublicIDs)
+        let shelved = query.isEmpty ? DiscoverGamePassShelf.allCases.flatMap { shelfProducts($0).map(\.id) } : []
+        let available = Set(ownedMatches.map(\.id) + visible.map(\.id) + shelved).subtracting(retainedPublicIDs)
         if let target = GameSearchPresentation.focusReturnTarget(preferred: detailFocusReturnID,
                                                                   available: available) {
             focusedResult = target

@@ -51,6 +51,8 @@ struct LibraryFirstLoadInputs: Equatable {
     var artworkTotal = 0
     var artworkReady = 0
     var artworkSettled = false
+    /// REQ-119: the saved library for this account is already on screen (warm launch).
+    var showingSavedLibrary = false
 }
 
 enum LibraryFirstLoadStep: Int, CaseIterable, Comparable {
@@ -153,6 +155,11 @@ struct LibraryFirstLoad: Equatable {
         }
         if inputs.needsAccountAction {
             phase = .finished(.accountAction)
+            return
+        }
+        // REQ-119: a warm launch shows the saved library at once and reads the account behind it.
+        if inputs.showingSavedLibrary, inputs.gamesFound > 0, failure == nil {
+            phase = .finished(.ready)
             return
         }
         if let error = inputs.error, !inputs.loading, inputs.gamesFound == 0 {

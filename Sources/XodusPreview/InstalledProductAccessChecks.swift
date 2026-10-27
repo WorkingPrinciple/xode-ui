@@ -41,6 +41,27 @@ enum InstalledProductAccessChecks {
               "REQ-119 F1: Access checks run back to back with no fixed 100 ms gap (21 synthetic checks took \(elapsed))")
         pendingAccess.retire()
 
+        let sweep = InstalledProductAccess()
+        let sweepIDs = (0..<12).map { String(format: "9SWEEP%06d", $0) }
+        let urgent = "9URGENT00001"
+        var order: [String] = []
+        let slowReader: @MainActor (String) async throws -> OdeAccountRead = { id in
+            order.append(id)
+            try await Task.sleep(for: .milliseconds(30))
+            return try response(id)
+        }
+        let running = Task { @MainActor in
+            await sweep.refresh(account: account, installedIDs: sweepIDs, now: now, read: slowReader)
+        }
+        for _ in 0..<100 where order.count < 2 { try await Task.sleep(for: .milliseconds(5)) }
+        await sweep.prioritize(urgent, account: account, installedIDs: sweepIDs + [urgent], read: slowReader)
+        await running.value
+        let urgentIndex = order.firstIndex(of: urgent)
+        check(urgentIndex.map { $0 <= 3 } == true && order.count == sweepIDs.count + 1
+              && sweep.permits(urgent, account: account, now: now),
+              "L8 e2e: a deep link's newly registered game is checked next inside a running access sweep, not after it (position \(urgentIndex.map(String.init) ?? "none") of \(order.count))")
+        sweep.retire()
+
         let controller = InstalledProductAccess()
         defer { controller.retire() }
         var requests: [String] = []
@@ -215,6 +236,29 @@ enum InstalledProductAccessChecks {
         local.useUnifiedAccount(LiveSession())
         local.setAccountAccessAllowed(true)
         check(!local.canRequestPlay(product), "Installed presence and confirmed sign-in alone never enable Play")
+        let waitStarted = ContinuousClock.now
+        let unsettled = InstalledGame(id: UUID(), title: "Synthetic pending title", identityName: "Synthetic",
+            version: "1.0.0.0", storeId: product, folder: "/synthetic/never-read",
+            launcher: "/synthetic/never-executed", importedAt: now)
+        let pendingMessage = await local.playFromLaunchRequest(unsettled, engine: nil, timeout: .milliseconds(400))
+        let waited = waitStarted.duration(to: .now)
+        check(!local.productAccessSettled(product) && waited >= .milliseconds(400) && waited < .seconds(3)
+              && pendingMessage?.contains("wasn't confirmed within") == true && !local.launchStarted
+              && local.runningGameID == nil,
+              "L7: A deep-link Play waits (bounded) for a pending access check instead of failing at once, then reports it truthfully without launching (\(waited))")
+        var flag = false
+        Task { @MainActor in try? await Task.sleep(for: .milliseconds(100)); flag = true }
+        let became = await InstalledGamesController.waitUntil(timeout: .seconds(2), interval: .milliseconds(20)) { flag }
+        let never = await InstalledGamesController.waitUntil(timeout: .milliseconds(100), interval: .milliseconds(20)) { false }
+        check(became && !never, "L7: The deep-link wait returns as soon as access settles and gives up at its bound")
+        let direct = InstalledGamesController()
+        direct.setAccountAccessAllowed(true)
+        let wrongEngine = await direct.playFromLaunchRequest(unsettled, engine: "highball-x64-crossover26.3-r27",
+                                                              timeout: .milliseconds(200))
+        check(wrongEngine?.contains("isn't available for Synthetic pending title") == true
+              && wrongEngine?.contains("No other engine was used") == true
+              && direct.runningGameID == nil && !direct.launchStarted && unsettled.engineOverrideV2 == nil,
+              "L8: A deep-link engine outside the title's verified Engine menu is refused, never substituted or launched")
         let game = InstalledGame(id: UUID(), title: "Synthetic installed title", identityName: "Synthetic",
             version: "1.0.0.0", storeId: product, folder: "/synthetic/never-read",
             launcher: "/synthetic/never-executed", importedAt: now)

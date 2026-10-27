@@ -35,7 +35,9 @@ actor PublicCatalogDescriptors {
     }
     private struct Waiter {
         let id: UUID
-        let background: Bool
+        var background: Bool
+        /// The batch waiting, so a foreground reader joining it can promote it.
+        let owner: UUID?
         let continuation: CheckedContinuation<Void, Error>
     }
     private struct Entry {
@@ -55,11 +57,15 @@ actor PublicCatalogDescriptors {
     private struct Pending {
         let task: Task<Data?, Error>
         let network: Bool
+        var batch: UUID? = nil
+        var background = false
     }
     private let transport: any PCGamesTransport
     private let now: @Sendable () -> Date
     private let sleep: @Sendable (Duration) async throws -> Void
     private var batches: [UUID: Task<Batch, Error>] = [:]
+    /// Background batches a foreground reader joined; they queue as foreground from then on (review L6).
+    private var promoted = Set<UUID>()
     private var retryNotBefore: Date?
     private var client: ManagementClient?
     private var owner: UUID?
@@ -215,6 +221,7 @@ actor PublicCatalogDescriptors {
                 result[key] = entry.bytes
             } else if let read = pending[key] {
                 waiting[key] = read.task
+                if !background, read.background, let batch = read.batch { promote(batch) }
             } else if !refresh, let revalidation = revalidating[key] {
                 stale[key] = revalidation.stale
                 if !following.contains(revalidation.task) { following.append(revalidation.task) }
@@ -250,10 +257,13 @@ actor PublicCatalogDescriptors {
             let client = client
             let batchID = UUID()
             let batch = Task { () throws -> Batch in
-                defer { batches[batchID] = nil }
+                defer {
+                    batches[batchID] = nil
+                    promoted.remove(batchID)
+                }
                 let batch = try await recovering(ids: missing.map(\.id), market: market,
                     language: client == nil ? language : wireLanguage, client: client, refresh: refresh,
-                    epoch: epoch, background: background)
+                    epoch: epoch, background: background, owner: batchID)
                 if generation == epoch { persist(batch.entries, market: market, language: language) }
                 return batch
             }
@@ -268,7 +278,7 @@ actor PublicCatalogDescriptors {
                     if let value = batch.entries[key.id] { insert(value, for: key) }
                     return batch.entries[key.id]?.bytes
                 }
-                pending[key] = Pending(task: task, network: refresh)
+                pending[key] = Pending(task: task, network: refresh, batch: batchID, background: background)
                 waiting[key] = task
             }
         }
@@ -381,8 +391,14 @@ actor PublicCatalogDescriptors {
     }
 
     /// Caps concurrent descriptor network reads across every consumer; foreground reads go before revalidation.
-    private func acquireNetwork(background: Bool) async throws {
+    private func promote(_ batch: UUID) {
+        guard promoted.insert(batch).inserted else { return }
+        for index in waiters.indices where waiters[index].owner == batch { waiters[index].background = false }
+    }
+
+    private func acquireNetwork(background requested: Bool, owner: UUID? = nil) async throws {
         try Task.checkCancellation()
+        let background = requested && !(owner.map(promoted.contains) ?? false)
         let limit = client == nil ? Self.directNetworkLimit : PCGamesClient.descriptorConcurrency
         let queued = background ? !waiters.isEmpty : waiters.contains { !$0.background }
         if networkActive < limit, !queued {
@@ -394,7 +410,7 @@ actor PublicCatalogDescriptors {
         try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
                 if Task.isCancelled { continuation.resume(throwing: CancellationError()) }
-                else { waiters.append(Waiter(id: id, background: background, continuation: continuation)) }
+                else { waiters.append(Waiter(id: id, background: background, owner: owner, continuation: continuation)) }
             }
         } onCancel: {
             Task { await self.cancelWaiter(id) }
@@ -417,7 +433,7 @@ actor PublicCatalogDescriptors {
 
     private func recovering(ids: [String], market: String, language: String,
                             client: ManagementClient?, refresh: Bool, epoch: UUID,
-                            background: Bool) async throws -> Batch {
+                            background: Bool, owner: UUID? = nil) async throws -> Batch {
         var remaining = ids
         var result = Batch()
         for attempt in 0...3 {
@@ -425,7 +441,7 @@ actor PublicCatalogDescriptors {
             guard epoch == generation else { throw CancellationError() }
             var delay: TimeInterval = pow(2, Double(attempt))
             do {
-                try await acquireNetwork(background: background)
+                try await acquireNetwork(background: background, owner: owner)
                 guard epoch == generation else {
                     releaseNetwork()
                     throw CancellationError()
@@ -554,6 +570,7 @@ actor PublicCatalogDescriptors {
     private func managed(ids: [String], market: String, language: String,
                          client: ManagementClient, refresh: Bool) async throws -> Batch {
         requests += 1
+        try DebugFaultInjection.check(.descriptors)
         let value = try await client.request(.descriptors, params: [
             "productIDs": .array(ids.map(JSONValue.string)), "market": .string(market),
             "language": .string(language), "refresh": .string(refresh ? "network" : "cache")
@@ -565,12 +582,20 @@ actor PublicCatalogDescriptors {
         let encoder = JSONEncoder()
         encoder.outputFormatting = .sortedKeys
         var invalid = checked.invalid
+        // REQ-121 diagnosis: name why records are rejected (no product IDs), so a live run can attribute them.
+        var reasons: [String: Int] = [:]
+        let checkedAt = now()
+        for record in response.descriptors where checked.invalid.contains(record.productID) {
+            reasons[CatalogDescriptors.rejection(record, market: market, language: language, now: checkedAt)
+                    ?? "unknown", default: 0] += 1
+        }
         for record in checked.valid {
             guard let bytes = try? encoder.encode(record.product),
                   let wrapped = try? JSONEncoder().encode(JSONValue.object(["Products": .array([record.product])])),
                   (try? JSONDecoder().decode(PCGamesCatalog.self, from: wrapped)) != nil,
                   let expiry = try? record.expiration() else {
                 invalid.insert(record.productID)
+                reasons["productDecode", default: 0] += 1
                 continue
             }
             result.entries[record.productID] = Entry(bytes: bytes, expiresAt: expiry, usedAt: now())
@@ -578,7 +603,7 @@ actor PublicCatalogDescriptors {
         for id in invalid { result.failures[id] = Self.unreadableRecord }
         if !invalid.isEmpty {
             Logger(subsystem: "io.github.dragoshont.xodus", category: "pc-library")
-                .warning("Public descriptor records rejected individually: \(invalid.count) of \(ids.count)")
+                .warning("Public descriptor records rejected individually: \(invalid.count) of \(ids.count); reasons=\(reasons.sorted { $0.key < $1.key }.map { "\($0.key):\($0.value)" }.joined(separator: ","), privacy: .public) requestedMarket=\(market, privacy: .public) requestedLanguage=\(language, privacy: .public) recordMarkets=\(Set(response.descriptors.map(\.market)).sorted().joined(separator: "/"), privacy: .public) recordLanguages=\(Set(response.descriptors.map(\.language)).sorted().joined(separator: "/"), privacy: .public)")
         }
         let oversized = response.failures.filter {
             $0.error.code == "LIMIT_EXCEEDED" && !$0.error.retryable

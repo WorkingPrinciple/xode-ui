@@ -64,6 +64,182 @@ enum EngineManagementChecks {
         check(EngineDisplayName.label("calimocho-wine11.20-gptk4b3-tls-vulkan-private") == "Calimocho"
               && EngineDisplayName.label("apple-gptk-4.0b3") == "Apple Game Porting Toolkit",
               "REQ114 U2 engine identifiers map to user-meaningful names without renaming IDs")
+        highballChecks(check: check)
+    }
+
+    static func highballChecks(check: (Bool, String) -> Void) {
+        func json(_ state: String, qualified: Bool, product: String, error: String?) -> Data {
+            let failure = error.map { "{\"code\":\"\($0)\"}" } ?? "null"
+            return Data("""
+            {"schemaVersion":1,"capability":"highballAdmissionV1","providerID":"highball","state":"\(state)",
+            "qualified":\(qualified),"admitted":\(qualified),"ready":\(qualified),"productID":"\(product)",
+            "candidate":{"version":"0.10.22"},"error":\(failure)}
+            """.utf8)
+        }
+        check(HighballContract.decode(json("missing", qualified: false, product: "9P9VNSQK1W3K",
+                                           error: "HIGHBALL_NOT_INSTALLED")) == .missing,
+              "REQ127 missing Highball decodes and offers Get")
+        check(HighballContract.decode(json("detected", qualified: false, product: "BQVQTL3PCH05",
+                                           error: "HIGHBALL_TITLE_UNQUALIFIED"))
+              == .detected(version: "0.10.22", blocker: "HIGHBALL_TITLE_UNQUALIFIED"),
+              "REQ127 detected-but-unqualified Highball is blocked")
+        check(HighballContract.decode(json("qualified", qualified: true, product: "9P9VNSQK1W3K", error: nil))
+              == .qualified(version: "0.10.22", productID: "9P9VNSQK1W3K"),
+              "REQ127 qualified requires the backend verdict")
+        check(HighballContract.decode(json("detected", qualified: true, product: "X", error: nil)) == nil
+              && HighballContract.decode(json("qualified", qualified: false, product: "X", error: nil)) == nil
+              && HighballContract.decode(Data("{}".utf8)) == nil,
+              "REQ127 inconsistent or unknown backend output is never qualified")
+        check(HighballState.missing.offersGet && !HighballState.detected(version: nil, blocker: nil).offersGet
+              && HighballContract.detect(at: URL(fileURLWithPath: "/nonexistent/Highball.app")) == .missing,
+              "REQ127 Get appears only when absent and detection is read-only")
+        let qualified = json("qualified", qualified: true, product: HighballContract.qualifiedProductID, error: nil)
+        check(HighballContract.decode(qualified, product: HighballContract.qualifiedProductID, exitCode: 0) != nil
+              && HighballContract.decode(qualified, product: "BQVQTL3PCH05", exitCode: 0) == nil
+              && HighballContract.decode(qualified, product: HighballContract.qualifiedProductID, exitCode: 1) == nil
+              && HighballContract.decode(json("detected", qualified: false, product: HighballContract.qualifiedProductID,
+                                              error: "HIGHBALL_TITLE_UNQUALIFIED"),
+                                         product: HighballContract.qualifiedProductID, exitCode: 0) == nil,
+              "REQ127 a verdict for another product, or an exit status that disagrees with it, is refused")
+        let local = HighballState.detected(version: "0.10.22", blocker: nil)
+        check(HighballContract.reconcile(local: local, backend: nil) == local
+              && !HighballContract.reconcile(local: local, backend: nil).isQualified
+              && HighballContract.reconcile(local: local, backend: .qualified(version: "0.10.22",
+                  productID: HighballContract.qualifiedProductID)).isQualified
+              && HighballContract.reconcile(local: .missing, backend: nil) == .missing,
+              "REQ127 without a backend verdict Highball stays Detected, never Qualified")
+        check(HighballCopy.detail(.qualified(version: "0.10.22", productID: HighballContract.qualifiedProductID))
+                == "0.10.22 · Qualified for Brotato only"
+              && HighballCopy.detail(.detected(version: nil, blocker: "HIGHBALL_SIGNATURE_INVALID"))
+                == "Signature couldn't be verified"
+              && HighballCopy.detail(.detected(version: "1", blocker: nil)) == "1 · Not qualified"
+              && !HighballCopy.explanation.contains("backend")
+              && HighballCopy.explanation.contains(AppBrand.displayName),
+              "REQ127 rows read Missing, Detected or Qualified for the one title in plain language")
+    }
+
+    /// COR-224/REQ-127: admitted CrossOver and Highball engines decode, but launch only for their one title.
+    static func providerScopeChecks(check: (Bool, String) -> Void) throws {
+        func inspection(_ declared: String?, _ admitted: String?, admission: String = "admitted",
+                        name: String = "engine") -> EngineInspection {
+            EngineInspection(schemaVersion: 1, capability: "engineAdmissionV1",
+                registrySha256: String(repeating: "a", count: 64), engineName: name, declaredProvider: declared,
+                admittedProvider: admitted, admission: admission, ready: true, qualified: false,
+                wineSha256: String(repeating: "b", count: 64), wineserverSha256: String(repeating: "c", count: 64),
+                error: nil)
+        }
+        func decodes(_ value: EngineInspection) -> Bool {
+            guard let bytes = try? JSONEncoder().encode(value) else { return false }
+            return (try? EngineInspection.decode(bytes, engine: "engine", registryDigest: nil, exitCode: 0)) != nil
+        }
+        check(decodes(inspection("calimocho", "calimocho")) && decodes(inspection("crossover", "crossover"))
+              && decodes(inspection("highball", "highball"))
+              && !decodes(inspection("other", "other")) && !decodes(inspection("crossover", "highball"))
+              && !decodes(inspection("highball", "calimocho"))
+              && !decodes(inspection("crossover", nil, admission: "genericWine"))
+              && decodes(inspection("other", nil, admission: "genericWine")),
+              "REQ127/COR224: engine-inspect admits Calimocho, CrossOver and Highball only as themselves; unknown providers fail closed")
+        func selection(_ provider: String) -> AdmittedEngineSelection {
+            AdmittedEngineSelection(registryPath: "/tmp/registry.json", inspection: inspection(provider, provider))
+        }
+        func game(_ product: String) -> InstalledGame {
+            InstalledGame(id: UUID(), title: "Fixture", identityName: "Fixture", version: "1", storeId: product,
+                          folder: "/tmp/fixture", launcher: "", importedAt: Date())
+        }
+        func overrides(_ provider: String, _ product: String) -> Bool {
+            (try? NativeLaunchConfiguration.validateOverride(selection(provider), game: game(product))) != nil
+        }
+        check(overrides("crossover", AdmittedProviderScope.crossOverProductID)
+              && !overrides("crossover", HighballContract.qualifiedProductID)
+              && overrides("highball", HighballContract.qualifiedProductID)
+              && !overrides("highball", AdmittedProviderScope.crossOverProductID)
+              && !overrides("highball", "FIXTURE00001") && !overrides("crossover", "FIXTURE00001"),
+              "REQ127/COR224: CrossOver appears only for No Man's Sky and Highball only for Brotato")
+        check(NativeEngineDefaults.permitsGlobalDefault(selection("calimocho"))
+              && !NativeEngineDefaults.permitsGlobalDefault(selection("crossover"))
+              && !NativeEngineDefaults.permitsGlobalDefault(selection("highball")),
+              "COR263: Calimocho stays the only global default; title-scoped providers never become it")
+        let home = "/Users/fixture"
+        let root = HighballContract.engineRoot(home: home).path
+        func verdict(_ entry: [String: Any]) -> Data {
+            (try? JSONSerialization.data(withJSONObject: [
+                "schemaVersion": 1, "capability": "highballAdmissionV1", "providerID": "highball",
+                "productID": HighballContract.qualifiedProductID, "state": "qualified", "admitted": true,
+                "ready": true, "qualified": true, "candidate": ["version": "0.10.22"], "engine": NSNull(),
+                "error": NSNull(), "registryEntry": entry])) ?? Data()
+        }
+        var entry: [String: Any] = [
+            "name": HighballContract.engineName, "provider": ["id": "highball", "contract_version": 1],
+            "kind": "free", "local_only": true, "version": "Highball 0.10.22 engine x64-crossover26.3-r27",
+            "renderer": "dxmt", "install_path": root, "wine": root + "/engine/bin/wine",
+            "wineserver": root + "/engine/bin/wineserver", "sha256": HighballContract.wineSha256,
+            "wineserver_sha256": HighballContract.wineserverSha256,
+            "environment": ["WINEESYNC": "0"], "smoke_test": ["status": "pass", "evidence": "x"]]
+        let rendered = try HighballContract.registryData(verdict: verdict(entry),
+            product: HighballContract.qualifiedProductID, exitCode: 0, home: home)
+        let again = try HighballContract.registryData(verdict: verdict(entry),
+            product: HighballContract.qualifiedProductID, exitCode: 0, home: home)
+        entry["wine"] = "/tmp/other/wine"
+        let moved = try? HighballContract.registryData(verdict: verdict(entry),
+            product: HighballContract.qualifiedProductID, exitCode: 0, home: home)
+        let refused = try? HighballContract.registryData(verdict: verdict(entry),
+            product: HighballContract.qualifiedProductID, exitCode: 1, home: home)
+        check(rendered == again && String(decoding: rendered, as: UTF8.self).contains(HighballContract.engineName)
+              && moved == nil && refused == nil,
+              "REQ127: The Highball registry renders deterministically from a qualified verdict for the pinned engine path only")
+    }
+
+    /// Owner decision (27 Oct): a profile's qualification time bound never reaches user Play.
+    static func playTimeoutChecks(check: (Bool, String) -> Void) throws {
+        let profiles = try NativeTitleLaunchProfile.bundledProfiles()
+        let bounded = profiles.filter { $0.timeoutSeconds != nil }
+        let source = (try? String(contentsOfFile: "Sources/XodusPreview/NativeLaunchConfiguration.swift", encoding: .utf8)) ?? ""
+        let play = source.range(of: "func arguments() async throws -> [String] {").map {
+            String(source[$0.lowerBound...].prefix(2_000)) } ?? ""
+        check(!bounded.isEmpty && bounded.allSatisfy { $0.arguments.contains("--timeout-seconds") }
+              && profiles.allSatisfy { !$0.playArguments.contains("--timeout-seconds") }
+              && play.contains("profile?.playArguments") && !play.contains("profile?.arguments"),
+              "Owner: app Play never passes --timeout-seconds for any of \(profiles.count) bundled profiles; the bound stays on probe arguments only (\(bounded.map(\.productID)))")
+    }
+
+    /// REQ-127: the app runs only the read-only `highball-inspect` contract and never a game or Highball.
+    static func highballInspectionChecks(root: URL, check: (Bool, String) -> Void) async throws {
+        let cli = root.appendingPathComponent("highball-cli")
+        let launched = root.appendingPathComponent("highball-must-not-run")
+        func script(capability: String, verdict: String, exit: Int) throws {
+            try Data("""
+            #!/bin/sh
+            if [ "$1" != "highball-inspect" ]; then /usr/bin/touch '\(launched.path)'; exit 91; fi
+            if [ "$2" = "--contract-version" ]; then printf '%s\\n' '\(capability)'; exit 0; fi
+            if [ "$2" != "--product" ] || [ "$3" != "\(HighballContract.qualifiedProductID)" ] || [ -n "$4" ]; then
+              /usr/bin/touch '\(launched.path)'; exit 92
+            fi
+            printf '%s\\n' '\(verdict)'
+            exit \(exit)
+
+            """.utf8).write(to: cli)
+            try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: cli.path)
+        }
+        let supported = #"{"schemaVersion":1,"capability":"highballAdmissionV1","supported":true}"#
+        let product = HighballContract.qualifiedProductID
+        let qualifiedVerdict = #"{"schemaVersion":1,"capability":"highballAdmissionV1","providerID":"highball","productID":"\#(product)","state":"qualified","admitted":true,"ready":true,"qualified":true,"candidate":{"version":"0.10.22"},"engine":null,"registryEntry":null,"error":null}"#
+        let detectedVerdict = #"{"schemaVersion":1,"capability":"highballAdmissionV1","providerID":"highball","productID":"\#(product)","state":"detected","admitted":false,"ready":false,"qualified":false,"candidate":{"version":"0.10.22"},"error":{"code":"HIGHBALL_ENGINE_HASH_MISMATCH","message":"x"}}"#
+        let client = EngineInspectionClient()
+        try script(capability: supported, verdict: qualifiedVerdict, exit: 0)
+        let qualified = await client.highball(executable: cli)
+        try script(capability: supported, verdict: detectedVerdict, exit: 1)
+        let detected = await client.highball(executable: cli)
+        try script(capability: supported, verdict: qualifiedVerdict, exit: 1)
+        let disagreeing = await client.highball(executable: cli)
+        try script(capability: #"{"schemaVersion":1,"capability":"highballAdmissionV1","supported":false}"#,
+                   verdict: qualifiedVerdict, exit: 0)
+        let unsupported = await client.highball(executable: cli)
+        let absent = await client.highball(executable: root.appendingPathComponent("no-backend"))
+        check(qualified == .qualified(version: "0.10.22", productID: product)
+              && detected == .detected(version: "0.10.22", blocker: "HIGHBALL_ENGINE_HASH_MISMATCH")
+              && disagreeing == nil && unsupported == nil && absent == nil
+              && !FileManager.default.fileExists(atPath: launched.path),
+              "REQ127 Settings asks only highball-inspect for Brotato; unsupported, missing or inconsistent backends give no verdict")
     }
 
     /// REQ-115/B3: release engines are discovered, hash- and signature-verified and rendered per Mac; nothing user-specific ships.
@@ -71,7 +247,15 @@ enum EngineManagementChecks {
         let bundled = try Data(contentsOf: LaunchRecipeResources.engineDefaultsURL())
         let catalog = try NativeEngineDefaults.read()
         let release = catalog.bindings.first { $0.engineName == catalog.defaultEngine }
-        let devLocal = catalog.bindings.filter { $0.registryPath != nil }
+        let devLocal = catalog.bindings.filter { $0.registryPath != nil && $0.provider == nil }
+        let scoped = catalog.bindings.filter { $0.provider != nil }
+        check(scoped.map(\.engineName).sorted() == ["crossover-26.3-mvk142", HighballContract.engineName]
+              && scoped.allSatisfy { $0.developerLocal == true && $0.engineName != catalog.defaultEngine }
+              && scoped.first { $0.provider == "highball" }?.isHighball == true
+              && scoped.first { $0.provider == "crossover" }?.registrySha256
+                == "c246dd2977fc42daf933d1e39507d5c1e2b49a7aa37beaaa6fe5348bcccbf80d"
+              && NativeEngineDefaults.titleScopedEngineNames == Set(scoped.map(\.engineName)),
+              "REQ127/COR224: CrossOver and Highball are developer-local, title-scoped bindings that are never the default")
         check(CalimochoReleasePin.release06.engineName == "calimocho-11.20-4.0b3-06"
               && CalimochoReleasePin.all == [.release04, .release06]
               && catalog.defaultEngine == "calimocho-11.20-4.0b3-06"
@@ -222,6 +406,9 @@ enum EngineManagementChecks {
             do { try FileManager.default.removeItem(at: root) }
             catch { check(false, "REQ79 removes only its owned fixture directory") }
         }
+        try await highballInspectionChecks(root: root, check: check)
+        try providerScopeChecks(check: check)
+        try playTimeoutChecks(check: check)
         let executable = root.appendingPathComponent("wine")
         try Data("#!/bin/sh\nexit 0\n".utf8).write(to: executable)
         try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: executable.path)
@@ -285,6 +472,21 @@ enum EngineManagementChecks {
         check(try NativeLaunchConfiguration.selectEngine(registry: registry, provider: .crossover,
             defaults: defaults, provenEngine: nil).name == "cross",
               "REQ79 valid explicit provider selection resolves the exact record")
+        let scopedBytes = try JSONSerialization.data(withJSONObject: ["engines": [
+            ["name": "crossover-26.3-mvk142", "kind": "CrossOver", "wine": executable.path,
+             "provider": ["id": "crossover", "contract_version": 1]],
+            ["name": "missing-wine", "kind": "CrossOver", "wine": root.appendingPathComponent("absent/wine").path]
+        ]])
+        let scopedURL = root.appendingPathComponent("scoped-registry.json")
+        try scopedBytes.write(to: scopedURL)
+        let scoped = try NativeEngineRegistry.read(scopedURL)
+        func picks(_ name: String, scoped admitted: Bool) -> Bool {
+            (try? NativeLaunchConfiguration.selectEngine(registry: scoped, provider: nil, defaults: defaults,
+                provenEngine: name, scopedAdmission: admitted))?.name == name
+        }
+        check(picks("crossover-26.3-mvk142", scoped: true) && !picks("crossover-26.3-mvk142", scoped: false)
+              && !picks("missing-wine", scoped: true),
+              "COR224 e2e: A freshly admitted title-scoped engine needs no registry smoke test, only an executable Wine; unadmitted records still do")
         defaults.set("removed", forKey: "Xodus.lifecycle.engine.crossover")
         do {
             _ = try NativeLaunchConfiguration.selectEngine(registry: registry, provider: .crossover,

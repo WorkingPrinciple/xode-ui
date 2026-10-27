@@ -64,6 +64,7 @@ enum BrandUXChecks {
         let session = LiveSession()
         let copy = [WelcomeCopy.technology, WelcomeCopy.signIn, WelcomeCopy.keychain,
                     EnginesCopy.lead, EnginesCopy.crossOver, EnginesCopy.crossOverLicense,
+                    HighballCopy.explanation, HighballCopy.license,
                     session.accountLabel, LiveSession.signOutConfirmationMessage, session.libraryMessage,
                     ManagementError.stateLocked.errorDescription ?? "", ManagementError.startFailed.errorDescription ?? "",
                     AppLegalCopy.acknowledgment, AppLegalCopy.trademarks,
@@ -263,7 +264,7 @@ enum BrandUXChecks {
                 let joined = labels.joined(separator: " ")
                 check(labels.filter { $0 == "Check Again" }.count == 1
                       && joined.contains("Engines run Windows games")
-                      && joined.contains("Play currently uses Calimocho")
+                      && joined.contains("every other game plays with Calimocho")
                       && !joined.contains("Private") && !joined.contains("Use App"),
                       "COR186 M8/U2: \(scenario) Engines (\(scheme)) leads with an explanation, one Check Again, plain names and honest CrossOver copy: \(labels)")
                 let hasDownloadControl = joined.contains("Get Calimocho")
@@ -1286,6 +1287,34 @@ enum BrandUXChecks {
         check(installedFailure.failure == "Installed failed" && quietRetry.failure == nil && quietRetry.covers
               && PCGamesController.surfacedError("Library failed", retryPending: false) == "Library failed",
               "REQ-75/P0: Setup fails visibly on an installed-games error, but stays quiet while a silent library retry is scheduled")
+        var warmSaved = LibraryFirstLoad()
+        warmSaved.begin(at: t0)
+        warmSaved.update(LibraryFirstLoadInputs(loading: true, gamesFound: 12, showingSavedLibrary: true),
+                         now: t0 + .milliseconds(100))
+        var savedButEmpty = LibraryFirstLoad()
+        savedButEmpty.begin(at: t0)
+        savedButEmpty.update(LibraryFirstLoadInputs(loading: true, gamesFound: 0, showingSavedLibrary: true),
+                             now: t0 + .seconds(1))
+        check(warmSaved.phase == .finished(.ready) && !warmSaved.covers && savedButEmpty.covers,
+              "REQ-119: A warm launch with the saved library on screen ends setup inside the grace delay, so no overlay; an empty one doesn't")
+        check(AccountGatePresentation.defers(statusSettled: false, failed: false, waitElapsed: false)
+              && !AccountGatePresentation.defers(statusSettled: true, failed: false, waitElapsed: false)
+              && !AccountGatePresentation.defers(statusSettled: false, failed: true, waitElapsed: false)
+              && !AccountGatePresentation.defers(statusSettled: false, failed: false, waitElapsed: true)
+              && AccountGatePresentation.launchWait == .seconds(3),
+              "Warm launch: the welcome sheet waits only while the first sign-in read is outstanding (≤3 s, never after an error), so no empty sheet window is left behind")
+        let faultFile = FileManager.default.temporaryDirectory.appendingPathComponent("xodus-fault-\(UUID().uuidString)")
+        let faultEnvironment = ["XODUS_DEBUG_FAULT_FILE": faultFile.path]
+        let faultAbsent = !DebugFaultInjection.active(.catalog, environment: faultEnvironment)
+        try? "catalog\n".write(to: faultFile, atomically: true, encoding: .utf8)
+        let catalogOnly = DebugFaultInjection.active(.catalog, environment: faultEnvironment)
+            && !DebugFaultInjection.active(.account, environment: faultEnvironment)
+        try? "all\n".write(to: faultFile, atomically: true, encoding: .utf8)
+        let allSeams = DebugFaultInjection.active(.descriptors, environment: faultEnvironment)
+        try? FileManager.default.removeItem(at: faultFile)
+        check(faultAbsent && catalogOnly && allSeams && !DebugFaultInjection.active(.catalog, environment: faultEnvironment)
+              && !DebugFaultInjection.active(.catalog, environment: [:]),
+              "REQ-12 debug fault injection: only named seams fail while the file exists; removing it restores requests; unset is inert")
         let windowState = AppState()
         let windowA = UUID(), windowB = UUID()
         windowState.setFirstLoadCovering(true, window: windowA)

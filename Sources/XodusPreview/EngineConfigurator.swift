@@ -727,7 +727,7 @@ enum EnginesCopy {
     static let lead = "Engines run Windows games on your Mac. You can add your own Wine engines for testing; in this beta, games play with Calimocho."
     /// Why a non-Calimocho engine can't be the default (REQ-109/COR-201: custom-engine launching isn't in 0.2.0).
     static let testingOnly = "Saved for testing. In this beta, games play with Calimocho."
-    static let crossOver = "\(AppBrand.displayName) detects and configures CrossOver, but Play currently uses Calimocho."
+    static let crossOver = "CrossOver is reserved for No Man's Sky once it qualifies; every other game plays with Calimocho."
     static let crossOverLicense = "Use your own licensed copy of CrossOver; \(AppBrand.displayName) doesn't include it."
 }
 
@@ -776,6 +776,8 @@ struct EngineConfiguratorForm<Advanced: View>: View {
     var checkCalimochoUpdatesOnOpen = false
     var beginCalimochoUpdate: @MainActor (LocalCalimochoRelease) -> Void = { _ in }
     var removeOldCalimocho: @MainActor () -> Void = {}
+    /// Backend executable for read-only provider verdicts (Highball); empty means none.
+    var backendPath = ""
     @ViewBuilder let advanced: () -> Advanced
 
     var body: some View {
@@ -794,6 +796,7 @@ struct EngineConfiguratorForm<Advanced: View>: View {
             showsCalimochoUpdates: showsCalimochoUpdates, beginCalimochoUpdate: beginCalimochoUpdate,
             removeOldCalimocho: removeOldCalimocho,
             checkCalimochoUpdatesOnOpen: checkCalimochoUpdatesOnOpen,
+            backendPath: backendPath,
             advanced: advanced)
     }
 }
@@ -816,7 +819,9 @@ struct EngineConfiguratorSections<Advanced: View>: View {
     let beginCalimochoUpdate: @MainActor (LocalCalimochoRelease) -> Void
     let removeOldCalimocho: @MainActor () -> Void
     let checkCalimochoUpdatesOnOpen: Bool
+    let backendPath: String
     let advanced: () -> Advanced
+    @State private var providerRefresh = 0
     @StateObject private var ownedUsers: UserEngineModel
     @StateObject private var ownedCalimochoInstaller: CalimochoReleaseInstallController
     private var users: UserEngineModel { ownedUsers }
@@ -835,6 +840,7 @@ struct EngineConfiguratorSections<Advanced: View>: View {
          beginCalimochoUpdate: @escaping @MainActor (LocalCalimochoRelease) -> Void = { _ in },
          removeOldCalimocho: @escaping @MainActor () -> Void = {},
          checkCalimochoUpdatesOnOpen: Bool = false,
+         backendPath: String = "",
          advanced: @escaping () -> Advanced) {
         self.choices = choices
         self.defaultID = defaultID
@@ -853,6 +859,7 @@ struct EngineConfiguratorSections<Advanced: View>: View {
         self.beginCalimochoUpdate = beginCalimochoUpdate
         self.removeOldCalimocho = removeOldCalimocho
         self.checkCalimochoUpdatesOnOpen = checkCalimochoUpdatesOnOpen
+        self.backendPath = backendPath
         self.advanced = advanced
         _ownedUsers = StateObject(wrappedValue:
             userEngineModel ?? UserEngineModel(store: userEngineStore, suggestions: suggestions))
@@ -875,6 +882,7 @@ struct EngineConfiguratorSections<Advanced: View>: View {
                 if checkingAny { ProgressView().controlSize(.small).accessibilityLabel("Checking engines") }
                 Button("Check Again") {
                     refresh()
+                    providerRefresh += 1
                     Task { await settings.refreshCrossOverDependency() }
                 }
                 .disabled(checkingAny || calimochoInstaller.isWorking || !allowsFileReads || settings.applicationTerminating)
@@ -938,6 +946,11 @@ struct EngineConfiguratorSections<Advanced: View>: View {
         UserEngineAddSection(model: users, allowsFileReads: allowsFileReads)
             .onAppear { users.terminating = { [settings] in settings.applicationTerminating } }
         CrossOverLocationRow(settings: settings, allowsCheck: allowsFileReads)
+        if allowsFileReads {
+            HighballSection(inspect: backendPath.isEmpty ? nil : { [settings, backendPath] in
+                await settings.inspectHighball(backendPath: backendPath)
+            }, refreshID: providerRefresh)
+        }
         if showsAdvanced {
             Section {
                 DisclosureGroup("Advanced", isExpanded: $advancedExpanded) { advanced() }

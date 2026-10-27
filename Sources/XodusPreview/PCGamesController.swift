@@ -54,6 +54,9 @@ final class PCGamesController: ObservableObject {
     @Published private(set) var presenceUnavailable = false
     /// REQ-119: this scope's collection read has been sent, or can't be; background account reads wait for it.
     @Published private(set) var collectionReadStarted = false
+    /// REQ-7/63: active Game Pass plan IDs from the last collection read, bound to the account that read it.
+    @Published private(set) var activeGamePassPlans: Set<String> = []
+    private var activeGamePassPlansAccount: String?
     private(set) var accountDisconnecting = false
     private let store: any PCGamesRefreshStore
     private let client: PCGamesClient
@@ -105,34 +108,67 @@ final class PCGamesController: ObservableObject {
     }
     @Published private(set) var detailRetriesLeft = PCGamesController.detailRetryDelays.count
     private var detailRetry: Task<Void, Never>?
-    var detailRetryPending: Bool { detailRetry != nil }
+    private var detailRetryToken: UUID?
+    /// True only while a silent retry is actually waiting to fire; cleared however that task ends.
+    @Published private(set) var detailRetryPending = false
     /// P0: a read error stays quiet while a silent retry is scheduled; it shows once the retries are used up.
     var surfacedError: String? { Self.surfacedError(error, retryPending: detailRetryPending) }
     static func surfacedError(_ error: String?, retryPending: Bool) -> String? { retryPending ? nil : error }
 
     /// Re-reads the library after a backoff while some details failed; bounded, cancelled by sign-out.
     func scheduleDetailRetry(account: String) {
-        detailRetry?.cancel()
+        cancelDetailRetry()
         let attempt = Self.detailRetryDelays.count - detailRetriesLeft
         guard attempt >= 0, attempt < Self.detailRetryDelays.count else { return }
         let delay = Self.detailRetryDelays[attempt]
+        let token = UUID()
+        detailRetryToken = token
+        detailRetryPending = true
         detailRetry = Task { [weak self] in
             try? await Task.sleep(for: delay)
-            guard let self, !Task.isCancelled, !self.busy, !self.terminating, !self.accountDisconnecting,
+            guard let self else { return }
+            // Review M1: a retry that exits without firing must not keep the error hidden.
+            if self.detailRetryToken == token { self.cancelDetailRetry() }
+            guard !Task.isCancelled, !self.busy, !self.terminating, !self.accountDisconnecting,
                   self.unifiedSession?.accountHash == account else { return }
-            self.detailRetry = nil
             self.detailRetriesLeft -= 1
             self.logger.notice("Retrying unavailable game details silently; \(self.detailRetriesLeft) retries left")
             self.refreshUnifiedAccount()
         }
     }
+    private func cancelDetailRetry() {
+        detailRetry?.cancel()
+        detailRetry = nil
+        detailRetryToken = nil
+        if detailRetryPending { detailRetryPending = false }
+    }
+
     var retainedLibraryNotice: String? {
         guard error != nil, let snapshot else { return nil }
         return snapshot.isComplete ? "Showing the last complete library."
             : "Showing available details from an incomplete library."
     }
     var accessIsCurrent: Bool {
-        snapshot?.isComplete == true && accountAccessIsCurrent
+        snapshot?.isComplete == true && snapshot?.restored == false && accountAccessIsCurrent
+    }
+    /// REQ-119: the library on screen is the saved copy, still being read again from the account.
+    var showingSavedLibrary: Bool { representedSnapshot?.restored == true }
+    /// REQ-119: injectable saved-library store; nil keeps checks and previews isolated.
+    var savedLibrary: LibrarySnapshotStore? = LibrarySnapshotStore.production
+
+    /// REQ-119: draws the saved library for this account and catalogue scope at once on a warm launch.
+    /// Only fills an empty library; the account read replaces it. Returns whether a saved library is shown.
+    @discardableResult
+    func restoreSavedLibrary() -> Bool {
+        guard usesUnifiedAccount, snapshot == nil, let session = unifiedSession, session.hasConfirmedSignIn,
+              session.accountCountryReady, let account = session.accountHash,
+              let saved = savedLibrary?.load(accountHash: account, market: session.market,
+                                             language: session.language) else { return false }
+        snapshot = saved.snapshot()
+        snapshotScope = session.accountCatalogScope
+        FirstLoadTimeline.mark("savedLibraryShown", "games=\(saved.games.count)")
+        logger.notice("Showing the saved library while the account is read again")
+        return true
     }
     private var accountAccessIsCurrent: Bool {
         accountReadiness == .ready
@@ -163,6 +199,13 @@ final class PCGamesController: ObservableObject {
             return snapshot?.unresolvedIDs.contains(productID) == true ? .refreshLibrary : .accountSettings
         }
     }
+    /// A current, same-account licence read reported an active Game Pass plan. Never inferred from Play,
+    /// installed files or catalogue membership; a different or unready account reads as no plan.
+    var gamePassPlanActive: Bool {
+        accountAccessIsCurrent && activeGamePassPlansAccount != nil
+            && activeGamePassPlansAccount == accountHash && !activeGamePassPlans.isEmpty
+    }
+
     func accessIsCurrent(for productID: String) -> Bool {
         accountAccessIsCurrent && snapshot?.hasResolvedGame(productID) == true
     }
@@ -230,8 +273,7 @@ final class PCGamesController: ObservableObject {
 
     /// A user, explicit or foreground refresh restarts the bounded silent-retry budget (review M3).
     func resetDetailRetries() {
-        detailRetry?.cancel()
-        detailRetry = nil
+        cancelDetailRetry()
         detailRetriesLeft = Self.detailRetryDelays.count
     }
 
@@ -369,6 +411,7 @@ final class PCGamesController: ObservableObject {
                 let scope = session.accountCatalogScope
                 if snapshotScope != scope { snapshot = nil }
                 snapshotScope = scope
+                restoreSavedLibrary()
                 // This task has not entered readUnifiedAccount yet, so accountBusy cannot include itself.
                 session.beginLibraryReadPriority()
                 var prioritized = true
@@ -402,6 +445,8 @@ final class PCGamesController: ObservableObject {
                 try current(token)
                 logger.notice("Account collection candidates: \(collection.items.count), purchased: \(collection.items.filter { $0.acquisitionKind == .purchased }.count), subscription: \(collection.items.filter { $0.acquisitionKind == .subscription }.count), unknown: \(collection.items.filter { $0.acquisitionKind == .unknown }.count)")
                 FirstLoadTimeline.mark("collectionCandidates", "count=\(collection.items.count)")
+                activeGamePassPlans = Set(collection.activeSubscriptions ?? [])
+                activeGamePassPlansAccount = read.accountHash
                 let kinds = Dictionary(uniqueKeysWithValues: collection.items.map { ($0.productID, $0.acquisitionKind) })
                 let result = try await client.resolveCollection(
                     ids: collection.items.map(\.productID), kinds: kinds,
@@ -411,7 +456,10 @@ final class PCGamesController: ObservableObject {
                               !self.terminating, !self.accountDisconnecting,
                               session.hasConfirmedSignIn, session.accountHash == read.accountHash,
                               session.accountCatalogScope == scope else { return }
-                        self.snapshot = partial.retainingUnresolved(from: self.snapshot)
+                        // A saved library stays whole until the account read completes (no shrinking mid-load).
+                        if self.snapshot?.restored != true {
+                            self.snapshot = partial.retainingUnresolved(from: self.snapshot)
+                        }
                         if !partial.games.isEmpty { FirstLoadTimeline.mark("firstGames", "count=\(partial.games.count)") }
                     }
                 try current(token)
@@ -420,6 +468,10 @@ final class PCGamesController: ObservableObject {
                 }
                 guard session.accountCatalogScope == scope else { throw CancellationError() }
                 snapshot = result.retainingUnresolved(from: snapshot)
+                if let saved = SavedLibrary(result, accountHash: read.accountHash, market: market,
+                                            language: language, savedAt: Date()) {
+                    savedLibrary?.save(saved)
+                }
                 FirstLoadTimeline.mark("libraryResolved", "games=\(result.games.count)")
                 logger.notice("Account PC resolution: \(result.games.count) games, \(result.excludedCount) excluded, \(result.unresolvedCount) unresolved")
                 if result.detailFailureCount > 0, detailRetriesLeft > 0 {
@@ -461,8 +513,7 @@ final class PCGamesController: ObservableObject {
         snapshotScope = nil
         collectionReadStarted = false
         lastAutomaticAttempt = nil
-        detailRetry?.cancel()
-        detailRetry = nil
+        cancelDetailRetry()
         detailRetriesLeft = Self.detailRetryDelays.count
         hasSavedSignIn = false
         restored = false

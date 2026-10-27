@@ -14,7 +14,7 @@ struct NativeEngineRegistry: Decodable {
         let wineserver: String?
         let sha256: String?
         let wineserver_sha256: String?
-        let smoke_test: SmokeTest
+        let smoke_test: SmokeTest?
         let presentation_validation: SmokeTest?
         let engine_label: String?
         let environment: [String: String]?
@@ -23,7 +23,11 @@ struct NativeEngineRegistry: Decodable {
         let provider: Provider?
         var id: String { name }
         var isAvailable: Bool {
-            smoke_test.status == "pass" && presentation_validation?.status != "failed"
+            (smoke_test?.status == "pass"
+                || name == NativeFH6Recipe.engineName && provider?.id == "calimocho"
+                    && sha256 == CalimochoReleasePin.release06.wineSha256
+                    && wineserver_sha256 == CalimochoReleasePin.release06.wineserverSha256)
+                && presentation_validation?.status != "failed"
                 && wine.hasPrefix("/") && RunnerAvailabilityDetector.isExecutable(URL(fileURLWithPath: wine))
         }
     }
@@ -173,7 +177,7 @@ struct NativeTitleLaunchProfile: Codable {
         static func bundled() throws -> Self {
             let bytes = try Data(contentsOf: LaunchRecipeResources.runtimeProfilesURL())
             guard SHA256.hash(data: bytes).map({ String(format: "%02x", $0) }).joined()
-                    == "bbbacb8d2c0c585ca3e176c28aa8fae812e4b6ce660bec398b5969dfe865da2f" else {
+                    == "756e794bcf6b3a6bf3d03d6d48eca3d8a29cf777b7d187cd9d6d14363fe12889" else {
                 throw NativeLaunchError.invalidProfile
             }
             let catalogue = try JSONDecoder().decode(Self.self, from: bytes)
@@ -225,6 +229,10 @@ struct NativeTitleLaunchProfile: Codable {
     var dllOverrideEvidence: DLLOverrideEvidence? = nil
     var preservedPrefixPath: String? = nil
     var registrySHA256: String? = nil
+    /// Reviewed backend game-only recipe (L6 `--game-recipe`, producer 01b333e7+); never a free-form override.
+    var gameRecipe: String? = nil
+    /// Reviewed scoped popup rules (L6 producer #2 `--auto-dismiss-rules`); conflicts with `noAutoDismiss`.
+    var autoDismissRules: String? = nil
 
     func enginePinsMatch(_ inspection: EngineInspection) -> Bool {
         guard let engine else { return true }
@@ -344,6 +352,9 @@ struct NativeTitleLaunchProfile: Codable {
         return profile
     }
 
+    /// Validates a decoded profile exactly as a local profile is validated (used by checks).
+    func validatedForChecks() throws -> Self { try validate(productID: productID); return self }
+
     private func validate(productID: String) throws {
         func validKey(_ key: String) -> Bool {
             key.range(of: "^[A-Z_][A-Z0-9_]{0,127}$", options: .regularExpression) != nil
@@ -355,12 +366,20 @@ struct NativeTitleLaunchProfile: Codable {
         }
         let mirrored = crossOverEnvironment ?? [:]
         if wineSha256 != nil || wineserverSha256 != nil {
-            guard let engine, let pin = CalimochoReleasePin.named(engine),
+            guard let engine, let pin = engine == NativeFH6Recipe.engineName
+                    ? CalimochoReleasePin.release06 : CalimochoReleasePin.named(engine),
                   wineSha256 == pin.wineSha256, wineserverSha256 == pin.wineserverSha256 else {
                 throw NativeLaunchError.invalidProfile
             }
         }
+        if self.productID == NativeFH6Recipe.productID || engine == NativeFH6Recipe.engineName {
+            try NativeFH6Recipe.validate(profile: self)
+        }
         if preservedPrefixPath != nil || registrySHA256 != nil {
+            #if XODUS_SHIPPING
+            // Packaging drops the developer-local preserved-prefix profile with its engine binding.
+            throw NativeLaunchError.invalidProfile
+            #else
             guard productID == "BQVQTL3PCH05",
                   engine == "calimocho-wine11.20-gptk4b3-tls-vulkan-private",
                   preservedPrefixPath == "${HOME}/Library/Application Support/XodusCLI/prefixes/req71-nms-calimocho-port11b-v1",
@@ -372,6 +391,20 @@ struct NativeTitleLaunchProfile: Codable {
                   prefixRegistryImports == nil, prefixOverlays == nil, dllOverrides == nil else {
                 throw NativeLaunchError.invalidProfile
             }
+            #endif
+        }
+        if let autoDismissRules {
+            guard noAutoDismiss != true, NativeAutoDismissRules.productID(for: autoDismissRules) == productID else {
+                throw NativeLaunchError.invalidProfile
+            }
+        }
+        if let gameRecipe {
+            guard NativeGameRecipe.productID(for: gameRecipe) == productID, let engine,
+                  engine != NativeFH6Recipe.engineName, CalimochoReleasePin.named(engine) != nil,
+                  wineSha256 != nil, wineserverSha256 != nil,
+                  dllOverrides == nil, environment["WINEDLLOVERRIDES"] == nil,
+                  prefixRegistryImports == nil, prefixOverlays == nil, preservedPrefixPath == nil,
+                  registrySHA256 == nil else { throw NativeLaunchError.invalidProfile }
         }
         guard version == 1, self.productID == productID, PCGamesClient.validProductID(productID),
               environment.count <= 64, mirrored.count <= 64,
@@ -419,11 +452,24 @@ struct NativeTitleLaunchProfile: Codable {
         return result
     }
 
+    /// Probe/QA arguments, including the profile's qualification time bound.
     var arguments: [String] {
         var result: [String] = []
         if let executable { result += ["--exe", executable] }
         if let timeoutSeconds { result += ["--timeout-seconds", String(timeoutSeconds)] }
         if noAutoDismiss == true { result += ["--no-auto-dismiss"] }
+        if let autoDismissRules { result += ["--auto-dismiss-rules", autoDismissRules] }
+        if let gameRecipe { result += ["--game-recipe", gameRecipe] }
+        return result
+    }
+
+    /// User Play arguments: a qualification time bound must never end a player's session.
+    var playArguments: [String] {
+        var result: [String] = []
+        if let executable { result += ["--exe", executable] }
+        if noAutoDismiss == true { result += ["--no-auto-dismiss"] }
+        if let autoDismissRules { result += ["--auto-dismiss-rules", autoDismissRules] }
+        if let gameRecipe { result += ["--game-recipe", gameRecipe] }
         return result
     }
 
@@ -487,6 +533,16 @@ struct NativeLaunchConfiguration {
 
     static func validateOverride(_ selection: AdmittedEngineSelection, game: InstalledGame,
                                  defaults: UserDefaults = .standard) throws {
+        try NativeFH6Recipe.requireEnabled(productID: game.storeId)
+        if let engine = selection.inspection.engineName {
+            try NativeFH6Recipe.validate(game: game, engine: engine)
+        }
+        let provider = selection.inspection.admittedProvider
+        guard AdmittedProviderScope.permits(provider, productID: game.storeId) else {
+            throw NativeLaunchError.providerNotAdmitted
+        }
+        // A title-scoped provider owns its launch contract; the title's Calimocho profile doesn't apply.
+        if AdmittedProviderScope.isTitleScoped(provider) { return }
         let profile = try NativeTitleLaunchProfile.read(productID: game.storeId, defaults: defaults,
                                                        provider: .calimocho)
         if let profile {
@@ -502,11 +558,11 @@ struct NativeLaunchConfiguration {
                                runtime: NativeRuntimeReference? = NativeRuntimePins.approved,
                                evidence: MacGameEvidence.Game? = nil,
                                engineDefaults: NativeEngineDefaults? = nil) async throws -> Self {
+        try NativeFH6Recipe.requireEnabled(productID: game.storeId)
         guard provider == nil || provider == .calimocho else { throw NativeLaunchError.providerPolicy }
         let profile = try NativeTitleLaunchProfile.read(productID: game.storeId, defaults: defaults,
                                                        provider: .calimocho, evidence: evidence)
-        let saved = try defaults.data(forKey: NativeEngineDefaults.preferenceKey)
-            .map { try JSONDecoder().decode(AdmittedEngineSelection.self, from: $0) }
+        let saved = try NativeEngineDefaults.savedAdmission(defaults: defaults)
         let catalog = try engineDefaults ?? NativeEngineDefaults.read()
         let selection: AdmittedEngineSelection
         if let override = game.engineOverrideV2 {
@@ -533,9 +589,11 @@ struct NativeLaunchConfiguration {
         }
         guard let engine = selection.inspection.engineName,
               let digest = selection.inspection.registrySha256 else { throw NativeLaunchError.engineUnavailable }
+        try NativeFH6Recipe.validate(game: game, engine: engine)
         try await EngineInspectionClient().validateLaunch(configuration: configuration, arguments: [
             "--registry", selection.registryPath, "--engine", engine, "--expected-registry-sha256", digest
-        ], selection: selection)
+        ] + (engine == NativeFH6Recipe.engineName ? NativeFH6Recipe.arguments : []),
+            selection: selection, product: game.storeId)
         if game.engineOverrideV2 == nil, saved == nil {
             guard let binding = catalog.bindings.first(where: { $0.engineName == catalog.defaultEngine }) else {
                 throw NativeLaunchError.engineNotSelected
@@ -579,6 +637,7 @@ struct NativeLaunchConfiguration {
                                 provenEngine: String? = nil, evidence: MacGameEvidence.Game? = nil,
                                 detectCrossOver: () -> CrossOverDependencyState = CrossOverDetector.detect,
                                 candidateOverride: NativeCandidateLaunchCatalogue.Row?) throws -> Self {
+        try NativeFH6Recipe.requireEnabled(productID: game.storeId)
         let localRuntime = try defaults.data(forKey: "Xodus.lifecycle.runtime")
             .map { try JSONDecoder().decode(NativeLocalRuntime.self, from: $0).reference }
         let selected: AdmittedEngineSelection?
@@ -590,8 +649,12 @@ struct NativeLaunchConfiguration {
         } else {
             selected = nil
         }
-        var profile = try NativeTitleLaunchProfile.read(productID: game.storeId, defaults: defaults,
-                                                       provider: provider, evidence: evidence)
+        let titleScoped = AdmittedProviderScope.isTitleScoped(selected?.inspection.admittedProvider)
+        if let selected, !AdmittedProviderScope.permits(selected.inspection.admittedProvider, productID: game.storeId) {
+            throw NativeLaunchError.providerNotAdmitted
+        }
+        var profile = titleScoped ? nil : try NativeTitleLaunchProfile.read(productID: game.storeId,
+            defaults: defaults, provider: provider, evidence: evidence)
         if let selected, let profile {
             guard profile.enginePinsMatch(selected.inspection) else { throw NativeLaunchError.configurationConflict }
         }
@@ -604,7 +667,7 @@ struct NativeLaunchConfiguration {
         } else {
             releasePinnedProfile = false
         }
-        let candidate = qualified != nil || releasePinnedProfile
+        let candidate = qualified != nil || releasePinnedProfile || titleScoped
             ? nil : try candidateOverride ?? NativeCandidateLaunchCatalogue.row(productID: game.storeId)
         if let candidate {
             try candidate.validateManifest(folder: URL(fileURLWithPath: game.folder))
@@ -626,7 +689,8 @@ struct NativeLaunchConfiguration {
         }
         var entry = try selectEngine(registry: registry,
                                      provider: selected != nil || qualified != nil || profile?.engine != nil || candidate != nil || profile?.dllOverrides != nil ? nil : provider, defaults: defaults,
-                                     provenEngine: selected?.inspection.engineName ?? profile?.engine ?? provenEngine)
+                                     provenEngine: selected?.inspection.engineName ?? profile?.engine ?? provenEngine,
+                                     scopedAdmission: titleScoped)
         if let selected {
             guard entry.sha256 == selected.inspection.wineSha256,
                   entry.wineserver_sha256 == selected.inspection.wineserverSha256,
@@ -673,6 +737,7 @@ struct NativeLaunchConfiguration {
             profile = fallback
         }
         let engineName = entry.name
+        try NativeFH6Recipe.validate(game: game, engine: engineName)
         guard entry.wine.hasPrefix("/"), RunnerAvailabilityDetector.isExecutable(URL(fileURLWithPath: entry.wine)) else {
             throw NativeLaunchError.engineUnavailable
         }
@@ -684,11 +749,14 @@ struct NativeLaunchConfiguration {
                 throw NativeLaunchError.configurationConflict
             }
         }
+        let prefixRoot = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(
+            "Library/Application Support/Xodus/Prefixes")
+        let titlePrefix = engineName == NativeFH6Recipe.engineName
+            ? NativeFH6Recipe.prefix(root: prefixRoot) : nil
         let prefix = profile?.preservedPrefixPath.map { URL(fileURLWithPath: NativeTitleLaunchProfile.expand($0)) }
-            ?? qualified?.prefix ?? CalimochoPrefixContinuity.location(
+            ?? qualified?.prefix ?? titlePrefix ?? CalimochoPrefixContinuity.location(
                 productID: game.storeId, installationID: game.id, engine: engineName,
-                root: URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(
-                    "Library/Application Support/Xodus/Prefixes"))
+                root: prefixRoot)
         try GameScriptFiles.checkPath(prefix, allowMissing: true)
         if let selected = profile?.shimDirectory, selected != shims.directory.path {
             throw NativeLaunchError.invalidProfile
@@ -714,8 +782,11 @@ struct NativeLaunchConfiguration {
             }
     }
 
+    /// `scopedAdmission`: a CrossOver/Highball engine whose title-scoped backend admission was freshly
+    /// verified; its availability is that admission plus an executable Wine, not a registry smoke test.
     static func selectEngine(registry: NativeEngineRegistry, provider: RuntimeProviderKind?,
-                             defaults: UserDefaults, provenEngine: String?) throws -> NativeEngineRegistry.Entry {
+                             defaults: UserDefaults, provenEngine: String?,
+                             scopedAdmission: Bool = false) throws -> NativeEngineRegistry.Entry {
         let selected = provider.flatMap { defaults.string(forKey: "Xodus.lifecycle.engine.\($0.rawValue)") }
         if provider != nil || provenEngine != nil {
             guard let name = provider != nil ? selected : provenEngine,
@@ -723,7 +794,8 @@ struct NativeLaunchConfiguration {
                   provider.map({ EngineManagementPolicy.matches(entry, provider: $0)
                       || ($0 == .standaloneWine && entry.provider?.id == "calimocho"
                           && defaults.data(forKey: AdmittedEngineSelection.preferenceKey) != nil) }) ?? true,
-                  entry.isAvailable else {
+                  entry.isAvailable || scopedAdmission && entry.wine.hasPrefix("/")
+                    && RunnerAvailabilityDetector.isExecutable(URL(fileURLWithPath: entry.wine)) else {
                 throw NativeLaunchError.engineUnavailable
             }
             return entry
@@ -738,7 +810,12 @@ struct NativeLaunchConfiguration {
                   profile?.dllOverrides == nil else { throw NativeLaunchError.invalidProfile }
         }
         let dll = try await runtime.validate()
-        try await shims.validate()
+        if engine == NativeFH6Recipe.engineName {
+            guard let profile, admittedSelection != nil else { throw NativeLaunchError.titleRecipeUnavailable }
+            try NativeFH6Recipe.validate(profile: profile)
+        } else {
+            try await shims.validate()
+        }
         let selectedRegistry = try await profile?.registryForLaunch(base: registry, engine: engine) ?? registry
         if let admittedSelection {
             guard selectedRegistry == registry, let digest = admittedSelection.inspection.registrySha256 else {
@@ -746,10 +823,12 @@ struct NativeLaunchConfiguration {
             }
             return ["--engine", engine, "--registry", selectedRegistry.path,
                     "--expected-registry-sha256", digest, "--prefix", prefix.path,
-                    "--runtime-dll", dll.path, "--shim-dir", shims.directory.path] + (profile?.arguments ?? [])
+                    "--runtime-dll", dll.path]
+                + (engine == NativeFH6Recipe.engineName ? NativeFH6Recipe.arguments : ["--shim-dir", shims.directory.path])
+                + (profile?.playArguments ?? [])
         }
         return ["--engine", engine, "--registry", selectedRegistry.path, "--prefix", prefix.path,
-                "--runtime-dll", dll.path, "--shim-dir", shims.directory.path] + (profile?.arguments ?? [])
+                "--runtime-dll", dll.path, "--shim-dir", shims.directory.path] + (profile?.playArguments ?? [])
     }
 
     func prefixNotice() async throws -> String? {
@@ -790,6 +869,7 @@ struct NativeLaunchConfiguration {
 }
 
 enum NativeLaunchError: Error, LocalizedError {
+    case titleRecipeUnavailable
     case prefixContinuity(String)
     case candidateBlocked(String)
     case runtimeNotQualified, registryMissing, engineNotSelected, engineUnavailable, invalidProfile, shimsUnavailable,
@@ -797,6 +877,8 @@ enum NativeLaunchError: Error, LocalizedError {
          selectionChanged, providerNotAdmitted
     var errorDescription: String? {
         switch self {
+        case .titleRecipeUnavailable:
+            "Forza Horizon 6 needs its verified Calimocho title recipe and prefix preparation support. Refresh Engines or install the matching app update. No game was started or plain Calimocho engine substituted."
         case .prefixContinuity(let detail):
             "The previous Calimocho prefix couldn't be preserved: \(detail). The game wasn't started. The previous prefix was kept."
         case .candidateBlocked(let reason): reason
@@ -828,4 +910,17 @@ enum NativeLaunchError: Error, LocalizedError {
             "This installation isn't verified complete. Check it, download it again or repair it before playing."
         }
     }
+}
+
+/// Reviewed backend game recipes: each changes only its own title's game process (never prefix setup) and is
+/// admitted by the backend only on an exact production release engine.
+enum NativeGameRecipe {
+    static let known: [String: String] = ["hades-mscoree-v1": "9P8DL6W0JBB8"]
+    static func productID(for recipe: String) -> String? { known[recipe] }
+}
+
+/// Reviewed scoped popup rules: only the named dialog is pressed; generic Continue/OK rules stay off.
+enum NativeAutoDismissRules {
+    static let known: [String: String] = ["fh6-compat": "9NR1R1XWLCNB"]
+    static func productID(for rules: String) -> String? { known[rules] }
 }

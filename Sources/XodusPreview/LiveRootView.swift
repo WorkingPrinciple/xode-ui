@@ -24,6 +24,8 @@ struct LiveRootView: View {
     @State private var libraryContainerSize: CGSize?
     @State private var libraryHasHero = false
     @State private var launchArgumentHandled = false
+    /// The launch sign-in decision has had its bounded wait; the account gate may show even if undecided.
+    @State private var launchGateWaitElapsed = false
     @State private var libraryVisited = false
     @State private var discoverVisited = false
     @State private var firstLoad = LibraryFirstLoad()
@@ -82,6 +84,12 @@ struct LiveRootView: View {
         return values.count >= 2 && Set(values).count > 1
     }
     private var requiresAccountGate: Bool { unifiedAccountMode ? requiresSignIn : !unifiedAccountVerified }
+    /// A warm launch's saved sign-in is still being read: the welcome sheet waits, so it never flashes and
+    /// leaves an empty sheet window behind when sign-in confirms a moment later.
+    private var accountGateDeferred: Bool {
+        AccountGatePresentation.defers(statusSettled: session.initialStatusSettled,
+                                       failed: session.errorMessage != nil, waitElapsed: launchGateWaitElapsed)
+    }
     private var accountContentAllowed: Bool { startupAllowed && (unifiedAccountMode ? !requiresSignIn : unifiedAccountVerified) }
     private var heroAnimationAllowed: Bool {
         startupAllowed && !state.showingAccount && session.selectedProduct == nil
@@ -157,12 +165,12 @@ struct LiveRootView: View {
                                                               busy: library.busy,
                                                               retriesLeft: library.detailRetriesLeft),
             error: LibraryFirstLoad.surfacedError(library: library.surfacedError,
-                                                  installed: state.installedGames.error,
+                                                  installed: state.installedGames.loadError,
                                                   hasGames: !library.representedGames.isEmpty),
             needsAccountAction: library.needsSignIn || library.needsKeychainApproval
                 || (library.error != nil && !session.accountCountryReady),
             artworkTotal: firstScreenArtwork.total, artworkReady: firstScreenArtwork.ready,
-            artworkSettled: firstScreenArtwork.settled)
+            artworkSettled: firstScreenArtwork.settled, showingSavedLibrary: library.showingSavedLibrary)
     }
     private var firstLoadArtworkKey: String {
         guard firstLoad.active, LibraryFirstLoad.gamesReady(firstLoadInputs) else { return "idle" }
@@ -224,7 +232,8 @@ struct LiveRootView: View {
                                                 priority: .foreground)
         guard !Task.isCancelled else { return }
         firstScreenRequested.formUnion(ids)
-        let token = firstScreenArtwork.target(items)
+        // Review L5: target what the first screen shows now that its descriptors have loaded.
+        let token = firstScreenArtwork.target(firstScreenItems)
         let work = firstScreenArtwork.pending
         let reads = work.map { item in
             Task { () -> (FirstScreenArtwork.Item, Bool) in
@@ -288,7 +297,10 @@ struct LiveRootView: View {
                                      showNow: { applyFirstLoad { $0.showLibraryNow() } },
                                      tryAgain: {
                                          applyFirstLoad { $0.retry(at: .now) }
-                                         Task { await state.pcGames.retryLibraryLoad() }
+                                         Task {
+                                             if state.installedGames.loadError != nil { await state.installedGames.load() }
+                                             await state.pcGames.retryLibraryLoad()
+                                         }
                                      })
                     .transition(.opacity)
             }
@@ -393,15 +405,19 @@ struct LiveRootView: View {
             case .nativeMinecraft:
                 await NativeMinecraft.shared.refresh()
                 NativeMinecraft.shared.open()
-            case .play(let productID):
-                guard let game = state.installedGames.games.first(where: { $0.storeId == productID }) else {
-                    session.errorMessage = "The requested game isn't registered as installed on this Mac."
-                    return
-                }
-                await state.installedGames.play(game)
-                if state.installedGames.runningGameID != game.id {
-                    session.errorMessage = state.installedGames.playErrors[game.id]
-                        ?? "The requested game couldn't start. Check its installation and runtime settings."
+            case .play(let productID, let engine):
+                // Saving an engine or registering a verified installation changes this task's identity;
+                // the request must outlive that restart.
+                let installed = state.installedGames
+                Task { @MainActor in
+                    guard let game = await installed.registeredGameForLaunchRequest(productID: productID) else {
+                        session.errorMessage = installed.discoveredVerificationErrors[productID]
+                            ?? "The requested game isn't registered as installed on this Mac."
+                        return
+                    }
+                    if let message = await installed.playFromLaunchRequest(game, engine: engine) {
+                        session.errorMessage = message
+                    }
                 }
             }
         }
@@ -494,7 +510,11 @@ struct LiveRootView: View {
         .onChange(of: session.hasConfirmedSignIn) { _, confirmed in
             if confirmed {
                 FirstLoadTimeline.begin(state.unifiedSignInRequested ? "interactive" : "restored")
-                if startupAllowed, unifiedAccountMode, firstLoadDoneFor != session.accountHash,
+                // REQ-119: with a saved library for this account, the window opens on it; no setup view.
+                if startupAllowed, unifiedAccountMode, !state.unifiedSignInRequested,
+                   state.pcGames.restoreSavedLibrary() {
+                    firstLoadDoneFor = session.accountHash
+                } else if startupAllowed, unifiedAccountMode, firstLoadDoneFor != session.accountHash,
                    LibraryFirstLoad.shouldBegin(signedIn: true) {
                     firstScreenArtwork = FirstScreenArtwork()
                     firstScreenRequested = []
@@ -524,7 +544,11 @@ struct LiveRootView: View {
                 state.accountDestination = .account
             }
         }
-        .sheet(isPresented: Binding(get: { requiresAccountGate || state.showingAccount
+        .task {
+            try? await Task.sleep(for: AccountGatePresentation.launchWait)
+            launchGateWaitElapsed = true
+        }
+        .sheet(isPresented: Binding(get: { (requiresAccountGate && !accountGateDeferred) || state.showingAccount
                                         || (state.showingReadiness && !firstLoadOutstanding) },
                                     set: { presented in
                                         if !presented { state.showingReadiness = false }

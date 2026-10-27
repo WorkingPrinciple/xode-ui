@@ -168,26 +168,19 @@ final class LibraryCatalogArtwork: ObservableObject {
             }
             var failure: (any Error)?
             do {
-                try await withThrowingTaskGroup(of: (Int, Result<PublicCatalogDescriptors.Read, any Error>).self) { group in
-                    var next = 0
-                    func start(_ group: inout ThrowingTaskGroup<(Int, Result<PublicCatalogDescriptors.Read, any Error>), any Error>) {
-                        guard next < batches.count else { return }
-                        let index = next, batch = batches[index]
-                        next += 1
-                        group.addTask {
-                            do {
-                                return (index, .success(try await descriptors.read(ids: batch, market: market,
-                                                                                  language: language, refresh: refresh,
-                                                                                  background: priority == .background)))
-                            } catch { return (index, .failure(error)) }
-                        }
+                let background = priority == .background
+                try await withThrowingTaskGroup(of: PCGamesClient.DescriptorBatchResult.self) { group in
+                    var started = 0
+                    while started < min(PCGamesClient.descriptorConcurrency, batches.count) {
+                        PCGamesClient.addDescriptorRead(&group, index: started, batch: batches[started], descriptors: descriptors,
+                            market: market, language: language, refresh: refresh, background: background)
+                        started += 1
                     }
-                    for _ in 0..<PCGamesClient.descriptorConcurrency { start(&group) }
-                    while let (index, result) = try await group.next() {
+                    while let (_, batch, result) = try await group.next() {
                         guard !Task.isCancelled, generation == epoch else { throw CancellationError() }
                         do {
                             let read = try result.get()
-                            let counts = try await apply(read.data, batch: batches[index], staleIDs: read.staleIDs,
+                            let counts = try await apply(read.data, batch: batch, staleIDs: read.staleIDs,
                                                          market: market, language: language, epoch: epoch)
                             tally.kept += counts.kept
                             tally.dropped += counts.dropped
@@ -199,10 +192,16 @@ final class LibraryCatalogArtwork: ObservableObject {
                             }
                         } catch is CancellationError { throw CancellationError() }
                         catch { failure = failure ?? error }
-                        start(&group)
+                        if started < batches.count {
+                            PCGamesClient.addDescriptorRead(&group, index: started, batch: batches[started], descriptors: descriptors,
+                            market: market, language: language, refresh: refresh, background: background)
+                            started += 1
+                        }
                     }
                 }
-                guard generation == epoch else { return }
+                // Review M4: `error` is the foreground outcome; a background warmup keeps per-ID
+                // detail errors only, so it can't clear or raise the library's recovery state.
+                guard generation == epoch, priority == .foreground else { return }
                 if let failure {
                     self.error = Self.message(failure)
                 } else {
@@ -213,7 +212,7 @@ final class LibraryCatalogArtwork: ObservableObject {
                 }
             } catch is CancellationError { }
             catch {
-                guard generation == epoch else { return }
+                guard generation == epoch, priority == .foreground else { return }
                 self.error = Self.message(error)
             }
         }

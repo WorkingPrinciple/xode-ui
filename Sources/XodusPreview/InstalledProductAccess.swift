@@ -25,6 +25,8 @@ final class InstalledProductAccess: ObservableObject {
     private var attempts: [String: Date] = [:]
     private var installed = Set<String>()
     private var operation: Task<Void, Never>?
+    /// A product a waiting request needs now (e.g. a deep link); a running sweep checks it next.
+    private var priorityID: String?
     private var expiryNotification: Task<Void, Never>?
     private var generation = UUID()
     private let logger = Logger(subsystem: "io.github.dragoshont.xodus", category: "product-access")
@@ -130,6 +132,19 @@ final class InstalledProductAccess: ObservableObject {
         }
     }
 
+    func prioritize(_ productID: String, session: LiveSession, installedIDs: [String]) async {
+        guard session.accountCountryReady, catalogScope == nil || catalogScope == session.accountCatalogScope else { return }
+        let account = session.hasConfirmedSignIn ? session.accountHash : nil
+        guard account != nil, session.nativeLifecycleConfiguration != nil else { return }
+        let scope = session.accountCatalogScope
+        await prioritize(productID, account: account, installedIDs: installedIDs) { id in
+            guard session.accountCatalogScope == scope else { throw CancellationError() }
+            let result = try await session.readUnifiedAccount(.license, productID: id)
+            guard session.accountCatalogScope == scope else { throw CancellationError() }
+            return result
+        }
+    }
+
     func refresh(account: String?, installedIDs: [String], now: Date = Date(), force: Bool = false,
                  selectedProductID: String? = nil,
                  read: @escaping @MainActor (String) async throws -> OdeAccountRead) async {
@@ -177,7 +192,14 @@ final class InstalledProductAccess: ObservableObject {
             defer {
                 if generation == epoch { checking = false; operation = nil }
             }
-            for id in ids {
+            var queue = ids
+            while !queue.isEmpty || priorityID != nil {
+                let id: String
+                if let urgent = priorityID {
+                    priorityID = nil
+                    queue.removeAll { $0 == urgent }
+                    id = urgent
+                } else { id = queue.removeFirst() }
                 guard !Task.isCancelled, generation == epoch, accountHash == account else { return }
                 guard installed.contains(id) else { continue }
                 attempts[id] = now
@@ -218,6 +240,19 @@ final class InstalledProductAccess: ObservableObject {
             }
         }
         await operation?.value
+    }
+
+    /// Checks this installed product next: inside a running sweep, or as its own check otherwise.
+    func prioritize(_ productID: String, account: String?, installedIDs: [String],
+                    read: @escaping @MainActor (String) async throws -> OdeAccountRead) async {
+        guard PCGamesClient.validProductID(productID), installedIDs.contains(productID) else { return }
+        if operation != nil, accountHash == account, account != nil {
+            installed.insert(productID)
+            priorityID = productID
+            return
+        }
+        await refresh(account: account, installedIDs: installedIDs, force: true,
+                      selectedProductID: productID, read: read)
     }
 
     private func scheduleExpiry() {

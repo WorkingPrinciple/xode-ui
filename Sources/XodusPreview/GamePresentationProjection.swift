@@ -77,7 +77,7 @@ struct CatalogProjection {
     let hiddenCount: Int
     let artworkIDs: [String]
     var unresolvedClassificationCount: Int {
-        index.results.storeProducts.filter { facts[$0.id]?.isBaseGame == nil }.count
+        GameSurfaceFilter.counts(index.results.storeProducts, facts: facts).unresolved
     }
 
     static let empty = Self(index: CatalogCardIndex(query: "", owned: [], products: [], gamePass: [],
@@ -91,7 +91,7 @@ struct CatalogProjection {
             accessIsCurrent: key.accessIsCurrent)
         self.index = index
         self.facts = facts
-        let games = index.results.storeProducts.filter { facts[$0.id]?.isBaseGame == true }
+        let games = GameSurfaceFilter.games(index.results.storeProducts, facts: facts)
         genres = DiscoverBrowse.genres(products: games, facts: facts)
         var first: [String: CatalogProduct] = [:]
         for product in games {
@@ -152,6 +152,8 @@ struct LibraryProjectionKey: Equatable {
     let filter: LibraryFilter
     let sort: LibrarySort
     let showsUnsupported: Bool
+    var gamePassPlanActive = false
+    var denied: Set<String> = []
 }
 
 struct LibraryProjection {
@@ -170,7 +172,8 @@ struct LibraryProjection {
          recommendable: (LibraryGame) -> Bool) {
         collection = LibraryGame.collection(installed: key.installed, owned: key.owned, products: key.products,
             gamePass: key.gamePass, active: key.active, accessIsCurrent: key.accessIsCurrent,
-            permittedInstalledIDs: key.permitted)
+            permittedInstalledIDs: key.permitted, gamePassPlanActive: key.gamePassPlanActive,
+            deniedInstalledIDs: key.denied)
         byID = Dictionary(collection.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         candidates = LibraryGame.visible(collection.filter { $0.installed == nil },
             query: key.query, filter: key.filter, sort: key.sort)

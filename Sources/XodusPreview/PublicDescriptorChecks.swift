@@ -633,6 +633,23 @@ enum PublicDescriptorChecks {
             }
         }
 
+        func rejection(_ field: String?, _ value: JSONValue? = nil, now: Date? = nil) throws -> String? {
+            var record = validRecord
+            if let field, let value { record[field] = value }
+            let decoded = try JSONValue.object(record).decode(CatalogDescriptors.Record.self)
+            return CatalogDescriptors.rejection(decoded, market: "GB", language: "en-GB",
+                                               now: now ?? wireTime.addingTimeInterval(1))
+        }
+        let reasons = [
+            try rejection(nil), try rejection("market", .string("US")), try rejection("language", .string("en-US")),
+            try rejection("product", .object(["ProductId": .string(sample[1])])),
+            try rejection("freshness", .string("stale")),
+            try rejection("expiresAt", .string(formatter.string(from: wireTime.addingTimeInterval(301)))),
+            try rejection(nil, now: wireTime.addingTimeInterval(300)), try rejection(nil, now: wireTime.addingTimeInterval(-31))
+        ]
+        check(reasons == [nil, "market", "language", "productIdentity", "freshness", "lifetime", "expired", "checkedInFuture"],
+              "REQ-121 diagnosis: each managed descriptor rejection is named without product identifiers: \(reasons)")
+
         if let path = ProcessInfo.processInfo.environment["XODUS_DESCRIPTOR_CHECK_CLI"] {
             let state = root.appendingPathComponent("source-descriptor-envelope")
             try FileManager.default.createDirectory(at: state, withIntermediateDirectories: false,
@@ -740,10 +757,54 @@ enum PublicDescriptorChecks {
               "Total public metadata failure reports incomplete Library details, never a last-complete or genuine-zero claim; P0: it retries silently before any notice")
         let retryScheduled = failedController.detailRetryPending
             && failedController.detailRetriesLeft == PCGamesController.detailRetryDelays.count
+        check(retryScheduled && failedController.surfacedError == nil && failedController.error != nil,
+              "Review M2/P0: While a silent retry is scheduled the library error stays quiet")
+        failedController.scheduleDetailRetry(account: "another-account")
+        let staleRetryPending = failedController.detailRetryPending
+        try await Task.sleep(for: PCGamesController.detailRetryDelays[0] + .milliseconds(400))
+        check(staleRetryPending && !failedController.detailRetryPending
+              && failedController.detailRetriesLeft == PCGamesController.detailRetryDelays.count
+              && failedController.surfacedError == failedController.error,
+              "Review M1: A retry that wakes for another account doesn't fire, stops counting as pending, and lets the error surface")
         await failedController.retireUnifiedAccount()
         check(retryScheduled && !failedController.detailRetryPending
               && failedController.detailRetriesLeft == PCGamesController.detailRetryDelays.count,
               "Review Low: A failed library read schedules one bounded silent retry, and sign-out cancels it and restores the budget")
+        let savedFile = root.appendingPathComponent("library-snapshot/library-v1.plist")
+        let savedStore = LibrarySnapshotStore(file: savedFile)
+        let firstRun = PCGamesController(store: UnavailableDescriptorCredentials(),
+            client: PCGamesClient(transport: DescriptorTransport()))
+        firstRun.savedLibrary = savedStore
+        firstRun.useUnifiedAccount(session)
+        await firstRun.loadOnAppear()
+        await firstRun.waitForLoad()
+        let firstGames = firstRun.representedGames.map(\.id)
+        let savedBytes = (try? Data(contentsOf: savedFile)) ?? Data()
+        let savedMode = (try? FileManager.default.attributesOfItem(atPath: savedFile.path)[.posixPermissions] as? Int) ?? 0
+        let rawAccount = firstRun.snapshot?.accountID.map { savedBytes.range(of: Data($0.utf8)) != nil } ?? false
+        let warmRun = PCGamesController(store: UnavailableDescriptorCredentials(),
+            client: PCGamesClient(transport: DescriptorTransport()))
+        warmRun.savedLibrary = savedStore
+        warmRun.useUnifiedAccount(session)
+        let restoredAtOnce = warmRun.restoreSavedLibrary()
+        let restoredGames = warmRun.representedGames.map(\.id)
+        let restoredNotCurrent = warmRun.showingSavedLibrary && !warmRun.accessIsCurrent
+        await warmRun.loadOnAppear()
+        await warmRun.waitForLoad()
+        check(!firstGames.isEmpty && !savedBytes.isEmpty && savedMode == 0o600 && !rawAccount
+              && restoredAtOnce && restoredGames == firstGames && restoredNotCurrent
+              && !warmRun.showingSavedLibrary && warmRun.representedGames.map(\.id) == firstGames,
+              "REQ-119: A warm launch draws the saved library at once (owner-only file, no raw account ID), never as current access, and the account read replaces it")
+        let otherScope = savedStore.load(accountHash: session.accountHash, market: "ZZ", language: session.language) == nil
+            && savedStore.load(accountHash: "another-account", market: session.market, language: session.language) == nil
+        savedStore.clear()
+        let cleared = savedStore.load(accountHash: session.accountHash, market: session.market, language: session.language) == nil
+        let clearedController = PCGamesController(store: UnavailableDescriptorCredentials(),
+            client: PCGamesClient(transport: DescriptorTransport()))
+        clearedController.savedLibrary = savedStore
+        clearedController.useUnifiedAccount(session)
+        check(otherScope && cleared && !clearedController.restoreSavedLibrary() && clearedController.snapshot == nil,
+              "REQ-119: The saved library is bound to account and catalogue scope, and after sign-out cleanup nothing is restored")
         check(await session.disconnect(), "Descriptor retirement check joins its isolated management child")
 
         let invalidTransport = DescriptorTransport()
@@ -1191,6 +1252,77 @@ extension PublicDescriptorChecks {
         check(fifth == ids(20, offset: 8_080) && sixth == urgent && Set(seventh) == Set(sample),
               "REQ-121: Queued foreground reads are admitted in order and before saved-copy revalidation")
 
+        let promoteTransport = DescriptorTransport()
+        await promoteTransport.configure(blocked: Set(0..<8))
+        let promoteStore = store(promoteTransport)
+        var promoteFill: [Task<Data, Error>] = []
+        for batch in 0..<4 {
+            let batchIDs = ids(20, offset: 12_000 + batch * 20)
+            promoteFill.append(Task { try await promoteStore.load(ids: batchIDs, market: "US", language: "en-US") })
+            try await wait(promoteTransport, count: batch + 1)
+        }
+        let sharedIDs = ids(4, offset: 12_500)
+        let warmupRead = Task {
+            try await promoteStore.read(ids: sharedIDs, market: "US", language: "en-US", background: true)
+        }
+        try await queued(promoteStore, foreground: 0, background: 1)
+        let firstScreenRead = Task { try await promoteStore.read(ids: sharedIDs, market: "US", language: "en-US") }
+        try await queued(promoteStore, foreground: 1, background: 0)
+        try await drain(promoteTransport, through: 5)
+        for task in promoteFill { _ = try await task.value }
+        let joined = try await firstScreenRead.value, warmed = try await warmupRead.value
+        let promoteRequests = await promoteTransport.requests.count, promotedIDs = await promoteTransport.requestedIDs(4)
+        check(promoteRequests == 5 && promotedIDs == sharedIDs
+              && !joined.data.isEmpty && !warmed.data.isEmpty,
+              "REQ-121 review L6: A first-screen read joining a queued background warmup promotes it ahead of other background work, with one shared request")
+
+        let pairingTransport = DescriptorTransport()
+        await pairingTransport.configure(heldIDs: Set(ids(20, offset: 13_000)))
+        let pairingIDs = ids(91, offset: 13_000)
+        let pairingStore = PublicCatalogDescriptors(transport: pairingTransport)
+        let pairingResolution = Task {
+            try await PCGamesClient(transport: pairingTransport, descriptors: pairingStore)
+                .resolveCollection(ids: pairingIDs, kinds: [:], candidateCount: 91, market: "US", language: "en-US")
+        }
+        try await wait(pairingTransport, count: 5)
+        await pairingTransport.releaseHeld()
+        let paired = try await pairingResolution.value
+        let pairingArtwork = LibraryCatalogArtwork(descriptors: PublicCatalogDescriptors(transport: DescriptorTransport()))
+        await pairingArtwork.load(ids: pairingIDs, market: "US", language: "en-US")
+        check(paired.unresolvedCount == 0 && paired.detailFailureCount == 0
+              && paired.games.count + paired.excludedCount == 91
+              && pairingArtwork.images.count == 91 && pairingArtwork.error == nil,
+              "P1: Concurrent descriptor batches completing out of order are each validated against their own IDs (91 IDs, 5 batches; resolver and artwork)")
+
+        let pcGameID = "9BUNDLE00001", ownedGameID = "9BUNDLE00002", bundleID = "9BUNDLE00010"
+        let duplicateBundleID = "9BUNDLE00011", noPackageID = "9BUNDLE00020"
+        func catalogProduct(_ id: String, title: String, packages: [[String: Any]], bundled: [String] = []) -> [String: Any] {
+            ["ProductId": id, "ProductType": "Game", "ProductKind": "Game",
+             "LocalizedProperties": [["ProductTitle": title, "Images": []]],
+             "DisplaySkuAvailabilities": [["Sku": ["Properties": ["Packages": packages,
+                "BundledSkus": bundled.map { ["BigId": $0] }]], "Availabilities": []]]]
+        }
+        let desktop: [[String: Any]] = [["PlatformDependencies": [["PlatformName": "Windows.Desktop"]]]]
+        let bundleTransport = FixtureCatalogTransport(products: [
+            pcGameID: catalogProduct(pcGameID, title: "Bundled Game", packages: desktop),
+            ownedGameID: catalogProduct(ownedGameID, title: "Owned Game", packages: desktop),
+            bundleID: catalogProduct(bundleID, title: "Bundled Game Deluxe", packages: [], bundled: [pcGameID]),
+            duplicateBundleID: catalogProduct(duplicateBundleID, title: "Owned Game Gold", packages: [], bundled: [ownedGameID]),
+            noPackageID: catalogProduct(noPackageID, title: "No Package Game", packages: [])
+        ])
+        let bundled = try await PCGamesClient(transport: bundleTransport,
+                                              descriptors: PublicCatalogDescriptors(transport: bundleTransport))
+            .resolveCollection(ids: [ownedGameID, bundleID, duplicateBundleID, noPackageID],
+                               kinds: [bundleID: .purchased], candidateCount: 4, market: "US", language: "en-US")
+        let noPackage = try JSONDecoder().decode(PCGamesCatalog.self, from: JSONSerialization.data(withJSONObject:
+            ["Products": [catalogProduct(noPackageID, title: "No Package Game", packages: [])]])).Products[0]
+        check(bundled.games.map(\.id).sorted() == [pcGameID, ownedGameID].sorted()
+              && bundled.games.first { $0.id == pcGameID }?.acquisitionKind == .purchased
+              && bundled.unresolvedIDs == [noPackageID] && bundled.detailFailureCount == 0
+              && PCGamesClient.unresolvedReason(noPackage, failed: false, bundleRead: false) == "noPCPackageListing"
+              && PCGamesClient.unresolvedReason(nil, failed: true, bundleRead: false) == "detailsUnavailable",
+              "P1 follow-up: An owned bundle edition shows the PC game it contains once (no duplicate of an owned game); a base game with no PC package stays unresolved with a logged reason, not a retried failure")
+
         // Each defect below is planted in an otherwise valid, in-age record, so each check stands alone.
         let corruptDirectory = root.appendingPathComponent("corrupt")
         let encoder = PropertyListEncoder()
@@ -1349,3 +1481,18 @@ extension PublicDescriptorChecks {
     }
 }
 #endif
+
+
+/// Serves fixed public catalogue products by `bigIds`, in request order; unknown IDs are omitted.
+private struct FixtureCatalogTransport: PCGamesTransport {
+    let bodies: [String: Data]
+    init(products: [String: [String: Any]]) {
+        bodies = products.compactMapValues { try? JSONSerialization.data(withJSONObject: $0) }
+    }
+    func send(_ request: URLRequest) async throws -> PCGamesHTTPResponse {
+        let ids = request.url.flatMap { URLComponents(url: $0, resolvingAgainstBaseURL: false) }?.queryItems?
+            .first { $0.name == "bigIds" }?.value?.split(separator: ",").map(String.init) ?? []
+        let products = try ids.compactMap { id in try bodies[id].map { try JSONSerialization.jsonObject(with: $0) } }
+        return PCGamesHTTPResponse(status: 200, data: try JSONSerialization.data(withJSONObject: ["Products": products]))
+    }
+}

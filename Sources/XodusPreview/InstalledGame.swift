@@ -422,8 +422,10 @@ actor InstalledGameStore {
         var games = try load()
         guard let index = games.firstIndex(where: { $0.id == id }) else { throw InstalledGameError.invalidRegistry }
         if let selection {
+            try NativeFH6Recipe.requireEnabled(productID: games[index].storeId)
             guard let name = selection.inspection.engineName,
                   let digest = selection.inspection.registrySha256 else { throw NativeLaunchError.engineUnavailable }
+            try NativeFH6Recipe.validate(game: games[index], engine: name)
             try selection.validate(registryPath: selection.registryPath, engineName: name, registryDigest: digest)
         }
         games[index].engineOverrideV2 = selection.map { GameEngineOverride(selection: $0) }

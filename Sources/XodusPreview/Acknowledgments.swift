@@ -37,7 +37,7 @@ struct OpenSourceComponent: Identifiable, Hashable, Sendable {
 /// the installed Calimocho engine's notices and the app's own bundled notices.
 struct AcknowledgmentsInventory: Sendable {
     static let producerDirectoryName = "ProducerNotices"
-    static let pinnedProducerInventorySHA256 = "3ff49520c8eef04343806c75ab699084a670e2f21ee7adc9194cf8bb1979c425"
+    static let pinnedProducerInventorySHA256 = "f7ea18df92d24cee4fd09854cbe598996a05ed9a3d7c99e01ad5ee687a75f62d"
 
     var components: [OpenSourceComponent] = []
     /// Packages the producer inventory itself lists as lacking exact notice text.
@@ -359,7 +359,9 @@ enum KeyOpenSourceProjects {
         ("engine:gmp", .init(name: "GMP", role: "Arithmetic for Nettle", license: "LGPL-3.0-or-later or GPL-2.0-or-later")),
         ("engine:libtasn1", .init(name: "libtasn1", role: "Certificate parsing for GnuTLS", license: "LGPL-2.1-or-later")),
         ("engine:xxhash", .init(name: "xxHash", role: "Fast hashing", license: "BSD-2-Clause")),
-        ("engine:highball-tsshim", .init(name: "Highball timestamp shim", role: "DirectX 12 timestamp queries on D3DMetal", license: "GPL-3.0"))
+        ("engine:highball-tsshim", .init(name: "Highball timestamp shim",
+            role: "DirectX 12 timestamp queries on D3DMetal; a component bundled inside the Calimocho engine, separate from the Highball app, which \(AppBrand.displayName) doesn't bundle or install",
+            license: "GPL-3.0"))
     ]
     static let separatelyLicensed: (marker: String, project: Project) = ("engine:apple-gptk",
         .init(name: "Apple D3DMetal", role: "Direct3D on Metal, from Apple's Game Porting Toolkit",
@@ -406,6 +408,9 @@ struct AppAcknowledgmentsView: View {
 
     var body: some View {
         NavigationSplitView {
+            VStack(spacing: 0) {
+            AcknowledgmentsSearchField(query: $query)
+                .padding(.horizontal, 10).padding(.vertical, 8)
             List(selection: $selection) {
                 Label(KeyOpenSourceProjects.header, systemImage: "heart.text.square")
                     .tag(Selection.overview)
@@ -436,14 +441,12 @@ struct AppAcknowledgmentsView: View {
                     Text("No components match “\(query)”.").foregroundStyle(.secondary)
                 }
             }
-            .navigationSplitViewColumnWidth(min: 220, ideal: 260)
             .accessibilityIdentifier("xodus.acknowledgments.list")
+            }
+            .navigationSplitViewColumnWidth(min: 220, ideal: 260)
         } detail: {
             detail
         }
-        .searchable(text: $query, placement: .sidebar,
-                    prompt: Text("Search components and licences")
-                        .foregroundStyle(Color(nsColor: AccessiblePalette.placeholder)))
         .onChange(of: navigation.request, initial: true) { _, request in
             guard let request else { return }
             selection = Self.selection(for: request)
@@ -655,5 +658,40 @@ private struct ComponentNoticeView: View {
             }.value
             texts = loaded
         }
+    }
+}
+
+/// REQ-19: the system search field draws its prompt in the system placeholder colour (2.6:1), so the
+/// Acknowledgments sidebar uses its own field with a placeholder in X Ode's accessible placeholder colour.
+struct AcknowledgmentsSearchField: View {
+    @Binding var query: String
+    static let prompt = "Search components and licences"
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "magnifyingglass").foregroundStyle(Color(nsColor: AccessiblePalette.placeholder))
+                .accessibilityHidden(true)
+            TextField(Self.prompt, text: $query, prompt: Text(""))
+                .textFieldStyle(.plain)
+                .labelsHidden()
+                .overlay(alignment: .leading) {
+                    if query.isEmpty {
+                        Text(Self.prompt).foregroundStyle(Color(nsColor: AccessiblePalette.placeholder))
+                            .lineLimit(1).allowsHitTesting(false).accessibilityHidden(true)
+                    }
+                }
+                .onExitCommand { query = "" }
+            if !query.isEmpty {
+                Button { query = "" } label: { Image(systemName: "xmark.circle.fill") }
+                    .buttonStyle(.plain).foregroundStyle(Color(nsColor: AccessiblePalette.placeholder))
+                    .accessibilityLabel("Clear search")
+            }
+        }
+        .padding(.horizontal, 8).padding(.vertical, 5)
+        .background(RoundedRectangle(cornerRadius: 7).fill(Color(nsColor: .textBackgroundColor)))
+        .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(Color(nsColor: .separatorColor)))
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(Self.prompt)
+        .accessibilityIdentifier("xodus.acknowledgments.search")
     }
 }

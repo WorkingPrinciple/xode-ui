@@ -38,19 +38,19 @@ manifest SHA-256
 handoff; its last Forza qualification/publication is still pending.
 
 The current backend producer is source commit
-`1bcc1c426dd5b8cc1a5073b73eb1580781a7fddb`, tree
-`5ebdba190998fa2c719885dc53cf3e7d2b5c00e1`. Its signed build manifest is
-`04e153c0bb9c72ca49e4d91af49db67c3c854e0c65b61c658cd2cbcc8252f60b`; the
+`0a5d1dad7d94fa204c5d61abb43f068252f37bd1`, tree
+`2b70033fcaff869d8598fe7f5256e41d94142106`. Its signed build manifest is
+`9ebdc8fc0e1d5ce8aa422b825987f46f1aa67ea9d380930eb93e4c0bedc0a7e1`; the
 paired CLI and Windows helper hashes are
-`146a71689aa450c45ac5f0d17e9e980adfe759cc86a06070aa76d07bd65a38b3` and
-`7a68e6f835a596058f0a411c791242b046c00c4df3c38823f8c40c74d26de1ed`.
+`ba193c0ac12765e354ec514ec156b7cf6462854f73e1bc0d398423cd1cbbda99` and
+`c205a45fcfa703296593034498a35c177ad7e9c80fdd1a4ddeec2fdb721bface`.
 The regenerated producer-notice inventory is
-`3ff49520c8eef04343806c75ab699084a670e2f21ee7adc9194cf8bb1979c425`; its
+`f7ea18df92d24cee4fd09854cbe598996a05ed9a3d7c99e01ad5ee687a75f62d`; its
 source-bound supplemental evidence is
-`2d5b88033c9ca273148e13b3e4f1336680b3010bc113f514f4b13caad3e858bb`. The
+`9a111886e2a66d5d84a33c6cce990ee4b751191463e07f321d28aa96d26cf97b`. The
 corresponding-source archive is
-`6d7adbaf0998ab9a2c024f68cd3c2ad88bd173235872e790b462edd469a65f87`
-(8,980,480 bytes, 589 members, from the exact commit). It excludes
+`d639992229a9a289aae12c0d232e02c004f002d0ea725121485b20dd81faef28`
+(9,625,600 bytes, 533 regular files, from the exact commit). It excludes
 `docs/private-ai/` and `docs/private-checkpoints/`. The inventory covers 479
 packages and 462 compiler-artifact identities; its one unresolved obligation
 covers final corresponding-source delivery and applicable licence/notice
@@ -74,9 +74,12 @@ The producer's `eappx`, `msixvc`, `msixvc-common`, `xodus`, `xodus-cli`,
 via the producer repository's root `LICENSE`; the corresponding source archive
 includes that file.
 
-Beta release notes disclose the temporary No Man's Sky developer-local engine
-binding: another Mac without the exact tested engine reports it missing, and
-X Ode does not substitute a different engine.
+Packaging strips developer-local engine bindings whose registry lives in a source
+tree or worktree (`${HOME}/src/…`, `copilot-worktrees`), and fails if any staged
+resource still names such a path (REQ-52). The former No Man's Sky private
+Calimocho binding therefore never ships. Packaged builds offer No Man's Sky only
+through its admitted CrossOver route (COR-224). Development builds keep the
+source-tree binding.
 
 The inventory's own hashes and packaged resource seal do not establish
 completeness. The independently approved digest binds the exact producer
@@ -196,17 +199,17 @@ Existing r7 build/source receipts resolve its provenance rather than requiring
 reconstruction of older evidence. Outer app/DMG acceptance remains mandatory.
 
 The active Xodus shipping pair is producer commit
-`1bcc1c426dd5b8cc1a5073b73eb1580781a7fddb`, tree
-`5ebdba190998fa2c719885dc53cf3e7d2b5c00e1`, signed CLI
-`146a71689aa450c45ac5f0d17e9e980adfe759cc86a06070aa76d07bd65a38b3`
-(28,974,448 bytes), Windows helper
-`7a68e6f835a596058f0a411c791242b046c00c4df3c38823f8c40c74d26de1ed`
-(20,480 bytes), producer manifest
-`04e153c0bb9c72ca49e4d91af49db67c3c854e0c65b61c658cd2cbcc8252f60b`, and
+`0a5d1dad7d94fa204c5d61abb43f068252f37bd1`, tree
+`2b70033fcaff869d8598fe7f5256e41d94142106`, signed CLI
+`ba193c0ac12765e354ec514ec156b7cf6462854f73e1bc0d398423cd1cbbda99`
+(30,087,584 bytes), Windows helper
+`c205a45fcfa703296593034498a35c177ad7e9c80fdd1a4ddeec2fdb721bface`
+(22,016 bytes), producer manifest
+`9ebdc8fc0e1d5ce8aa422b825987f46f1aa67ea9d380930eb93e4c0bedc0a7e1`, and
 Cargo.lock `b03657f83cbf14dbf1f4b2cc70fa51ffe75e14934b816b4e21ae103f29a36868`.
 The pinned inventory checks these values and binds the corresponding-source
-archive `6d7adbaf0998ab9a2c024f68cd3c2ad88bd173235872e790b462edd469a65f87`
-(8,980,480 bytes) to the same producer. Supplemental-provenance report
+archive `d639992229a9a289aae12c0d232e02c004f002d0ea725121485b20dd81faef28`
+(9,625,600 bytes) to the same producer. Supplemental-provenance report
 metadata naming the prior producer is historical, not an active shipping pin.
 
 Known test-only build issue: release-mode
@@ -716,7 +719,7 @@ python3 tools/release_candidate.py \
   --identity 410914520BCC840C0125D3826CCF0F247F603321 \
   --candidate "$HOME/Library/Application Support/Ode to X/Service/candidates/a1aade5e959a5ad27e695f85c15ef50addf036d4ab857d70e041f57a95abe664" \
   --producer-source /absolute/frozen-xodus-macos-checkout \
-  --producer-source-archive /absolute/xodus-cli-beta-1bcc1c42-source.tar \
+  --producer-source-archive /absolute/xodus-cli-beta-0a5d1dad-source.tar \
   --notary-profile notary \
   --dry-run
 ```
@@ -784,7 +787,7 @@ python3 tools/release_candidate.py \
   --resume-receipt /absolute/Ode-release-SESSION/release-receipt.json \
   --producer-notices-sha256 INDEPENDENTLY_APPROVED_SHA256 \
   --dmg-background /absolute/reviewed/dmg-background.tiff \
-  --producer-source-archive /absolute/xodus-cli-beta-1bcc1c42-source.tar \
+  --producer-source-archive /absolute/xodus-cli-beta-0a5d1dad-source.tar \
   --notary-profile notary
 ```
 
