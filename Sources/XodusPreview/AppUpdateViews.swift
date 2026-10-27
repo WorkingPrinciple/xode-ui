@@ -72,7 +72,7 @@ struct AppUpdateSettingsSection: View {
                 }
             }
             Text(updates.isConfigured
-                 ? "Checks run at most once a day, never during a game or install, and skip Low Data Mode and Low Power Mode. Updates replace the app only; your games, engines, prefixes and saves are never touched."
+                 ? "Automatic checks run at most once a day and skip Low Data Mode and Low Power Mode. Update relaunch waits until no game or install is running."
                  : "Updates aren't published for this build yet, so there's nothing to check.")
                 .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
         }

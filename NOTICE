@@ -13,6 +13,12 @@ licensed by the GPL; see TRADEMARKS.md.
 Credits and third-party notices
 -------------------------------
 
+Sparkle 2.10.1
+  App update framework, https://sparkle-project.org/
+  Copyright Andy Matuschak and the other contributors named in
+  ThirdParty/Sparkle/LICENSE. Sparkle and its embedded components retain
+  their MIT, BSD-2-Clause and Zlib notices; see that file for the full text.
+
 Xodus
   X Ode manages games through a fork of the Xodus game-management project
   (xodus-gaming/xodus), licensed under GPL-3.0. Thank you to its contributors.

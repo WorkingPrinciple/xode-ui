@@ -14,6 +14,10 @@
     <key>LSMinimumSystemVersion</key><string>14.0</string>
     <key>NSHighResolutionCapable</key><true/>
     <key>NSPrincipalClass</key><string>NSApplication</string>
+    <key>SUEnableAutomaticChecks</key><false/>
+    <key>SUAutomaticallyUpdate</key><false/>
+    <key>SUEnableSystemProfiling</key><false/>
+    <key>SUPublicEDKey</key><string>3WwORNS9L6+6SDImFIyM9oS0dqvGYXUle5yoiKWsf0Q=</string>
     <key>NSLocalNetworkUsageDescription</key><string>X Ode uses Bonjour to find Xbox consoles on your local network; games it runs may use local multiplayer.</string>
     <key>NSRemovableVolumesUsageDescription</key><string>X Ode installs games on this external drive when selected; games it runs may read or save files there.</string>
     <key>NSNetworkVolumesUsageDescription</key><string>X Ode installs games on this network drive when selected; games it runs may read or save files there.</string>

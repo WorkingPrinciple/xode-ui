@@ -370,6 +370,10 @@ struct LiveRootView: View {
         .onPreferenceChange(LibraryHeroPresenceKey.self) { libraryHasHero = $0 }
         .onReceive(state.gameOperations.objectWillChange) { _ in state.objectWillChange.send() }
         .onReceive(state.installedGames.objectWillChange) { _ in state.objectWillChange.send() }
+        .onReceive(state.calimochoInstaller.objectWillChange) { _ in state.objectWillChange.send() }
+        .task(id: state.appUpdateBusyReason) {
+            await state.appUpdate.busyStateChanged()
+        }
 #if !XODUS_SHIPPING
         .onReceive(LibraryPreviewExporter.presentation.$showGrid) { show in
             if show { proxy.scrollTo("library-games", anchor: .top) }
@@ -379,11 +383,13 @@ struct LiveRootView: View {
             // REQ-143 UPD-02: a quiet once-a-day check, never at launch and never while the owner is busy.
             guard startupAllowed else { return }
             while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(60))
+                do { try await Task.sleep(for: .seconds(60)) }
+                catch { return }
                 await state.appUpdate.checkIfDue()
                 state.appUpdate.refreshSuppression()
                 await state.appUpdate.busyStateChanged()
-                try? await Task.sleep(for: .seconds(3600))
+                do { try await Task.sleep(for: .seconds(3600)) }
+                catch { return }
             }
         }
         .task {

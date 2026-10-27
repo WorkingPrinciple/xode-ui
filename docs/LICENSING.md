@@ -12,6 +12,23 @@ Future runtime components, libraries and assets retain their own licenses. The a
 
 Signing, notarization, installer/updater channel and the detailed component redistribution review remain release blockers. This foundation makes no legal determination about future consumer APIs or package distribution.
 
+## Sparkle 2.10.1 (REQ-143 / COR-298)
+
+The owner approved this first external SwiftPM dependency. `Package.swift`
+pins version 2.10.1 exactly; its binary target is checksum-bound upstream.
+`ThirdParty/components.json` records the release, binary checksum, source,
+licences and full notice path. `ThirdParty/Sparkle/LICENSE` is the unmodified
+upstream combined licence, including bsdiff/bspatch, sais-lite, Ed25519 and
+SUSignatureVerifier notices (MIT, BSD-2-Clause and Zlib).
+These permissive grants are compatible with GPL-3.0-only; original app code
+retains its GPL grant, and third-party code retains its own grant.
+
+The build lane must embed and re-sign the exact framework and nested code,
+ship these notices, and add their actual file identities to the final
+distribution inventory. The source manifest is not a claim that the existing
+packager already handles a dynamic framework or that distribution review is
+complete. Do not relax the existing unmapped-payload gate to ship it.
+
 ## COR176 package boundary
 
 The source-bound 2794e68 local candidate is historical and includes the app,

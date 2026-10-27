@@ -28,7 +28,13 @@ let package = Package(
         .executable(name: "XodusManagementChecks", targets: ["XodusManagementChecks"]),
         .executable(name: "XodusCredentialChecks", targets: ["XodusCredentialChecks"])
     ]),
+    dependencies: [
+        .package(url: "https://github.com/sparkle-project/Sparkle", exact: "2.10.1")
+    ],
     targets: [
+        .target(name: "OdeUpdates", dependencies: [
+            "XodusManagement", .product(name: "Sparkle", package: "Sparkle")
+        ]),
         .target(name: "XodusCore", exclude: shipping ? ["Fixtures.swift"] : [],
                 swiftSettings: shippingSettings),
         .target(name: "XodusManagement", dependencies: ["XodusCore"],
@@ -45,12 +51,15 @@ let package = Package(
         .target(name: "XodusCredentials"),
         .target(name: "XodusProcessIdentity"),
         .executableTarget(name: "XodusCredentialBroker", dependencies: ["XodusCredentials"]),
-        .executableTarget(name: "XodusPreview", dependencies: ["XodusCore", "XodusManagement", "XodusCredentials", "XodusProcessIdentity"],
+        .executableTarget(name: "XodusPreview", dependencies: ["XodusCore", "XodusManagement", "XodusCredentials", "XodusProcessIdentity", "OdeUpdates"],
                           exclude: shipping ? previewOnly : [],
                           resources: shipping ? [] : [.copy("Resources/Artwork")],
                           swiftSettings: shippingSettings),
         .executableTarget(name: "XodusAuthHost", exclude: shipping ? ["AuthHostChecks.swift", "Resources"] : [],
                           resources: shipping ? [] : [.copy("Resources")], swiftSettings: shippingSettings)
+    ] + [
+        .testTarget(name: "OdeUpdateChecks", dependencies: ["OdeUpdates", "XodusManagement"],
+                    path: "Tests/UpdateChecks")
     ] + (shipping ? [
         .testTarget(name: "XodusShippingChecks", dependencies: ["XodusPreview", "XodusManagement"],
                     path: "Tests/ShippingChecks")

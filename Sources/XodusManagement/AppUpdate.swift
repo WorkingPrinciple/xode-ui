@@ -39,12 +39,16 @@ public struct UpdateVersion: Comparable, Equatable, Sendable, CustomStringConver
 
 public struct AppUpdateInfo: Equatable, Codable, Sendable {
     public let version: String
+    public let buildVersion: String?
     public let releaseNotes: URL?
 
-    public init(version: String, releaseNotes: URL? = nil) {
+    public init(version: String, buildVersion: String? = nil, releaseNotes: URL? = nil) {
         self.version = version
+        self.buildVersion = buildVersion
         self.releaseNotes = releaseNotes
     }
+
+    var preferenceIdentity: String { buildVersion.map { "\(version)#\($0)" } ?? version }
 }
 
 public enum AppUpdateFeedResponse: Equatable, Sendable {
@@ -220,6 +224,7 @@ public final class AppUpdateController: ObservableObject {
     private let driver: UpdateDriver
     private let preferences: AppUpdatePreferences
     private let currentVersion: UpdateVersion?
+    private let currentBuildVersion: UpdateVersion?
     private let clock: @Sendable () -> Date
     private let conditions: @MainActor () -> AppUpdateConditions
     private let busy: @MainActor () -> AppUpdateBusyReason?
@@ -227,6 +232,7 @@ public final class AppUpdateController: ObservableObject {
     private var checkInFlight = false
 
     public init(driver: UpdateDriver, preferences: AppUpdatePreferences, currentVersion: UpdateVersion?,
+                currentBuildVersion: UpdateVersion? = nil,
                 clock: @escaping @Sendable () -> Date = { Date() },
                 conditions: @escaping @MainActor () -> AppUpdateConditions = { AppUpdateConditions() },
                 busy: @escaping @MainActor () -> AppUpdateBusyReason? = { nil },
@@ -234,13 +240,15 @@ public final class AppUpdateController: ObservableObject {
         self.driver = driver
         self.preferences = preferences
         self.currentVersion = currentVersion
+        self.currentBuildVersion = currentBuildVersion
         self.clock = clock
         self.conditions = conditions
         self.busy = busy
         self.jitter = jitter
         if !driver.isConfigured {
             state = .unconfigured
-        } else if let saved = preferences.available, Self.isNewer(saved, than: currentVersion) {
+        } else if let saved = preferences.available,
+                  Self.isNewer(saved, than: currentVersion, build: currentBuildVersion) {
             state = .available(saved)
         } else {
             state = .idle
@@ -294,7 +302,7 @@ public final class AppUpdateController: ObservableObject {
     public func refreshSuppression() { suppressionRevision += 1 }
 
     private func isSuppressed(_ info: AppUpdateInfo) -> Bool {
-        if preferences.skippedVersion == info.version { return true }
+        if preferences.skippedVersion == info.preferenceIdentity { return true }
         if let until = preferences.remindUntil, clock() < until { return true }
         return false
     }
@@ -306,7 +314,7 @@ public final class AppUpdateController: ObservableObject {
 
     public func skipThisVersion() {
         guard case .available(let info) = state else { return }
-        preferences.skippedVersion = info.version
+        preferences.skippedVersion = info.preferenceIdentity
         suppressionRevision += 1
     }
 
@@ -356,7 +364,7 @@ public final class AppUpdateController: ObservableObject {
                 preferences.available = nil
                 state = .upToDate
             case .available(let info, let etag):
-                guard Self.isNewer(info, than: currentVersion) else {
+                guard Self.isNewer(info, than: currentVersion, build: currentBuildVersion) else {
                     preferences.etag = etag
                     preferences.available = nil
                     state = .upToDate
@@ -384,7 +392,12 @@ public final class AppUpdateController: ObservableObject {
         preferences.nextCheck = now.addingTimeInterval(delay + jitter() * AppUpdateSchedule.maximumJitter)
     }
 
-    private static func isNewer(_ info: AppUpdateInfo, than current: UpdateVersion?) -> Bool {
+    private static func isNewer(_ info: AppUpdateInfo, than current: UpdateVersion?,
+                                build: UpdateVersion?) -> Bool {
+        if let offeredBuild = info.buildVersion {
+            guard let build, let version = UpdateVersion(offeredBuild) else { return false }
+            return version > build
+        }
         guard let current, let version = UpdateVersion(info.version) else { return false }
         return version > current
     }
@@ -413,7 +426,12 @@ public final class AppUpdateController: ObservableObject {
             return
         }
         state = .relaunching(info)
-        do { try await driver.relaunchToInstall(info) } catch { state = .ready(info) }
+        do {
+            try await driver.relaunchToInstall(info)
+        } catch {
+            state = .ready(info)
+            manualFailure = "The update could not relaunch the app. Try again when no game or install is running."
+        }
     }
 
     /// The app calls this when a game or operation ends so a waiting update can proceed.

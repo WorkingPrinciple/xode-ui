@@ -4,6 +4,7 @@ import Foundation
 import SwiftUI
 import XodusCore
 import XodusManagement
+import OdeUpdates
 
 enum Destination: String, CaseIterable, Identifiable {
     case library = "Library", discover = "Discover", downloads = "Downloads"
@@ -100,18 +101,32 @@ final class AppState: ObservableObject {
         return operations
     }()
     private lazy var updateConditions = AppUpdateConditionsMonitor()
-    /// REQ-143. No feed is configured until the owner decides hosting and signing, so this never makes a request.
+    private var appUpdateBusy: Bool { appUpdateBusyReason != nil }
+    var appUpdateBusyReason: AppUpdateBusyReason? {
+        if installedGames.runningGameID != nil || installedGames.launchStarted { return .gameRunning }
+        if gameOperations.isBusy || !gameOperations.canQuit || installedGames.mutationActive
+            || calimochoInstaller.isWorking || runtimeSettings.applicationTerminating {
+            return .installActive
+        }
+        return nil
+    }
+    private lazy var updateDriver = SparkleUpdateDriver(
+        isBusy: { [weak self] in self?.appUpdateBusy ?? true },
+        readyToRelaunch: { [weak self] info in
+            guard let self else { return }
+            self.appUpdate.markReady(info)
+            Task { await self.appUpdate.installWhenIdle() }
+        })
+    /// REQ-143 / COR-298: absent feed/key keeps Sparkle unstarted.
     lazy var appUpdate = AppUpdateController(
-        driver: UnconfiguredUpdateDriver(),
+        driver: updateDriver,
         preferences: AppUpdatePreferences(defaults: settingsDefaults),
         currentVersion: AppBrand.current.version.flatMap { UpdateVersion($0) },
+        currentBuildVersion: AppBrand.current.build.flatMap { UpdateVersion($0) },
         conditions: { [unowned self] in self.updateConditions.conditions },
-        busy: { [unowned self] in
-            if self.installedGames.runningGameID != nil || self.installedGames.launchStarted { return .gameRunning }
-            if self.gameOperations.isBusy || self.installedGames.mutationActive || self.calimochoInstaller.isWorking {
-                return .installActive
-            }
-            return nil
+        busy: { [weak self] in
+            guard let self else { return .installActive }
+            return self.appUpdateBusyReason
         })
     lazy var downloadQueue = DownloadQueueController(
         driver: GameOperationsInstallDriver(operations: gameOperations))
