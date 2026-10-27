@@ -514,8 +514,8 @@ enum BrandUXChecks {
         let featured = DiscoverBrowse.spotlight(order, limit: 3) { tiers[$0] ?? .supported }
         check(featured == ["Halls", "Forza", "Witcher"],
               "L21: Spotlight features playable titles first, keeps store order within a tier and drops unsupported ones")
-        check(DiscoverBrowse.spotlight(["A", "B"], limit: 5) { _ in .unsupported } == ["A", "B"],
-              "L21: Spotlight falls back to store order when no title has a better known fact")
+        check(DiscoverBrowse.spotlight(["A", "B"], limit: 5) { _ in .unsupported }.isEmpty,
+              "L21/L9: With only unsupported titles, Discover shows no hero rather than a blocked one")
         let installed = InstalledGamesController()
         let operations = GameOperationsController(installed: installed)
         let game = PCGame(id: "FIXTURE00009", title: "Hero fixture", artwork: nil)

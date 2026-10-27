@@ -665,7 +665,11 @@ struct LiveRootView: View {
                             selection: state.discoverSelection,
                             focused: $discoverSuggestionFocus,
                             select: selectRecentSearch,
-                            dismiss: dismissDiscoverRecentSearches))) {
+                            dismiss: dismissDiscoverRecentSearches,
+                            returnToField: {
+                                discoverSuggestionFocus = nil
+                                searchFocused = true
+                            }))) {
                 state.openAccount()
             }
             ToolbarItem(placement: .primaryAction) {

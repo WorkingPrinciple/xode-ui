@@ -169,14 +169,12 @@ enum DiscoverBrowse {
 
     /// Spotlight picks from the leading store-order window, ranking only known facts: playable titles
     /// first, then supported ones, keeping store order within a tier. Titles with a known support
-    /// issue are dropped unless nothing else is available.
+    /// issue are never featured; with nothing else, there is no hero (owner: no blocked heroes).
     static func spotlight<Item>(_ items: [Item], limit: Int = 5, window: Int = 48,
                                 tier: (Item) -> SpotlightTier) -> [Item] {
         let ranked = items.prefix(max(limit, window)).enumerated()
             .map { (offset: $0.offset, item: $0.element, tier: tier($0.element)) }
-        let usable = ranked.filter { $0.tier != .unsupported }
-        guard !usable.isEmpty else { return Array(items.prefix(limit)) }
-        return usable.sorted { $0.tier == $1.tier ? $0.offset < $1.offset : $0.tier < $1.tier }
+        return ranked.filter { $0.tier != .unsupported }.sorted { $0.tier == $1.tier ? $0.offset < $1.offset : $0.tier < $1.tier }
             .prefix(limit).map(\.item)
     }
 }
@@ -245,6 +243,15 @@ enum DiscoverSearchOverlayLayout {
               let first = searches.first else { return nil }
         return .search(first)
     }
+
+    /// REQ-91: Up/Down move through the visible recent searches and then Clear; nil above the first
+    /// entry returns focus to the search field.
+    static func moving(from current: DiscoverSearchFocus?, down: Bool, searches: [String]) -> DiscoverSearchFocus? {
+        let order = searches.prefix(8).map(DiscoverSearchFocus.search) + [.clear]
+        guard let current, let index = order.firstIndex(of: current) else { return down ? order.first : nil }
+        let next = index + (down ? 1 : -1)
+        return next < 0 ? nil : order[min(next, order.count - 1)]
+    }
 }
 
 struct DiscoverRecentSearches: View {
@@ -252,6 +259,18 @@ struct DiscoverRecentSearches: View {
     @FocusState.Binding var focused: DiscoverSearchFocus?
     var select: (String) -> Void
     var dismiss: () -> Void
+    var returnToField: () -> Void = {}
+
+    private func move(down: Bool) -> KeyPress.Result {
+        if let next = DiscoverSearchOverlayLayout.moving(from: focused, down: down,
+                                                          searches: selection.recentSearches) {
+            focused = next
+        } else {
+            focused = nil
+            returnToField()
+        }
+        return .handled
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -288,6 +307,8 @@ struct DiscoverRecentSearches: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Recent searches")
         .accessibilityIdentifier("xodus.discover.recentSearches")
+        .onKeyPress(.downArrow) { move(down: true) }
+        .onKeyPress(.upArrow) { move(down: false) }
         .onExitCommand(perform: dismiss)
     }
 }
@@ -372,6 +393,7 @@ struct LiveCatalogView: View {
     @State private var detailFocusReturnID: String?
     @State private var seasonalDate = Date()
     @StateObject private var halloweenCatalog = HalloweenCatalog()
+    @State private var shelvesAdmittedScope: String?
     @StateObject private var gamePassShelves = GamePassCollections(artwork: .shared,
                                                                    keys: DiscoverGamePassShelf.keys)
 
@@ -467,7 +489,7 @@ struct LiveCatalogView: View {
                     .padding(.horizontal, 56).padding(.top, 24)
                     .accessibilityIdentifier("xodus.catalog.installStatus")
             }
-            if query.isEmpty, !visible.isEmpty { featuredCarousel }
+            if query.isEmpty, !featuredGames.isEmpty { featuredCarousel }
             VStack(alignment: .leading, spacing: 28) {
                 if query.isEmpty {
                     if !genres.isEmpty { browseGenres }
@@ -683,7 +705,7 @@ struct LiveCatalogView: View {
                 }
             }
             .padding(.horizontal, 56).padding(.bottom, 32)
-            .padding(.top, DiscoverLayout.contentTopInset(query: query, hasFeatured: !visible.isEmpty))
+            .padding(.top, DiscoverLayout.contentTopInset(query: query, hasFeatured: !featuredGames.isEmpty))
         }
         .onChange(of: query) { _, value in
             selection.genre = nil
@@ -714,6 +736,9 @@ struct LiveCatalogView: View {
         }
         .onExitCommand(perform: exitSearchResults)
         .task(id: halloweenScope) { await loadHalloween() }
+        .onChange(of: shelvesMayStart, initial: true) { _, ready in
+            if ready, query.isEmpty { shelvesAdmittedScope = session.accountCatalogScope }
+        }
         .task(id: gamePassShelvesScope) { await loadGamePassShelves() }
         .task(id: CatalogArtworkLoadKey(market: session.market, language: session.language,
                                        ids: presentationActive ? metadataIDs : [])) {
@@ -754,8 +779,16 @@ struct LiveCatalogView: View {
 
     private var gamePassShelvesScope: String? {
         guard query.isEmpty, presentationActive, allowsStartupTasks, session.isReady,
-              session.accountCountryReady else { return nil }
+              session.accountCountryReady, shelvesAdmittedScope == session.accountCatalogScope else { return nil }
         return session.accountCatalogScope
+    }
+
+    /// Latched per account scope so later paging or metadata work never restarts loaded shelves.
+    private var shelvesMayStart: Bool {
+        DiscoverGamePassShelf.mayStart(
+            firstPageSettled: (session.catalogMatches(query: "") && !session.searching)
+                || session.catalogError != nil || session.catalogStopped || !canRefresh,
+            firstViewPending: metadataIDs.prefix(DiscoverBrowse.pageSize).contains { art.pendingIDs.contains($0) })
     }
 
     private func loadGamePassShelves() async {

@@ -24,6 +24,12 @@ enum DiscoverGamePassShelf: String, CaseIterable, Identifiable {
 
     static var keys: [String] { allCases.map(\.rawValue) }
 
+    /// REQ-81: shelves wait until the first browse page has settled (loaded, failed or stopped) and its
+    /// first-view metadata is no longer pending, so they never compete with the first useful content.
+    static func mayStart(firstPageSettled: Bool, firstViewPending: Bool) -> Bool {
+        firstPageSettled && !firstViewPending
+    }
+
     /// Games a shelf may show: official members only, Microsoft-classified PC base games, in list order.
     static func products(_ collection: GamePassCollection?, facts: [String: LibraryCatalogFacts],
                          isVisible: (CatalogProduct) -> Bool) -> [CatalogProduct] {
