@@ -726,13 +726,23 @@ final class InstalledGamesController: ObservableObject {
     /// the actual reason. An explicit engine is applied exactly like the per-game Engine menu.
     func playFromLaunchRequest(_ game: InstalledGame, engine: String?,
                                timeout: Duration = .seconds(60)) async -> String? {
+        let message = await launchRequestOutcome(game, engine: engine, timeout: timeout)
+        if let message {
+            Self.launchLog.error("Launch request not started: \(game.storeId, privacy: .public): \(message, privacy: .public)")
+        }
+        return message
+    }
+
+    private func launchRequestOutcome(_ game: InstalledGame, engine: String?, timeout: Duration) async -> String? {
         let settled = await Self.waitUntil(timeout: timeout) { productAccessSettled(game.storeId) }
         guard canRequestPlay(game.storeId) else {
             return settled ? (productAccessNotice(for: game) ?? "Access to this game hasn't been confirmed for your Xbox account.")
                 : "Access to this game wasn't confirmed within \(timeout.components.seconds) seconds. Open the game and try again."
         }
         if let engine {
-            await refreshEngineOverrides(force: false)
+            // Engine admission needs the backend lifecycle; a check already in flight is awaited, not skipped.
+            _ = await Self.waitUntil(timeout: timeout) { unifiedSession?.nativeLifecycleConfiguration != nil }
+            await refreshEngineOverrides(force: true)
             guard let selection = engineOverrides(for: game).first(where: { $0.inspection.engineName == engine }) else {
                 return "\(Self.readableEngineName(engine)) isn't available for \(game.title) on this Mac. No other engine was used."
             }
