@@ -352,10 +352,8 @@ struct NativeTitleLaunchProfile: Codable {
         return profile
     }
 
-    #if !XODUS_SHIPPING
-    /// Checks only: validates a decoded fixture exactly as a local profile is validated.
+    /// Validates a decoded profile exactly as a local profile is validated (used by checks).
     func validatedForChecks() throws -> Self { try validate(productID: productID); return self }
-    #endif
 
     private func validate(productID: String) throws {
         func validKey(_ key: String) -> Bool {
