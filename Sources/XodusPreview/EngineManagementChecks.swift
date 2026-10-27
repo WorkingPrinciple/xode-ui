@@ -1094,6 +1094,14 @@ enum EngineManagementChecks {
               && (try? NativeFH6Recipe.validate(game: fh6Game, engine: NativeFH6Recipe.engineName, explicitChoice: true)) != nil
               && (try? NativeFH6Recipe.validate(game: borrowed, engine: NativeFH6Recipe.engineName, explicitChoice: true)) == nil,
               "REQ153 FH6 on its recipe engine keeps the recipe path unchanged, and no other title can borrow that engine")
+        check(NativeLaunchConfiguration.genericArguments(true) == ["--generic-unsupported"]
+              && NativeLaunchConfiguration.genericArguments(false).isEmpty,
+              "REQ153 only the explicit generic path sends --generic-unsupported")
+        let recipeRefusal = EngineInspectionError.rejected(.init(code: "TITLE_RECIPE_REQUIRED", message: "x"))
+        check(InstalledGamesController.nativeLaunchFailureMessage(recipeRefusal) == InstalledGameActionCopy.titleRecipeRequired
+              && NativeGameResult.failureCodes.contains("TITLE_RECIPE_REQUIRED")
+              && InstalledGameActionCopy.titleRecipeRequired.hasPrefix("This game needs a newer X Ode to run on this engine"),
+              "REQ153 TITLE_RECIPE_REQUIRED shows an honest update-or-choose-default error")
         let nmsInspection = EngineInspection(schemaVersion: 1, capability: "engineAdmissionV1",
             registrySha256: "170ca4ad08a5274b614e74bf740866ef219a97fdc7855270c5d8fa03192ed609",
             engineName: "calimocho-wine11.20-gptk4b3-tls-vulkan-private", declaredProvider: "calimocho",

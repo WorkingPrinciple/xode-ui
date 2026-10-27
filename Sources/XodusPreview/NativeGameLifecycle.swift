@@ -66,7 +66,7 @@ struct NativeGameResult: Codable, Equatable, Sendable {
         "ACCOUNT_UNAVAILABLE", "ACCOUNT_MISMATCH", "ACCOUNT_CHANGED", "TIMEOUT", "CANCELLED", "OPERATION_FAILED",
         "RESOURCE_BUSY", "DISK_SPACE_FLOOR", "DISK_SPACE_FLOOR_INVALID",
         "UNINSTALL_PERMISSION_DENIED", "UNINSTALL_NOT_A_GAME", "UNINSTALL_UNSAFE_TREE", "UNINSTALL_FAILED",
-        "PREFIX_MISSING_RESTORE_REQUIRED"
+        "PREFIX_MISSING_RESTORE_REQUIRED", "TITLE_RECIPE_REQUIRED"
     ]
 
     /// The backend refused uninstall because the folder no longer proves it is this installed game.
@@ -152,6 +152,9 @@ struct NativeGameResult: Codable, Equatable, Sendable {
         if !success, errorCode == "PREFIX_MISSING_RESTORE_REQUIRED"
             || (error ?? "").hasPrefix("PREFIX_MISSING_RESTORE_REQUIRED:") {
             return NativePrefixCopy.missingRestoreRequired
+        }
+        if !success, errorCode == "TITLE_RECIPE_REQUIRED" || (error ?? "").hasPrefix("TITLE_RECIPE_REQUIRED") {
+            return InstalledGameActionCopy.titleRecipeRequired
         }
         return success ? nil : InstalledGameActionCopy.launchUnavailable
     }

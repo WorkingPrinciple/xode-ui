@@ -3,6 +3,8 @@ import SwiftUI
 import XodusManagement
 
 enum InstalledGameActionCopy {
+    /// REQ-153: the backend refused a per-game engine without the title's recipe (TITLE_RECIPE_REQUIRED).
+    static let titleRecipeRequired = "This game needs a newer X Ode to run on this engine. Choose its default engine from the … menu, or update X Ode. No other engine was substituted."
     static let removeKeepingFiles = "Remove from Library (Keep Files)…"
     /// REQ-135: keeping files is the default; deleting is limited to a verified game folder.
     static let deleteGameFiles = "Delete Game Files"

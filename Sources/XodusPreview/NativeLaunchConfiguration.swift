@@ -542,6 +542,11 @@ struct NativeLaunchConfiguration {
     let profile: NativeTitleLaunchProfile?
     let shims: NativeShimReference
     var admittedSelection: AdmittedEngineSelection? = nil
+    /// REQ-153: explicit per-game engine other than the tested profile's; launches on its `generic-<engine>` prefix.
+    var generic = false
+
+    /// The backend's opt-in for an explicit generic launch; never sent on the profile or default path.
+    static func genericArguments(_ generic: Bool) -> [String] { generic ? ["--generic-unsupported"] : [] }
 
     static func validateOverride(_ selection: AdmittedEngineSelection, game: InstalledGame,
                                  defaults: UserDefaults = .standard) throws {
@@ -790,7 +795,7 @@ struct NativeLaunchConfiguration {
             admitted = selection
         }
         return Self(engine: engineName, registry: registryURL, prefix: prefix, runtime: runtime,
-                        profile: profile, shims: shims, admittedSelection: admitted)
+                        profile: profile, shims: shims, admittedSelection: admitted, generic: generic)
     }
 
     /// REQ-153 (COR-301): only an explicit per-game choice of a differently named engine drops the tested
@@ -860,11 +865,12 @@ struct NativeLaunchConfiguration {
                     "--expected-registry-sha256", digest, "--prefix", prefix.path,
                     "--runtime-dll", dll.path]
                 + (engine == NativeFH6Recipe.engineName ? NativeFH6Recipe.arguments : ["--shim-dir", shims.directory.path])
-                + (profile?.playArguments ?? []) + manifestExecutable
+                + (profile?.playArguments ?? []) + manifestExecutable + Self.genericArguments(generic)
                 + QualificationDiagnostics.arguments(provider: admittedSelection.inspection.admittedProvider)
         }
         return ["--engine", engine, "--registry", selectedRegistry.path, "--prefix", prefix.path,
                 "--runtime-dll", dll.path, "--shim-dir", shims.directory.path] + (profile?.playArguments ?? []) + manifestExecutable
+                + Self.genericArguments(generic)
     }
 
     func prefixNotice() async throws -> String? {
