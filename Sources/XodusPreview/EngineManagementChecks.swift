@@ -33,19 +33,27 @@ enum EngineManagementChecks {
         let allPresent: (String) -> String? = { path in
             catalog.bindings.first { $0.registryPath.map(NativeTitleLaunchProfile.expand) == path }?.registrySha256
         }
-        let untested = NativeLaunchSupport.evaluate(productID: "9NZZZZZZZZZZ", defaults: defaults,
+        let generic = NativeLaunchSupport.evaluate(productID: "9NZZZZZZZZZZ", defaults: defaults,
             engineDefaults: { catalog }, registryDigest: allPresent, releaseStatus: { _ in nil })
-        check(untested == .untested && untested.canPlay && untested.isUntested && untested.reason == nil
-              && !untested.offersEngines && unprofiled != .notSupported(NativeLaunchSupport.notSupportedReason),
-              "REQ153 owner-directed: an installed title with no tested setup is compatible by default: normal Play through the default engine, no warning")
+        check(generic == .supported && generic.canPlay && generic.reason == nil && !generic.offersEngines
+              && unprofiled.reason?.localizedCaseInsensitiveContains("tested") != true,
+              "REQ153 owner-directed: a title without its own profile is compatible by default: normal Play through the default engine, no label")
         let noEngine = NativeLaunchSupport.evaluate(productID: "9NZZZZZZZZZZ", defaults: defaults,
             engineDefaults: { catalog }, registryDigest: { _ in nil }, releaseStatus: { _ in .notInstalled })
-        check(noEngine == .engineMissing(NativeLaunchSupport.untestedEngineMissingReason) && !noEngine.canPlay
-              && noEngine.offersEngines && noEngine.reason?.contains("tested with") == false,
-              "REQ153 untested title with no usable engine says Engine needed honestly, never claims a tested engine")
+        check(!noEngine.canPlay && noEngine.offersEngines && noEngine.reason?.contains("Open Engines") == true,
+              "REQ153 a title with no usable engine says Engine needed honestly")
+        let copy = NativeLaunchSupport.engineMissingReason("calimocho-wine11.20-gptk4b3-tls-vulkan-private")
+        let launchSupportSource = (try? String(contentsOfFile: "Sources/XodusPreview/NativeLaunchSupport.swift",
+                                               encoding: .utf8)) ?? ""
+        let consentSource = (try? String(contentsOfFile: "Sources/XodusPreview/GameOperationsView.swift",
+                                         encoding: .utf8)) ?? ""
+        check(!copy.localizedCaseInsensitiveContains("tested") && !launchSupportSource.contains("case untested")
+              && !launchSupportSource.contains("tested launch setup")
+              && !consentSource.contains("tested launch setup") && !consentSource.contains("Not tested"),
+              "REQ153 owner-directed: no 'not tested on this engine' label, note or state remains for any title or engine")
         check(NativeLaunchSupport.evaluate(productID: "9NZZZZZZZZZZ", defaults: defaults,
                 engineDefaults: { throw CocoaError(.fileNoSuchFile) }).canPlay == false,
-              "REQ153 untested Play is withheld when the engine catalog can't be read (no hidden fallback)")
+              "REQ153 generic Play is withheld when the engine catalog can't be read (no hidden fallback)")
         let blocked = LibrarySupportVisibility.issues(productID: "9NZZZZZZZZZZ", installed: true,
             packageFormat: "MSIXVC", compatibility: nil, catalogue: nil)
             + GameSupportPolicy.issues(packageFormat: "MSIXVC", antiCheat: "Easy Anti-Cheat")
@@ -54,13 +62,13 @@ enum EngineManagementChecks {
               "REQ153 only DB-known anti-cheat or non-MSIXVC titles get blocking issues (Not available on Mac yet)")
         let fh6 = NativeLaunchSupport.evaluate(productID: NativeFH6Recipe.productID, defaults: defaults,
             hasEngineOverride: true, engineDefaults: { catalog }, registryDigest: allPresent, releaseStatus: { _ in nil })
-        check(NativeFH6Recipe.enabled ? !fh6.isUntested : fh6 == .notSupported(NativeLaunchSupport.inTestingReason),
+        check(NativeFH6Recipe.enabled || fh6 == .notSupported(NativeLaunchSupport.inTestingReason),
               "REQ153 FH6 keeps its recipe gate and never becomes a generic launch")
-        check(NativeLaunchConfiguration.untestedExecutableArguments(profile: nil, manifestExecutables: ["Game.exe"])
+        check(NativeLaunchConfiguration.manifestExecutableArguments(profile: nil, manifestExecutables: ["Game.exe"])
                 == ["--exe", "Game.exe"]
-              && NativeLaunchConfiguration.untestedExecutableArguments(profile: nil,
+              && NativeLaunchConfiguration.manifestExecutableArguments(profile: nil,
                     manifestExecutables: ["A.exe", "B.exe"]).isEmpty
-              && NativeLaunchConfiguration.untestedExecutableArguments(profile: nil, manifestExecutables: []).isEmpty,
+              && NativeLaunchConfiguration.manifestExecutableArguments(profile: nil, manifestExecutables: []).isEmpty,
               "REQ153 generic launch passes only an unambiguous manifest executable, never a guess")
         let missingRelease = NativeLaunchSupport.evaluate(productID: "9P9VNSQK1W3K", defaults: defaults,
             engineDefaults: { catalog }, registryDigest: present, releaseStatus: { _ in .notInstalled })
@@ -80,7 +88,7 @@ enum EngineManagementChecks {
         check(NativeLaunchSupport.evaluate(productID: "9P9VNSQK1W3K", defaults: defaults, hasEngineOverride: true,
                 engineDefaults: { catalog }, registryDigest: present) == .supported
               && NativeLaunchSupport.evaluate(productID: "9NZZZZZZZZZZ", defaults: defaults, hasEngineOverride: true,
-                engineDefaults: { catalog }, registryDigest: present) == .untested,
+                engineDefaults: { catalog }, registryDigest: present) == .supported,
               "REQ153 explicit per-game engine also applies to titles without a tested setup")
         let unavailable = InstalledGamesController.nativeLaunchFailureMessage(NativeLaunchError.engineUnavailable)
         check(unavailable == NativeLaunchError.engineUnavailable.localizedDescription

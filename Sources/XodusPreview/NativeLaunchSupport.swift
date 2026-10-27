@@ -10,9 +10,6 @@ enum NativeLaunchSupport: Equatable {
     case notSupported(String)
     /// The title has an admitted setup, but its engine isn't usable on this Mac.
     case engineMissing(String)
-    /// Owner decision (REQ-153): an installed title with no tested launch setup still offers Play
-    /// through the generic Calimocho launch and the user's chosen engine, labelled honestly.
-    case untested
 
     static let notSupportedTitle = "Not available on Mac yet"
     /// REQ-139: a title gated to the test build has played on this Mac, so it isn't "not available".
@@ -24,14 +21,10 @@ enum NativeLaunchSupport: Equatable {
         if offersEngines { return "Engine needed" }
         return reason == Self.inTestingReason ? Self.inTestingTitle : Self.notSupportedTitle
     }
-    static let notSupportedReason = "There's no tested launch setup for this game yet, so Play isn't offered."
-    static let untestedEngineMissingReason = "No engine is set up on this Mac yet. Open Engines to set one up, or choose one for this game from its … menu."
-
-    var canPlay: Bool { self == .supported || self == .untested }
-    var isUntested: Bool { self == .untested }
+    var canPlay: Bool { self == .supported }
     var reason: String? {
         switch self {
-        case .supported, .untested: nil
+        case .supported: nil
         case .notSupported(let reason), .engineMissing(let reason): reason
         }
     }
@@ -62,20 +55,9 @@ enum NativeLaunchSupport: Equatable {
         } catch {
             return .notSupported(NativeLaunchError.invalidProfile.localizedDescription)
         }
-        guard let profile else {
-            // No tested setup: the generic launch uses the user's per-game or default engine, so Play is
-            // offered (as normal Play) only when that engine is actually usable here.
-            let status = engineStatus(engine: nil, registrySHA256: nil, hasEngineOverride: hasEngineOverride,
-                                      defaults: defaults, engineDefaults: engineDefaults,
-                                      registryDigest: registryDigest, releaseStatus: releaseStatus)
-            switch status {
-            case .supported: return .untested
-            case .engineMissing(let reason) where reason.hasPrefix("The engine this game was tested with"):
-                return .engineMissing(untestedEngineMissingReason)
-            default: return status
-            }
-        }
-        return engineStatus(engine: profile.engine, registrySHA256: profile.registrySHA256,
+        // REQ-153: a title without its own launch profile plays through the user's per-game or default
+        // engine, offered only when that engine is actually usable here.
+        return engineStatus(engine: profile?.engine, registrySHA256: profile?.registrySHA256,
                             hasEngineOverride: hasEngineOverride, defaults: defaults, engineDefaults: engineDefaults,
                             registryDigest: registryDigest, releaseStatus: releaseStatus)
     }
@@ -117,7 +99,7 @@ enum NativeLaunchSupport: Equatable {
 
     static func engineMissingReason(_ engine: String?) -> String {
         let name = engine.map(EngineDisplayName.label) ?? "Calimocho"
-        return "The engine this game was tested with (\(name)) isn't installed on this Mac. Open Engines to set it up. No other engine was substituted."
+        return "The \(name) engine isn't installed on this Mac. Open Engines to set it up, or choose another engine from this game's … menu. No other engine was substituted."
     }
 
     static func releaseManifestStatus(_ pin: CalimochoReleasePin) -> CalimochoReleaseError? {

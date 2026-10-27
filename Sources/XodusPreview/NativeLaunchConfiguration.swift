@@ -819,8 +819,8 @@ struct NativeLaunchConfiguration {
         throw NativeLaunchError.engineNotSelected
     }
 
-    /// Untested titles have no profile; the manifest's only executable is passed when it is unambiguous.
-    static func untestedExecutableArguments(profile: NativeTitleLaunchProfile?, manifestExecutables: [String]) -> [String] {
+    /// Titles without a profile get the manifest's only executable, passed only when it is unambiguous.
+    static func manifestExecutableArguments(profile: NativeTitleLaunchProfile?, manifestExecutables: [String]) -> [String] {
         guard profile?.executable == nil, manifestExecutables.count == 1,
               let executable = manifestExecutables.first else { return [] }
         return ["--exe", executable]
@@ -828,7 +828,7 @@ struct NativeLaunchConfiguration {
 
     func arguments(manifestExecutables: [String] = []) async throws -> [String] {
         _ = try await prefixNotice()
-        let untestedExecutable = Self.untestedExecutableArguments(profile: profile,
+        let manifestExecutable = Self.manifestExecutableArguments(profile: profile,
                                                                   manifestExecutables: manifestExecutables)
         if admittedSelection != nil {
             guard profile?.prefixRegistryImports == nil, profile?.prefixOverlays == nil,
@@ -850,11 +850,11 @@ struct NativeLaunchConfiguration {
                     "--expected-registry-sha256", digest, "--prefix", prefix.path,
                     "--runtime-dll", dll.path]
                 + (engine == NativeFH6Recipe.engineName ? NativeFH6Recipe.arguments : ["--shim-dir", shims.directory.path])
-                + (profile?.playArguments ?? []) + untestedExecutable
+                + (profile?.playArguments ?? []) + manifestExecutable
                 + QualificationDiagnostics.arguments(provider: admittedSelection.inspection.admittedProvider)
         }
         return ["--engine", engine, "--registry", selectedRegistry.path, "--prefix", prefix.path,
-                "--runtime-dll", dll.path, "--shim-dir", shims.directory.path] + (profile?.playArguments ?? []) + untestedExecutable
+                "--runtime-dll", dll.path, "--shim-dir", shims.directory.path] + (profile?.playArguments ?? []) + manifestExecutable
     }
 
     func prefixNotice() async throws -> String? {
