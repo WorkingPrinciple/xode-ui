@@ -131,12 +131,12 @@ enum BrandUXChecks {
             "calimocho-wine11.20-gptk4b3-ags54-minidump-dirt5",
             "calimocho-wine11.20-gptk4b3-gameinput-empty-witcher"
         ].map(EngineDisplayName.presentation(for:))
-        check(names.map(\.name) == ["Calimocho", "Calimocho (alternate build)", "Calimocho for DIRT 5",
+        check(names.map(\.name) == ["Calimocho (developer build)", "Calimocho (alternate build)", "Calimocho for DIRT 5",
                                     "Calimocho for The Witcher"]
               && names.map(\.detail) == ["Wine 11.20", "Wine 11.20",
                                          "Wine 11.20 · Tuned for DIRT 5 only", "Wine 11.20 · Tuned for The Witcher only"]
               && names.map(\.titleSpecific) == [false, false, true, true]
-              && !names.contains { $0.name.contains("Private") || $0.name.contains("11.20") },
+              && !names.contains { $0.name.contains("Private") || $0.name.contains("11.20") || $0.name.contains("private") },
               "COR186 U2: Engines use plain names with a secondary line; game-specific builds say so")
         check(EngineDisplayName.name(nil) == "Calimocho" && EngineDisplayName.name("Wine Staging") == "Wine Staging"
               && EngineChoice.named("calimocho-wine11.20-gptk4b3-tls-vulkan-private", ready: true).id
@@ -266,14 +266,14 @@ enum BrandUXChecks {
                       && !joined.contains("Wine app or folder"),
                       "COR-279 steps 5/6: one Calimocho row, no top install block, no Add Engine section (\(scenario), \(scheme)): \(labels)")
                 check(labels.filter { $0 == "Check Again" }.count == 1
-                      && joined.contains("Engines run Windows games")
+                      && !joined.contains("Engines run Windows games") && joined.components(separatedBy: "Get Calimocho").count <= 2
                       && joined.contains("runs every game unless a game needs a specific engine")
                       && !joined.contains("Private") && !joined.contains("Use App"),
-                      "COR186 M8/U2: \(scenario) Engines (\(scheme)) leads with an explanation, one Check Again, plain names and honest CrossOver copy: \(labels)")
+                      "COR186 M8/U2 and review 76fe346a: \(scenario) Engines (\(scheme)) has one Check Again, no lead paragraph, at most one Get, plain names: \(labels)")
                 let hasDownloadControl = joined.contains("Get Calimocho")
                 switch scenario {
                 case "missing":
-                    check(joined.contains("Calimocho isn't installed") && !joined.contains("install the engine folder")
+                    check(joined.contains("Not Installed") && !joined.contains("install the engine folder")
                           && joined.contains("Check Again") && hasDownloadControl,
                           "REQ-115: Missing Calimocho offers in-app installation without manual folder instructions (\(scheme))")
                 case "invalid":
@@ -346,6 +346,7 @@ enum BrandUXChecks {
                                    name: "engine-detail-calimocho-\(scheme == .dark ? "dark" : "light")")
                 let joinedSheet = sheet.joined(separator: " ")
                 check(joinedSheet.contains("Show in Finder") && joinedSheet.contains("Remove Calimocho")
+                      && sheet.filter { $0.contains("Remove Calimocho") }.count == 1
                       && joinedSheet.contains("0.1120.4.6") && joinedSheet.contains("Check for Updates")
                       && joinedSheet.contains("Done"),
                       "COR-279 step 5: the Calimocho ⓘ sheet holds location, removal, version and updates (\(scheme)): \(sheet)")

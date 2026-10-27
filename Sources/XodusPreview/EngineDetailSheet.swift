@@ -65,6 +65,7 @@ struct EngineDetailSheet: View {
     var allowsFileReads = true
     var calimocho: CalimochoSheetContext? = nil
     let close: () -> Void
+    @State private var confirmingCalimochoRemoval = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -76,6 +77,22 @@ struct EngineDetailSheet: View {
                 .formStyle(.grouped)
             Divider()
             HStack {
+                if detail == .calimocho, let calimocho, calimocho.installer.hasEngineFolder {
+                    Button("Remove Calimocho…", role: .destructive) { confirmingCalimochoRemoval = true }
+                        .disabled(calimocho.isBusy() || calimocho.installer.isWorking)
+                        .help("Quit any running game and finish active operations before removing Calimocho.")
+                        .accessibilityIdentifier("xodus.engines.calimocho.remove")
+                        .confirmationDialog("Move Calimocho to the Trash?", isPresented: $confirmingCalimochoRemoval,
+                                            titleVisibility: .visible) {
+                            Button("Move to Trash", role: .destructive) {
+                                calimocho.installer.remove(isBusy: calimocho.isBusy,
+                                                           refreshAdmission: { _ = await calimocho.refreshAdmission() })
+                            }
+                            Button("Cancel", role: .cancel) {}
+                        } message: {
+                            Text("Only the pinned Calimocho engine folder will be moved. Game prefixes and saves won't be changed.")
+                        }
+                }
                 if case .user(let engine) = detail {
                     Button("Remove from List", role: .destructive) {
                         users.remove(engine)
@@ -108,7 +125,7 @@ struct EngineDetailSheet: View {
             if let calimocho {
                 Section("Location") {
                     CalimochoReleaseInstallControls(installer: calimocho.installer, isBusy: calimocho.isBusy,
-                                                    refreshAdmission: calimocho.refreshAdmission)
+                                                    refreshAdmission: calimocho.refreshAdmission, allowsRemoval: false)
                 }
                 Section("Version") {
                     LabeledContent("Version") {

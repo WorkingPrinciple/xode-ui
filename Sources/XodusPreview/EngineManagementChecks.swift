@@ -61,7 +61,7 @@ enum EngineManagementChecks {
               && InstalledGamesController.nativeLaunchFailureMessage(GameScriptError.failed(14))
                 == InstalledGameActionCopy.launchUnavailable,
               "REQ114 B2 Play failures keep their specific cause and offer Engines only for engine issues")
-        check(EngineDisplayName.label("calimocho-wine11.20-gptk4b3-tls-vulkan-private") == "Calimocho"
+        check(EngineDisplayName.label("calimocho-wine11.20-gptk4b3-tls-vulkan-private") == "Calimocho (developer build)"
               && EngineDisplayName.label("apple-gptk-4.0b3") == "Apple Game Porting Toolkit",
               "REQ114 U2 engine identifiers map to user-meaningful names without renaming IDs")
         highballChecks(check: check)
@@ -1109,18 +1109,38 @@ enum EngineManagementChecks {
                          EngineChoice.named("c", ready: true, playable: false)]).map(\.id) == ["a"]
                   && !picker.contains { $0.id.hasPrefix("crossover") || $0.name.localizedCaseInsensitiveContains("CrossOver") },
                   "REQ109 CrossOver is never offered in the Default Engine picker, even when admitted or failing")
-            let ready = EngineChoice.named("calimocho-11.20-4.0b3-06", ready: true)
-            let other = EngineChoice.named("calimocho-old", ready: true)
-            let unverified = EngineChoice.named("calimocho-11.20-4.0b3-06", ready: false)
-            check(EngineConfiguratorSections<EmptyView>.defaultValue(choices: [ready], defaultID: ready.id, defaultName: "Calimocho")
+            typealias Sections = EngineConfiguratorSections<EmptyView>
+            let release = CalimochoRelease.engineID
+            let other = EngineChoice.named("calimocho-11.20-4.0b3-04", ready: true)
+            let unverifiedOther = EngineChoice.named("calimocho-11.20-4.0b3-04", ready: false)
+            check(Sections.defaultValue(choices: [], defaultID: release, defaultName: "Calimocho", calimocho: .ready, checking: false)
                     == "Calimocho"
-                  && EngineConfiguratorSections<EmptyView>.defaultValue(choices: [other], defaultID: ready.id, defaultName: "Calimocho")
-                    == "Calimocho · Not Installed"
-                  && EngineConfiguratorSections<EmptyView>.defaultValue(choices: [unverified], defaultID: unverified.id,
-                                                                        defaultName: "Calimocho") == "Calimocho · Couldn't Verify"
-                  && EngineConfiguratorSections<EmptyView>.defaultValue(choices: [ready], defaultID: nil, defaultName: "Unavailable")
-                    == "None Ready",
-                  "Review 7c5beadb M1: the Default row names the actual default and its state; None Ready only without a default")
+                  && Sections.defaultValue(choices: [], defaultID: release, defaultName: "Calimocho", calimocho: .notChecked,
+                                           checking: false) == "Calimocho"
+                  && Sections.defaultValue(choices: [], defaultID: release, defaultName: "Calimocho", calimocho: .checking,
+                                           checking: true) == "Calimocho · Verifying"
+                  && Sections.defaultValue(choices: [], defaultID: release, defaultName: "Calimocho", calimocho: .missing,
+                                           checking: false) == "Calimocho · Not Installed"
+                  && Sections.defaultValue(choices: [], defaultID: release, defaultName: "Calimocho",
+                                           calimocho: .invalid("x"), checking: false) == "Calimocho · Couldn't Verify"
+                  && Sections.defaultValue(choices: [], defaultID: other.id, defaultName: other.name, calimocho: .notChecked,
+                                           checking: false) == other.name
+                  && Sections.defaultValue(choices: [], defaultID: other.id, defaultName: other.name, calimocho: .ready,
+                                           checking: true) == "\(other.name) · Verifying"
+                  && Sections.defaultValue(choices: [unverifiedOther], defaultID: other.id, defaultName: other.name,
+                                           calimocho: .ready, checking: false) == "\(other.name) · Couldn't Verify"
+                  && Sections.defaultValue(choices: [other], defaultID: nil, defaultName: "Unavailable", calimocho: .ready,
+                                           checking: false) == "None Ready",
+                  "Review 76fe346a M2: the Default row follows the managed Calimocho state, shows no suffix before a check and Verifying during one")
+            let installed = ["calimocho-11.20-4.0b3-06", "calimocho-11.20-4.0b3-04", "calimocho-11.20-4.0b3-01",
+                             "calimocho-11.20-4.0b3-01-fh6", "calimocho-11.20-4.0b3-06-fh6",
+                             "calimocho-wine11.20-gptk4b3-tls-vulkan-private", "calimocho-wine11.20-gptk4b3-tls-vulkan",
+                             "calimocho-wine11.20-gptk4b3-ags54-minidump-dirt5"]
+            let labels = installed.map(EngineDisplayName.name)
+            check(Set(labels).count == labels.count && labels[0] == "Calimocho"
+                  && labels[4] == "Calimocho for Forza Horizon 6" && labels[3] == "Calimocho for Forza Horizon 6 (0.1120.4.1)"
+                  && labels[1] == "Calimocho 0.1120.4.4",
+                  "Review 76fe346a M1: no two engine rows or Default choices share a label on a Mac with several releases: \(labels)")
             func calimochoRow(_ availability: CalimochoAvailability, folder: Bool = true, progress: String? = nil,
                               update: Bool = false) -> CalimochoEngineRow.Presentation {
                 CalimochoEngineRow.presentation(availability: availability, hasFolder: folder, progress: progress,

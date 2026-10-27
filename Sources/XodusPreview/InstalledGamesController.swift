@@ -108,6 +108,16 @@ final class InstalledGamesController: ObservableObject {
     private let discoveryCompleteness: (@MainActor (String, URL) async throws -> Bool)?
     private let compatibilityCatalogue: OfflineGameCompatibility?
     private weak var unifiedSession: LiveSession?
+    #if !XODUS_SHIPPING
+    /// Checks only: a synthetic install-status CLI in place of the connected service.
+    var installStatusConfigurationForChecks: BackendConfiguration?
+    #endif
+    private var installStatusConfiguration: BackendConfiguration? {
+        #if !XODUS_SHIPPING
+        if let installStatusConfigurationForChecks { return installStatusConfigurationForChecks }
+        #endif
+        return unifiedSession?.nativeInstallStatusConfiguration
+    }
     private var usesUnifiedAccount = false
     private var launchSupportCache: [String: (NativeLaunchSupport, ContinuousClock.Instant)] = [:]
     private let nativeLauncher = NativeGameLifecycle()
@@ -332,7 +342,7 @@ final class InstalledGamesController: ObservableObject {
                     if let discoveryCompleteness {
                         complete = try await discoveryCompleteness(candidate.config.storeId, candidate.folder)
                     } else {
-                        guard let configuration = unifiedSession?.nativeInstallStatusConfiguration else {
+                        guard let configuration = installStatusConfiguration else {
                             throw GameInstallationDiscoveryError.serviceUnavailable
                         }
                         let status = try await NativeInstallationQuery().run(configuration: configuration,
@@ -381,7 +391,7 @@ final class InstalledGamesController: ObservableObject {
 
     func discoveredReadinessKey(productID: String) -> String {
         let paths = undiscoveredInstallations.filter { $0.value == productID }.keys.sorted().joined(separator: "|")
-        return "\(productID):\(paths):\(unifiedSession?.accountHash ?? ""):\(discoveryCompleteness != nil || unifiedSession?.nativeInstallStatusConfiguration != nil)"
+        return "\(productID):\(paths):\(unifiedSession?.accountHash ?? ""):\(discoveryCompleteness != nil || installStatusConfiguration != nil)"
     }
 
     func automaticallyVerifyDiscoveredInstallation(productID: String) async {
@@ -448,7 +458,7 @@ final class InstalledGamesController: ObservableObject {
                 if let discoveryCompleteness {
                     complete = try await discoveryCompleteness(productID, candidate.folder)
                 } else {
-                    guard let configuration = unifiedSession?.nativeInstallStatusConfiguration else {
+                    guard let configuration = installStatusConfiguration else {
                         throw GameInstallationDiscoveryError.serviceUnavailable
                     }
                     let status = try await NativeInstallationQuery().run(configuration: configuration,
@@ -998,11 +1008,11 @@ final class InstalledGamesController: ObservableObject {
     }
 
     func automaticReadinessKey(for game: InstalledGame) -> String {
-        "\(game.id):\(game.importedAt.timeIntervalSince1970):\(unifiedSession?.nativeInstallStatusConfiguration != nil):\(loaded):\(mutationActive):\(editing)"
+        "\(game.id):\(game.importedAt.timeIntervalSince1970):\(installStatusConfiguration != nil):\(loaded):\(mutationActive):\(editing)"
     }
 
     func automaticallyCheckInstallation(_ game: InstalledGame) async {
-        let key = "\(game.id):\(game.importedAt.timeIntervalSince1970):\(unifiedSession?.nativeInstallStatusConfiguration != nil)"
+        let key = "\(game.id):\(game.importedAt.timeIntervalSince1970):\(installStatusConfiguration != nil)"
         let contextChanged = automaticReadinessAttempts[game.id].map { $0 != key } == true
         guard automaticReadinessAttempts[game.id] != key, requiresNativeInstallationStatus(game),
               installationStatuses[game.id] == nil, installationErrors[game.id] == nil || contextChanged,
@@ -1012,13 +1022,10 @@ final class InstalledGamesController: ObservableObject {
                 evidence: MacGameEvidenceStore.shared.games[game.storeId]) == nil else { return }
         automaticReadinessAttempts[game.id] = key
         defer {
-            if installationStatuses[game.id] == nil, installationErrors[game.id] == nil,
-               packageErrors[game.id] == nil, loaded, !accountDisconnecting, !applicationTerminating,
-               games.contains(where: { $0.id == game.id }) {
+            // An automatic check that a view cancelled or that couldn't run yet isn't a failure: it is
+            // re-queued (the next appearance or status refresh checks again) and never shows Retry.
+            if installationStatuses[game.id] == nil, installationErrors[game.id] == nil {
                 automaticReadinessAttempts[game.id] = nil
-                installationErrors[game.id] = Task.isCancelled
-                    ? "Installation verification was cancelled. Retry when you're ready."
-                    : "Installation verification didn't finish. Retry to verify this game."
             }
         }
         guard !Task.isCancelled else { return }
@@ -1028,7 +1035,7 @@ final class InstalledGamesController: ObservableObject {
     func refreshNativeInstallationStatuses() async {
         guard loaded, !editing, !choosing, !mutationActive, !accountDisconnecting,
               !applicationTerminating, runningGameID == nil, stoppingGameID == nil,
-              unifiedSession?.nativeInstallStatusConfiguration != nil else { return }
+              installStatusConfiguration != nil else { return }
         let pending = games.filter { game in
             guard requiresNativeInstallationStatus(game), !Self.isMountedGame(game) else { return false }
             guard installationErrors[game.id] == nil, packageErrors[game.id] == nil,
@@ -1128,17 +1135,19 @@ final class InstalledGamesController: ObservableObject {
                 return nil
             }
         }
-        guard let configuration = unifiedSession?.nativeInstallStatusConfiguration else {
+        guard let configuration = installStatusConfiguration else {
             installationErrors[game.id] = "The verified local service isn't connected. Reconnect \(AppBrand.displayName) and check again."
             return nil
         }
-        guard Self.permitsNativeInspection(activeChecks: nativeInspectionTasks.count,
-                  preparingLaunch: runningGameID == game.id && playState == .launching),
-              loaded, !mutationActive, !applicationTerminating,
-              games.contains(game) else {
-            installationErrors[game.id] = "Wait for the current installation check or operation, then try again."
-            return nil
+        // At most two read-only checks run at once; the rest wait their turn (showing Checking…)
+        // instead of recording a Retry. Only a real CLI result or failure sets an error.
+        while !Self.permitsNativeInspection(activeChecks: nativeInspectionTasks.count,
+                                            preparingLaunch: runningGameID == game.id && playState == .launching) {
+            guard !Task.isCancelled, loaded, !mutationActive, !applicationTerminating, games.contains(game) else { return nil }
+            try? await Task.sleep(for: .milliseconds(100))
+            if nativeInspectionTasks[game.id] != nil { return await inspectNativeInstallation(game, timeout: timeout) }
         }
+        guard !Task.isCancelled, loaded, !mutationActive, !applicationTerminating, games.contains(game) else { return nil }
         let query = NativeInstallationQuery()
         let task = Task {
             try await query.run(configuration: configuration, product: game.storeId,
@@ -1769,6 +1778,8 @@ final class InstalledGamesController: ObservableObject {
         let inspectPackage = inspectPackage
         let mountedStorageRoots = mountedStorageRoots
         let nativeIDs = Set(entries.filter(requiresNativeInstallationStatus).map(\.id))
+        // On an external drive a missing folder may only mean the drive isn't connected.
+        let localNativeIDs = Set(entries.filter { nativeIDs.contains($0.id) && !Self.isMountedGame($0) }.map(\.id))
         let read = Task { try await probe.read(timeout: .seconds(3)) {
             var launchable: Set<UUID> = []
             var publishers: [UUID: String] = [:]
@@ -1786,6 +1797,9 @@ final class InstalledGamesController: ObservableObject {
                     failures[game.id] = Self.driveUnavailableMessage
                     continue
                 }
+                // A native game whose folder is gone is "not installed", which install-status reports
+                // (DIRECTORY_MISSING → Download); it is not a package failure that shows Retry.
+                if localNativeIDs.contains(game.id), !FileManager.default.fileExists(atPath: folder.path) { continue }
                 if game.publisher == nil, let publisher = (try? MicrosoftGameConfig.read(folder: folder))?.publisher {
                     publishers[game.id] = publisher
                 }

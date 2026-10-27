@@ -386,7 +386,8 @@ struct EngineAdvancedSheet<Content: View>: View {
             }
             .padding(16)
         }
-        .frame(width: 620, height: 560)
+        .frame(width: 620)
+        .frame(minHeight: 240, idealHeight: 360, maxHeight: 640)
     }
 }
 
@@ -590,28 +591,36 @@ enum EngineDisplayName {
         let titleSpecific: Bool
     }
 
-    private static let titles: [(marker: String, title: String)] = [("dirt5", "DIRT 5"), ("witcher", "The Witcher")]
+    private static let titles: [(marker: String, title: String)] = [("dirt5", "DIRT 5"), ("witcher", "The Witcher"),
+                                                                    ("fh6", "Forza Horizon 6")]
 
     static func presentation(for id: String?) -> Presentation {
         guard let id else { return Presentation(name: "Calimocho", detail: nil, titleSpecific: false) }
         let lowered = id.lowercased()
         guard lowered.hasPrefix("calimocho") else { return Presentation(name: id, detail: nil, titleSpecific: false) }
-        if let release = releaseName(lowered), let facts = releaseVersion(lowered) {
-            return Presentation(name: release, detail: facts.detail, titleSpecific: false)
+        let parts = lowered.split(separator: "-").map(String.init)
+        // The managed release is plainly "Calimocho"; any other release keeps its version so no two rows match.
+        let base = parts.count >= 4 ? parts[0..<4].joined(separator: "-") : nil
+        let baseFacts = base.flatMap(releaseVersion)
+        let otherRelease = base.map { $0 != CalimochoRelease.engineID.lowercased() } ?? false
+        if parts.count == 4, let facts = baseFacts {
+            return Presentation(name: otherRelease ? "Calimocho \(facts.version)" : "Calimocho", detail: facts.detail,
+                                titleSpecific: false)
         }
-        let wine = wineVersion(lowered).map { "Wine \($0)" }
+        let wine = wineVersion(lowered).map { "Wine \($0)" } ?? baseFacts.map { $0.detail }
         if let match = titles.first(where: { lowered.contains($0.marker) }) {
-            return Presentation(name: "Calimocho for \(match.title)",
+            let version = baseFacts.flatMap { otherRelease ? " (\($0.version))" : nil } ?? ""
+            return Presentation(name: "Calimocho for \(match.title)\(version)",
                                 detail: [wine, "Tuned for \(match.title) only"].compactMap { $0 }.joined(separator: " · "),
                                 titleSpecific: true)
         }
         if lowered.hasSuffix("-private") {
-            return Presentation(name: "Calimocho", detail: wine, titleSpecific: false)
+            return Presentation(name: "Calimocho (developer build)", detail: wine, titleSpecific: false)
         }
         if lowered.contains("tls-vulkan") {
             return Presentation(name: "Calimocho (alternate build)", detail: wine, titleSpecific: false)
         }
-        return Presentation(name: "Calimocho", detail: wine, titleSpecific: false)
+        return Presentation(name: "Calimocho (\(id))", detail: wine, titleSpecific: false)
     }
 
     static func name(_ id: String?) -> String { presentation(for: id).name }
@@ -627,11 +636,6 @@ enum EngineDisplayName {
         let beta = gptk.output.3.map { " beta \($0)" } ?? ""
         return ("0.\(wine.output.1)\(wine.output.2).\(gptk.output.1).\(build)",
                 "Wine \(parts[1]) · GPTK \(gptk.output.1).\(gptk.output.2)\(beta)")
-    }
-
-    /// Release engines are plainly "Calimocho"; the 0.x version code is shown in the detail sheet (COR-279 F8).
-    private static func releaseName(_ id: String) -> String? {
-        releaseVersion(id).map { _ in "Calimocho" }
     }
 
     private static func wineVersion(_ id: String) -> String? {
@@ -720,6 +724,14 @@ enum CalimochoAvailability: Equatable, Sendable {
         case .notChecked: "Engines are checked once your account and game connection are ready."
         case .checking: "Checking engines…"
         case .ready, .pendingVerification, .missing, .invalid: nil
+        }
+    }
+
+    /// The reason shown under the Calimocho row: only what its status and action don't already say.
+    var rowReason: String? {
+        switch self {
+        case .invalid, .pendingVerification: message
+        case .missing, .notChecked, .checking, .ready: nil
         }
     }
 
@@ -1002,6 +1014,11 @@ struct EngineConfiguratorSections<Advanced: View>: View {
                                showsUpdates: showsCalimochoUpdates,
                                refreshAdmission: refreshReleaseAdmission, beginUpdate: beginCalimochoUpdate,
                                showDetails: { detail = .calimocho })
+            if let reason = calimocho.rowReason {
+                Text(reason).font(.callout).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("xodus.engines.calimocho.status")
+            }
             ForEach(choices.filter { $0.id != CalimochoRelease.engineID }) { choice in
                 EngineRow(name: choice.name,
                           detail: EngineRowState.subtitle([choice.version.flatMap { choice.name.contains($0) ? nil : $0 }],
@@ -1018,7 +1035,20 @@ struct EngineConfiguratorSections<Advanced: View>: View {
             UserEngineList(model: users, allowsFileReads: allowsFileReads, selection: $selectedUserEngine) { detail = .user($0) }
             EngineListControls(model: users, allowsFileReads: allowsFileReads, selection: $selectedUserEngine)
         } header: {
-            Text("Engines")
+            HStack(alignment: .firstTextBaseline) {
+                Text("Engines")
+                Spacer()
+                if checkingAny { ProgressView().controlSize(.small).accessibilityLabel("Checking engines") }
+                Button("Check Again") {
+                    refresh()
+                    providerRefresh += 1
+                    Task { await settings.refreshCrossOverDependency() }
+                }
+                .controlSize(.small)
+                .disabled(checkingAny || calimochoInstaller.isWorking || !allowsFileReads || settings.applicationTerminating)
+                .accessibilityLabel("Check engines and CrossOver again")
+                .accessibilityIdentifier("xodus.engines.refresh")
+            }
         } footer: {
             Text(choices.contains(where: { $0.ready && $0.playable }) ? EnginesCopy.listFooter : EnginesCopy.listFooterPending)
                 .multilineTextAlignment(.leading)
@@ -1045,13 +1075,24 @@ struct EngineConfiguratorSections<Advanced: View>: View {
     }
 
     /// The plain Default row: the saved default's name, with its state when it isn't ready (review 7c5beadb M1).
-    static func defaultValue(choices: [EngineChoice], defaultID: String?, defaultName: String) -> String {
+    static func defaultValue(choices: [EngineChoice], defaultID: String?, defaultName: String,
+                             calimocho: CalimochoAvailability, checking: Bool) -> String {
         guard let defaultID else { return "None Ready" }
-        guard let choice = choices.first(where: { $0.id == defaultID }) else {
-            return "\(defaultName) · \(EngineRowState.notInstalled.title)"
+        func suffixed(_ state: EngineRowState?) -> String {
+            guard let state, state != .ready, state != .updateAvailable else { return defaultName }
+            return "\(defaultName) · \(state.title)"
         }
-        let rowState = Self.state(for: choice, checking: false)
-        return rowState == .ready ? defaultName : "\(defaultName) · \(rowState.title)"
+        if defaultID == CalimochoRelease.engineID {
+            return suffixed(CalimochoEngineRow.presentation(availability: calimocho, hasFolder: false, progress: nil,
+                                                            updateAvailable: false, downloadPublished: true,
+                                                            isDefault: true).state)
+        }
+        guard let choice = choices.first(where: { $0.id == defaultID }) else {
+            // Before any engine check there is nothing to report; while one runs, say so.
+            if checking { return suffixed(.verifying) }
+            return calimocho == .notChecked ? defaultName : suffixed(.notInstalled)
+        }
+        return suffixed(state(for: choice, checking: checking))
     }
 
     /// Default Engine offers only engines Play can use; with one or none it is a plain value (COR-279 step 7).
@@ -1062,31 +1103,6 @@ struct EngineConfiguratorSections<Advanced: View>: View {
     static func state(for choice: EngineChoice, checking: Bool) -> EngineRowState {
         if !choice.ready { return checking ? .verifying : .couldntVerify }
         return choice.playable ? .ready : .testingOnly
-    }
-
-    @ViewBuilder private var statusSection: some View {
-        Section {
-            HStack(alignment: .firstTextBaseline, spacing: 12) {
-                Text(EnginesCopy.lead)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                if checkingAny { ProgressView().controlSize(.small).accessibilityLabel("Checking engines") }
-                Button("Check Again") {
-                    refresh()
-                    providerRefresh += 1
-                    Task { await settings.refreshCrossOverDependency() }
-                }
-                .disabled(checkingAny || calimochoInstaller.isWorking || !allowsFileReads || settings.applicationTerminating)
-                .accessibilityLabel("Check engines and CrossOver again")
-                .accessibilityIdentifier("xodus.engines.refresh")
-            }
-            if let message = calimocho.message {
-                Label(message, systemImage: calimocho.needsDownload ? "exclamationmark.triangle" : "clock")
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("xodus.engines.calimocho.status")
-            }
-        }
     }
 
     @ViewBuilder private var defaultSection: some View {
@@ -1108,7 +1124,8 @@ struct EngineConfiguratorSections<Advanced: View>: View {
                 .accessibilityIdentifier("xodus.engines.default")
             } else {
                 LabeledContent("Default Engine") {
-                    Text(Self.defaultValue(choices: choices, defaultID: defaultID, defaultName: defaultName))
+                    Text(Self.defaultValue(choices: choices, defaultID: defaultID, defaultName: defaultName,
+                                           calimocho: calimocho, checking: checkingAny))
                 }
                 .accessibilityIdentifier("xodus.engines.default")
             }
@@ -1137,7 +1154,6 @@ struct EngineConfiguratorSections<Advanced: View>: View {
     }
 
     var body: some View {
-        statusSection
         defaultSection
         enginesList
             .onAppear { users.terminating = { [settings] in settings.applicationTerminating } }

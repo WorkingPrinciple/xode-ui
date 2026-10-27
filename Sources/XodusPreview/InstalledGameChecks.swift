@@ -6,6 +6,7 @@ import ImageIO
 import SwiftUI
 import Vision
 import XodusCore
+import XodusManagement
 
 @MainActor
 enum InstalledGameChecks {
@@ -220,17 +221,19 @@ enum InstalledGameChecks {
         cancellationGate.release()
         await automaticCheck.value
         await cancelled.automaticallyCheckInstallation(cancelledEntry)
+        let reentryReason = cancelled.installationErrors[cancelledEntry.id] ?? cancelled.packageErrors[cancelledEntry.id]
         check(cancelled.installationStatuses[cancelledEntry.id] == nil
-              && cancelled.installationErrors[cancelledEntry.id]?.contains("cancelled") == true
+              && reentryReason?.contains("cancelled") == false
               && !cancelled.checkingInstallations.contains(cancelledEntry.id)
               && InstalledPlayButton(library: cancelled, operations: GameOperationsController(installed: cancelled),
                   game: cancelledEntry).nativeActionTitle == "Retry",
-              "COR171 H1: Cancelled mounted view re-entry retains an explained Retry, never an idle Checking spinner")
+              "COR171 H1/REQ-82: a view-cancelled automatic check is re-queued, not recorded; re-entry checks again and shows Retry only for its real reason (\(reentryReason ?? "nil")), never an idle spinner")
         try cancelled.reserveMutation(gameID: nil)
         check(InstalledPlayButton(library: cancelled, operations: GameOperationsController(installed: cancelled),
             game: cancelledEntry).nativeReadinessUnavailableReason?.contains("operation") == true,
               "COR171: A mutation-blocked readiness Retry is explicitly disabled with an operation-wait reason, not a no-op")
         cancelled.releaseMutation()
+        try await startupTilesChecks(root: root.appendingPathComponent("startup-tiles"), check: check)
         try FileManager.default.removeItem(at: local)
         await isolated.checkInstallation(game)
         check(isolated.packageErrors[game.id] == InstalledGameError.missingFolder.localizedDescription
@@ -511,7 +514,7 @@ enum InstalledGameChecks {
                   resumingManagedOperation: true),
               "REQ106: A queued partial-install record is admitted at its original destination")
         check(InstalledGamesController.readableEngineName("calimocho-wine11.20-gptk4b3-tls-vulkan-private")
-              == "Calimocho"
+              == "Calimocho (developer build)"
               && !controller.defaultEngineLabel(for: InstalledGame(id: UUID(), title: "Fixture",
                   identityName: "Fixture", version: "1", storeId: "FIXTURE00001",
                   folder: folder.path, launcher: "", importedAt: Date())).isEmpty,
@@ -1580,4 +1583,54 @@ private final class PackageInspectionInterleaving: @unchecked Sendable {
     }
 
     func release() { resume.signal() }
+}
+
+
+extension InstalledGameChecks {
+    /// REQ-82/119 owner report (build 650): with 30 tiles checking at startup, the two-check throttle must
+    /// queue the rest. A throttled or unfinished automatic check is never a Retry; an uninstalled game
+    /// shows Download from its real install-status result.
+    @MainActor static func startupTilesChecks(root: URL, check: (Bool, String) -> Void) async throws {
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let executable = root.appendingPathComponent("synthetic-install-status")
+        try Data(#"""
+        #!/usr/bin/python3
+        import json, pathlib, sys, time, uuid
+        assert len(sys.argv) == 7 and sys.argv[1] == "install-status"
+        options = dict(zip(sys.argv[3::2], sys.argv[4::2]))
+        game = pathlib.Path(options["--game-dir"])
+        state = pathlib.Path(options["--state-dir"])
+        time.sleep(0.2)
+        run_id = str(uuid.uuid4())
+        log = state / "runs" / run_id
+        log.mkdir(parents=True, mode=0o700)
+        result = dict(version=1, operation="install-status", product=sys.argv[2], run_id=run_id,
+            game_dir=str(game), log_dir=str(log), result_path=str(log / "result.json"), success=True,
+            exit_code=0, status="missing", error_code=None, reason_code="DIRECTORY_MISSING")
+        receipt = log / "result.json"
+        receipt.write_text(json.dumps(result))
+        receipt.chmod(0o600)
+        print(json.dumps(result))
+        """#.utf8).write(to: executable)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: executable.path)
+        let games = (0..<30).map { index in
+            InstalledGame(id: UUID(), title: "Tile \(index)", identityName: "Fixture\(index)", version: "1",
+                          storeId: String(format: "FIXTURE%05d", index + 10), folder: root.appendingPathComponent("tile-\(index)/missing").path,
+                          launcher: "", importedAt: Date(), usesNativeLifecycle: true)
+        }
+        let store = InstalledGameStore(file: root.appendingPathComponent("games.json"))
+        try await store.save(games)
+        let library = InstalledGamesController(store: store, inspectPackage: { _ in .msixvc }, mountedStorageRoots: { [] })
+        library.installStatusConfigurationForChecks = BackendConfiguration(
+            executable: executable, stateDirectory: root.appendingPathComponent("manage"))
+        await library.load()
+        let tasks = library.games.map { game in Task { @MainActor in await library.automaticallyCheckInstallation(game) } }
+        for task in tasks { await task.value }
+        let operations = GameOperationsController(installed: library)
+        let titles = library.games.map { InstalledPlayButton(library: library, operations: operations, game: $0).nativeActionTitle }
+        let errors = library.games.compactMap { library.installationErrors[$0.id] }
+        check(library.games.count == 30 && errors.isEmpty && titles.allSatisfy { $0 == "Download" }
+              && library.games.allSatisfy { library.installationStatuses[$0.id]?.status == .missing },
+              "REQ-82/119: 30 tiles checking at startup queue behind the two-check limit; none shows Retry, and uninstalled games show Download (errors \(Set(errors)), titles \(Set(titles)))")
+    }
 }
