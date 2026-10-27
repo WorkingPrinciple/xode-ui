@@ -975,6 +975,17 @@ struct PCGamesClient: Sendable {
         try Task.checkCancellation()
         if revised { await progress?(snapshot()) }
         let final = snapshot()
+        // Owned bundles whose PC game is already shown on its own count as neither game nor excluded; name them
+        // so games + excluded + bundled-duplicates + unresolved adds up to the owned candidates.
+        let directGames = Set(resolved.values.flatMap { $0 }.compactMap { $0.game?.id })
+        let duplicateBundles = bundleGames.filter { $0.value.allSatisfy { directGames.contains($0.id) } }.keys.sorted()
+        if !duplicateBundles.isEmpty {
+            let logger = Logger(subsystem: "io.github.dragoshont.xodus", category: "pc-library")
+            for id in duplicateBundles {
+                logger.notice("Bundle PC candidate \(id, privacy: .public): contains \(bundleGames[id]?.map(\.id).joined(separator: "/") ?? "", privacy: .public), already shown")
+            }
+            logger.notice("Bundled duplicates of shown games: \(duplicateBundles.count)")
+        }
         if !final.unresolvedIDs.isEmpty {
             let allFailed = failed.values.reduce(into: Set<String>()) { $0.formUnion($1) }
             var reasons: [String: Int] = [:]
