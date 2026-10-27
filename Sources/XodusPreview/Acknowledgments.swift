@@ -359,7 +359,9 @@ enum KeyOpenSourceProjects {
         ("engine:gmp", .init(name: "GMP", role: "Arithmetic for Nettle", license: "LGPL-3.0-or-later or GPL-2.0-or-later")),
         ("engine:libtasn1", .init(name: "libtasn1", role: "Certificate parsing for GnuTLS", license: "LGPL-2.1-or-later")),
         ("engine:xxhash", .init(name: "xxHash", role: "Fast hashing", license: "BSD-2-Clause")),
-        ("engine:highball-tsshim", .init(name: "Highball timestamp shim", role: "DirectX 12 timestamp queries on D3DMetal", license: "GPL-3.0"))
+        ("engine:highball-tsshim", .init(name: "Highball timestamp shim",
+            role: "DirectX 12 timestamp queries on D3DMetal; a component bundled inside the Calimocho engine, separate from the Highball app, which \(AppBrand.displayName) doesn't bundle or install",
+            license: "GPL-3.0"))
     ]
     static let separatelyLicensed: (marker: String, project: Project) = ("engine:apple-gptk",
         .init(name: "Apple D3DMetal", role: "Direct3D on Metal, from Apple's Game Porting Toolkit",
