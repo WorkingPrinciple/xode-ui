@@ -114,6 +114,9 @@ import XodusManagement
             }
             page.track(account: account, installedIDs: installed)
         }
+        let m2Reads = pageReads
+        let m2Permits = page.permits(pageProduct, account: account, now: start.addingTimeInterval(240))
+        let m2Errors = page.errors
         // 4ea60eb3 F3: Play/Retry over the installed list never evicts a page's cached answer.
         await page.refresh(account: account, installedIDs: installed, now: start.addingTimeInterval(300), force: true,
                            selectedProductID: installed[0]) { id in pageReads += 1; return try await reader(id) }
@@ -131,10 +134,10 @@ import XodusManagement
               "4ea60eb3 F1/F3: Play over the installed list keeps product-page answers; only the 20 most recent pages stay tracked")
         let productSource = (try? String(contentsOfFile: "Sources/XodusPreview/LiveProductView.swift", encoding: .utf8)) ?? ""
         let appSource = (try? String(contentsOfFile: "Sources/XodusPreview/XodusPreviewApp.swift", encoding: .utf8)) ?? ""
-        check(pageReads == 1 && page.permits(pageProduct, account: account, now: start.addingTimeInterval(240))
+        check(m2Reads == 1 && m2Permits
               && !productSource.isEmpty && !productSource.contains("InstalledProductAccess()")
               && !productSource.contains("titleAccess.retire()") && productSource.contains("installedLibrary.productAccess"),
-              "72450bd3 M2: product pages share the app's access store; five visits in 5 minutes make one read and keep the answer (reads \(pageReads), permits \(page.permits(pageProduct, account: account, now: start.addingTimeInterval(240))), errors \(page.errors))")
+              "72450bd3 M2: product pages share the app's access store; five visits in 5 minutes make one read and keep the answer (reads \(m2Reads), permits \(m2Permits), errors \(m2Errors))")
         check(appSource.contains("Task { await installed.playRequested(game) }") && !appSource.contains("Task { await installed.play(game) }"),
               "72450bd3 M1: Play from the ready notification checks access and the newer-build guard like the Play button")
     }
