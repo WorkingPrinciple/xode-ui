@@ -59,7 +59,7 @@ content-addressed notice texts, with 14 unresolved obligations. That baseline
 was superseded by the reviewed successor below. The corresponding-source
 archive is SHA-256
 `d67b903137c96479298a139374d5bdf988db4f64ee971588183584bf520e4fdd` (9,574,400
-bytes; 529 regular files); it is from that exact commit and omits
+bytes; 533 regular files); it is from that exact commit and omits
 `docs/private-ai/` and `docs/private-checkpoints/`. The source tar contains
 `DO_NOT_UPSTREAM` and is private-tester-only; the builder binds its exact hash
 and refuses a substituted archive.
@@ -78,20 +78,20 @@ evidence establish provenance and notice-text identity, not legal clearance.
 Do not publish the draft or source archive before the source asset is attached
 and the owner makes the publication decision.
 
-The current -06 producer is `a9d52be1a820fb227e892217337e9861f7c99458`
-(tree `0ad1607a3e2b743d7a40dd9b52eacdf99a13d6c8`), with signed manifest
-`eb500a9ff0131f60a9d703d4a2c432cba7f774d041de1ac2ec35f6c8b55015fa`, CLI
-`75a2158c5670b12a3b3970f99f5f09f5a9fde91e57a0a32e5b5fde746c20396f`, and
-Windows helper `57b179dcd11b5b18a0bbfa92bdd3ef66e442e7bc7ff0e793d23c5eb0fd8b9019`.
+The current -06 producer is `406790341cf0c0fb5e46ee61f41ab4a8fcc176a1`
+(tree `287f6e2dfb436b5e6bace750ecacbfac2d7b4ec0`), with signed manifest
+`9505e607a010a34bbeca87328ce03ed6289630126e828db39507914f920cea82`, CLI
+`09909899cb5a869cc0f34ceff17a153c9db52d195401daf4b32336efff1a07b9`, and
+Windows helper `c205a45fcfa703296593034498a35c177ad7e9c80fdd1a4ddeec2fdb721bface`.
 Its corresponding-source archive
-`xodus-cli-beta-a9d52be1-source.tar` is SHA-256
-`b382120267bd5b8d8759e9e7e79b8b932a3b87684579ebe68dc3791ff5b6f044`
-(9,543,680 bytes; 529 regular files), from that exact commit and excluding
+`xodus-cli-beta-40679034-source.tar` is SHA-256
+`f22bf418d09850be128a415ba14ce71bdff3b46d203359bfc2cd827e35db42de`
+(9,584,640 bytes; 533 regular files), from that exact commit and excluding
 `docs/private-ai/` and `docs/private-checkpoints/`.
 The regenerated inventory SHA-256 is
-`96ee9572c0945d199c4870309a5550927339a8af6f4e4de937b276a87d6897ae`;
+`3b2bad174e3e89a3f9676f6cab3a59d865785750665c17b593e5705703b48520`;
 the matching source-bound supplemental evidence SHA-256 is
-`63eb3f753f86c1dc8477abecf514e5900073830d01fd5625280f7ceed5a0fa4a`.
+`8ec2a70029799519c0199e3cb7fa58860dbd66835465c6956a05f2bf4d607664`.
 It covers 479 package identities and 462 compiler-artifact identities, with
 one unresolved corresponding-source delivery and applicable licence/notice
 review obligation. The evidence establishes provenance and notice-text

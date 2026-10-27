@@ -40,13 +40,13 @@
       "wineSha256": "803a62d101303bb3160da4aa8a506857c3d1e1146aa4a0c9ee8250357ef12505",
       "wineserverSha256": "7102d70405e7667acf143e710723f58fb24d32eee81468b1f0f02279343601d0",
       "executable": "forzahorizon6.exe",
-      "noAutoDismiss": true,
       "environment": {},
       "runtime": {
         "primaryPath": "${HOME}/Library/Application Support/Ode to X/Runtime/candidates/e4c1085b4991e7af50e7e6a06245a7948d9911ae2d12b87e8fc035aacd671cb2/xgameruntime.dll",
         "primarySHA256": "e4c1085b4991e7af50e7e6a06245a7948d9911ae2d12b87e8fc035aacd671cb2",
         "legacySHA256": "1fb7b7c81a64c82ca2f4ea1bdc260826fe8ced3b09738e987d836eabb488b768"
-      }
+      },
+      "autoDismissRules": "fh6-compat"
     },
     {
       "version": 1,
@@ -59,6 +59,32 @@
       "executable": "Brotato.exe",
       "noAutoDismiss": true,
       "environment": {},
+      "unsetEnvironment": [
+        "XODUS_PRIVATE_RUNTIME_COM_STA",
+        "XODUS_PRIVATE_CALLER_OWNS_COM",
+        "CX_APPLEGPTK_LIBD3DSHARED_PATH"
+      ],
+      "runtime": {
+        "primaryPath": "${HOME}/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll",
+        "primarySHA256": "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8",
+        "legacySHA256": "cfe7e5f837fabc51b8066809ca69c2ee0a7852512afbb1979190ec495b0b8b96"
+      }
+    },
+    {
+      "version": 1,
+      "productID": "9P8DL6W0JBB8",
+      "title": "Hades",
+      "qualification": "L11 run 4e43a5ce on Calimocho 0.1120.4.6 with game recipe hades-mscoree-v1 (27 Oct): builtin mscoree loaded BasecampBugReporter.Native.dll without Wine Mono, \"Press Any Button\" title rendered, WM_CLOSE exit 0, CLI and Wine exit 0. Xbox sign-in fails (0x8007000d, REQ-32); gameplay, saves and controller untested.",
+      "engine": "calimocho-11.20-4.0b3-06",
+      "wineSha256": "803a62d101303bb3160da4aa8a506857c3d1e1146aa4a0c9ee8250357ef12505",
+      "wineserverSha256": "7102d70405e7667acf143e710723f58fb24d32eee81468b1f0f02279343601d0",
+      "executable": "Hades.exe",
+      "noAutoDismiss": true,
+      "gameRecipe": "hades-mscoree-v1",
+      "environment": {
+        "XODUS_PRIVATE_LOCAL_SAVES": "1",
+        "XODUS_XBL_ONLINE": "1"
+      },
       "unsetEnvironment": [
         "XODUS_PRIVATE_RUNTIME_COM_STA",
         "XODUS_PRIVATE_CALLER_OWNS_COM",
