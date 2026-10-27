@@ -142,6 +142,19 @@ final class NativeMinecraft: ObservableObject {
     }
 }
 
+/// REQ-23/60: the Library card names the launcher without any local filesystem path; the folder stays in details.
+enum NativeMinecraftCardCopy {
+    static let help = "Official macOS Minecraft Launcher"
+    static func label(version: String?) -> String {
+        let version = version?.trimmingCharacters(in: .whitespacesAndNewlines)
+            .filter { !$0.isNewline }
+        guard let version, !version.isEmpty, !version.contains("/"), version.utf8.count <= 32 else {
+            return "Minecraft Launcher"
+        }
+        return "Minecraft Launcher · \(version)"
+    }
+}
+
 struct NativeMinecraftCard<Artwork: View>: View {
     @ObservedObject private var minecraft = NativeMinecraft.shared
     @ViewBuilder let artwork: () -> Artwork
@@ -150,9 +163,9 @@ struct NativeMinecraftCard<Artwork: View>: View {
     var body: some View {
         GameCard(title: "Minecraft: Java Edition", openLabel: "Details for",
                      open: { showsDetails = true }, artwork: artwork) {
-            Label(minecraft.installation.version.map { "Native launcher · \($0)" } ?? "Native launcher",
+            Label(NativeMinecraftCardCopy.label(version: minecraft.installation.version),
                   systemImage: "desktopcomputer")
-                .help(minecraft.installation.path ?? "Official macOS Minecraft Launcher")
+                .help(NativeMinecraftCardCopy.help)
             if minecraft.javaPID != nil { Text("Minecraft Java is running") }
             if let error = minecraft.errorMessage {
                 Text(error).fixedSize(horizontal: false, vertical: true)

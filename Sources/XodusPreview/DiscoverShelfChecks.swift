@@ -21,6 +21,14 @@ enum DiscoverShelfChecks {
         try shelfChecks(check: check)
         accessBadgeChecks(check: check)
         try gamePassAvailabilityChecks(check: check)
+        let home = NSHomeDirectory()
+        let surfaced = [NativeMinecraftCardCopy.help, NativeMinecraftCardCopy.label(version: "2.6.12"),
+                        NativeMinecraftCardCopy.label(version: nil),
+                        NativeMinecraftCardCopy.label(version: "\(home)/Applications/Minecraft.app")]
+        check(surfaced[1] == "Minecraft Launcher · 2.6.12" && surfaced[2] == "Minecraft Launcher"
+              && surfaced[3] == "Minecraft Launcher"
+              && !surfaced.contains { $0.contains(home) || $0.contains("/Users/") || $0.contains("/") },
+              "REQ-23/60: the Library Minecraft card label and help name the launcher without any home or filesystem path")
         check(!RecentActivityCopy.findAction.contains("Store")
               && !RecentActivityCopy.findLabel("Fixture").contains("Store"),
               "REQ-60: recent-activity cards name the in-app Discover search, not a Store or source")
