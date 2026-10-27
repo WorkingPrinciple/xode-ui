@@ -1487,6 +1487,23 @@ enum BrandUXChecks {
               && BrowseGate.installDisabledReason(startupComplete: starting.startupComplete,
                                                   otherwise: "Access pending") == BrowseGate.startupNotice,
               "REQ-75: 'Wait for X Ode to finish starting.' appears only while startup is genuinely incomplete")
+        let launchRead = Date(timeIntervalSince1970: 1_800_000_000)
+        check(!LiveSession.foregroundRevalidationDue(lastStatusRead: launchRead, now: launchRead.addingTimeInterval(2))
+              && LiveSession.foregroundRevalidationDue(lastStatusRead: launchRead, now: launchRead.addingTimeInterval(30))
+              && LiveSession.foregroundRevalidationDue(lastStatusRead: nil, now: launchRead)
+              && LiveSession.foregroundRevalidationDue(lastStatusRead: launchRead, now: launchRead.addingTimeInterval(-5)),
+              "REQ-121: Becoming active right after the launch status read doesn't read the saved sign-in again; later activations do")
+        func background(started: Bool, snapshot: Bool, restored: Bool) -> Bool {
+            BackgroundAccountReads.allowed(unifiedAccountMode: true, collectionReadStarted: started, hasSnapshot: snapshot,
+                                           snapshotRestored: restored, failed: false, countryReady: true)
+        }
+        check(!background(started: false, snapshot: true, restored: true)
+              && !background(started: false, snapshot: false, restored: false)
+              && background(started: true, snapshot: true, restored: true)
+              && background(started: false, snapshot: true, restored: false)
+              && BackgroundAccountReads.allowed(unifiedAccountMode: true, collectionReadStarted: false, hasSnapshot: false,
+                                               snapshotRestored: false, failed: true, countryReady: true),
+              "REQ-119/121: A restored saved library doesn't let profile and other background account reads go ahead of the collection read")
         let faultFile = FileManager.default.temporaryDirectory.appendingPathComponent("xodus-fault-\(UUID().uuidString)")
         let faultEnvironment = ["XODUS_DEBUG_FAULT_FILE": faultFile.path]
         let faultAbsent = !DebugFaultInjection.active(.catalog, environment: faultEnvironment)

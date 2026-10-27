@@ -945,17 +945,31 @@ struct PCGamesClient: Sendable {
             var contents = known
             let wanted = Array(Set(bundles.flatMap(\.bundledProductIDs)).subtracting(known.keys).sorted()
                 .prefix(Self.maximumBundleReads))
-            for start in stride(from: 0, to: wanted.count, by: 20) {
-                let batch = Array(wanted[start..<min(start + 20, wanted.count)])
-                do {
-                    let read = try await descriptors.read(ids: batch, market: market, language: language,
-                                                          background: true)
-                    for product in try products(read.data, batch: batch).products { contents[product.ProductId] = product }
-                    bundleReadIDs.formUnion(batch)
-                } catch is CancellationError { throw CancellationError() }
-                catch {
-                    Logger(subsystem: "io.github.dragoshont.xodus", category: "pc-library")
-                        .warning("Bundle contents couldn't be read; \(batch.count) bundled products stay unknown: \(String(describing: error), privacy: .public)")
+            // REQ-121: bundle contents are part of the library answer, so they read like the collection batches
+            // (foreground, same bounded concurrency and per-batch pairing), not one at a time behind warmups.
+            let bundleBatches = stride(from: 0, to: wanted.count, by: 20).map { Array(wanted[$0..<min($0 + 20, wanted.count)]) }
+            try await withThrowingTaskGroup(of: DescriptorBatchResult.self) { group in
+                var started = 0
+                while started < min(Self.descriptorConcurrency, bundleBatches.count) {
+                    Self.addDescriptorRead(&group, index: started, batch: bundleBatches[started], descriptors: descriptors,
+                                           market: market, language: language)
+                    started += 1
+                }
+                while let (_, batch, result) = try await group.next() {
+                    do {
+                        let read = try result.get()
+                        for product in try products(read.data, batch: batch).products { contents[product.ProductId] = product }
+                        bundleReadIDs.formUnion(batch)
+                    } catch is CancellationError { throw CancellationError() }
+                    catch {
+                        Logger(subsystem: "io.github.dragoshont.xodus", category: "pc-library")
+                            .warning("Bundle contents couldn't be read; \(batch.count) bundled products stay unknown: \(String(describing: error), privacy: .public)")
+                    }
+                    if started < bundleBatches.count {
+                        Self.addDescriptorRead(&group, index: started, batch: bundleBatches[started], descriptors: descriptors,
+                                               market: market, language: language)
+                        started += 1
+                    }
                 }
             }
             bundleReadIDs.formUnion(known.keys)
