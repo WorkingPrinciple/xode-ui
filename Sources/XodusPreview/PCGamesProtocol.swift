@@ -352,7 +352,15 @@ struct PCGamesCatalog: Decodable {
                                 ?? (try? values.decode(String.self, forKey: .MaxDownloadSizeInBytes)).flatMap(Int64.init)
                         }
                     }
+                    struct Bundled: Decodable { let BigId: String? }
                     let Packages: [Package]?
+                    let BundledSkus: [Bundled]?
+                    private enum CodingKeys: String, CodingKey { case Packages, BundledSkus }
+                    init(from decoder: Decoder) throws {
+                        let values = try decoder.container(keyedBy: CodingKeys.self)
+                        Packages = try values.decodeIfPresent([Package].self, forKey: .Packages)
+                        BundledSkus = try? values.decode([Bundled].self, forKey: .BundledSkus)
+                    }
                 }
                 let Properties: PropertiesDTO?
             }
@@ -430,6 +438,18 @@ struct PCGamesCatalog: Decodable {
                 }
             }
         }
+
+        /// Products a bundle edition contains (public catalogue IDs), for bundles that list no packages themselves.
+        var bundledProductIDs: [String] {
+            var seen = Set<String>()
+            return (DisplaySkuAvailabilities ?? []).flatMap { $0.Sku?.Properties?.BundledSkus ?? [] }
+                .compactMap(\.BigId)
+                .filter { PCGamesClient.validProductID($0) && $0 != ProductId && seen.insert($0).inserted }
+                .prefix(PCGamesClient.maximumBundledProducts).map { $0 }
+        }
+
+        /// A base game whose PC availability the catalogue can't state (no packages listed for any SKU).
+        var unclassifiedBaseGame: Bool { game == nil && isBaseGame == true && pcPackageListing == nil }
 
         var pcPackageListing: Bool? {
             if isPC { return true }
@@ -766,6 +786,19 @@ struct PCGamesClient: Sendable {
     }
 
     static let descriptorConcurrency = 2
+    static let maximumBundledProducts = 32
+    static let maximumBundleReads = 200
+
+    /// Why an owned candidate stays unresolved, for the load log (public product IDs only).
+    static func unresolvedReason(_ product: PCGamesCatalog.Product?, failed: Bool, bundleRead: Bool) -> String {
+        if failed { return "detailsUnavailable" }
+        guard let product else { return "notInCatalogue" }
+        if product.isBaseGame == nil { return "unclassifiedProductType" }
+        if !product.bundledProductIDs.isEmpty {
+            return bundleRead ? "bundleWithoutPCGame" : "bundleContentsUnread"
+        }
+        return "noPCPackageListing"
+    }
 
     typealias DescriptorBatchResult = (index: Int, batch: [String], result: Result<PublicCatalogDescriptors.Read, any Error>)
 
@@ -796,15 +829,26 @@ struct PCGamesClient: Sendable {
         var failed: [Int: Set<String>] = [:]
         var revalidations: [Int: Task<PublicCatalogDescriptors.Revalidated, Never>] = [:]
         var completedBatches = 0
+        /// Owned bundle editions that list no packages, resolved to the PC base games they contain.
+        var bundleGames: [String: [PCGame]] = [:]
         func snapshot() -> PCGamesSnapshot {
             var games: [PCGame] = []
+            var shown = Set<String>()
             var unresolved = Set(ids)
             var excluded = 0
+            func show(_ game: PCGame, kind: PCGameAcquisitionKind) {
+                guard shown.insert(game.id).inserted else { return }
+                games.append(PCGame(id: game.id, title: game.title, artwork: game.artwork, acquisitionKind: kind))
+            }
             for index in resolved.keys.sorted() {
                 for product in resolved[index] ?? [] {
                     if let game = product.game {
-                        games.append(PCGame(id: game.id, title: game.title, artwork: game.artwork,
-                                            acquisitionKind: kinds[game.id] ?? .unknown))
+                        show(PCGame(id: game.id, title: game.title, artwork: game.artwork),
+                             kind: kinds[game.id] ?? .unknown)
+                        unresolved.remove(product.ProductId)
+                    } else if let contained = bundleGames[product.ProductId], !contained.isEmpty {
+                        // P1 follow-up: an owned bundle shows the PC game it contains, once.
+                        for game in contained { show(game, kind: kinds[product.ProductId] ?? .unknown) }
                         unresolved.remove(product.ProductId)
                     } else if product.isBaseGame == false
                         || (product.isBaseGame == true && product.pcPackageListing == false) {
@@ -892,9 +936,58 @@ struct PCGamesClient: Sendable {
                     .warning("Revalidated PC descriptors couldn't be read; saved details remain")
             }
         }
+        // P1 follow-up: bundle editions list no packages; read the products they contain (bounded) and show
+        // the PC base game an owned bundle includes. Contents that can't be read keep the bundle unresolved.
+        let known = Dictionary(resolved.values.flatMap { $0 }.map { ($0.ProductId, $0) }, uniquingKeysWith: { a, _ in a })
+        let bundles = resolved.values.flatMap { $0 }.filter { $0.unclassifiedBaseGame && !$0.bundledProductIDs.isEmpty }
+        var bundleReadIDs = Set<String>()
+        if !bundles.isEmpty {
+            var contents = known
+            let wanted = Array(Set(bundles.flatMap(\.bundledProductIDs)).subtracting(known.keys).sorted()
+                .prefix(Self.maximumBundleReads))
+            for start in stride(from: 0, to: wanted.count, by: 20) {
+                let batch = Array(wanted[start..<min(start + 20, wanted.count)])
+                do {
+                    let read = try await descriptors.read(ids: batch, market: market, language: language,
+                                                          background: true)
+                    for product in try products(read.data, batch: batch).products { contents[product.ProductId] = product }
+                    bundleReadIDs.formUnion(batch)
+                } catch is CancellationError { throw CancellationError() }
+                catch {
+                    Logger(subsystem: "io.github.dragoshont.xodus", category: "pc-library")
+                        .warning("Bundle contents couldn't be read; \(batch.count) bundled products stay unknown: \(String(describing: error), privacy: .public)")
+                }
+            }
+            bundleReadIDs.formUnion(known.keys)
+            for bundle in bundles {
+                let ids = bundle.bundledProductIDs
+                let games = ids.compactMap { contents[$0]?.game }
+                if !games.isEmpty {
+                    bundleGames[bundle.ProductId] = games
+                    revised = true
+                } else if !ids.allSatisfy(bundleReadIDs.contains) {
+                    bundleReadIDs.remove(bundle.ProductId)
+                } else {
+                    bundleReadIDs.insert(bundle.ProductId)
+                }
+            }
+        }
         try Task.checkCancellation()
         if revised { await progress?(snapshot()) }
-        return snapshot()
+        let final = snapshot()
+        if !final.unresolvedIDs.isEmpty {
+            let allFailed = failed.values.reduce(into: Set<String>()) { $0.formUnion($1) }
+            var reasons: [String: Int] = [:]
+            let logger = Logger(subsystem: "io.github.dragoshont.xodus", category: "pc-library")
+            for id in final.unresolvedIDs.sorted() {
+                let reason = Self.unresolvedReason(known[id], failed: allFailed.contains(id),
+                                                   bundleRead: bundleReadIDs.contains(id))
+                reasons[reason, default: 0] += 1
+                logger.notice("Unresolved PC candidate \(id, privacy: .public): reason=\(reason, privacy: .public)")
+            }
+            logger.notice("Unresolved PC candidates: \(reasons.sorted { $0.key < $1.key }.map { "\($0.key)=\($0.value)" }.joined(separator: " "), privacy: .public)")
+        }
+        return final
     }
 }
 

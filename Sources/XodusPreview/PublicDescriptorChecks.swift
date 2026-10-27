@@ -1294,6 +1294,35 @@ extension PublicDescriptorChecks {
               && pairingArtwork.images.count == 91 && pairingArtwork.error == nil,
               "P1: Concurrent descriptor batches completing out of order are each validated against their own IDs (91 IDs, 5 batches; resolver and artwork)")
 
+        let pcGameID = "9BUNDLE00001", ownedGameID = "9BUNDLE00002", bundleID = "9BUNDLE00010"
+        let duplicateBundleID = "9BUNDLE00011", noPackageID = "9BUNDLE00020"
+        func catalogProduct(_ id: String, title: String, packages: [[String: Any]], bundled: [String] = []) -> [String: Any] {
+            ["ProductId": id, "ProductType": "Game", "ProductKind": "Game",
+             "LocalizedProperties": [["ProductTitle": title, "Images": []]],
+             "DisplaySkuAvailabilities": [["Sku": ["Properties": ["Packages": packages,
+                "BundledSkus": bundled.map { ["BigId": $0] }]], "Availabilities": []]]]
+        }
+        let desktop: [[String: Any]] = [["PlatformDependencies": [["PlatformName": "Windows.Desktop"]]]]
+        let bundleTransport = FixtureCatalogTransport(products: [
+            pcGameID: catalogProduct(pcGameID, title: "Bundled Game", packages: desktop),
+            ownedGameID: catalogProduct(ownedGameID, title: "Owned Game", packages: desktop),
+            bundleID: catalogProduct(bundleID, title: "Bundled Game Deluxe", packages: [], bundled: [pcGameID]),
+            duplicateBundleID: catalogProduct(duplicateBundleID, title: "Owned Game Gold", packages: [], bundled: [ownedGameID]),
+            noPackageID: catalogProduct(noPackageID, title: "No Package Game", packages: [])
+        ])
+        let bundled = try await PCGamesClient(transport: bundleTransport,
+                                              descriptors: PublicCatalogDescriptors(transport: bundleTransport))
+            .resolveCollection(ids: [ownedGameID, bundleID, duplicateBundleID, noPackageID],
+                               kinds: [bundleID: .purchased], candidateCount: 4, market: "US", language: "en-US")
+        let noPackage = try JSONDecoder().decode(PCGamesCatalog.self, from: JSONSerialization.data(withJSONObject:
+            ["Products": [catalogProduct(noPackageID, title: "No Package Game", packages: [])]])).Products[0]
+        check(bundled.games.map(\.id).sorted() == [pcGameID, ownedGameID].sorted()
+              && bundled.games.first { $0.id == pcGameID }?.acquisitionKind == .purchased
+              && bundled.unresolvedIDs == [noPackageID] && bundled.detailFailureCount == 0
+              && PCGamesClient.unresolvedReason(noPackage, failed: false, bundleRead: false) == "noPCPackageListing"
+              && PCGamesClient.unresolvedReason(nil, failed: true, bundleRead: false) == "detailsUnavailable",
+              "P1 follow-up: An owned bundle edition shows the PC game it contains once (no duplicate of an owned game); a base game with no PC package stays unresolved with a logged reason, not a retried failure")
+
         // Each defect below is planted in an otherwise valid, in-age record, so each check stands alone.
         let corruptDirectory = root.appendingPathComponent("corrupt")
         let encoder = PropertyListEncoder()
@@ -1453,3 +1482,17 @@ extension PublicDescriptorChecks {
 }
 #endif
 
+
+/// Serves fixed public catalogue products by `bigIds`, in request order; unknown IDs are omitted.
+private struct FixtureCatalogTransport: PCGamesTransport {
+    let bodies: [String: Data]
+    init(products: [String: [String: Any]]) {
+        bodies = products.compactMapValues { try? JSONSerialization.data(withJSONObject: $0) }
+    }
+    func send(_ request: URLRequest) async throws -> PCGamesHTTPResponse {
+        let ids = request.url.flatMap { URLComponents(url: $0, resolvingAgainstBaseURL: false) }?.queryItems?
+            .first { $0.name == "bigIds" }?.value?.split(separator: ",").map(String.init) ?? []
+        let products = try ids.compactMap { id in try bodies[id].map { try JSONSerialization.jsonObject(with: $0) } }
+        return PCGamesHTTPResponse(status: 200, data: try JSONSerialization.data(withJSONObject: ["Products": products]))
+    }
+}
