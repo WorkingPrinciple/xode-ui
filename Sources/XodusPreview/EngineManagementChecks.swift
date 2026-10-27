@@ -231,7 +231,7 @@ enum EngineManagementChecks {
         let profiles = try NativeTitleLaunchProfile.bundledProfiles()
         let bounded = profiles.filter { $0.timeoutSeconds != nil }
         let source = (try? String(contentsOfFile: "Sources/XodusPreview/NativeLaunchConfiguration.swift", encoding: .utf8)) ?? ""
-        let play = source.range(of: "func arguments() async throws -> [String] {").map {
+        let play = source.range(of: "func arguments(manifestExecutables: [String] = []) async throws -> [String] {").map {
             String(source[$0.lowerBound...].prefix(2_000)) } ?? ""
         check(!bounded.isEmpty && bounded.allSatisfy { $0.arguments.contains("--timeout-seconds") }
               && profiles.allSatisfy { !$0.playArguments.contains("--timeout-seconds") }
