@@ -84,6 +84,37 @@ import XodusManagement
               && InstalledProductAccess.backoff(afterFailures: 3) == 240
               && InstalledProductAccess.backoff(afterFailures: 10) == InstalledProductAccess.maximumBackoff,
               "REQ-159: a failed read backs off for every product (60 s doubling to 15 min) instead of retrying")
+        // Review 72450bd3 L1/L2: the pause says until when, and grows with consecutive failures on any product.
+        let pausedText = access.pausedNotice(now: start.addingTimeInterval(720)) ?? ""
+        check(pausedText.hasPrefix("Access checks are paused until")
+              && access.reviewNotice(for: installed[11], account: account, now: start.addingTimeInterval(720)) == pausedText
+              && access.pausedNotice(now: start.addingTimeInterval(5_000)) == nil,
+              "72450bd3 L1: during a pause an unchecked game and Retry say until when, not a silent wait")
+        failing = true
+        await access.refresh(account: account, installedIDs: installed, now: start.addingTimeInterval(800),
+                             force: true, selectedProductID: installed[12], read: reader)
+        check(access.pausedUntil == start.addingTimeInterval(800 + 120),
+              "72450bd3 L2: a second consecutive failure on another game doubles the global pause (120 s)")
+        // Review 72450bd3 M2: a product page shares this store; repeat visits reuse one answer for 10 minutes.
+        failing = false
+        let page = InstalledProductAccess()
+        let pageProduct = "9PAGEVIEW001"
+        var pageReads = 0
+        for minute in 0..<5 {
+            await page.checkProduct(pageProduct, account: account, now: start.addingTimeInterval(Double(minute) * 60)) { id in
+                pageReads += 1
+                return try await reader(id)
+            }
+            page.track(account: account, installedIDs: installed)
+        }
+        let productSource = (try? String(contentsOfFile: "Sources/XodusPreview/LiveProductView.swift", encoding: .utf8)) ?? ""
+        let appSource = (try? String(contentsOfFile: "Sources/XodusPreview/XodusPreviewApp.swift", encoding: .utf8)) ?? ""
+        check(pageReads == 1 && page.permits(pageProduct, account: account, now: start.addingTimeInterval(240))
+              && !productSource.isEmpty && !productSource.contains("InstalledProductAccess()")
+              && !productSource.contains("titleAccess.retire()") && productSource.contains("installedLibrary.productAccess"),
+              "72450bd3 M2: product pages share the app's access store; five visits in 5 minutes make one read and keep the answer")
+        check(appSource.contains("Task { await installed.playRequested(game) }") && !appSource.contains("Task { await installed.play(game) }"),
+              "72450bd3 M1: Play from the ready notification checks access and the newer-build guard like the Play button")
     }
 
     /// Review fc2f17d1 H1: producer #7 sends installation verdicts as a lifecycle error_code. Each is a receipt,

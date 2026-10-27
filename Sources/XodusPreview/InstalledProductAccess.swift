@@ -28,6 +28,10 @@ final class InstalledProductAccess: ObservableObject {
     nonisolated static let freshness: TimeInterval = 600
     nonisolated static let maximumBackoff: TimeInterval = 900
     private var failures: [String: Int] = [:]
+    /// 72450bd3 L2: consecutive failures across all products set the global pause length.
+    private var globalFailures = 0
+    /// 72450bd3 M2: products checked from their product page stay tracked (cached) across installed-set updates.
+    private var pagedIDs = Set<String>()
     private(set) var pausedUntil: Date?
     /// Every licence read this object started; a fixture bounds it.
     private(set) var readCount = 0
@@ -51,9 +55,34 @@ final class InstalledProductAccess: ObservableObject {
     /// REQ-159: keeps the installed set current without reading any licence.
     func track(account: String?, installedIDs: [String]) {
         guard account == accountHash else { return }
-        installed = Set(installedIDs.filter(PCGamesClient.validProductID))
+        installed = Set(installedIDs.filter(PCGamesClient.validProductID)).union(pagedIDs)
         facts = facts.filter { installed.contains($0.key) }
         errors = errors.filter { installed.contains($0.key) }
+    }
+
+    /// 72450bd3 M2: one shared, cached check for a product page; never its own store or a retire on disappear.
+    func checkProduct(_ productID: String, session: LiveSession, force: Bool = false) async {
+        guard PCGamesClient.validProductID(productID) else { return }
+        pagedIDs.insert(productID)
+        await refresh(session: session, installedIDs: Array(installed.union([productID])), force: force,
+                      selectedProductID: productID)
+    }
+
+    func checkProduct(_ productID: String, account: String?, now: Date = Date(), force: Bool = false,
+                      read: @escaping @MainActor (String) async throws -> OdeAccountRead) async {
+        guard PCGamesClient.validProductID(productID) else { return }
+        pagedIDs.insert(productID)
+        await refresh(account: account, installedIDs: Array(installed.union([productID])), now: now, force: force,
+                      selectedProductID: productID, read: read)
+    }
+
+    /// 72450bd3 L1: while reads are paused after a failure, say until when instead of waiting silently.
+    func pausedNotice(now: Date = Date()) -> String? {
+        guard let pausedUntil, now < pausedUntil else { return nil }
+        let formatter = DateFormatter()
+        formatter.dateStyle = .none
+        formatter.timeStyle = .short
+        return "Access checks are paused until \(formatter.string(from: pausedUntil)) after a failed check. Try again then."
     }
 
     /// REQ-159: a current answer that this account can't play the product; until then Play stays offered and
@@ -113,6 +142,7 @@ final class InstalledProductAccess: ObservableObject {
             return "Access for this account hasn't been checked for this game."
         }
         if checking { return "Checking access for this game." }
+        if errors[productID] != nil || facts[productID] == nil, let paused = pausedNotice(now: now) { return paused }
         if errors[productID] != nil { return Self.unavailableNotice }
         if permits(productID, account: account, now: now) { return nil }
         guard let fact = facts[productID] else { return "Access for this game hasn't been checked." }
@@ -141,6 +171,8 @@ final class InstalledProductAccess: ObservableObject {
         errors = [:]
         attempts = [:]
         failures = [:]
+        globalFailures = 0
+        pagedIDs = []
         pausedUntil = nil
         installed = []
         checking = false
@@ -267,6 +299,7 @@ final class InstalledProductAccess: ObservableObject {
                     }
                     facts[id] = Fact(value: value, checkedAt: checkedAt)
                     failures[id] = nil
+                    globalFailures = 0
                     pausedUntil = nil
                     scheduleExpiry()
                     if errors[id] != nil { errors[id] = nil }
@@ -275,9 +308,9 @@ final class InstalledProductAccess: ObservableObject {
                 catch {
                     guard generation == epoch, accountHash == account else { return }
                     errors[id] = LiveSession.describe(error)
-                    let count = (failures[id] ?? 0) + 1
-                    failures[id] = count
-                    pausedUntil = now.addingTimeInterval(Self.backoff(afterFailures: count))
+                    failures[id] = (failures[id] ?? 0) + 1
+                    globalFailures += 1
+                    pausedUntil = now.addingTimeInterval(Self.backoff(afterFailures: globalFailures))
                     logger.error("Product access \(id, privacy: .public) failed: \(LiveSession.describe(error), privacy: .public)")
                 }
                 await Task.yield()

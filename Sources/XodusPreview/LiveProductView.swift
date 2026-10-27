@@ -153,7 +153,8 @@ struct LiveProductView: View {
     @Environment(\.openSettings) private var openSettings
     @ObservedObject var catalog = LibraryCatalogArtwork.shared
     @ObservedObject private var stats = LibraryXboxStats.shared
-    @StateObject private var titleAccess = InstalledProductAccess()
+    /// 72450bd3 M2: the app's one access store, so a product page shares its cache and backoff.
+    private var titleAccess: InstalledProductAccess { installedLibrary.productAccess }
 
     private var installed: InstalledGame? {
         installedLibrary.games.first { $0.storeId == product.id && (installationID == nil || $0.id == installationID) }
@@ -225,7 +226,7 @@ struct LiveProductView: View {
         if notIncluded { return }
         if checksTitleAccess {
             guard session.nativeLifecycleConfiguration != nil else { openSettings(); return }
-            Task { await titleAccess.refresh(session: session, installedIDs: [product.id], force: true) }
+            Task { await titleAccess.checkProduct(product.id, session: session, force: true) }
             return
         }
         switch installRecovery {
@@ -340,10 +341,9 @@ struct LiveProductView: View {
             operations.precheck([product.id])
         }
         .task(id: "\(product.id):\(session.accountHash ?? ""):\(session.hasConfirmedSignIn):\(operations.usesUnifiedAccount)") {
-            guard allowsStartupTasks, checksTitleAccess else { titleAccess.retire(); return }
-            await titleAccess.refresh(session: session, installedIDs: [product.id])
+            guard allowsStartupTasks, checksTitleAccess else { return }
+            await titleAccess.checkProduct(product.id, session: session)
         }
-        .onDisappear { titleAccess.retire() }
     }
 
     private var header: some View {

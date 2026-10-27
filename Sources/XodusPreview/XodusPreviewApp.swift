@@ -79,7 +79,7 @@ final class PreviewDelegate: NSObject, NSApplicationDelegate {
         readyNotifier.play = { [weak self] folder in
             guard let installed = self?.installedGames,
                   let game = installed.games.first(where: { $0.folder == folder }) else { return }
-            Task { await installed.play(game) }
+            Task { await installed.playRequested(game) }
         }
         readyNotifier.playActive = { [weak self] in
             guard let installed = self?.installedGames else { return false }

@@ -742,6 +742,10 @@ final class InstalledGamesController: ObservableObject {
 
     func playRequested(_ game: InstalledGame) async {
         if let refusal = Self.newerBuildRefusal() { playErrors[game.id] = refusal; return }
+        if !canRequestPlay(game.storeId), let paused = productAccess.pausedNotice() {
+            playErrors[game.id] = paused
+            return
+        }
         if canRequestPlay(game.storeId) { await play(game); return }
         if let message = await playFromLaunchRequest(game, engine: nil, timeout: .seconds(30)) {
             playErrors[game.id] = message
