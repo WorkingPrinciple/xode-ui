@@ -49,7 +49,7 @@ import XodusManagement
         var failing = false
         let reader: @MainActor (String) async throws -> OdeAccountRead = { id in
             reads.append(id)
-            if failing { throw ManagementError.disconnected }
+            if failing { throw ManagementError.authenticatedReadFailed(.transportFailed) }
             let payload: [String: Any] = ["section": "license", "accountHash": account,
                 "checkedAt": "2030-01-01T00:00:00Z",
                 "payload": ["productID": id, "access": "permitted", "reason": NSNull(), "expiresAt": NSNull()]]
