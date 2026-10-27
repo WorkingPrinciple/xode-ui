@@ -438,6 +438,13 @@ final class GameOperationsController: ObservableObject {
         }
     }
 
+    /// REQ-153 (COR-313): titles the compatibility DB knows won't run (anti-cheat, non-MSIXVC package)
+    /// are never downloaded or queued. Returns the honest reason, or nil when the title may be downloaded.
+    func downloadBlockedReason(productID: String, packageFormat: String? = nil) -> String? {
+        let issues = supportIssues(productID: productID, packageFormat: packageFormat, includeRuntime: false)
+        return issues.isEmpty ? nil : issues.map(\.detail).joined(separator: " ")
+    }
+
     func supportIssues(productID: String, packageFormat: String? = nil,
                        includeRuntime: Bool = true) -> [LibraryCompatibilityIssue] {
         LibrarySupportVisibility.issues(productID: productID, installed: false,
@@ -1023,6 +1030,11 @@ final class GameOperationsController: ObservableObject {
     func prepareInstall(_ game: PCGame, repairing: InstalledGame? = nil, expectedAccountHash: String? = nil) async {
         await cancelPrecheck()
         guard canStartMutation, PCGamesClient.validProductID(game.id) else { return }
+        if let blocked = downloadBlockedReason(productID: game.id, packageFormat: repairing?.packageType?.label) {
+            resetFeedback(productID: game.id)
+            error = blocked
+            return
+        }
         let reviewAccount = usesUnifiedAccount ? nativeAccount : nil
         guard !usesUnifiedAccount || expectedAccountHash == nil || expectedAccountHash == reviewAccount else {
             error = "Your Xbox account changed. Choose the game again before reviewing installation."

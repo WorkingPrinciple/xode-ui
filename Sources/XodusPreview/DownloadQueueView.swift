@@ -34,6 +34,11 @@ struct DownloadQueueRow: View {
                 Text(statusLabel).font(.caption).foregroundStyle(.secondary)
                     .accessibilityIdentifier("xodus.queue.status")
             }
+            if job.phase == .failed, let reason = queue.failureReasons[job.id] {
+                Label(reason, systemImage: "exclamationmark.triangle")
+                    .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("xodus.queue.failureReason")
+            }
             if job.phase.occupiesSlot {
                 if let fraction = job.progress?.fraction {
                     ProgressView(value: fraction)

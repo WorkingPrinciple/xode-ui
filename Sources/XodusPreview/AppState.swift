@@ -104,7 +104,8 @@ final class AppState: ObservableObject {
         return operations
     }()
     lazy var downloadQueue = DownloadQueueController(
-        driver: GameOperationsInstallDriver(operations: gameOperations))
+        driver: GameOperationsInstallDriver(operations: gameOperations),
+        blockedReason: { [weak self] id in self?.gameOperations.downloadBlockedReason(productID: id) })
 #if !XODUS_SHIPPING
     @Published var fixtureMode = CommandLine.arguments.contains("--fixture")
         || CommandLine.arguments.contains("--export-preview") || LibraryPreviewExporter.fixtureRequested

@@ -163,5 +163,37 @@ enum DownloadQueueChecks {
         check(started == ids && fifo.jobs.allSatisfy { $0.phase == .completed }
               && fifo.pendingJob(productID: "9NBLGGH0000Two") == nil,
               "REQ-148: Queued downloads start automatically in the order they were added")
+
+        // REQ-153 (COR-313): a known-blocked title in the queue fails with its reason, never
+        // reaches the engine, and doesn't hold up the next job.
+        let blockedEngine = Engine()
+        let blockedReason = "Games that use Easy Anti-Cheat can't run in X Ode yet."
+        let gated = DownloadQueueController(driver: Driver(engine: blockedEngine), maxConcurrent: 1,
+            blockedReason: { $0 == "9NBLOCKED0001" ? blockedReason : nil })
+        let blocked = gated.enqueue(productID: "9NBLOCKED0001", title: "Blocked", destination: "/games/Blocked")
+        let allowed = gated.enqueue(productID: "9NBLGGH0000OK", title: "Allowed", destination: "/games/Allowed")
+        try await settle { await blockedEngine.activeRuns.count == 1 }
+        check(gated.job(id: blocked)?.phase == .failed
+              && gated.job(id: blocked)?.failureCode == DownloadQueueController.blockedFailureCode
+              && gated.failureReasons[blocked] == blockedReason,
+              "REQ-153: A queued known-blocked title fails with its reason instead of downloading")
+        let gatedRuns = await blockedEngine.starts.count
+        check(gated.job(id: allowed)?.phase.occupiesSlot == true && gatedRuns == 1,
+              "REQ-153: A blocked queued title never reaches the engine and the next game starts")
+        gated.clearFinished()
+        check(gated.failureReasons[blocked] == nil, "REQ-153: Clearing finished jobs drops their failure reasons")
+
+        let root = "Sources/XodusPreview/"
+        let view = (try? String(contentsOfFile: root + "GameOperationsView.swift", encoding: .utf8)) ?? ""
+        let controllerSource = (try? String(contentsOfFile: root + "GameOperationsController.swift", encoding: .utf8)) ?? ""
+        let app = (try? String(contentsOfFile: root + "AppState.swift", encoding: .utf8)) ?? ""
+        check(view.contains("guard blockingIssues.isEmpty else { return false }")
+              && view.contains("guard let queue, blockingIssues.isEmpty else { return false }")
+              && view.contains("LibraryCompatibilityIndicators(issues: blockingIssues")
+              && view.contains("if let blocked = operations.downloadBlockedReason(productID: game.id)"),
+              "REQ-153: Download and Add to queue give way to the blocking reason on every install surface")
+        check(controllerSource.contains("if let blocked = downloadBlockedReason(productID: game.id")
+              && app.contains("blockedReason: { [weak self] id in self?.gameOperations.downloadBlockedReason(productID: id) }"),
+              "REQ-153: Install review and the live queue both refuse known-blocked titles")
     }
 }

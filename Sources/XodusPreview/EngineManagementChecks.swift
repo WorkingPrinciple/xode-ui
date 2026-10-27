@@ -30,9 +30,38 @@ enum EngineManagementChecks {
         let present: (String) -> String? = { $0 == nms.registryPath.map(NativeTitleLaunchProfile.expand) ? nms.registrySha256 : nil }
         let unprofiled = NativeLaunchSupport.evaluate(productID: "9NZZZZZZZZZZ", defaults: defaults,
             engineDefaults: { catalog }, registryDigest: present)
-        check(unprofiled == .notSupported(NativeLaunchSupport.notSupportedReason) && !unprofiled.canPlay
-              && !unprofiled.offersEngines,
-              "REQ114 M1/R1 title without an admitted launch profile is not yet supported and never offers Play")
+        let allPresent: (String) -> String? = { path in
+            catalog.bindings.first { $0.registryPath.map(NativeTitleLaunchProfile.expand) == path }?.registrySha256
+        }
+        let untested = NativeLaunchSupport.evaluate(productID: "9NZZZZZZZZZZ", defaults: defaults,
+            engineDefaults: { catalog }, registryDigest: allPresent, releaseStatus: { _ in nil })
+        check(untested == .untested && untested.canPlay && untested.isUntested && untested.reason == nil
+              && !untested.offersEngines && unprofiled != .notSupported(NativeLaunchSupport.notSupportedReason),
+              "REQ153 owner-directed: an installed title with no tested setup is compatible by default: normal Play through the default engine, no warning")
+        let noEngine = NativeLaunchSupport.evaluate(productID: "9NZZZZZZZZZZ", defaults: defaults,
+            engineDefaults: { catalog }, registryDigest: { _ in nil }, releaseStatus: { _ in .notInstalled })
+        check(noEngine == .engineMissing(NativeLaunchSupport.untestedEngineMissingReason) && !noEngine.canPlay
+              && noEngine.offersEngines && noEngine.reason?.contains("tested with") == false,
+              "REQ153 untested title with no usable engine says Engine needed honestly, never claims a tested engine")
+        check(NativeLaunchSupport.evaluate(productID: "9NZZZZZZZZZZ", defaults: defaults,
+                engineDefaults: { throw CocoaError(.fileNoSuchFile) }).canPlay == false,
+              "REQ153 untested Play is withheld when the engine catalog can't be read (no hidden fallback)")
+        let blocked = LibrarySupportVisibility.issues(productID: "9NZZZZZZZZZZ", installed: true,
+            packageFormat: "MSIXVC", compatibility: nil, catalogue: nil)
+            + GameSupportPolicy.issues(packageFormat: "MSIXVC", antiCheat: "Easy Anti-Cheat")
+            + GameSupportPolicy.issues(packageFormat: "EAppx", antiCheat: "none")
+        check(blocked.contains { $0.kind == .antiCheat } && blocked.contains { $0.kind == .packageType },
+              "REQ153 only DB-known anti-cheat or non-MSIXVC titles get blocking issues (Not available on Mac yet)")
+        let fh6 = NativeLaunchSupport.evaluate(productID: NativeFH6Recipe.productID, defaults: defaults,
+            hasEngineOverride: true, engineDefaults: { catalog }, registryDigest: allPresent, releaseStatus: { _ in nil })
+        check(NativeFH6Recipe.enabled ? !fh6.isUntested : fh6 == .notSupported(NativeLaunchSupport.inTestingReason),
+              "REQ153 FH6 keeps its recipe gate and never becomes a generic launch")
+        check(NativeLaunchConfiguration.untestedExecutableArguments(profile: nil, manifestExecutables: ["Game.exe"])
+                == ["--exe", "Game.exe"]
+              && NativeLaunchConfiguration.untestedExecutableArguments(profile: nil,
+                    manifestExecutables: ["A.exe", "B.exe"]).isEmpty
+              && NativeLaunchConfiguration.untestedExecutableArguments(profile: nil, manifestExecutables: []).isEmpty,
+              "REQ153 generic launch passes only an unambiguous manifest executable, never a guess")
         let missingRelease = NativeLaunchSupport.evaluate(productID: "9P9VNSQK1W3K", defaults: defaults,
             engineDefaults: { catalog }, registryDigest: present, releaseStatus: { _ in .notInstalled })
         check(!missingRelease.canPlay && missingRelease.offersEngines
@@ -51,8 +80,8 @@ enum EngineManagementChecks {
         check(NativeLaunchSupport.evaluate(productID: "9P9VNSQK1W3K", defaults: defaults, hasEngineOverride: true,
                 engineDefaults: { catalog }, registryDigest: present) == .supported
               && NativeLaunchSupport.evaluate(productID: "9NZZZZZZZZZZ", defaults: defaults, hasEngineOverride: true,
-                engineDefaults: { catalog }, registryDigest: present) != .supported,
-              "REQ114 M1 explicit per-game engine applies only to profiled titles")
+                engineDefaults: { catalog }, registryDigest: present) == .untested,
+              "REQ153 explicit per-game engine also applies to titles without a tested setup")
         let unavailable = InstalledGamesController.nativeLaunchFailureMessage(NativeLaunchError.engineUnavailable)
         check(unavailable == NativeLaunchError.engineUnavailable.localizedDescription
               && unavailable.contains("Open Engines") && !unavailable.contains("Runtime settings")

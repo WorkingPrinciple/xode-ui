@@ -10,6 +10,9 @@ enum NativeLaunchSupport: Equatable {
     case notSupported(String)
     /// The title has an admitted setup, but its engine isn't usable on this Mac.
     case engineMissing(String)
+    /// Owner decision (REQ-153): an installed title with no tested launch setup still offers Play
+    /// through the generic Calimocho launch and the user's chosen engine, labelled honestly.
+    case untested
 
     static let notSupportedTitle = "Not available on Mac yet"
     /// REQ-139: a title gated to the test build has played on this Mac, so it isn't "not available".
@@ -22,11 +25,13 @@ enum NativeLaunchSupport: Equatable {
         return reason == Self.inTestingReason ? Self.inTestingTitle : Self.notSupportedTitle
     }
     static let notSupportedReason = "There's no tested launch setup for this game yet, so Play isn't offered."
+    static let untestedEngineMissingReason = "No engine is set up on this Mac yet. Open Engines to set one up, or choose one for this game from its … menu."
 
-    var canPlay: Bool { self == .supported }
+    var canPlay: Bool { self == .supported || self == .untested }
+    var isUntested: Bool { self == .untested }
     var reason: String? {
         switch self {
-        case .supported: nil
+        case .supported, .untested: nil
         case .notSupported(let reason), .engineMissing(let reason): reason
         }
     }
@@ -57,20 +62,41 @@ enum NativeLaunchSupport: Equatable {
         } catch {
             return .notSupported(NativeLaunchError.invalidProfile.localizedDescription)
         }
-        guard let profile else { return .notSupported(notSupportedReason) }
+        guard let profile else {
+            // No tested setup: the generic launch uses the user's per-game or default engine, so Play is
+            // offered (as normal Play) only when that engine is actually usable here.
+            let status = engineStatus(engine: nil, registrySHA256: nil, hasEngineOverride: hasEngineOverride,
+                                      defaults: defaults, engineDefaults: engineDefaults,
+                                      registryDigest: registryDigest, releaseStatus: releaseStatus)
+            switch status {
+            case .supported: return .untested
+            case .engineMissing(let reason) where reason.hasPrefix("The engine this game was tested with"):
+                return .engineMissing(untestedEngineMissingReason)
+            default: return status
+            }
+        }
+        return engineStatus(engine: profile.engine, registrySHA256: profile.registrySHA256,
+                            hasEngineOverride: hasEngineOverride, defaults: defaults, engineDefaults: engineDefaults,
+                            registryDigest: registryDigest, releaseStatus: releaseStatus)
+    }
+
+    private static func engineStatus(engine titleEngine: String?, registrySHA256: String?, hasEngineOverride: Bool,
+                                     defaults: UserDefaults, engineDefaults: () throws -> NativeEngineDefaults,
+                                     registryDigest: (String) -> String?,
+                                     releaseStatus: (CalimochoReleasePin) -> CalimochoReleaseError?) -> Self {
         // An explicit per-game engine choice is re-verified at launch; it is never substituted here.
         if hasEngineOverride { return .supported }
-        if profile.engine == nil {
+        if titleEngine == nil {
             do {
                 if try NativeEngineDefaults.savedAdmission(defaults: defaults) != nil { return .supported }
             } catch {
                 return .engineMissing(NativeLaunchError.selectionChanged.localizedDescription)
             }
         }
-        guard let catalog = try? engineDefaults() else { return .engineMissing(engineMissingReason(profile.engine)) }
-        let engine = profile.engine ?? catalog.defaultEngine
+        guard let catalog = try? engineDefaults() else { return .engineMissing(engineMissingReason(titleEngine)) }
+        let engine = titleEngine ?? catalog.defaultEngine
         guard let binding = catalog.bindings.first(where: { $0.engineName == engine }),
-              profile.registrySHA256.map({ $0 == binding.registrySha256 }) ?? true else {
+              registrySHA256.map({ $0 == binding.registrySha256 }) ?? true else {
             return .engineMissing(engineMissingReason(engine))
         }
         if let pin = binding.release ?? (binding.isFH6Recipe ? .release06 : nil) {

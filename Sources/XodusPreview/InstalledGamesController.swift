@@ -1237,7 +1237,7 @@ final class InstalledGamesController: ObservableObject {
                 evidence: MacGameEvidenceStore.shared.games[game.storeId])
             Self.launchLog.notice("Effective launch: \(game.storeId, privacy: .public); engine=\(launch.engine, privacy: .public); registry=\(launch.registry.path, privacy: .public); prefix=\(launch.prefix.path, privacy: .public)")
             guard launch.admittedSelection != nil else { throw NativeLaunchError.providerPolicy }
-            let arguments = try await launch.arguments()
+            let arguments = try await launch.arguments(manifestExecutables: config.executables)
             let prefixNotice = try await launch.prefixNotice()
             let legacyPrefixIDs = try await store.prefixInstallationIDs(productID: game.storeId) + [game.id]
             if preparation.isCancelled { throw CancellationError() }
