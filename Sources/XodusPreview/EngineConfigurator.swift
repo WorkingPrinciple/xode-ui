@@ -746,7 +746,7 @@ enum EnginesCopy {
     static let lead = "Engines run Windows games on your Mac. You can add your own Wine engines for testing; in this beta, games play with Calimocho."
     /// Why a non-Calimocho engine can't be the default (REQ-109/COR-201: custom-engine launching isn't in 0.2.0).
     static let testingOnly = "Saved for testing. In this beta, games play with Calimocho."
-    static let listFooter = "Engines run Windows games on your Mac. Calimocho is built in and runs every game unless a game needs a specific engine."
+    static let listFooter = "Calimocho is built in and runs every game unless a game needs a specific engine."
     static let defaultFooter = "New games use this engine. Change a game's engine from its menu in the Library."
     static let crossOver = "CrossOver is reserved for No Man's Sky once it qualifies; every other game plays with Calimocho."
     static let crossOverLicense = "Use your own licensed copy of CrossOver; \(AppBrand.displayName) doesn't include it."
@@ -921,6 +921,7 @@ struct EngineConfiguratorSections<Advanced: View>: View {
             Text("Engines")
         } footer: {
             Text(EnginesCopy.listFooter)
+                .multilineTextAlignment(.leading)
                 .font(.callout).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -1004,6 +1005,7 @@ struct EngineConfiguratorSections<Advanced: View>: View {
             }
         } footer: {
             Text(EnginesCopy.defaultFooter)
+                .multilineTextAlignment(.leading)
                 .font(.callout).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -1075,17 +1077,19 @@ struct CrossOverEngineRow: View {
 struct CrossOverLocationRow: View {
     @ObservedObject var settings: RuntimeProviderSettings
     var allowsCheck = true
+    /// The detail sheet shows status once, in its Version section.
+    var showsStatus = true
     @State private var location = ""
     @State private var error: String?
     @State private var fence = EngineRequestFence()
 
     var body: some View {
         Section {
-            LabeledContent("Status") {
+            if showsStatus { LabeledContent("Status") {
                 let row = CrossOverEngineRow.presentation(state: settings.crossOverDependency)
                 Text(row.state?.title ?? "Not Checked Yet").foregroundStyle(.secondary)
                     .accessibilityIdentifier("xodus.engines.crossover.status")
-            }
+            } }
             LabeledContent("Application") {
                 HStack(spacing: 8) {
                     TextField("Application", text: $location, prompt: Text("/Applications/CrossOver.app"))

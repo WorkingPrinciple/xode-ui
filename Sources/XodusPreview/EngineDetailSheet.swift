@@ -53,6 +53,10 @@ struct EngineDetailSheet: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            Text(detail.title).font(.title3.weight(.semibold))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 20).padding(.top, 16)
+                .accessibilityAddTraits(.isHeader)
             Form { sections }
                 .formStyle(.grouped)
             Divider()
@@ -72,22 +76,17 @@ struct EngineDetailSheet: View {
             }
             .padding(16)
         }
-        .frame(width: 520, height: 500)
+        .frame(width: 520, height: 600)
         .onExitCommand(perform: close)
         .accessibilityIdentifier("xodus.engines.detail")
         .navigationTitle(detail.title)
     }
 
     @ViewBuilder private var sections: some View {
-        Section {
-            LabeledContent("Engine") { Text(detail.title) }
-        } header: {
-            Text(detail.title).font(.headline)
-        }
         switch detail {
         case .crossOver:
-            CrossOverLocationRow(settings: settings, allowsCheck: allowsFileReads)
-            versionSection(CrossOverEngineRow.presentation(state: settings.crossOverDependency).detail,
+            CrossOverLocationRow(settings: settings, allowsCheck: allowsFileReads, showsStatus: false)
+            versionSection(Self.crossOverVersion(settings.crossOverDependency),
                            status: CrossOverEngineRow.presentation(state: settings.crossOverDependency).state)
         case .highball:
             Section("Location") {
@@ -98,7 +97,7 @@ struct EngineDetailSheet: View {
                 }
                 if let highball, highball != .missing { finderButton(HighballContract.applicationPath) }
             }
-            versionSection(HighballEngineRow.presentation(highball).detail, status: HighballEngineRow.presentation(highball).state)
+            versionSection(Self.highballVersion(highball), status: HighballEngineRow.presentation(highball).state)
         case .engine(let choice):
             versionSection(choice.version ?? "Built-in engine",
                            status: EngineConfiguratorSections<EmptyView>.state(for: choice, checking: false))
@@ -146,6 +145,22 @@ struct EngineDetailSheet: View {
                 NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
             }
             .disabled(!allowsFileReads)
+        }
+    }
+
+    static func crossOverVersion(_ state: CrossOverDependencyState) -> String {
+        switch state {
+        case .installed(let app): app.version
+        case .absent: "Not installed"
+        case .notChecked, .checking, .unverified: "Not checked yet"
+        }
+    }
+
+    static func highballVersion(_ state: HighballState?) -> String {
+        switch state {
+        case nil: "Not checked yet"
+        case .missing: "Not installed"
+        case .detected(let version, _), .qualified(let version, _): version ?? "Unknown"
         }
     }
 

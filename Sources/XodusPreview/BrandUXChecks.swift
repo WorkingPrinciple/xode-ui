@@ -293,7 +293,7 @@ enum BrandUXChecks {
             let users = UserEngineModel(store: store, suggestions: [])
             let crossOver = render(EngineDetailSheet(detail: .crossOver, settings: settings, highball: nil, users: users,
                                                      defaultID: nil, allowsFileReads: false) {},
-                                   size: CGSize(width: 520, height: 500), scheme: scheme,
+                                   size: CGSize(width: 520, height: 600), scheme: scheme,
                                    name: "engine-detail-crossover-\(scheme == .dark ? "dark" : "light")")
             let joinedCrossOver = crossOver.joined(separator: " ")
             check(joinedCrossOver.contains("No Man's Sky only") && joinedCrossOver.contains("Location")
@@ -301,7 +301,7 @@ enum BrandUXChecks {
                   "COR-279 steps 3-4: the CrossOver ⓘ sheet holds its location, use and licence, with no removal (\(scheme)): \(crossOver)")
             let highball = render(EngineDetailSheet(detail: .highball, settings: settings, highball: nil, users: users,
                                                     defaultID: nil, allowsFileReads: false) {},
-                                  size: CGSize(width: 520, height: 500), scheme: scheme,
+                                  size: CGSize(width: 520, height: 600), scheme: scheme,
                                   name: "engine-detail-highball-\(scheme == .dark ? "dark" : "light")")
             let joinedHighball = highball.joined(separator: " ")
             check(joinedHighball.contains("Brotato only") && joinedHighball.contains("GPL-3.0")
