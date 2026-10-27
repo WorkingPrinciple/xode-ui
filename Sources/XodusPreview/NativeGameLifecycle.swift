@@ -102,7 +102,7 @@ struct NativeGameResult: Codable, Equatable, Sendable {
         case "COMPATIBILITY_DB_INVALID":
             "X Ode's game compatibility list couldn't be verified, so the game wasn't started. Nothing was changed. Update X Ode, then try again."
         case "GENERIC_PREFIX_REQUIRED":
-            "This engine choice needs its own separate prefix for this game, so the game wasn't started and its existing prefix and saves weren't touched. Choose the engine again from the game's … menu."
+            "This engine choice needs a separate prefix that X Ode couldn't prepare, so the game wasn't started and its existing prefix and saves weren't touched. Use Copy Diagnostics and send them to support."
         case "EXECUTABLE_AMBIGUOUS":
             "This game's package lists more than one program, and X Ode can't tell which one to start, so the game wasn't started. Nothing was changed."
         default: nil

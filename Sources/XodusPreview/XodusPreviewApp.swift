@@ -430,6 +430,32 @@ enum ConcurrentAppGuard {
         return peers.first { peer in peer.key != bundleID && running.contains { $0.bundleID == peer.key } }?.value
     }
 
+    /// Owner hardening 2: an older X Ode (either variant; both share one state directory) doesn't launch games
+    /// once a newer build is installed. Returns the newer copy's path and build.
+    static func newerInstalledBuild(selfBuild: Int, installed: [(path: String, bundleID: String, build: Int)])
+        -> (path: String, build: Int)? {
+        installed.filter { peers[$0.bundleID] != nil && $0.build > selfBuild }
+            .max { $0.build < $1.build }.map { ($0.path, $0.build) }
+    }
+
+    static func installedCopies(fileManager: FileManager = .default) -> [(path: String, bundleID: String, build: Int)] {
+        let roots = ["/Applications", NSHomeDirectory() + "/Applications"]
+        return roots.flatMap { root -> [(path: String, bundleID: String, build: Int)] in
+            let names = (try? fileManager.contentsOfDirectory(atPath: root)) ?? []
+            return names.filter { $0.hasSuffix(".app") }.compactMap { name in
+                let path = root + "/" + name
+                guard let info = NSDictionary(contentsOfFile: path + "/Contents/Info.plist"),
+                      let id = info["CFBundleIdentifier"] as? String, peers[id] != nil,
+                      let build = Int(info["CFBundleVersion"] as? String ?? "") else { return nil }
+                return (path, id, build)
+            }
+        }
+    }
+
+    static func newerBuildMessage(path: String, build: Int) -> String {
+        "A newer \(AppBrand.displayName) (build \(build)) is installed at \(path). Open it to play; this older copy doesn't start games, so two versions never manage the same games."
+    }
+
     static func message(peer: String) -> String {
         "\(peer) is already running. Quit it first; both apps share the same games and game service."
     }

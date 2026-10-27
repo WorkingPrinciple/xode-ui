@@ -451,6 +451,13 @@ import Foundation
               && ConcurrentAppGuard.runningPeer(bundleID: ordinary, running: [Run(bundleID: ordinary, pid: 10)], selfPID: 10) == nil
               && ConcurrentAppGuard.runningPeer(bundleID: nil, running: [Run(bundleID: ordinary, pid: 10)], selfPID: 99) == nil,
               "REQ-138 F4: the ordinary and Qualification apps, and a second copy of either, refuse to run at the same time")
+        let copies: [(path: String, bundleID: String, build: Int)] = [
+            ("/Applications/Ode.app", ordinary, 681), ("/Applications/Q.app", qual, 690),
+            ("/Applications/Other.app", "com.example.other", 999)]
+        check(ConcurrentAppGuard.newerInstalledBuild(selfBuild: 681, installed: copies)?.build == 690
+              && ConcurrentAppGuard.newerInstalledBuild(selfBuild: 690, installed: copies) == nil
+              && ConcurrentAppGuard.newerBuildMessage(path: "/Applications/Q.app", build: 690).contains("build 690"),
+              "Owner hardening 2: an older X Ode of either variant refuses to start games once a newer build is installed; other apps are ignored")
         let fh6 = NativeLaunchSupport.notSupported(NativeLaunchSupport.inTestingReason)
         check(fh6.unavailableTitle == "In testing on Mac" && !fh6.unavailableTitle.contains("Not available")
               && NativeLaunchSupport.notSupported("x").unavailableTitle == NativeLaunchSupport.notSupportedTitle,
@@ -459,6 +466,8 @@ import Foundation
                 == "Gated was installed. Play isn't offered for it in this build yet."
               && GameReadyAnnouncement(productID: "A", title: "Game", folder: "/x").body == "Game is ready to play.",
               "L19 MED 3: an installed title Play can't start is never announced as ready to play")
+        check(GameOperationsController.finishPlayingMessage("Hades") == "Finish playing Hades first, then try again.",
+              "d6d729c0 LOW: uninstall or repair of the game that's playing explains itself")
         func status(_ code: String, success: Bool) -> NativeInstallationStatus {
             NativeInstallationStatus(version: 1, operation: "install-status", product: "FIXTURE00095",
                 runID: UUID().uuidString, gameDirectory: "/fixture", logDirectory: "/fixture/log",
