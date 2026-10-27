@@ -22,6 +22,26 @@ protocol UpdateSession: AnyObject {
     func resumeInstallation(_ info: AppUpdateInfo) throws
 }
 
+enum SparkleCheckOutcome {
+    static func resolve(response: AppUpdateFeedResponse?, callbackError: Error?,
+                        cycleError: Error?) throws -> AppUpdateFeedResponse {
+        // Sparkle 2.10.1 SUErrors.h: SUNoUpdateError = 1001. Domain is essential:
+        // NSURLErrorDomain also uses 1001 (with a negative sign) for an unrelated error.
+        func isNoUpdate(_ error: Error) -> Bool {
+            let error = error as NSError
+            return error.domain == SUSparkleErrorDomain && error.code == 1001
+        }
+        for error in [cycleError, callbackError].compactMap({ $0 }) {
+            if !isNoUpdate(error) { throw error }
+        }
+        if let response { return response }
+        if [callbackError, cycleError].compactMap({ $0 }).contains(where: isNoUpdate) {
+            return .current(etag: nil)
+        }
+        throw AppUpdateError.rejected
+    }
+}
+
 /// A one-shot relaunch continuation, retained while the app is busy and checked again at invocation.
 @MainActor
 final class DeferredUpdateRelaunch {
@@ -86,6 +106,7 @@ private final class SparkleSession: NSObject, UpdateSession, SPUUpdaterDelegate,
     private let relaunch: DeferredUpdateRelaunch
     private var updater: SPUUpdater?
     private var result: AppUpdateFeedResponse?
+    private var noUpdateError: Error?
     private var continuation: CheckedContinuation<AppUpdateFeedResponse, Error>?
 
     init(bundle: Bundle, isBusy: @escaping () -> Bool,
@@ -113,6 +134,7 @@ private final class SparkleSession: NSObject, UpdateSession, SPUUpdaterDelegate,
         let updater = try startedUpdater()
         guard updater.canCheckForUpdates else { throw AppUpdateError.rejected }
         result = nil
+        noUpdateError = nil
         return try await withCheckedThrowingContinuation { continuation in
             self.continuation = continuation
             updater.checkForUpdateInformation()
@@ -130,20 +152,20 @@ private final class SparkleSession: NSObject, UpdateSession, SPUUpdaterDelegate,
     }
 
     func updaterDidNotFindUpdate(_ updater: SPUUpdater, error: Error) {
-        result = .current(etag: nil)
+        noUpdateError = error
     }
 
     func updater(_ updater: SPUUpdater, didFinishUpdateCycleFor updateCheck: SPUUpdateCheck, error: Error?) {
         guard let continuation else { return }
         self.continuation = nil
-        if let result {
-            continuation.resume(returning: result)
-        } else if let error {
+        do {
+            continuation.resume(returning: try SparkleCheckOutcome.resolve(
+                response: result, callbackError: noUpdateError, cycleError: error))
+        } catch {
             continuation.resume(throwing: error)
-        } else {
-            continuation.resume(throwing: AppUpdateError.rejected)
         }
         result = nil
+        noUpdateError = nil
     }
 
     func updater(_ updater: SPUUpdater, shouldPostponeRelaunchForUpdate item: SUAppcastItem,

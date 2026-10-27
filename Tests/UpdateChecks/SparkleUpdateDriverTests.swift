@@ -6,6 +6,26 @@ import XodusManagement
 
 @MainActor
 final class SparkleUpdateDriverTests: XCTestCase {
+    func testFailedCycleNeverBecomesUpToDate() throws {
+        let noUpdate = NSError(domain: "SUSparkleErrorDomain", code: 1001)
+        let offline = URLError(.notConnectedToInternet)
+        let parseFailure = NSError(domain: "SUSparkleErrorDomain", code: 1000)
+        XCTAssertEqual(try SparkleCheckOutcome.resolve(response: nil,
+            callbackError: noUpdate, cycleError: noUpdate), .current(etag: nil))
+        for error in [offline as NSError, parseFailure,
+                      NSError(domain: "OtherDomain", code: 1001)] {
+            XCTAssertThrowsError(try SparkleCheckOutcome.resolve(
+                response: nil, callbackError: error, cycleError: nil))
+            XCTAssertThrowsError(try SparkleCheckOutcome.resolve(
+                response: .current(etag: nil), callbackError: noUpdate, cycleError: error))
+            XCTAssertThrowsError(try SparkleCheckOutcome.resolve(
+                response: .available(AppUpdateInfo(version: "1.0"), etag: nil),
+                callbackError: nil, cycleError: error))
+        }
+        XCTAssertThrowsError(try SparkleCheckOutcome.resolve(
+            response: nil, callbackError: nil, cycleError: nil))
+    }
+
     func testMissingConfigurationNeverConstructsSparkle() async {
         for info: [String: Any] in [
             [:], ["SUFeedURL": "https://example.invalid/appcast.xml"],
