@@ -53,10 +53,12 @@ run 08-discover "REQ-5 REQ-65 REQ-91 REQ-60 REQ-61" press "$OUT" xodus.navigatio
 run 09-discover-down "REQ-91 REQ-21" scroll "$OUT" down 2
 run 10-back-to-library "REQ-8 REQ-9" press "$OUT" xodus.navigation.library
 run 11-back-to-discover "REQ-8 REQ-9" press "$OUT" xodus.navigation.discover
-run 12a-open-search "REQ-10 REQ-59" press "$OUT" xodus.catalog.openSearch
-run 12-search "REQ-10 REQ-59 REQ-60 REQ-61 REQ-62 REQ-9" set-search "$OUT" "$SEARCH_QUERY"
-run 13-detail "REQ-11 REQ-23 REQ-62 REQ-63 REQ-77 REQ-61" press "$OUT" "label:View $DETAIL_TITLE"
-run 14-detail-close "REQ-11" press "$OUT" "label:Close"
+run 11b-library-for-detail "REQ-11" press "$OUT" xodus.navigation.library
+run 12-detail "REQ-11 REQ-23 REQ-62 REQ-63 REQ-77 REQ-61" press "$OUT" "label:View $DETAIL_TITLE"
+run 13-detail-close "REQ-11" press "$OUT" "label:Close"
+run 14a-discover "REQ-10" press "$OUT" xodus.navigation.discover
+run 14b-open-search "REQ-10 REQ-59" press "$OUT" xodus.catalog.openSearch
+run 14-search "REQ-10 REQ-59 REQ-60 REQ-61 REQ-62 REQ-9" set-search "$OUT" "$SEARCH_QUERY"
 run 15-downloads "REQ-51 REQ-23" press "$OUT" xodus.navigation.downloads
 run 16-account "REQ-93 REQ-49" press "$OUT" xodus.account
 run 17-account-close "REQ-93" press "$OUT" xodus.account.close

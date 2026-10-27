@@ -97,13 +97,11 @@ struct XodusToolbar: ToolbarContent {
     let openAccount: () -> Void
 
     @ToolbarContentBuilder var body: some ToolbarContent {
-        if libraryContrast {
-            ToolbarItem(placement: .principal) {
-                HStack(spacing: 8) { navigationControls }
-                    .modifier(NativeToolbarMaterial())
-            }
-        } else {
-            ToolbarItemGroup(placement: .principal) { navigationControls }
+        // REQ-19: build 650 showed the Library grid scrolling under bare section labels when no hero is shown,
+        // so the section controls always sit on the toolbar material, not only over hero artwork.
+        ToolbarItem(placement: .principal) {
+            HStack(spacing: 8) { navigationControls }
+                .modifier(NativeToolbarMaterial())
         }
         if #available(macOS 26, *) {
             ToolbarSpacer(.flexible, placement: .primaryAction)
