@@ -21,6 +21,8 @@ enum ManagementChecks {
                     discover: CommandLine.arguments.contains("--probe-discovery"),
                     query: CommandLine.arguments.contains("--probe-query"),
                     inspect: CommandLine.arguments.contains("--probe-inspect"))
+            } else if CommandLine.arguments.contains("--app-update-checks") {
+                await checks.appUpdateChecks()
             } else if CommandLine.arguments.contains("--descriptor-metrics-checks") {
                 try await checks.descriptorMetricsChecks()
             } else if CommandLine.arguments.contains("--overflow-checks") {

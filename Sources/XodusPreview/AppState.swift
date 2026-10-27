@@ -110,7 +110,7 @@ final class AppState: ObservableObject {
         }
         return nil
     }
-    private lazy var updateDriver = SparkleUpdateDriver(
+    private lazy var updateDriver: SparkleUpdateDriver = SparkleUpdateDriver(
         isBusy: { [weak self] in self?.appUpdateBusy ?? true },
         readyToRelaunch: { [weak self] info in
             guard let self else { return }
@@ -118,7 +118,7 @@ final class AppState: ObservableObject {
             Task { await self.appUpdate.installWhenIdle() }
         })
     /// REQ-143 / COR-298: absent feed/key keeps Sparkle unstarted.
-    lazy var appUpdate = AppUpdateController(
+    lazy var appUpdate: AppUpdateController = AppUpdateController(
         driver: updateDriver,
         preferences: AppUpdatePreferences(defaults: settingsDefaults),
         currentVersion: AppBrand.current.version.flatMap { UpdateVersion($0) },
