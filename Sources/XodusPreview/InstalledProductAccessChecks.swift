@@ -41,6 +41,27 @@ enum InstalledProductAccessChecks {
               "REQ-119 F1: Access checks run back to back with no fixed 100 ms gap (21 synthetic checks took \(elapsed))")
         pendingAccess.retire()
 
+        let sweep = InstalledProductAccess()
+        let sweepIDs = (0..<12).map { String(format: "9SWEEP%06d", $0) }
+        let urgent = "9URGENT00001"
+        var order: [String] = []
+        let slowReader: @MainActor (String) async throws -> OdeAccountRead = { id in
+            order.append(id)
+            try await Task.sleep(for: .milliseconds(30))
+            return try response(id)
+        }
+        let running = Task { @MainActor in
+            await sweep.refresh(account: account, installedIDs: sweepIDs, now: now, read: slowReader)
+        }
+        for _ in 0..<100 where order.count < 2 { try await Task.sleep(for: .milliseconds(5)) }
+        await sweep.prioritize(urgent, account: account, installedIDs: sweepIDs + [urgent], read: slowReader)
+        await running.value
+        let urgentIndex = order.firstIndex(of: urgent)
+        check(urgentIndex.map { $0 <= 3 } == true && order.count == sweepIDs.count + 1
+              && sweep.permits(urgent, account: account, now: now),
+              "L8 e2e: a deep link's newly registered game is checked next inside a running access sweep, not after it (position \(urgentIndex.map(String.init) ?? "none") of \(order.count))")
+        sweep.retire()
+
         let controller = InstalledProductAccess()
         defer { controller.retire() }
         var requests: [String] = []

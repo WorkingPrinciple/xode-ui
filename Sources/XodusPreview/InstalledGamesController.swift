@@ -734,6 +734,12 @@ final class InstalledGamesController: ObservableObject {
     }
 
     private func launchRequestOutcome(_ game: InstalledGame, engine: String?, timeout: Duration) async -> String? {
+        if !canRequestPlay(game.storeId), let session = unifiedSession {
+            // A just-registered game shouldn't wait behind the full background access sweep.
+            Task { @MainActor in
+                await productAccess.prioritize(game.storeId, session: session, installedIDs: games.map(\.storeId))
+            }
+        }
         let settled = await Self.waitUntil(timeout: timeout) { productAccessSettled(game.storeId) }
         guard canRequestPlay(game.storeId) else {
             return settled ? (productAccessNotice(for: game) ?? "Access to this game hasn't been confirmed for your Xbox account.")
