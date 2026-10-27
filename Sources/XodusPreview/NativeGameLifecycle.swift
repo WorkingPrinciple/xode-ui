@@ -5,7 +5,7 @@ import OSLog
 import XodusManagement
 
 enum NativeLifecyclePins {
-    static let cliSHA256 = "5a854834e146839a132ad86e1625ce85530092ac7a30d9e987e3dbd50fdb9e30"
+    static let cliSHA256 = "a00eba7df19ec5ae861910eebdef43f51d0323e9c961104b4ff1b92824abc6c4"
 }
 
 struct NativeGameResult: Codable, Equatable, Sendable {
