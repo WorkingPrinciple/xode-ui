@@ -156,6 +156,29 @@ enum DiscoverBrowse {
         if owned && accessIsCurrent { return true }
         return gamePass && subscriptionActive
     }
+
+    enum SpotlightTier: Int, Comparable {
+        /// Supported on this Mac and the account can play or install it now.
+        case playable
+        /// Supported on this Mac; access is unconfirmed (not held, not in an active Game Pass).
+        case supported
+        /// A known Mac support issue: never featured while other titles remain.
+        case unsupported
+        static func < (lhs: Self, rhs: Self) -> Bool { lhs.rawValue < rhs.rawValue }
+    }
+
+    /// Spotlight picks from the leading store-order window, ranking only known facts: playable titles
+    /// first, then supported ones, keeping store order within a tier. Titles with a known support
+    /// issue are dropped unless nothing else is available.
+    static func spotlight<Item>(_ items: [Item], limit: Int = 5, window: Int = 48,
+                                tier: (Item) -> SpotlightTier) -> [Item] {
+        let ranked = items.prefix(max(limit, window)).enumerated()
+            .map { (offset: $0.offset, item: $0.element, tier: tier($0.element)) }
+        let usable = ranked.filter { $0.tier != .unsupported }
+        guard !usable.isEmpty else { return Array(items.prefix(limit)) }
+        return usable.sorted { $0.tier == $1.tier ? $0.offset < $1.offset : $0.tier < $1.tier }
+            .prefix(limit).map(\.item)
+    }
 }
 
 enum DiscoverCopy {
@@ -324,6 +347,7 @@ struct LiveCatalogView: View {
     @ObservedObject var library: PCGamesController
     @ObservedObject var installed: InstalledGamesController
     @ObservedObject var operations: GameOperationsController
+    var queue: DownloadQueueController? = nil
     @EnvironmentObject private var session: LiveSession
     @Environment(\.openSettings) private var openSettings
     @ObservedObject var art = LibraryCatalogArtwork.shared
@@ -923,7 +947,16 @@ struct LiveCatalogView: View {
             pcCandidate: game.pc != nil || game.product?.pcCatalogCandidate == true)
     }
 
-    private var featuredGames: [CatalogProduct] { Array(visible.prefix(5)) }
+    private var featuredGames: [CatalogProduct] {
+        DiscoverBrowse.spotlight(visible) { product in
+            let game = game(product)
+            guard unsupportedIssues(game).isEmpty else { return .unsupported }
+            if let match = game.installed {
+                return installed.launchableIDs.contains(match.id) ? .playable : .supported
+            }
+            return canReviewInstall(game) ? .playable : .supported
+        }
+    }
 
     private var featuredCarousel: some View {
         GeometryReader { geometry in
@@ -1088,7 +1121,7 @@ struct LiveCatalogView: View {
                           disabledReason: BrowseGate.installDisabledReason(startupComplete: startupComplete,
                             otherwise: game.pc == nil && game.product?.pcCatalogCandidate != true
                                 ? "PC availability for this title hasn't been confirmed. Installation is unavailable."
-                                : library.installAccessNotice(for: game.id)))
+                                : library.installAccessNotice(for: game.id)), queue: queue)
     }
 
     @ViewBuilder private func actions(_ game: LibraryGame, primary: Bool) -> some View {
@@ -1158,11 +1191,11 @@ struct DiscoverHeroScrim: View {
 
 /// When a hero may swap its install control for View Details plus a reason. Only a static
 /// "can't install" qualifies: while this game is preparing, installing, checking an existing
-/// installation or prechecking, the control keeps its in-place progress and Cancel.
+/// installation, the control keeps its in-place progress and Cancel. A Mac precheck shows no
+/// in-place progress in the control, so it must not hide the reason behind a disabled Download.
 enum HeroInstallReplacement {
-    static func reason(unavailable: String?, active: Bool, preparing: Bool, checking: Bool,
-                       prechecking: Bool) -> String? {
-        guard let unavailable, !active, !preparing, !checking, !prechecking else { return nil }
+    static func reason(unavailable: String?, active: Bool, preparing: Bool, checking: Bool) -> String? {
+        guard let unavailable, !active, !preparing, !checking else { return nil }
         return unavailable
     }
 }
@@ -1170,10 +1203,10 @@ enum HeroInstallReplacement {
 extension GameInstallAction {
     /// Mirrors the in-place states GameInstallAction renders for this game.
     var heroReplacementReason: String? {
-        HeroInstallReplacement.reason(unavailable: unavailableReason, active: active, preparing: preparing,
+        if queueOffered { return nil }
+        return HeroInstallReplacement.reason(unavailable: unavailableReason, active: active, preparing: preparing,
             checking: operations.checkingExistingInstallation(productID: game.id)
                 || (operations.installationCheckRequired(for: game)
-                    && operations.existingInstallationError(productID: game.id) == nil),
-            prechecking: operations.precheckingProductID == game.id)
+                    && operations.existingInstallationError(productID: game.id) == nil))
     }
 }

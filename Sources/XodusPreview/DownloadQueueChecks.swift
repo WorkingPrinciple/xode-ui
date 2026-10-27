@@ -141,5 +141,27 @@ enum DownloadQueueChecks {
         try await settle { raceController.job(id: x)?.phase == .completed }
         check(raceController.job(id: x)?.phase == .completed,
               "A natural completion delivered after a late pause wins, so the job is not stranded paused")
+
+        // REQ-148: any number of games queue behind one active download and start in order;
+        // queuing the same game twice keeps one job.
+        let fifoEngine = Engine()
+        let fifo = DownloadQueueController(driver: Driver(engine: fifoEngine), maxConcurrent: 1)
+        let titles = ["One", "Two", "Three", "Four"]
+        let ids = titles.map { fifo.enqueue(productID: "9NBLGGH0000" + $0, title: $0, destination: "/games/" + $0) }
+        let again = fifo.enqueue(productID: "9NBLGGH0000Two", title: "Two", destination: "/games/Two")
+        check(again == ids[1] && fifo.jobs.count == titles.count && fifo.pendingJob(productID: "9NBLGGH0000Two")?.id == ids[1],
+              "REQ-148: Adding a queued game again keeps its single job")
+        var started: [UUID] = []
+        for _ in titles {
+            try await settle { await fifoEngine.activeRuns.count == 1 }
+            check(await fifoEngine.activeRuns.count == 1, "REQ-148: Only one queued download runs at a time")
+            guard let active = fifo.jobs.first(where: { $0.phase.occupiesSlot }) else { break }
+            started.append(active.id)
+            await fifoEngine.complete(await fifoEngine.activeRuns.first ?? "")
+            try await settle { fifo.job(id: active.id)?.phase == .completed }
+        }
+        check(started == ids && fifo.jobs.allSatisfy { $0.phase == .completed }
+              && fifo.pendingJob(productID: "9NBLGGH0000Two") == nil,
+              "REQ-148: Queued downloads start automatically in the order they were added")
     }
 }

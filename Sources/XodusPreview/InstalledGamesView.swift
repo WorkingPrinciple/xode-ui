@@ -329,9 +329,35 @@ struct InstalledPlayButton: View {
         return nil
     }
 
+    /// Why the readiness action can't run right now, so no surface shows a silent disabled Download.
+    static func nativeBlockedReason(actionIsCheck: Bool, readiness: String?, editing: Bool, terminating: Bool,
+                                    canStartMutation: Bool, mutationReason: String?,
+                                    otherGameRunning: Bool) -> String? {
+        if terminating { return "\(AppBrand.displayName) is closing." }
+        if !actionIsCheck, !canStartMutation, let mutationReason { return mutationReason }
+        if let readiness { return readiness }
+        if editing { return "Finish choosing or editing the game location first." }
+        guard !actionIsCheck else { return nil }
+        if otherGameRunning { return "Quit the running game first." }
+        return canStartMutation ? nil : "Wait for the current game operation to finish."
+    }
+
+    var nativeBlockedReason: String? {
+        Self.nativeBlockedReason(actionIsCheck: nativeAction == .check, readiness: nativeReadinessUnavailableReason,
+            editing: library.editing || library.choosing, terminating: library.applicationTerminating,
+            canStartMutation: operations.canStartMutation, mutationReason: operations.installUnavailableReason,
+            otherGameRunning: library.runningGameID != nil)
+    }
+
     @ViewBuilder private var nativeInstallationButton: some View {
         if nativeActionTitle == "Checking…" {
             ProgressView("Checking…").controlSize(.small)
+        } else if heroStyle || !showsDiagnostics, let reason = nativeBlockedReason {
+            Label(reason, systemImage: "info.circle")
+                .font(heroStyle ? .callout : .caption).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityLabel("\(nativeActionTitle) unavailable for \(actionGameTitle). \(reason)")
+                .accessibilityIdentifier("xodus.installed.blockedReason")
         } else {
         Button {
             let action = nativeAction
@@ -358,7 +384,7 @@ struct InstalledPlayButton: View {
         .disabled(library.checkingInstallations.contains(game.id) || library.editing || library.choosing
                   || library.applicationTerminating || nativeReadinessUnavailableReason != nil
                   || (nativeAction != .check && (!operations.canStartMutation || library.runningGameID != nil)))
-        .help(nativeReadinessUnavailableReason ?? "\(nativeActionTitle) for \(actionGameTitle)")
+        .help(nativeBlockedReason ?? "\(nativeActionTitle) for \(actionGameTitle)")
         .accessibilityLabel("\(nativeActionTitle) for \(actionGameTitle)")
         .accessibilityIdentifier("xodus.installed.readinessAction")
         }

@@ -27,6 +27,7 @@ struct LiveLibraryView: View {
     @ObservedObject var library: PCGamesController
     @ObservedObject var installed: InstalledGamesController
     @ObservedObject var operations: GameOperationsController
+    var queue: DownloadQueueController? = nil
     @EnvironmentObject private var session: LiveSession
     let query: String
     var allowsStartupTasks = true
@@ -468,7 +469,7 @@ struct LiveLibraryView: View {
                                 pcCandidate: true)),
                         showsDiagnostics: false,
                         disabledReason: BrowseGate.installDisabledReason(startupComplete: startupComplete,
-                            otherwise: library.installAccessNotice(for: game.id)))
+                            otherwise: library.installAccessNotice(for: game.id)), queue: queue)
                 }
                 let blockedReason = install?.heroReplacementReason
                 if let install, blockedReason == nil { install }

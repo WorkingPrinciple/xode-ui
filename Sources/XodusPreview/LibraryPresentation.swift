@@ -372,16 +372,29 @@ struct LibraryGame: Identifiable {
             }
     }
 
-    static func heroCandidates(qualified: [Self], catalogue: [Self], continuingIDs: [UUID]) -> [Self] {
+    /// Spotlight order: launchable installs first (most recently played first), then held games that
+    /// aren't installed, then installed records that can't launch (missing folder, incomplete or
+    /// unverified), which only fill the remaining slots. Membership still prefers subscription-held,
+    /// then purchased, then any qualified, then catalogue titles.
+    static func heroCandidates(qualified: [Self], catalogue: [Self], continuingIDs: [UUID],
+                               launchableIDs: Set<UUID>? = nil) -> [Self] {
         let order = Dictionary(continuingIDs.enumerated().map { ($1, $0) },
                                uniquingKeysWith: { first, _ in first })
         let subscriptions = qualified.filter { $0.pc?.acquisitionKind == .subscription }
         let purchases = qualified.filter { $0.pc?.acquisitionKind == .purchased }
         let source = !subscriptions.isEmpty ? subscriptions
             : !purchases.isEmpty ? purchases : !qualified.isEmpty ? qualified : catalogue
-        return Array(source.sorted {
-            let left = $0.installed.flatMap { order[$0.id] } ?? ($0.installed == nil ? 2_000 : 1_000)
-            let right = $1.installed.flatMap { order[$0.id] } ?? ($1.installed == nil ? 2_000 : 1_000)
+        let launchableHeld = launchableIDs.map { ids in
+            qualified.filter { $0.installed.map { ids.contains($0.id) } == true }
+        } ?? []
+        let pool = launchableHeld + source.filter { game in !launchableHeld.contains { $0.id == game.id } }
+        func rank(_ game: Self) -> Int {
+            guard let installed = game.installed else { return 2_000 }
+            if let launchableIDs, !launchableIDs.contains(installed.id) { return 3_000 }
+            return order[installed.id] ?? 1_000
+        }
+        return Array(pool.sorted {
+            let left = rank($0), right = rank($1)
             return left == right ? $0.title.localizedStandardCompare($1.title) == .orderedAscending : left < right
         }.prefix(6))
     }

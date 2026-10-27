@@ -615,6 +615,7 @@ struct LiveRootView: View {
                          allowed: startupAllowed, accountHash: session.accountHash) { product, reviewInstall in
             LiveProductView(product: product, library: state.pcGames,
                             installedLibrary: state.installedGames, operations: state.gameOperations,
+                            queue: state.downloadQueue,
                             allowsStartupTasks: startupAllowed, allowsArtworkLoading: libraryArtworkAllowed,
                             reviewInstall: reviewInstall)
         }
@@ -843,7 +844,7 @@ struct LiveRootView: View {
                     .accessibilityIdentifier("xodus.library.recentActivity")
             } else {
                 LiveLibraryView(library: state.pcGames, installed: state.installedGames,
-                                operations: state.gameOperations,
+                                operations: state.gameOperations, queue: state.downloadQueue,
                                 query: state.query(for: .library).trimmingCharacters(in: .whitespacesAndNewlines),
                                 allowsStartupTasks: libraryInputs.allowsStartupTasks,
                                 startupComplete: libraryInputs.startupComplete,
@@ -904,7 +905,7 @@ struct LiveRootView: View {
     }
     private var catalog: some View {
         LiveCatalogView(library: state.pcGames, installed: state.installedGames,
-                        operations: state.gameOperations,
+                        operations: state.gameOperations, queue: state.downloadQueue,
                         query: state.query(for: .discover).trimmingCharacters(in: .whitespacesAndNewlines),
                         allowsArtworkLoading: libraryArtworkAllowed,
                         allowsStartupTasks: discoverInputs.allowsStartupTasks,
