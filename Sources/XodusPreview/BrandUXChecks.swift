@@ -1287,6 +1287,16 @@ enum BrandUXChecks {
         check(installedFailure.failure == "Installed failed" && quietRetry.failure == nil && quietRetry.covers
               && PCGamesController.surfacedError("Library failed", retryPending: false) == "Library failed",
               "REQ-75/P0: Setup fails visibly on an installed-games error, but stays quiet while a silent library retry is scheduled")
+        var warmSaved = LibraryFirstLoad()
+        warmSaved.begin(at: t0)
+        warmSaved.update(LibraryFirstLoadInputs(loading: true, gamesFound: 12, showingSavedLibrary: true),
+                         now: t0 + .milliseconds(100))
+        var savedButEmpty = LibraryFirstLoad()
+        savedButEmpty.begin(at: t0)
+        savedButEmpty.update(LibraryFirstLoadInputs(loading: true, gamesFound: 0, showingSavedLibrary: true),
+                             now: t0 + .seconds(1))
+        check(warmSaved.phase == .finished(.ready) && !warmSaved.covers && savedButEmpty.covers,
+              "REQ-119: A warm launch with the saved library on screen ends setup inside the grace delay, so no overlay; an empty one doesn't")
         let faultFile = FileManager.default.temporaryDirectory.appendingPathComponent("xodus-fault-\(UUID().uuidString)")
         let faultEnvironment = ["XODUS_DEBUG_FAULT_FILE": faultFile.path]
         let faultAbsent = !DebugFaultInjection.active(.catalog, environment: faultEnvironment)

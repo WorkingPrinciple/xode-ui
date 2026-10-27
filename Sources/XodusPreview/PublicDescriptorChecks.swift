@@ -770,6 +770,41 @@ enum PublicDescriptorChecks {
         check(retryScheduled && !failedController.detailRetryPending
               && failedController.detailRetriesLeft == PCGamesController.detailRetryDelays.count,
               "Review Low: A failed library read schedules one bounded silent retry, and sign-out cancels it and restores the budget")
+        let savedFile = root.appendingPathComponent("library-snapshot/library-v1.plist")
+        let savedStore = LibrarySnapshotStore(file: savedFile)
+        let firstRun = PCGamesController(store: UnavailableDescriptorCredentials(),
+            client: PCGamesClient(transport: DescriptorTransport()))
+        firstRun.savedLibrary = savedStore
+        firstRun.useUnifiedAccount(session)
+        await firstRun.loadOnAppear()
+        await firstRun.waitForLoad()
+        let firstGames = firstRun.representedGames.map(\.id)
+        let savedBytes = (try? Data(contentsOf: savedFile)) ?? Data()
+        let savedMode = (try? FileManager.default.attributesOfItem(atPath: savedFile.path)[.posixPermissions] as? Int) ?? 0
+        let rawAccount = firstRun.snapshot?.accountID.map { savedBytes.range(of: Data($0.utf8)) != nil } ?? false
+        let warmRun = PCGamesController(store: UnavailableDescriptorCredentials(),
+            client: PCGamesClient(transport: DescriptorTransport()))
+        warmRun.savedLibrary = savedStore
+        warmRun.useUnifiedAccount(session)
+        let restoredAtOnce = warmRun.restoreSavedLibrary()
+        let restoredGames = warmRun.representedGames.map(\.id)
+        let restoredNotCurrent = warmRun.showingSavedLibrary && !warmRun.accessIsCurrent
+        await warmRun.loadOnAppear()
+        await warmRun.waitForLoad()
+        check(!firstGames.isEmpty && !savedBytes.isEmpty && savedMode == 0o600 && !rawAccount
+              && restoredAtOnce && restoredGames == firstGames && restoredNotCurrent
+              && !warmRun.showingSavedLibrary && warmRun.representedGames.map(\.id) == firstGames,
+              "REQ-119: A warm launch draws the saved library at once (owner-only file, no raw account ID), never as current access, and the account read replaces it")
+        let otherScope = savedStore.load(accountHash: session.accountHash, market: "ZZ", language: session.language) == nil
+            && savedStore.load(accountHash: "another-account", market: session.market, language: session.language) == nil
+        savedStore.clear()
+        let cleared = savedStore.load(accountHash: session.accountHash, market: session.market, language: session.language) == nil
+        let clearedController = PCGamesController(store: UnavailableDescriptorCredentials(),
+            client: PCGamesClient(transport: DescriptorTransport()))
+        clearedController.savedLibrary = savedStore
+        clearedController.useUnifiedAccount(session)
+        check(otherScope && cleared && !clearedController.restoreSavedLibrary() && clearedController.snapshot == nil,
+              "REQ-119: The saved library is bound to account and catalogue scope, and after sign-out cleanup nothing is restored")
         check(await session.disconnect(), "Descriptor retirement check joins its isolated management child")
 
         let invalidTransport = DescriptorTransport()
@@ -1241,6 +1276,24 @@ extension PublicDescriptorChecks {
               && !joined.data.isEmpty && !warmed.data.isEmpty,
               "REQ-121 review L6: A first-screen read joining a queued background warmup promotes it ahead of other background work, with one shared request")
 
+        let pairingTransport = DescriptorTransport()
+        await pairingTransport.configure(heldIDs: Set(ids(20, offset: 13_000)))
+        let pairingIDs = ids(91, offset: 13_000)
+        let pairingStore = PublicCatalogDescriptors(transport: pairingTransport)
+        let pairingResolution = Task {
+            try await PCGamesClient(transport: pairingTransport, descriptors: pairingStore)
+                .resolveCollection(ids: pairingIDs, kinds: [:], candidateCount: 91, market: "US", language: "en-US")
+        }
+        try await wait(pairingTransport, count: 5)
+        await pairingTransport.releaseHeld()
+        let paired = try await pairingResolution.value
+        let pairingArtwork = LibraryCatalogArtwork(descriptors: PublicCatalogDescriptors(transport: DescriptorTransport()))
+        await pairingArtwork.load(ids: pairingIDs, market: "US", language: "en-US")
+        check(paired.unresolvedCount == 0 && paired.detailFailureCount == 0
+              && paired.games.count + paired.excludedCount == 91
+              && pairingArtwork.images.count == 91 && pairingArtwork.error == nil,
+              "P1: Concurrent descriptor batches completing out of order are each validated against their own IDs (91 IDs, 5 batches; resolver and artwork)")
+
         // Each defect below is planted in an otherwise valid, in-age record, so each check stands alone.
         let corruptDirectory = root.appendingPathComponent("corrupt")
         let encoder = PropertyListEncoder()
@@ -1399,3 +1452,4 @@ extension PublicDescriptorChecks {
     }
 }
 #endif
+
