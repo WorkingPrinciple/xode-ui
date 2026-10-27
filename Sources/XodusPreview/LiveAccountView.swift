@@ -37,9 +37,7 @@ struct LiveAccountView: View {
             } else {
                 VStack(spacing: 16) {
                     if !session.hasConfirmedSignIn {
-                        XOdeLockup(markSize: 48, markStyle: AnyShapeStyle(XboxBrand.lightGreen),
-                                   wordmarkFont: .title2.weight(.medium),
-                                   markBackground: AnyShapeStyle(Color(red: 12 / 255, green: 40 / 255, blue: 25 / 255)))
+                        XOdeLockup(markSize: 48, wordmarkFont: .title2.weight(.medium))
                             .accessibilityAddTraits(.isHeader)
                     }
                     if session.hasConfirmedSignIn {
@@ -151,7 +149,7 @@ struct LiveAccountView: View {
                 await companion.refresh(for: state.gameOperations.serviceStatus)
             }
         }
-        .tint(XboxBrand.green)
+        .tint(OdeBrand.tint)
         .interactiveDismissDisabled(session.signInPending)
         .confirmationDialog("Sign out of Xbox Live on this Mac?", isPresented: $interaction.confirmingSignOut) {
             Button("Sign out of Xbox Live", role: .destructive) { Task { await state.signOut(session: session) } }
