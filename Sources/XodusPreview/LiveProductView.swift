@@ -143,6 +143,7 @@ struct LiveProductView: View {
     @ObservedObject var library: PCGamesController
     @ObservedObject var installedLibrary: InstalledGamesController
     @ObservedObject var operations: GameOperationsController
+    var queue: DownloadQueueController? = nil
     var installationID: UUID? = nil
     var allowsStartupTasks = true
     var allowsArtworkLoading = true
@@ -417,7 +418,7 @@ struct LiveProductView: View {
                                               enabled: allowsStartupTasks,
                                               disabledReason: installAccessReason,
                                               recoveryTitle: operations.installAccountUnavailable ? "Account settings" : nil,
-                                              recover: { openSettings() }, reviewInstall: reviewInstall)
+                                              recover: { openSettings() }, reviewInstall: reviewInstall, queue: queue)
                         } else if gamePass, !operations.usesUnifiedAccount {
                             VStack(alignment: .leading, spacing: 8) {
                             Button {

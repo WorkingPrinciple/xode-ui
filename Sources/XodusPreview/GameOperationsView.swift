@@ -414,6 +414,8 @@ struct GameInstallAction: View {
     var recoveryTitle: String? = nil
     var recover: (() -> Void)? = nil
     var reviewInstall: ((PCGame) -> Void)? = nil
+    /// When set, a Download blocked only by another game's operation becomes Add to queue.
+    var queue: DownloadQueueController? = nil
     var preparing: Bool {
         (operations.preparingConsent && operations.preparingInstallProductID == game.id)
             || (operations.installingDirectly && operations.directInstallProductID == game.id)
@@ -445,6 +447,20 @@ struct GameInstallAction: View {
             : (operations.installUnavailableReason ?? "Installation is not available yet.")
     }
     var showsCancel: Bool { preparing || (active && operations.canCancel) }
+    /// One download runs at a time; while the slot is held by another game, or earlier queued
+    /// games are still waiting, this game joins the queue instead of showing a dead Download.
+    var queueOffered: Bool {
+        guard let queue else { return false }
+        return Self.offersQueue(enabled: enabled, checkRequired: operations.installationCheckRequired(for: game),
+            active: active, preparing: preparing, canQueue: operations.canQueueInstall,
+            slotHeldByAnotherGame: operations.slotHeldByAnotherGame(productID: game.id),
+            queueHasUnfinishedJob: queue.jobs.contains { !$0.phase.isTerminal })
+    }
+    static func offersQueue(enabled: Bool, checkRequired: Bool, active: Bool, preparing: Bool, canQueue: Bool,
+                            slotHeldByAnotherGame: Bool, queueHasUnfinishedJob: Bool) -> Bool {
+        enabled && !checkRequired && !active && !preparing && canQueue
+            && (slotHeldByAnotherGame || queueHasUnfinishedJob)
+    }
 
     func registrationStatusTitle(installed: Bool) -> String? {
         guard !active, !preparing else { return nil }
@@ -499,6 +515,8 @@ struct GameInstallAction: View {
                     .disabled(operations.cancelling || operations.directInstallCancelled)
                     .accessibilityLabel(preparing ? "Cancel installation of \(game.title)" : "Stop downloading \(game.title)")
                 }
+            } else if let queue, queueOffered {
+                QueueInstallButton(game: game, operations: operations, queue: queue, primary: primary)
             } else {
                 Button {
                     Task { await requestInstall() }
@@ -525,6 +543,57 @@ struct GameInstallAction: View {
         }
         .task(id: operations.automaticInstallationKey(for: game)) {
             await operations.automaticallyCheckExistingInstallation(game)
+        }
+    }
+}
+
+/// Add to queue, or the queued state, for a game whose Download waits behind another one.
+struct QueueInstallButton: View {
+    let game: PCGame
+    @ObservedObject var operations: GameOperationsController
+    @ObservedObject var queue: DownloadQueueController
+    var primary = true
+    @State private var adding = false
+    @State private var error: String?
+
+    var body: some View {
+        if let job = queue.pendingJob(productID: game.id) {
+            Label(job.phase == .paused ? "Queued (paused)" : "Queued", systemImage: "clock")
+                .font(.callout.weight(.semibold))
+                .accessibilityLabel("\(game.title) is in the download queue")
+                .accessibilityIdentifier("xodus.pcGames.queued")
+        } else {
+            Button {
+                Task { await add() }
+            } label: {
+                Label("Add to queue", systemImage: "text.badge.plus")
+            }
+            .modifier(LibraryActionStyle(primary: primary))
+            .disabled(adding)
+            .help("Download \(game.title) after the current download finishes")
+            .accessibilityLabel("Add \(game.title) to download queue")
+            .accessibilityIdentifier("xodus.pcGames.addToQueue")
+            if let error {
+                Label(error, systemImage: "exclamationmark.triangle")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func add() async {
+        adding = true
+        defer { adding = false }
+        do {
+            let destination: String
+            if let resumable = operations.resumableInstallations[game.id]?.destination {
+                destination = resumable
+            } else {
+                destination = try await operations.installDestination(for: game).path
+            }
+            error = nil
+            queue.enqueue(productID: game.id, title: game.title, destination: destination)
+        } catch {
+            self.error = "Couldn't choose an install location. Try again when the current download finishes."
         }
     }
 }

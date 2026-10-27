@@ -16,6 +16,16 @@ final class GameReadyNotifier: NSObject, UNUserNotificationCenterDelegate {
     /// One explanation at a time: notices that finish while it is up wait for its answer instead of stacking alerts.
     private var explaining = false
     private var waiting: [UNNotificationRequest] = []
+    /// Notices that need the explanation while a game is running or X Ode is in the background. They wait
+    /// for the next time the user brings X Ode to the front; nothing interrupts play.
+    private(set) var held: [UNNotificationRequest] = []
+    private var foregroundObserver: NSObjectProtocol?
+    /// True while a game is launching or running.
+    var playActive: () -> Bool = { false }
+    var appFrontmost: () -> Bool = { NSApp?.isActive ?? false }
+    /// Test seams: the explanation and the system add. Production uses PermissionPrompt and the notification center.
+    var explainOverride: ((UserDefaults) -> Bool)?
+    var addOverride: ((UNNotificationRequest) -> Void)?
 
     /// UNUserNotificationCenter requires a bundled app; unbundled tool runs post nothing.
     static var available: Bool {
@@ -49,7 +59,7 @@ final class GameReadyNotifier: NSObject, UNUserNotificationCenterDelegate {
                                             content: Self.content(for: announcement), trigger: nil)
         center.getNotificationSettings { settings in
             let status = settings.authorizationStatus
-            Task { @MainActor in self.deliver(request, status: status) }
+            Task { @MainActor in self.deliver([request], status: status) }
         }
     }
 
@@ -68,31 +78,69 @@ final class GameReadyNotifier: NSObject, UNUserNotificationCenterDelegate {
 
     static let deferredKey = "Xodus.permission.deferred.notifications"
 
-    private func deliver(_ request: UNNotificationRequest, status: UNAuthorizationStatus,
-                         defaults: UserDefaults = .standard) {
-        let center = UNUserNotificationCenter.current()
+    /// Unsolicited modals and activation are allowed only while no game is running and X Ode is frontmost.
+    nonisolated static func interruptionAllowed(playing: Bool, frontmost: Bool) -> Bool { !playing && frontmost }
+
+    private func add(_ request: UNNotificationRequest) {
+        if let addOverride { addOverride(request) } else { UNUserNotificationCenter.current().add(request) }
+    }
+
+    func deliver(_ requests: [UNNotificationRequest], status: UNAuthorizationStatus,
+                 defaults: UserDefaults = .standard) {
+        guard !requests.isEmpty else { return }
         switch Self.step(status: status, deferred: defaults.bool(forKey: Self.deferredKey)) {
         case .add:
+            // A banner only: posting never brings X Ode forward or takes focus from a game.
             defaults.set(false, forKey: PrivacyPermission.notificationsDeniedKey)
-            center.add(request)
+            requests.forEach(add)
         case .skipDenied:
             defaults.set(true, forKey: PrivacyPermission.notificationsDeniedKey)
         case .skipDeferred:
             break
         case .explainThenAsk:
-            guard !explaining else { waiting.append(request); return }
+            guard !explaining else { waiting.append(contentsOf: requests); return }
+            guard Self.interruptionAllowed(playing: playActive(), frontmost: appFrontmost()) else {
+                held.append(contentsOf: requests)
+                watchForeground()
+                return
+            }
             explaining = true
-            let confirmed = PermissionPrompt.confirmFirstUse(.notifications, defaults: defaults)
-            let requests = [request] + waiting
+            let confirmed = explainOverride?(defaults)
+                ?? PermissionPrompt.confirmFirstUse(.notifications, defaults: defaults)
+            let all = requests + waiting
             waiting = []
             explaining = false
             guard confirmed else {
                 defaults.set(true, forKey: Self.deferredKey)
                 return
             }
-            Self.ask(defaults: defaults) { granted in
-                if granted { requests.forEach { center.add($0) } }
+            Self.ask(defaults: defaults) { [weak self] granted in
+                if granted { all.forEach { self?.add($0) } }
             }
+        }
+    }
+
+    /// Delivers held notices once X Ode is frontmost and no game is running, using the current status.
+    func releaseHeld(status: UNAuthorizationStatus, defaults: UserDefaults = .standard) {
+        guard !held.isEmpty, Self.interruptionAllowed(playing: playActive(), frontmost: appFrontmost()) else { return }
+        let requests = held
+        held = []
+        deliver(requests, status: status, defaults: defaults)
+    }
+
+    private func watchForeground() {
+        guard foregroundObserver == nil else { return }
+        foregroundObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in
+            Task { @MainActor in self?.foregrounded() }
+        }
+    }
+
+    private func foregrounded() {
+        guard !held.isEmpty, Self.available else { return }
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            let status = settings.authorizationStatus
+            Task { @MainActor in self.releaseHeld(status: status) }
         }
     }
 
@@ -146,6 +194,7 @@ final class GameReadyNotifier: NSObject, UNUserNotificationCenterDelegate {
         let action = response.actionIdentifier
         let folder = response.notification.request.content.userInfo[Self.folderKey] as? String
         await MainActor.run {
+            // The user clicked this banner, so activating X Ode here is solicited.
             NSApp.activate(ignoringOtherApps: true)
             if action == Self.playAction, let folder { play?(folder) }
         }

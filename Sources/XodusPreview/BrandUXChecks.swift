@@ -468,17 +468,53 @@ enum BrandUXChecks {
     static func heroInstallControl(check: (Bool, String) -> Void) {
         let reason = "Installation is not available yet."
         check(HeroInstallReplacement.reason(unavailable: reason, active: false, preparing: false,
-                                            checking: false, prechecking: false) == reason
+                                            checking: false) == reason
               && HeroInstallReplacement.reason(unavailable: nil, active: false, preparing: false,
-                                               checking: false, prechecking: false) == nil,
+                                               checking: false) == nil,
               "REVIEW H1: A statically unavailable Download is replaced by View Details with its reason")
-        let busy = [(true, false, false, false), (false, true, false, false),
-                    (false, false, true, false), (false, false, false, true)]
+        let busy = [(true, false, false), (false, true, false), (false, false, true)]
         check(busy.allSatisfy { state in
                   HeroInstallReplacement.reason(unavailable: reason, active: state.0, preparing: state.1,
-                                                checking: state.2, prechecking: state.3) == nil
+                                                checking: state.2) == nil
               },
-              "REVIEW H1: While this game is installing, preparing, checking or prechecking, the hero keeps its in-place progress and Cancel")
+              "REVIEW H1: While this game is installing, preparing or checking, the hero keeps its in-place progress and Cancel")
+        let record = GameOperationRecord(id: "fixture-run", kind: .install, productID: "FIXTURE00001",
+                                         title: "The Witcher 3", destination: "/games/Witcher", installedID: nil)
+        check(GameOperationsController.operationInProgressReason(record)
+                == "Another download is in progress (The Witcher 3).",
+              "L21: A Download blocked by another game's download names that download")
+        let otherRunning = InstalledPlayButton.nativeBlockedReason(actionIsCheck: false, readiness: nil,
+            editing: false, terminating: false, canStartMutation: false,
+            mutationReason: "Another download is in progress (The Witcher 3).", otherGameRunning: false)
+        let idle = InstalledPlayButton.nativeBlockedReason(actionIsCheck: false, readiness: nil,
+            editing: false, terminating: false, canStartMutation: true, mutationReason: nil, otherGameRunning: false)
+        let noReason = InstalledPlayButton.nativeBlockedReason(actionIsCheck: false, readiness: nil,
+            editing: false, terminating: false, canStartMutation: false, mutationReason: nil, otherGameRunning: false)
+        check(otherRunning == "Another download is in progress (The Witcher 3)." && idle == nil
+              && noReason?.isEmpty == false,
+              "L21: A blocked native install in the hero always states its reason; it is never a silent disabled Download")
+        check(GameInstallAction.offersQueue(enabled: true, checkRequired: false, active: false, preparing: false,
+                  canQueue: true, slotHeldByAnotherGame: true, queueHasUnfinishedJob: false)
+              && GameInstallAction.offersQueue(enabled: true, checkRequired: false, active: false, preparing: false,
+                  canQueue: true, slotHeldByAnotherGame: false, queueHasUnfinishedJob: true)
+              && !GameInstallAction.offersQueue(enabled: true, checkRequired: false, active: false, preparing: false,
+                  canQueue: true, slotHeldByAnotherGame: false, queueHasUnfinishedJob: false)
+              && !GameInstallAction.offersQueue(enabled: false, checkRequired: false, active: false, preparing: false,
+                  canQueue: true, slotHeldByAnotherGame: true, queueHasUnfinishedJob: false)
+              && !GameInstallAction.offersQueue(enabled: true, checkRequired: false, active: true, preparing: false,
+                  canQueue: true, slotHeldByAnotherGame: true, queueHasUnfinishedJob: false)
+              && !GameInstallAction.offersQueue(enabled: true, checkRequired: false, active: false, preparing: false,
+                  canQueue: false, slotHeldByAnotherGame: true, queueHasUnfinishedJob: false),
+              "L21: Add to queue replaces Download only while another download holds the slot or the queue is busy")
+        typealias Tier = DiscoverBrowse.SpotlightTier
+        let tiers: [String: Tier] = ["Hogwarts": .unsupported, "Witcher": .supported, "Halls": .playable,
+                                     "Forza": .playable, "Ori": .supported]
+        let order = ["Hogwarts", "Witcher", "Halls", "Forza", "Ori"]
+        let featured = DiscoverBrowse.spotlight(order, limit: 3) { tiers[$0] ?? .supported }
+        check(featured == ["Halls", "Forza", "Witcher"],
+              "L21: Spotlight features playable titles first, keeps store order within a tier and drops unsupported ones")
+        check(DiscoverBrowse.spotlight(["A", "B"], limit: 5) { _ in .unsupported } == ["A", "B"],
+              "L21: Spotlight falls back to store order when no title has a better known fact")
         let installed = InstalledGamesController()
         let operations = GameOperationsController(installed: installed)
         let game = PCGame(id: "FIXTURE00009", title: "Hero fixture", artwork: nil)
@@ -981,10 +1017,43 @@ enum BrandUXChecks {
               && postBody.contains("case .explainThenAsk:") && postBody.contains("PermissionPrompt.confirmFirstUse(.notifications")
               && postBody.contains("defaults.set(true, forKey: Self.deferredKey)")
               && postBody.contains("defaults.set(true, forKey: PrivacyPermission.notificationsDeniedKey)")
-              && postBody.contains("guard !explaining else { waiting.append(request); return }")
+              && postBody.contains("guard !explaining else { waiting.append(contentsOf: requests); return }")
               && ((try? String(contentsOfFile: "Sources/XodusPreview/PrivacyPermissions.swift", encoding: .utf8)) ?? "")
                 .components(separatedBy: "GameReadyNotifier.refreshRecordedStatus()").count == 3,
               "REQ-118: The first ready notice explains once (concurrent notices wait for that answer); Not now is remembered; Settings re-reads the real status")
+        // REQ-148: an install that completes during play never shows a modal or activates X Ode.
+        let notifierFixture = GameReadyNotifier()
+        var playing = true, frontmost = false, explained = 0
+        var added: [String] = []
+        notifierFixture.playActive = { playing }
+        notifierFixture.appFrontmost = { frontmost }
+        notifierFixture.explainOverride = { _ in explained += 1; return false }
+        notifierFixture.addOverride = { added.append($0.identifier) }
+        let readySuite = "XodusReadyDuringPlay-\(UUID().uuidString)"
+        if let suite = UserDefaults(suiteName: readySuite) {
+            defer { suite.removePersistentDomain(forName: readySuite) }
+            let notice = UNNotificationRequest(identifier: "ready.fixture", content: UNMutableNotificationContent(), trigger: nil)
+            notifierFixture.deliver([notice], status: .notDetermined, defaults: suite)
+            let heldDuringPlay = explained == 0 && notifierFixture.held.count == 1 && added.isEmpty
+            notifierFixture.deliver([notice], status: .authorized, defaults: suite)
+            let bannerDuringPlay = added == ["ready.fixture"] && explained == 0
+            playing = false
+            notifierFixture.releaseHeld(status: .notDetermined, defaults: suite)
+            let stillHeldInBackground = explained == 0 && notifierFixture.held.count == 1
+            frontmost = true
+            notifierFixture.releaseHeld(status: .notDetermined, defaults: suite)
+            let deliverBody = notifier.range(of: "func deliver(").flatMap { start in
+                notifier.range(of: "private func watchForeground", range: start.upperBound..<notifier.endIndex)
+                    .map { String(notifier[start.lowerBound..<$0.lowerBound]) } } ?? ""
+            check(heldDuringPlay && bannerDuringPlay && stillHeldInBackground
+                  && explained == 1 && notifierFixture.held.isEmpty
+                  && !deliverBody.isEmpty && !deliverBody.contains("activate")
+                  && !GameReadyNotifier.interruptionAllowed(playing: true, frontmost: true)
+                  && !GameReadyNotifier.interruptionAllowed(playing: false, frontmost: false),
+                  "REQ-148: A game ready during play posts only an authorized banner; the explanation waits until X Ode is next frontmost with no game running, and nothing activates X Ode")
+        } else {
+            check(false, "REQ-148: Ready-during-play fixture defaults are available")
+        }
         let account = (try? String(contentsOfFile: "Sources/XodusPreview/LiveAccountView.swift", encoding: .utf8)) ?? ""
         let findConsoles = account.range(of: "Button(\"Find consoles\")").map { String(account[$0.lowerBound...].prefix(200)) } ?? ""
         let rootView = (try? String(contentsOfFile: "Sources/XodusPreview/LiveRootView.swift", encoding: .utf8)) ?? ""

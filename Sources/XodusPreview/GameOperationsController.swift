@@ -283,11 +283,36 @@ final class GameOperationsController: ObservableObject {
         if recoveryRequired { return "Check the last operation in Downloads before starting another installation." }
         if !installed.loaded { return "Wait for installed games to finish loading." }
         if installed.editing || installed.choosing { return "Finish choosing or editing the game location before installing." }
+        if let busy = Self.operationInProgressReason(operation) { return busy }
+        if installingDirectly || preparingConsent { return "Another download is starting." }
         if gamePassBusy { return "Wait for the Game Pass access check to finish." }
         if checkingCompatibility { return "Wait for the compatibility check to finish." }
         return "Wait for the current game operation to finish before installing."
     }
+    /// Names the game that holds the single operation slot, so a blocked Download says why.
+    static func operationInProgressReason(_ operation: GameOperationRecord?) -> String? {
+        guard let operation else { return nil }
+        switch operation.kind {
+        case .install, .resume: return "Another download is in progress (\(operation.title))."
+        case .repair: return "Another repair is in progress (\(operation.title))."
+        case .uninstall: return "Another game is being removed (\(operation.title))."
+        }
+    }
     var installAccountUnavailable: Bool { usesUnifiedAccount && nativeAccount == nil }
+    /// Whether the one operation slot is held by another game's download, repair, removal or
+    /// install preparation, so this game's Download can wait in the queue instead.
+    func slotHeldByAnotherGame(productID: String) -> Bool {
+        if let operation { return operation.productID != productID }
+        if installingDirectly { return directInstallProductID != productID }
+        if preparingConsent { return preparingInstallProductID != productID }
+        return false
+    }
+    /// The queue runs installs with the unified account's admission checks and no consent sheet,
+    /// so it is offered only when that account is ready and nothing but the slot is in the way.
+    var canQueueInstall: Bool {
+        usesUnifiedAccount && nativeAccount != nil && !recoveryRequired && installed.loaded
+            && !installed.editing && !installed.choosing && !installed.accountDisconnecting && !terminating
+    }
     var canQuit: Bool {
         !installingDirectly && !preparingConsent && !choosingInstallLocation
             && mutationTask == nil && compatibilityTask == nil && gamePassTask == nil && stopTask == nil

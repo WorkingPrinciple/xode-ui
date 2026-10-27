@@ -49,9 +49,16 @@ final class DownloadQueueController: ObservableObject {
 
     func job(id: UUID) -> InstallJob? { queue.job(id: id) }
 
-    /// Enqueues a new install and promotes if a slot is free. Returns the new job id.
+    /// The unfinished job for a product, if one is queued, running or paused.
+    func pendingJob(productID: String) -> InstallJob? {
+        queue.jobs.first { $0.productID == productID && !$0.phase.isTerminal }
+    }
+
+    /// Enqueues a new install and promotes if a slot is free. Returns the job id; a product that
+    /// already has an unfinished job is not queued twice.
     @discardableResult
     func enqueue(productID: String, title: String, destination: String) -> UUID {
+        if let existing = pendingJob(productID: productID) { return existing.id }
         let job = InstallJob(productID: productID, title: title)
         destinations[job.id] = destination
         launch(queue.enqueue(job))

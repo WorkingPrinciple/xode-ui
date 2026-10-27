@@ -184,7 +184,7 @@ struct LibraryProjection {
             query: key.query, sort: key.sort, includingQualified: true)
         continuing = LibraryGame.continuing(collection.filter(recommendable), launchableIDs: key.launchable)
         hero = LibraryGame.heroCandidates(qualified: collection.filter(recommendable),
-            catalogue: [], continuingIDs: continuing.map(\.id))
+            catalogue: [], continuingIDs: continuing.map(\.id), launchableIDs: key.launchable)
     }
 
     private init(collection: [LibraryGame], byID: [String: LibraryGame], candidates: [LibraryGame],

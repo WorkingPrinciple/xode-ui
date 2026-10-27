@@ -88,7 +88,12 @@ final class AppState: ObservableObject {
     lazy var gameOperations: GameOperationsController = {
         let operations = GameOperationsController(installed: installedGames, paths: gameScriptPaths,
                                                   installLocationDefaults: .standard)
+        let installed = installedGames
         operations.confirmLifecycle = { request in
+            // Never put a modal over a running game or over another app; the action is simply not taken.
+            guard GameReadyNotifier.interruptionAllowed(
+                playing: installed.runningGameID != nil || installed.launchStarted,
+                frontmost: NSApp?.isActive ?? false) else { return false }
             let alert = NSAlert()
             alert.messageText = request.messageText
             alert.informativeText = request.informativeText
