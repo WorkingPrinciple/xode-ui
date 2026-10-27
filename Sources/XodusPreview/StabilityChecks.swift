@@ -92,12 +92,14 @@ import Foundation
         check(saves.allSatisfy(Ops.looksLikeSave) && !content.contains(where: Ops.looksLikeSave),
               "fc2f17d1 M1: save-like names and extensions are recognised; ordinary package files are not")
         let witcher = (try? NativeTitleLaunchProfile.bundledProfiles())?.first { $0.productID == "C261457LCNMJ" }
-        let args = witcher?.playArguments ?? []
-        check(witcher?.runtime == nil && args.filter { $0 == "--game-arg" }.count == 4
-              && Array(args.suffix(8)) == ["--game-arg", "-usebundles", "--game-arg", "-splitcook",
-                                           "--game-arg", "-dlcinstall", "--game-arg", "-goty"]
-              && args.starts(with: ["--exe", "bin/Gaming.Desktop.x64/witcher3.exe"]),
-              "REQ-140: the Witcher 3 candidate passes its commandline.txt tokens once each as --game-arg and uses the app-default runtime")
+        var withArguments = witcher
+        withArguments?.gameArguments = ["-usebundles", "-splitcook", "-dlcinstall", "-goty"]
+        check(witcher?.runtime == nil && witcher?.gameArguments == nil
+              && witcher?.playArguments.contains("--game-arg") == false
+              && witcher?.playArguments.starts(with: ["--exe", "bin/Gaming.Desktop.x64/witcher3.exe"]) == true
+              && Array(withArguments?.playArguments.suffix(8) ?? []) == ["--game-arg", "-usebundles", "--game-arg", "-splitcook",
+                                                                         "--game-arg", "-dlcinstall", "--game-arg", "-goty"],
+              "REQ-140/COR-320: the Witcher 3 baseline passes no arguments on the app-default runtime; a profile's gameArguments each become one --game-arg")
     }
 
     // MARK: REQ-135 Uninstall
