@@ -189,6 +189,19 @@ enum EngineManagementChecks {
               "REQ127: The Highball registry renders deterministically from a qualified verdict for the pinned engine path only")
     }
 
+    /// Owner decision (27 Oct): a profile's qualification time bound never reaches user Play.
+    static func playTimeoutChecks(check: (Bool, String) -> Void) throws {
+        let profiles = try NativeTitleLaunchProfile.bundledProfiles()
+        let bounded = profiles.filter { $0.timeoutSeconds != nil }
+        let source = (try? String(contentsOfFile: "Sources/XodusPreview/NativeLaunchConfiguration.swift", encoding: .utf8)) ?? ""
+        let play = source.range(of: "func arguments() async throws -> [String] {").map {
+            String(source[$0.lowerBound...].prefix(2_000)) } ?? ""
+        check(!bounded.isEmpty && bounded.allSatisfy { $0.arguments.contains("--timeout-seconds") }
+              && profiles.allSatisfy { !$0.playArguments.contains("--timeout-seconds") }
+              && play.contains("profile?.playArguments") && !play.contains("profile?.arguments"),
+              "Owner: app Play never passes --timeout-seconds for any of \(profiles.count) bundled profiles; the bound stays on probe arguments only (\(bounded.map(\.productID)))")
+    }
+
     /// REQ-127: the app runs only the read-only `highball-inspect` contract and never a game or Highball.
     static func highballInspectionChecks(root: URL, check: (Bool, String) -> Void) async throws {
         let cli = root.appendingPathComponent("highball-cli")
@@ -395,6 +408,7 @@ enum EngineManagementChecks {
         }
         try await highballInspectionChecks(root: root, check: check)
         try providerScopeChecks(check: check)
+        try playTimeoutChecks(check: check)
         let executable = root.appendingPathComponent("wine")
         try Data("#!/bin/sh\nexit 0\n".utf8).write(to: executable)
         try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: executable.path)

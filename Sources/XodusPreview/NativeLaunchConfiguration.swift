@@ -427,10 +427,19 @@ struct NativeTitleLaunchProfile: Codable {
         return result
     }
 
+    /// Probe/QA arguments, including the profile's qualification time bound.
     var arguments: [String] {
         var result: [String] = []
         if let executable { result += ["--exe", executable] }
         if let timeoutSeconds { result += ["--timeout-seconds", String(timeoutSeconds)] }
+        if noAutoDismiss == true { result += ["--no-auto-dismiss"] }
+        return result
+    }
+
+    /// User Play arguments: a qualification time bound must never end a player's session.
+    var playArguments: [String] {
+        var result: [String] = []
+        if let executable { result += ["--exe", executable] }
         if noAutoDismiss == true { result += ["--no-auto-dismiss"] }
         return result
     }
@@ -787,10 +796,10 @@ struct NativeLaunchConfiguration {
                     "--expected-registry-sha256", digest, "--prefix", prefix.path,
                     "--runtime-dll", dll.path]
                 + (engine == NativeFH6Recipe.engineName ? NativeFH6Recipe.arguments : ["--shim-dir", shims.directory.path])
-                + (profile?.arguments ?? [])
+                + (profile?.playArguments ?? [])
         }
         return ["--engine", engine, "--registry", selectedRegistry.path, "--prefix", prefix.path,
-                "--runtime-dll", dll.path, "--shim-dir", shims.directory.path] + (profile?.arguments ?? [])
+                "--runtime-dll", dll.path, "--shim-dir", shims.directory.path] + (profile?.playArguments ?? [])
     }
 
     func prefixNotice() async throws -> String? {
