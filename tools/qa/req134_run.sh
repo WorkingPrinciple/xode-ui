@@ -3,7 +3,8 @@
 # REQ-134 automated pass against the installed X Ode build (default: build 624, "Ode to X Local Candidate.app").
 # Reads AX trees and captures windows; changes app state only through the allow-listed AX actions in
 # req134_observe.swift. No synthetic keystrokes or clicks, no game, account, install or permission action.
-# Every action waits until the owner has been idle for XODE_IDLE_SECONDS (COR-272).
+# Every action waits until the owner has been idle for XODE_IDLE_SECONDS (COR-272; use 60 once the owner has
+# been seen at the Mac). Snapshots are prefixed with their step so repeated screens never overwrite evidence.
 #
 #   tools/qa/req134_run.sh OUT_DIR
 #
@@ -25,7 +26,7 @@ run() { # run STEP REQS ARGS... ; retries while the owner is active (exit 3 from
     local step="$1" reqs="$2"; shift 2
     local attempt=0 status
     while :; do
-        "$BIN" "$@" 2> "$OUT/.stderr"; status=$?
+        XODE_STEP="$step" "$BIN" "$@" 2> "$OUT/.stderr"; status=$?
         cp "$OUT/.stderr" "$OUT/stderr-$step.txt"
         if [ $status -eq 3 ] && grep -q "owner active" "$OUT/.stderr" && [ $attempt -lt 40 ]; then
             attempt=$((attempt + 1)); sleep 15; continue

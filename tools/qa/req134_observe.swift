@@ -11,6 +11,8 @@
 //   swift tools/qa/req134_observe.swift set-search OUT TEXT
 //   swift tools/qa/req134_observe.swift scroll OUT up|down PAGES     (AXScrollUp/DownByPage on the main scroll area)
 //   swift tools/qa/req134_observe.swift resize OUT WIDTH HEIGHT
+//   swift tools/qa/req134_observe.swift quit OUT                    (normal Quit, never forced)
+//   swift tools/qa/req134_observe.swift close-window OUT Engines|Acknowledgments|…   (auxiliary windows only)
 //   swift tools/qa/req134_observe.swift contrast OUT PNG
 //   swift tools/qa/req134_observe.swift signposts OUT MINUTES
 //
@@ -303,7 +305,9 @@ func preferences() -> [String: Any] {
 }
 
 @discardableResult
-func snapshot(_ label: String) -> [Node] {
+func snapshot(_ rawLabel: String) -> [Node] {
+    // The runner sets XODE_STEP so repeated actions (Library, Discover, scroll) never overwrite earlier evidence.
+    let label = environment["XODE_STEP"].map { $0 + "-" + rawLabel } ?? rawLabel
     let app = runningApp()
     let ax = application(app)
     var windowsRecord: [[String: Any]] = []
@@ -387,6 +391,12 @@ func press(_ target: String) {
     }
     if duplicateLabels { appendLog("press target=\(target) matched \(candidates.count) identical labels; using \(node.path)") }
     let text = label(node.element)
+    // AXPress on a disabled control reports success but does nothing; record that instead of a false step.
+    if (node.record["enabled"] as? Bool) == false {
+        appendLog("press target=\(target) label=\(text) path=\(node.path) skipped=disabled")
+        snapshot("disabled-" + target.replacingOccurrences(of: "[^A-Za-z0-9.]+", with: "-", options: .regularExpression))
+        fail("matched control '\(text)' is disabled")
+    }
     if !target.hasPrefix("menu:"), !text.hasPrefix("View "), isDenied(text) { refuse("matched control '\(text)' is on the deny list") }
     let result = AXUIElementPerformAction(node.element, kAXPressAction as CFString)
     appendLog("press target=\(target) label=\(text) path=\(node.path) result=\(result.rawValue)")
@@ -544,6 +554,27 @@ case "preflight":
     let ready = !screenLocked() && AXIsProcessTrusted() && CGPreflightScreenCaptureAccess() && running.count == 1 && clean
     print(ready ? "READY" : "NOT READY: see preflight.json (locked, AX trust, screen recording, one running app, one window without sheets)")
     exit(ready ? 0 : 3)
+case "close-window":
+    // Closes an auxiliary window (never the main X Ode window) with its standard close button.
+    guard let title = arguments.first, ["Engines", "General", "Account", "Advanced", "Settings", "Acknowledgments", "Licenses"].contains(title)
+    else { refuse("close-window accepts only Settings-pane and Acknowledgments/Licenses windows") }
+    requireIdle()
+    let ax = application(runningApp())
+    let matches = windows(ax).filter { string($0, kAXTitleAttribute) == title }
+    guard matches.count == 1, let button = axElement(attribute(matches[0], kAXCloseButtonAttribute)) else {
+        fail("expected one '\(title)' window with a close button, found \(matches.count)")
+    }
+    let result = AXUIElementPerformAction(button, kAXPressAction as CFString)
+    appendLog("close-window title=\(title) result=\(result.rawValue)")
+    guard result == .success else { fail("close failed (\(result.rawValue))") }
+case "quit":
+    // Normal Quit (the same request as Command-Q); never forced. X Ode may still ask to confirm.
+    requireIdle()
+    let app = runningApp()
+    let requested = app.terminate()
+    appendLog("quit requested=\(requested)")
+    for _ in 0..<30 where !app.isTerminated { Thread.sleep(forTimeInterval: 1) }
+    print(app.isTerminated ? "X Ode quit" : "X Ode is still running (it may be asking to confirm); not forced")
 case "activate":
     requireIdle()
     let app = runningApp()
