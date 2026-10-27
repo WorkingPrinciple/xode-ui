@@ -494,7 +494,9 @@ struct LiveRootView: View {
         }
         .task(id: scenePhase == .active) {
             if startupAllowed, scenePhase == .active {
-                await session.revalidateAccountOnForeground()
+                if LiveSession.foregroundRevalidationDue(lastStatusRead: session.accountStatusReadAt, now: Date()) {
+                    await session.revalidateAccountOnForeground()
+                }
                 await state.pcGames.refreshInBackground()
                 guard backgroundAccountReadsAllowed else { return }
                 state.installedGames.productAccess.track(account: session.accountHash,

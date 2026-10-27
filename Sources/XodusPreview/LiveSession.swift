@@ -544,12 +544,12 @@ final class LiveSession: ObservableObject {
         if isReady { await refreshAccount() }
     }
     func revalidateAccountOnForeground() async {
-        guard isReady, !connectionTransitioning, !accountBusy, !signInPending,
-              Self.foregroundRevalidationDue(lastStatusRead: accountStatusReadAt, now: Date()) else { return }
+        guard isReady, !connectionTransitioning, !accountBusy, !signInPending else { return }
         await refreshAccount()
     }
-    /// REQ-121: when the saved sign-in was read moments ago (at launch), becoming active doesn't read it again,
-    /// so that duplicate status read can't hold the account channel ahead of the library's collection read.
+    /// REQ-121: the scene-activation caller skips the re-read when the saved sign-in was read moments ago (at
+    /// launch), so that duplicate can't hold the account channel ahead of the collection read. Explicit callers
+    /// of revalidateAccountOnForeground always read.
     static let foregroundRevalidationInterval: TimeInterval = 30
     static func foregroundRevalidationDue(lastStatusRead: Date?, now: Date) -> Bool {
         guard let lastStatusRead else { return true }
