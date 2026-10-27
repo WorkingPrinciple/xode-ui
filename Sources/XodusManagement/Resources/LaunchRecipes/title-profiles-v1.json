@@ -42,9 +42,9 @@
       "executable": "forzahorizon6.exe",
       "environment": {},
       "runtime": {
-        "primaryPath": "${HOME}/Library/Application Support/Ode to X/Runtime/candidates/ce316019739a4f80fb893af64f2e91f77d6de111af70bb260a7b19970d54a360/xgameruntime.dll",
-        "primarySHA256": "ce316019739a4f80fb893af64f2e91f77d6de111af70bb260a7b19970d54a360",
-        "legacySHA256": "3cae73b96d3a38cbef57aa63e4146614cd7e35517a1ce15b1f1877550509c1d1"
+        "primaryPath": "${HOME}/Library/Application Support/Ode to X/Runtime/candidates/21171669a4c2b8b72addd923127587feba9b924fdae2337f679e83bb9ed31913/xgameruntime.dll",
+        "primarySHA256": "21171669a4c2b8b72addd923127587feba9b924fdae2337f679e83bb9ed31913",
+        "legacySHA256": "e81010448dbea50a1957dafbf5bd2543dbb353b11d60da7e5223c05157d9deb5"
       },
       "autoDismissRules": "fh6-compat"
     },
@@ -74,7 +74,7 @@
       "version": 1,
       "productID": "9P8DL6W0JBB8",
       "title": "Hades",
-      "qualification": "L12 run hades-03 (136cf1b4) on Calimocho 0.1120.4.6 with game recipe hades-mscoree-v1 (27 Oct), and app route on X Ode 611 (run d9787390): title rendered without Wine Mono, WM_CLOSE exit 0. Runtime now L12 e63bc66 (efcbf2a plus 073b317 and the XSTS WC_ERR_INVALID_CHARS fix); L12 run 175cb421 on the efcbf2a pair (hades-mscoree-v1): \"Hades\" window for 75 s, expected REQ-32 line, exit 0. Xbox sign-in fails at the RPS ticket bridge (0x89245115, REQ-32); gameplay, saves and controller untested.",
+      "qualification": "L12 run hades-03 (136cf1b4) on Calimocho 0.1120.4.6 with game recipe hades-mscoree-v1 (27 Oct), and app route on X Ode 611 (run d9787390): title rendered without Wine Mono, WM_CLOSE exit 0. Runtime now L12 be7ad79 (efcbf2a plus 073b317, the XSTS WC_ERR_INVALID_CHARS fix and the signed gamer-picture request); L12 run 175cb421 on the efcbf2a pair (hades-mscoree-v1): \"Hades\" window for 75 s, expected REQ-32 line, exit 0. Xbox sign-in fails at the RPS ticket bridge (0x89245115, REQ-32); gameplay, saves and controller untested.",
       "engine": "calimocho-11.20-4.0b3-06",
       "wineSha256": "803a62d101303bb3160da4aa8a506857c3d1e1146aa4a0c9ee8250357ef12505",
       "wineserverSha256": "7102d70405e7667acf143e710723f58fb24d32eee81468b1f0f02279343601d0",
@@ -91,9 +91,34 @@
         "CX_APPLEGPTK_LIBD3DSHARED_PATH"
       ],
       "runtime": {
-        "primaryPath": "${HOME}/Library/Application Support/Ode to X/Runtime/candidates/ce316019739a4f80fb893af64f2e91f77d6de111af70bb260a7b19970d54a360/xgameruntime.dll",
-        "primarySHA256": "ce316019739a4f80fb893af64f2e91f77d6de111af70bb260a7b19970d54a360",
-        "legacySHA256": "3cae73b96d3a38cbef57aa63e4146614cd7e35517a1ce15b1f1877550509c1d1"
+        "primaryPath": "${HOME}/Library/Application Support/Ode to X/Runtime/candidates/21171669a4c2b8b72addd923127587feba9b924fdae2337f679e83bb9ed31913/xgameruntime.dll",
+        "primarySHA256": "21171669a4c2b8b72addd923127587feba9b924fdae2337f679e83bb9ed31913",
+        "legacySHA256": "e81010448dbea50a1957dafbf5bd2543dbb353b11d60da7e5223c05157d9deb5"
+      }
+    },
+    {
+      "version": 1,
+      "productID": "9PDC8J1BSV8B",
+      "title": "Easy Delivery Co.",
+      "qualification": "Qualification only: L12 run edc-07 (91a11783, 27 Oct) on Calimocho 0.1120.4.6 with runtime be7ad79: EasyDeliveryCo.exe window up 5-90 s, XGameSave writes S_OK, WM_CLOSE, exit 0. Gameplay not verified; app route run pending.",
+      "engine": "calimocho-11.20-4.0b3-06",
+      "wineSha256": "803a62d101303bb3160da4aa8a506857c3d1e1146aa4a0c9ee8250357ef12505",
+      "wineserverSha256": "7102d70405e7667acf143e710723f58fb24d32eee81468b1f0f02279343601d0",
+      "executable": "EasyDeliveryCo.exe",
+      "noAutoDismiss": true,
+      "environment": {
+        "XODUS_PRIVATE_LOCAL_SAVES": "1",
+        "XODUS_XBL_ONLINE": "1"
+      },
+      "unsetEnvironment": [
+        "XODUS_PRIVATE_RUNTIME_COM_STA",
+        "XODUS_PRIVATE_CALLER_OWNS_COM",
+        "CX_APPLEGPTK_LIBD3DSHARED_PATH"
+      ],
+      "runtime": {
+        "primaryPath": "${HOME}/Library/Application Support/Ode to X/Runtime/candidates/21171669a4c2b8b72addd923127587feba9b924fdae2337f679e83bb9ed31913/xgameruntime.dll",
+        "primarySHA256": "21171669a4c2b8b72addd923127587feba9b924fdae2337f679e83bb9ed31913",
+        "legacySHA256": "e81010448dbea50a1957dafbf5bd2543dbb353b11d60da7e5223c05157d9deb5"
       }
     },
     {

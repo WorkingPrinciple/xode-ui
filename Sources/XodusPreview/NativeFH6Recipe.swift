@@ -47,9 +47,9 @@ enum NativeFH6Recipe {
       profile.noAutoDismiss == true && profile.autoDismissRules == nil
         || profile.noAutoDismiss != true && profile.autoDismissRules == "fh6-compat",
       profile.runtime?.primarySHA256
-        == "ce316019739a4f80fb893af64f2e91f77d6de111af70bb260a7b19970d54a360",
+        == "21171669a4c2b8b72addd923127587feba9b924fdae2337f679e83bb9ed31913",
       profile.runtime?.legacySHA256
-        == "3cae73b96d3a38cbef57aa63e4146614cd7e35517a1ce15b1f1877550509c1d1"
+        == "e81010448dbea50a1957dafbf5bd2543dbb353b11d60da7e5223c05157d9deb5"
     else {
       throw NativeLaunchError.titleRecipeUnavailable
     }

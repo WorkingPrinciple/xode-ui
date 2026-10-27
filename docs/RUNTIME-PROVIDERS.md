@@ -520,6 +520,20 @@ which its own run evidence used. Runtimes are staged locally under
 `~/Library/Application Support/Ode to X/Runtime/candidates/<primary sha>/`,
 with `SHA256SUMS` and `provenance.json`. They are not bundled in the app.
 
+### Runtime pair be7ad79 (supersedes e63bc66; FH6, Hades and Easy Delivery Co.)
+
+L12 commit `be7ad7931b70da2e55342373a853e4f5a0cad5c2` (tree `b2ba2b18`): primary
+`21171669a4c2b8b72addd923127587feba9b924fdae2337f679e83bb9ed31913`
+(5,062,605 bytes), legacy
+`e81010448dbea50a1957dafbf5bd2543dbb353b11d60da7e5223c05157d9deb5`
+(8,997,260 bytes). Unsigned Windows PE, verified by SHA-256 before launch. Over
+`e63bc66` it masks XUIDs in traced URLs and signs the gamer-picture profile
+request. Easy Delivery Co. (`9PDC8J1BSV8B`) gets a qualification-only profile
+from L12 run `edc-07` on this pair (window up 5-90 s, XGameSave writes `S_OK`,
+WM_CLOSE, exit 0); gameplay isn't claimed. That run used the same
+`native-web-shims-v1` set the app pins. DREDGE waits for a clean run. The pair is
+staged at `Runtime/candidates/21171669…/`.
+
 ### Runtime pair e63bc66 (supersedes efcbf2a for FH6 and Hades)
 
 L12 commit `e63bc665c9d2ab276b2dea533bcef538456ce749` (tree `91982592`): primary

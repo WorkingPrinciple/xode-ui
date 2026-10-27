@@ -858,20 +858,25 @@ enum NativeLifecycleChecks {
         let profile = try NativeTitleLaunchProfile.bundledProfiles().first { $0.productID == NativeFH6Recipe.productID }
         guard let profile else { throw NativeLaunchError.invalidProfile }
         try NativeFH6Recipe.validate(profile: profile)
-        check(profile.runtime?.primarySHA256 == "ce316019739a4f80fb893af64f2e91f77d6de111af70bb260a7b19970d54a360"
-              && profile.runtime?.legacySHA256 == "3cae73b96d3a38cbef57aa63e4146614cd7e35517a1ce15b1f1877550509c1d1",
-              "REQ125/32/30: FH6 binds L12 runtime e63bc66 (XSTS fix over efcbf2a; efcbf2a run 4efdf51d 331 s, exit 0)")
+        check(profile.runtime?.primarySHA256 == "21171669a4c2b8b72addd923127587feba9b924fdae2337f679e83bb9ed31913"
+              && profile.runtime?.legacySHA256 == "e81010448dbea50a1957dafbf5bd2543dbb353b11d60da7e5223c05157d9deb5",
+              "REQ125/32/30: FH6 binds L12 runtime be7ad79 (signed gamer-picture request over e63bc66; efcbf2a run 4efdf51d 331 s, exit 0)")
         let otherProfiles = try NativeTitleLaunchProfile.bundledProfiles().filter {
-            ![NativeFH6Recipe.productID, "9P8DL6W0JBB8"].contains($0.productID) && $0.runtime != nil
+            ![NativeFH6Recipe.productID, "9P8DL6W0JBB8", "9PDC8J1BSV8B"].contains($0.productID) && $0.runtime != nil
         }
         let hades = try NativeTitleLaunchProfile.bundledProfiles().first { $0.productID == "9P8DL6W0JBB8" }
-        check(hades?.runtime?.primarySHA256 == "ce316019739a4f80fb893af64f2e91f77d6de111af70bb260a7b19970d54a360" && hades?.runtime?.legacySHA256 == "3cae73b96d3a38cbef57aa63e4146614cd7e35517a1ce15b1f1877550509c1d1"
+        check(hades?.runtime?.primarySHA256 == "21171669a4c2b8b72addd923127587feba9b924fdae2337f679e83bb9ed31913" && hades?.runtime?.legacySHA256 == "e81010448dbea50a1957dafbf5bd2543dbb353b11d60da7e5223c05157d9deb5"
               && hades?.gameRecipe == "hades-mscoree-v1",
-              "REQ32/130: Hades binds runtime e63bc66 with its game recipe")
+              "REQ32/130: Hades binds runtime be7ad79 with its game recipe")
+        let edc = try NativeTitleLaunchProfile.bundledProfiles().first { $0.productID == "9PDC8J1BSV8B" }
+        check(edc?.runtime?.primarySHA256 == hades?.runtime?.primarySHA256
+              && edc?.runtime?.legacySHA256 == hades?.runtime?.legacySHA256
+              && edc?.executable == "EasyDeliveryCo.exe" && edc?.gameRecipe == nil && edc?.engine == hades?.engine,
+              "REQ130: Easy Delivery Co. binds runtime be7ad79 on release Calimocho with its own run (edc-07)")
         check(!otherProfiles.isEmpty && otherProfiles.allSatisfy {
             $0.runtime?.primarySHA256 == "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8"
                 && $0.runtime?.legacySHA256 == "cfe7e5f837fabc51b8066809ca69c2ee0a7852512afbb1979190ec495b0b8b96"
-        }, "REQ125: no title other than FH6 and Hades inherits the e63bc66 pair without its own run")
+        }, "REQ125: no title other than FH6, Hades and Easy Delivery Co. inherits the be7ad79 pair without its own run")
         var oldRuntime = profile
         oldRuntime.runtime = try JSONDecoder().decode(NativeLocalRuntime.self, from: Data("""
         {"primaryPath":"/synthetic/xgameruntime.dll",
