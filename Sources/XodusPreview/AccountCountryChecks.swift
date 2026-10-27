@@ -10,10 +10,47 @@ private actor CountryRequestProbe: PCGamesTransport {
     }
 }
 
+private actor LibraryFreeToPlayTransport: PCGamesTransport {
+    private(set) var requests = 0
+    func send(_ request: URLRequest) throws -> PCGamesHTTPResponse {
+        requests += 1
+        let body: String
+        switch request.url?.host {
+        case "www.xbox.com":
+            if request.url?.path.hasSuffix(".js") == true {
+                body = #"var guidAmpt = {"ftpbenefitspc":"00000000-0000-4000-8000-000000000011"};"#
+            } else {
+                body = """
+                    <script src="/en-US/xbox-game-pass/games/js/xgpcatPopulate-test.js"></script>
+                    <span class="colgroup collections-pc hidden">
+                    <a data-col="ftpbenefitspc"><span>Free to play</span></a>
+                    """
+            }
+        case "catalog.gamepass.com":
+            body = #"[{"siglId":"00000000-0000-4000-8000-000000000011"},{"id":"BT5P2X999VH2"}]"#
+        default: throw PCGamesError.invalidResponse
+        }
+        return PCGamesHTTPResponse(status: 200, data: Data(body.utf8))
+    }
+}
+
 @MainActor
 enum AccountCountryChecks {
     static func run(configuration: (String) -> BackendConfiguration,
                     check: (Bool, String) -> Void) async throws {
+        let freeTransport = LibraryFreeToPlayTransport()
+        let freeArtwork = LibraryCatalogArtwork(transport: freeTransport)
+        let freeCollection = GamePassCollections(transport: freeTransport, artwork: freeArtwork,
+            keys: [DiscoverGamePassShelf.freeToPlay.rawValue], loadsProductDetails: false)
+        await freeCollection.load(market: "US", language: "en-US")
+        let firstRequests = await freeTransport.requests
+        check(freeArtwork.freeToPlayIDs == ["BT5P2X999VH2"] && freeArtwork.images.isEmpty
+              && firstRequests == 3 && freeCollection.error == nil,
+              "REQ-162 L3: Library-first startup learns free-to-play IDs without Discover, artwork or licence reads")
+        await freeCollection.load(market: "US", language: "en-US")
+        let reusedRequests = await freeTransport.requests
+        check(reusedRequests == firstRequests,
+              "REQ-162 L3: repeated Library startup in the same scope reuses the loaded public list")
         let verified: JSONValue = .object([
             "status": .string("verified"), "countryCode": .string("UK"),
             "locale": .string("en-GB"), "source": .string("xboxAccount.legalCountry"), "reason": .null
