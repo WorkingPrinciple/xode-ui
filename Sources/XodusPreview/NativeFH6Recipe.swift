@@ -43,7 +43,9 @@ enum NativeFH6Recipe {
       profile.requiredFiles == nil, profile.dllOverrides == nil,
       profile.dllOverrideEvidence == nil, profile.preservedPrefixPath == nil,
       profile.registrySHA256 == nil, profile.provider == nil,
-      profile.timeoutSeconds == nil, profile.noAutoDismiss == true,
+      profile.timeoutSeconds == nil,
+      profile.noAutoDismiss == true && profile.autoDismissRules == nil
+        || profile.noAutoDismiss != true && profile.autoDismissRules == "fh6-compat",
       profile.runtime?.primarySHA256
         == "e4c1085b4991e7af50e7e6a06245a7948d9911ae2d12b87e8fc035aacd671cb2",
       profile.runtime?.legacySHA256

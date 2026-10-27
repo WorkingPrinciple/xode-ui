@@ -231,6 +231,8 @@ struct NativeTitleLaunchProfile: Codable {
     var registrySHA256: String? = nil
     /// Reviewed backend game-only recipe (L6 `--game-recipe`, producer 01b333e7+); never a free-form override.
     var gameRecipe: String? = nil
+    /// Reviewed scoped popup rules (L6 producer #2 `--auto-dismiss-rules`); conflicts with `noAutoDismiss`.
+    var autoDismissRules: String? = nil
 
     func enginePinsMatch(_ inspection: EngineInspection) -> Bool {
         guard let engine else { return true }
@@ -383,6 +385,11 @@ struct NativeTitleLaunchProfile: Codable {
                 throw NativeLaunchError.invalidProfile
             }
         }
+        if let autoDismissRules {
+            guard noAutoDismiss != true, NativeAutoDismissRules.productID(for: autoDismissRules) == productID else {
+                throw NativeLaunchError.invalidProfile
+            }
+        }
         if let gameRecipe {
             guard NativeGameRecipe.productID(for: gameRecipe) == productID, let engine,
                   engine != NativeFH6Recipe.engineName, CalimochoReleasePin.named(engine) != nil,
@@ -443,6 +450,7 @@ struct NativeTitleLaunchProfile: Codable {
         if let executable { result += ["--exe", executable] }
         if let timeoutSeconds { result += ["--timeout-seconds", String(timeoutSeconds)] }
         if noAutoDismiss == true { result += ["--no-auto-dismiss"] }
+        if let autoDismissRules { result += ["--auto-dismiss-rules", autoDismissRules] }
         if let gameRecipe { result += ["--game-recipe", gameRecipe] }
         return result
     }
@@ -452,6 +460,7 @@ struct NativeTitleLaunchProfile: Codable {
         var result: [String] = []
         if let executable { result += ["--exe", executable] }
         if noAutoDismiss == true { result += ["--no-auto-dismiss"] }
+        if let autoDismissRules { result += ["--auto-dismiss-rules", autoDismissRules] }
         if let gameRecipe { result += ["--game-recipe", gameRecipe] }
         return result
     }
@@ -900,4 +909,10 @@ enum NativeLaunchError: Error, LocalizedError {
 enum NativeGameRecipe {
     static let known: [String: String] = ["hades-mscoree-v1": "9P8DL6W0JBB8"]
     static func productID(for recipe: String) -> String? { known[recipe] }
+}
+
+/// Reviewed scoped popup rules: only the named dialog is pressed; generic Continue/OK rules stay off.
+enum NativeAutoDismissRules {
+    static let known: [String: String] = ["fh6-compat": "9NR1R1XWLCNB"]
+    static func productID(for rules: String) -> String? { known[rules] }
 }

@@ -255,6 +255,21 @@ enum NativeLifecycleChecks {
               && profile("9P8DL6W0JBB8", recipe: "hades-mscoree-v1", environment: ["WINEDLLOVERRIDES": "mscoree=b"]) == nil
               && profile("9P8DL6W0JBB8", recipe: nil)?.playArguments.contains("--game-recipe") == false,
               "602 Hades: a recipe for another title, an unknown recipe, a non-release engine or a free-form WINEDLLOVERRIDES is refused")
+        func rules(_ product: String, _ value: String?, noAutoDismiss: Bool?) -> NativeTitleLaunchProfile? {
+            var item: [String: Any] = ["version": 1, "productID": product, "engine": pin.engineName,
+                "wineSha256": pin.wineSha256, "wineserverSha256": pin.wineserverSha256,
+                "executable": "game.exe", "environment": [String: String]()]
+            if let value { item["autoDismissRules"] = value }
+            if let noAutoDismiss { item["noAutoDismiss"] = noAutoDismiss }
+            guard let data = try? JSONSerialization.data(withJSONObject: item),
+                  (try? data.write(to: directory.appendingPathComponent(product + ".json"))) != nil else { return nil }
+            return try? NativeTitleLaunchProfile.read(productID: product, defaults: defaults)
+        }
+        check(NativeAutoDismissRules.productID(for: "fh6-compat") == NativeFH6Recipe.productID
+              && rules("9TESTRULES00", "fh6-compat", noAutoDismiss: nil) == nil
+              && rules("9TESTRULES00", "anything", noAutoDismiss: nil) == nil
+              && rules("9TESTRULES00", nil, noAutoDismiss: true)?.playArguments.contains("--auto-dismiss-rules") == false,
+              "602 FH6: scoped popup rules are reviewed per title; another title or an unknown rule set is refused")
     }
 
     static func run(check: (Bool, String) -> Void) async throws {
