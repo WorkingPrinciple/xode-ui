@@ -941,9 +941,9 @@ enum QualificationDiagnostics {
     static let releasePrimarySHA256 = "21171669a4c2b8b72addd923127587feba9b924fdae2337f679e83bb9ed31913"
     static let releaseLegacySHA256 = "e81010448dbea50a1957dafbf5bd2543dbb353b11d60da7e5223c05157d9deb5"
     #if XODUS_QUALIFICATION
-    /// Qualification builds only: L12 f1a154b adds `xodus outcome:` WARN lines over the release pair.
-    static let pinnedPrimarySHA256 = "8d4c2b36940d198bc53113cee20b5f77bdaede8699d109f4f3f2e6fc9f404ad5"
-    static let pinnedLegacySHA256 = "e84f9f34cf2370fa7875bca6ea551e3bd9a1a162d0fed7a0980ec44e6b96f0b5"
+    /// Qualification builds only: L12 39088c3 (f1a154b outcome lines plus the COM fix) over the release pair.
+    static let pinnedPrimarySHA256 = "431c5ded2ab82000a3db935dbe2ce3046b3ffa3fb361001695194d3b923ab7db"
+    static let pinnedLegacySHA256 = "014346f172927c515417954656fb933955e1aa48b1a62353c6a70a977396fe7e"
     #else
     static let pinnedPrimarySHA256 = releasePrimarySHA256
     static let pinnedLegacySHA256 = releaseLegacySHA256
