@@ -44,6 +44,8 @@ struct GameFacts: Equatable {
     var subscriptionAcquisition = false
     /// REQ-7/63: an active Game Pass plan covers this PC Game Pass title; not a purchase, never "missing".
     var availableWithGamePass = false
+    var cachedAccessAt: Date?
+    var freeToPlay = false
     static let availableWithGamePassLabel = "Available with Game Pass"
 
     init(ownership: Ownership = .unknown, memberships: [Membership] = [], accessIsCurrent: Bool = false) {
@@ -102,8 +104,9 @@ struct GameFacts: Equatable {
     }
 
     func heroAccessLabels() -> [String] {
+        guard !freeToPlay else { return [] }
         var labels: [String] = []
-        if accessIsCurrent {
+        if accessIsCurrent || cachedAccessAt != nil {
             switch ownership {
             case .purchased: labels.append("Owned")
             case .inLibraryUnknownAcquisition:
@@ -120,11 +123,6 @@ struct GameFacts: Equatable {
                 catalogue.append("In \(plan == .pcGamePass ? "PC Game Pass" : plan.label) catalog")
             }
         }
-        // Absence from the library is inconclusive (REQ-7), so never claim "Not owned". Unless ownership,
-        // a subscription or Game Pass availability already states access, say it isn't confirmed (L21).
-        if labels.isEmpty, !catalogue.contains(Self.availableWithGamePassLabel) {
-            labels.append("Ownership not confirmed")
-        }
         return labels + catalogue
     }
 }
@@ -140,6 +138,12 @@ struct GameHeroAccess: View {
             }
             .font(.callout.weight(.medium))
             .accessibilityIdentifier("xodus.game.heroAccess")
+            if !facts.accessIsCurrent, let date = facts.cachedAccessAt, !facts.freeToPlay {
+                Text("Last checked \(Text(date, style: .relative)) ago")
+                    .font(.caption)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("xodus.game.heroAccessAge")
+            }
         }
     }
 
@@ -149,6 +153,16 @@ struct GameHeroAccess: View {
 }
 
 extension LibraryGame {
+    func heroFacts(cachedAccessAt: Date?, freeToPlay: Bool) -> GameFacts {
+        var result = GameFacts(pc: pc, gamePass: gamePass, installed: installed,
+            accessIsCurrent: accessIsCurrent || (pc != nil && cachedAccessAt != nil),
+            availableWithGamePass: availableWithGamePass)
+        result.accessIsCurrent = accessIsCurrent
+        result.cachedAccessAt = pc != nil && !accessIsCurrent ? cachedAccessAt : nil
+        result.freeToPlay = freeToPlay
+        return result
+    }
+
     var facts: GameFacts {
         GameFacts(pc: pc, gamePass: gamePass, installed: installed, accessIsCurrent: accessIsCurrent,
                   availableWithGamePass: availableWithGamePass)

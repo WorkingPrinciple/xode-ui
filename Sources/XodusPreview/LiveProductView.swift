@@ -170,8 +170,10 @@ struct LiveProductView: View {
     }
     /// Badges show PC Game Pass only for titles in the current live public list.
     private var gameFacts: GameFacts {
-        GameFacts(pc: owned, gamePass: session.gamePassBadgeProductIDs.contains(product.id), installed: installed,
-                  accessIsCurrent: library.accessIsCurrent(for: product.id))
+        var facts = GameFacts(pc: owned, gamePass: session.gamePassBadgeProductIDs.contains(product.id), installed: installed,
+                             accessIsCurrent: library.accessIsCurrent(for: product.id))
+        facts.freeToPlay = catalog.freeToPlayIDs.contains(product.id)
+        return facts
     }
     /// The complete, error-free public PC Game Pass list doesn't include this game and it isn't owned.
     private var publicGamePassExcludes: Bool {

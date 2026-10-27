@@ -25,6 +25,7 @@ enum BrandUXChecks {
         engines(check: check)
         heroContrast(check: check)
         heroInstallControl(check: check)
+        libraryAccessPresentation(check: check)
         toolbarAccessibility(check: check)
         welcome(check: check)
         readiness(check: check)
@@ -526,6 +527,31 @@ enum BrandUXChecks {
               && disabled.heroReplacementReason == (checking ? nil : disabled.unavailableReason)
               && (checking || disabled.heroReplacementReason != nil),
               "REVIEW H1: A real idle install control derives the hero replacement from the controller's own state")
+    }
+
+    static func libraryAccessPresentation(check: (Bool, String) -> Void) {
+        let purchase = LibraryGame(id: "FIXTURE00001", title: "Cached purchase", installed: nil,
+            pc: PCGame(id: "FIXTURE00001", title: "Cached purchase", artwork: nil, acquisitionKind: .purchased),
+            product: nil, owned: true, gamePass: false, accessIsCurrent: false)
+        let cached = purchase.heroFacts(cachedAccessAt: Date().addingTimeInterval(-3600), freeToPlay: false)
+        let absent = purchase.heroFacts(cachedAccessAt: nil, freeToPlay: false)
+        let free = purchase.heroFacts(cachedAccessAt: Date(), freeToPlay: true)
+        check(absent.heroAccessLabels().isEmpty && free.heroAccessLabels().isEmpty,
+              "REQ-162: no-cache and free-to-play hero fixtures omit ownership")
+        let message = "Your library couldn't be updated. Your saved games stay available. Retry when Microsoft allows another check."
+        for width in [320.0, 900.0] {
+            let view = VStack(alignment: .leading, spacing: 20) {
+                GameHeroAccess(facts: cached)
+                GameHeroAccess(facts: absent)
+                GameHeroAccess(facts: free)
+                LibraryRefreshNotice(message: message, retryEnabled: true, retry: {})
+            }.padding(16)
+            let labels = render(view, size: CGSize(width: width, height: 260), scheme: .light,
+                name: "library-cached-access-\(Int(width))").joined(separator: " ").lowercased()
+            check(labels.contains("owned") && labels.contains("last checked") && labels.contains("retry")
+                  && labels.contains("allows another check") && !labels.contains("ownership not confirmed"),
+                  "REQ-162: cached access age and the full wrapping Library refresh status remain readable at width \(Int(width))")
+        }
     }
 
     // MARK: Toolbar accessibility

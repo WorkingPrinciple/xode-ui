@@ -29,6 +29,14 @@ struct LibraryCompatibilityIssue: Identifiable, Hashable, Sendable {
 
 enum LibraryCompatibilityRegistry {
     private static let entries: [String: [LibraryCompatibilityIssue]] = [
+        "BT5P2X999VH2": [
+            LibraryCompatibilityIssue(
+                kind: .antiCheat,
+                title: "Easy Anti-Cheat",
+                detail: "Fortnite requires Easy Anti-Cheat, which this Mac runtime does not support.",
+                source: URL(string: "https://www.epicgames.com/help/c-34254770/c-37371353/a20611857?lang=en-US")
+            )
+        ],
         // Official Xbox support documents Easy Anti-Cheat specifically for Gears 5.
         "C2KDNLT2H7DM": [
             LibraryCompatibilityIssue(

@@ -220,6 +220,11 @@ final class GamePassCollections: ObservableObject {
                 guard let endpoint = url.url else { throw PCGamesError.invalidResponse }
                 ids = try GamePassCollectionSource.productIDs(await fetch(endpoint), feedID: definition.feedID)
             }
+            try Task.checkCancellation()
+            guard revision == owner else { return }
+            if key == DiscoverGamePassShelf.freeToPlay.rawValue {
+                artwork.recordFreeToPlay(ids, market: market, language: language)
+            }
             let limit = min(ids.count, more ? definition.loadedCount + 24 : 12)
             await artwork.load(ids: Array(ids.prefix(limit)), market: market, language: language)
             try Task.checkCancellation()

@@ -34,6 +34,15 @@ final class LibraryCatalogArtwork: ObservableObject {
         didSet { revision &+= 1 }
     }
     private(set) var revision: UInt64 = 0
+    @Published private(set) var freeToPlayIDs = Set<String>() {
+        didSet { if oldValue != freeToPlayIDs { revision &+= 1 } }
+    }
+
+    func recordFreeToPlay(_ ids: [String], market: String, language: String) {
+        let nextScope = "\(market):\(PCGamesClient.language(language).lowercased())"
+        _ = enterScope(nextScope)
+        freeToPlayIDs = Set(ids.filter(PCGamesClient.validProductID))
+    }
     @Published private(set) var error: String?
     @Published private(set) var detailErrors: [String: String] = [:]
     /// Product IDs whose public details are requested but not yet settled in this scope.
@@ -68,6 +77,7 @@ final class LibraryCatalogArtwork: ObservableObject {
             for task in revalidations.values { task.cancel() }
             revalidations = [:]
             if !images.isEmpty { images = [:] }
+            if !freeToPlayIDs.isEmpty { freeToPlayIDs = [] }
             if !detailErrors.isEmpty { detailErrors = [:] }
             if error != nil { error = nil }
             requested = [:]
