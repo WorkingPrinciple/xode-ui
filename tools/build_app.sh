@@ -124,8 +124,13 @@ mkdir "$stage/source"
 tar -xf "$stage/source.tar" -C "$stage/source"
 cd "$stage/source"
 python3 tools/sync_runtime_provider_contract.py --check
-XODUS_SHIPPING=1 swift build --jobs 1 -c release --product XodusAuthHost
-bin=$(XODUS_SHIPPING=1 swift build -c release --show-bin-path)
+# REQ-52: build-machine paths never reach shipped binaries.
+shipping_build() {
+    XODUS_SHIPPING=1 swift build "$@" -Xswiftc -file-prefix-map -Xswiftc "$PWD=/xode" \
+        -Xswiftc -debug-prefix-map -Xswiftc "$PWD=/xode" -Xcc "-ffile-prefix-map=$PWD=/xode"
+}
+shipping_build --jobs 1 -c release --product XodusAuthHost
+bin=$(shipping_build -c release --show-bin-path)
 app="$stage/Xodus.app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources/XodusEngine"
 cp "$bin/XodusAuthHost" "$app/Contents/MacOS/XodusAuthHost"
@@ -145,6 +150,7 @@ owned_bytes(sys.argv[1], sys.argv[2], int(sys.argv[3]))
 PY
 fi
 chmod 755 "$app/Contents/MacOS/XodusAuthHost" "$app/Contents/Resources/XodusEngine/xodus-cli"
+/usr/bin/strip -S "$app/Contents/MacOS/XodusAuthHost"
 python3 tools/signing_identity.py sign --kind helper --path "$app/Contents/MacOS/XodusAuthHost" "$@"
 if [ -z "$signed_cli" ]; then
     python3 tools/signing_identity.py sign --kind cli --path "$app/Contents/Resources/XodusEngine/xodus-cli" "$@"
@@ -182,8 +188,9 @@ PY
     python3 tools/signing_identity.py verify --kind broker \
         --path "$stage/CredentialBroker/XodusCredentialBroker" --identity "$signer"
 fi
-XODUS_SHIPPING=1 swift build --jobs 1 -c release --product XodusPreview
+shipping_build --jobs 1 -c release --product XodusPreview
 cp "$bin/XodusPreview" "$app/Contents/MacOS/Xodus"
+/usr/bin/strip -S "$app/Contents/MacOS/Xodus"
 cp tools/Info.plist "$app/Contents/Info.plist"
 cp LICENSE "$app/Contents/Resources/LICENSE.txt"
 cp NOTICE "$app/Contents/Resources/NOTICE.txt"

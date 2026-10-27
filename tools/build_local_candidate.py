@@ -18,6 +18,19 @@ from shipping_pair import (CARGO_LOCK_SHA256, FEATURES, PRODUCER, PRODUCER_TREE,
 from signing_identity import preflight, sign, verify_designated_requirement
 
 
+
+def path_remap(source):
+    """REQ-52: build-machine paths never reach shipped binaries (debug, file and Clang prefix maps)."""
+    root = str(source)
+    return ["-Xswiftc", "-file-prefix-map", "-Xswiftc", root + "=/xode",
+            "-Xswiftc", "-debug-prefix-map", "-Xswiftc", root + "=/xode",
+            "-Xcc", "-ffile-prefix-map=" + root + "=/xode"]
+
+
+def strip_debug(path):
+    """REQ-52: remove debug symbol entries (object-file paths) before signing."""
+    subprocess.run(["/usr/bin/strip", "-S", str(path)], check=True)
+
 def validate_host():
     require(platform.system() == "Darwin" and platform.machine() == "arm64",
             "This local candidate packager requires an Apple Silicon Mac")
@@ -144,13 +157,14 @@ def build(engine_root, output_root, identity, engine_notice=None):
     signed_engine, _ = owned_bytes(engine)
     environment = os.environ.copy()
     environment["XODUS_SHIPPING"] = "1"
-    run(["swift", "build", "--jobs", "1", "-c", "release", "--product", "XodusAuthHost"],
+    run(["swift", "build", "--jobs", "1", "-c", "release", "--product", "XodusAuthHost"] + path_remap(source),
         source, log, environment)
-    binary_dir = Path(run(["swift", "build", "-c", "release", "--show-bin-path"],
+    binary_dir = Path(run(["swift", "build", "-c", "release", "--show-bin-path"] + path_remap(source),
                          source, log, environment).decode().strip())
     helper = macos / "XodusAuthHost"
     shutil.copyfile(binary_dir / "XodusAuthHost", helper)
     helper.chmod(0o755)
+    strip_debug(helper)
     sign(helper, "helper", identity, developer_id=True)
     signed_helper, _ = owned_bytes(helper)
     pins = source / "Sources/XodusPreview/ShippingPairPins.swift"
@@ -158,10 +172,11 @@ def build(engine_root, output_root, identity, engine_notice=None):
                               signed_engine, signed_helper, engine_source["commit"], engine_source["tree"]))
     producer_pins = source / "Sources/XodusPreview/ShippingProducerPins.swift"
     producer_pins.write_text(swift_producer_pins())
-    run(["swift", "build", "--jobs", "1", "-c", "release", "--product", "XodusPreview"],
+    run(["swift", "build", "--jobs", "1", "-c", "release", "--product", "XodusPreview"] + path_remap(source),
         source, log, environment)
     shutil.copyfile(binary_dir / "XodusPreview", macos / "Xodus")
     (macos / "Xodus").chmod(0o755)
+    strip_debug(macos / "Xodus")
     info = plistlib.loads((source / "tools/Info.plist").read_bytes())
     require(re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+",
                          info.get("CFBundleShortVersionString", "")) is not None,

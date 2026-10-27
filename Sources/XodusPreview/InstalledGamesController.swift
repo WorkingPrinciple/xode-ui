@@ -760,6 +760,19 @@ final class InstalledGamesController: ObservableObject {
             : playErrors[current.id] ?? "The requested game couldn't start. Check its installation and runtime settings."
     }
 
+    /// Deep link for a game installed on disk but not yet registered: waits (bounded) for discovery, then runs
+    /// the same existing-installation verification as opening its page. Never registers unverified files.
+    func registeredGameForLaunchRequest(productID: String, timeout: Duration = .seconds(60)) async -> InstalledGame? {
+        if let game = games.first(where: { $0.storeId == productID }) { return game }
+        guard await Self.waitUntil(timeout: timeout, { hasUnverifiedInstallation(productID: productID)
+                || games.contains(where: { $0.storeId == productID }) }) else { return nil }
+        if let game = games.first(where: { $0.storeId == productID }) { return game }
+        await automaticallyVerifyDiscoveredInstallation(productID: productID)
+        if let game = games.first(where: { $0.storeId == productID }) { return game }
+        Self.launchLog.error("Launch request not started: \(productID, privacy: .public): installation not verified: \(self.discoveredVerificationErrors[productID] ?? "unknown", privacy: .public)")
+        return nil
+    }
+
     func productAccessNotice(for game: InstalledGame) -> String? {
         guard !canRequestPlay(game.storeId) else { return nil }
         return productAccess.reviewNotice(for: game.storeId, account: unifiedSession?.accountHash)

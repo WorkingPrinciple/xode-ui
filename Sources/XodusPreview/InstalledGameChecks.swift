@@ -567,6 +567,11 @@ enum InstalledGameChecks {
               && mountedController.games.first?.storeId == "9NR1R1XWLCNB"
               && mountedController.games.first?.storageVolume != nil,
               "REQ106: The mounted-root discovery registers the exact complete FH6 package at its existing location")
+        let registered = await mountedController.registeredGameForLaunchRequest(productID: "9NR1R1XWLCNB")
+        let absent = await mountedController.registeredGameForLaunchRequest(productID: "9TESTNOTHERE",
+                                                                             timeout: .milliseconds(200))
+        check(registered?.folder == folder.path && absent == nil,
+              "L8 e2e: a deep link resolves a registered game at once and gives up (bounded) on one that isn't on disk")
         try FileManager.default.removeItem(at: folder)
         await controller.discoverNativeInstallations(root: library)
         check(controller.games.count == 1,

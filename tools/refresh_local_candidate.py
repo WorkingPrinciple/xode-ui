@@ -30,6 +30,19 @@ from package_resources import copy_resources
 from distribution_manifest import distribution_blockers, write_manifest
 
 
+
+def path_remap(source):
+    """REQ-52: build-machine paths never reach shipped binaries (debug, file and Clang prefix maps)."""
+    root = str(source)
+    return ["-Xswiftc", "-file-prefix-map", "-Xswiftc", root + "=/xode",
+            "-Xswiftc", "-debug-prefix-map", "-Xswiftc", root + "=/xode",
+            "-Xcc", "-ffile-prefix-map=" + root + "=/xode"]
+
+
+def strip_debug(path):
+    """REQ-52: remove debug symbol entries (object-file paths) before signing."""
+    subprocess.run(["/usr/bin/strip", "-S", str(path)], check=True)
+
 def validate_payload_pair(cli, helper, producer, tree):
     require(producer == PRODUCER and tree == PRODUCER_TREE, "Selected producer differs from the approved pin")
     cli_record, cli_bytes = owned_bytes(cli, CLI_SHA256, CLI_BYTES, bounded=512 * 1024 * 1024)
@@ -103,9 +116,9 @@ def refresh(installed, output_root, identity, selected_cli=None, producer_source
         archived.extractall(source, filter="data")
     environment = os.environ.copy()
     environment["XODUS_SHIPPING"] = "1"
-    run(["swift", "build", "--jobs", "1", "-c", "release", "--product", "XodusAuthHost"],
+    run(["swift", "build", "--jobs", "1", "-c", "release", "--product", "XodusAuthHost"] + path_remap(source),
         source, log, environment)
-    binary_dir = Path(run(["swift", "build", "-c", "release", "--show-bin-path"],
+    binary_dir = Path(run(["swift", "build", "-c", "release", "--show-bin-path"] + path_remap(source),
                          source, log, environment).decode().strip())
     app = stage / "X Ode.app"
     macos, resources = app / "Contents/MacOS", app / "Contents/Resources"
@@ -122,6 +135,7 @@ def refresh(installed, output_root, identity, selected_cli=None, producer_source
     helper = macos / "XodusAuthHost"
     shutil.copyfile(binary_dir / "XodusAuthHost", helper)
     helper.chmod(0o755)
+    strip_debug(helper)
     sign(helper, "helper", identity, developer_id=True)
     helper_record, _ = owned_bytes(helper)
     (source / "Sources/XodusPreview/ShippingPairPins.swift").write_text(swift_pins(
@@ -130,10 +144,11 @@ def refresh(installed, output_root, identity, selected_cli=None, producer_source
     require(producer == PRODUCER and producer_tree == PRODUCER_TREE,
             "Selected producer differs from the approved shipping tuple")
     (source / "Sources/XodusPreview/ShippingProducerPins.swift").write_text(swift_producer_pins())
-    run(["swift", "build", "--jobs", "1", "-c", "release", "--product", "XodusPreview"],
+    run(["swift", "build", "--jobs", "1", "-c", "release", "--product", "XodusPreview"] + path_remap(source),
         source, log, environment)
     shutil.copyfile(binary_dir / "XodusPreview", macos / "Xodus")
     (macos / "Xodus").chmod(0o755)
+    strip_debug(macos / "Xodus")
     bundle_info = plistlib.loads((source / "tools/Info.plist").read_bytes())
     require(re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+",
                          bundle_info.get("CFBundleShortVersionString", "")) is not None,
