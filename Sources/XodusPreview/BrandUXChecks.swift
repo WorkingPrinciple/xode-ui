@@ -45,8 +45,8 @@ enum BrandUXChecks {
         check(OdeBrand.burgundy == .init(red: 0x7A, green: 0x1E, blue: 0x3A)
               && contrast(burgundy, against: .white) >= 10
               && contrast(OdeBrand.rose.nsColor, against: NSColor(srgbRed: 0x3A / 255, green: 0x3A / 255, blue: 0x3A / 255, alpha: 1)) >= 4.5
-              && contrast(.white, against: OdeBrand.wine.nsColor) >= 4.5
-              && contrast(OdeBrand.wine.nsColor, against: NSColor(srgbRed: 0x1E / 255, green: 0x1E / 255, blue: 0x1E / 255, alpha: 1)) >= 3,
+              && contrast(.white, against: OdeBrand.wineDark.nsColor) >= 4.5
+              && contrast(OdeBrand.wineDark.nsColor, against: NSColor(srgbRed: 0x1E / 255, green: 0x1E / 255, blue: 0x1E / 255, alpha: 1)) >= 3,
               "W1: Burgundy mark on white is 10:1; dark-appearance text and fills stay legible")
         let brandSources = ["Sources/XodusPreview/AppBrandPresentation.swift", "Sources/XodusPreview/XboxCompanionViews.swift",
                             "Sources/XodusPreview/LiveAccountView.swift", "tools/RenderAppIcon.swift"]

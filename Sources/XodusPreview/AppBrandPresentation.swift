@@ -21,6 +21,8 @@ enum OdeBrand {
     static let burgundy = RGB(red: 0x7A, green: 0x1E, blue: 0x3A)
     static let wine = RGB(red: 0xB2, green: 0x3A, blue: 0x48)
     static let rose = RGB(red: 0xEE, green: 0x97, blue: 0xA9)
+    /// Wine lifted for dark windows: white labels 4.8:1, and the fill 3.5:1 against #1E1E1E (#B23A48 is 2.85:1).
+    static let wineDark = RGB(red: 0xC2, green: 0x48, blue: 0x5A)
 
     private static func adaptive(_ name: String, light: RGB, dark: RGB) -> Color {
         Color(nsColor: NSColor(name: NSColor.Name(name)) { appearance in
@@ -31,8 +33,8 @@ enum OdeBrand {
     /// The mark itself, always on the white tile.
     static let mark = Color(nsColor: burgundy.nsColor)
     static let tile = Color.white
-    /// Button and progress fills: white labels on them stay at 5.8:1 or more; the fill keeps 3:1 against dark windows.
-    static let tint = adaptive("XOdeBrandTint", light: burgundy, dark: wine)
+    /// Button and progress fills: white labels on them stay at 4.5:1 or more; the fill keeps 3:1 against dark windows.
+    static let tint = adaptive("XOdeBrandTint", light: burgundy, dark: wineDark)
     /// Text and symbols on window backgrounds: 8:1 in light, 5.2:1 or more in dark.
     static let accent = adaptive("XOdeBrandAccent", light: burgundy, dark: rose)
     static let gradient = LinearGradient(colors: [Color(nsColor: wine.nsColor), Color(nsColor: burgundy.nsColor)],
