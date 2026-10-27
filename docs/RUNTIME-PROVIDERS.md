@@ -489,3 +489,31 @@ matches the pinned engine path and hashes. The backend re-checks it at
 `engine-inspect` and again in its launch gate (managed prefix, never a Highball
 bottle). A title-scoped selection does not apply the title's Calimocho launch
 profile. It launches on a fresh X Ode prefix for that installation and engine.
+
+## FH6 and Hades runtime pair 15e6d1e (REQ-125, REQ-32, REQ-128)
+
+FH6 and Hades now bind L12's runtime from private commit
+`15e6d1ef8f6df24c78e860086b950d4a5a203c50`: primary
+`a64fefb1041c476bf9b064abaf4cad6ea30559fd25b35bbe6e2ff603a23f6257`,
+legacy `dfeea51fb0c59d91f7ad71f43a1263e8318ed89379a672a953954121014196af`.
+It replaces the earlier FH6-only `e4c1085b…`/`1fb7b7c8…` pair above.
+The pair carries the REQ-125 assert-to-warning change, the REQ-32
+`E_GAMEUSER_NO_MSAAPPID` result and the REQ-128 add-on licence path.
+
+Run evidence on this exact pair:
+
+- FH6: run `57a4a57d-e87f-4091-9789-afa3fb1a6c67`, pinned
+  `calimocho-06-fh6-v1` recipe, 688 s, CLI and Wine exit 0, no assert or
+  FH206.
+- Hades: run `136cf1b4-bf79-42e7-ab44-24cb66f6339f`, `hades-mscoree-v1`,
+  title screen, WM_CLOSE exit 0. Sign-in still fails at the RPS ticket
+  bridge with 0x89245115 (REQ-32).
+
+Two build deviations are recorded in `provenance.json`. The snapshot lacked
+`xgameruntime.def`, so a byte-identical upstream copy was used; it is now
+committed in private `af76233`. The `widl` wrapper only added an include path.
+
+Every other title keeps the `7106d07…` candidate (`6c9d97d3…`/`cfe7e5f8…`),
+which its own run evidence used. Runtimes are staged locally under
+`~/Library/Application Support/Ode to X/Runtime/candidates/<primary sha>/`,
+with `SHA256SUMS` and `provenance.json`. They are not bundled in the app.
