@@ -352,6 +352,11 @@ struct NativeTitleLaunchProfile: Codable {
         return profile
     }
 
+    #if !XODUS_SHIPPING
+    /// Checks only: validates a decoded fixture exactly as a local profile is validated.
+    func validatedForChecks() throws -> Self { try validate(productID: productID); return self }
+    #endif
+
     private func validate(productID: String) throws {
         func validKey(_ key: String) -> Bool {
             key.range(of: "^[A-Z_][A-Z0-9_]{0,127}$", options: .regularExpression) != nil

@@ -242,8 +242,8 @@ enum NativeLifecycleChecks {
             if let recipe { value["gameRecipe"] = recipe }
             try JSONSerialization.data(withJSONObject: value)
                 .write(to: directory.appendingPathComponent(product + ".json"))
-            do { return try NativeTitleLaunchProfile.read(productID: product, defaults: defaults) }
-            catch { print("game-recipe fixture \(product) \(recipe ?? "-"): \(error)"); return nil }
+            let data = try Data(contentsOf: directory.appendingPathComponent(product + ".json"))
+            return try? JSONDecoder().decode(NativeTitleLaunchProfile.self, from: data).validatedForChecks()
         }
         let hades = try profile("9P8DL6W0JBB8", recipe: "hades-mscoree-v1")
         check(hades?.playArguments == ["--exe", "Hades.exe", "--no-auto-dismiss", "--game-recipe", "hades-mscoree-v1"]
@@ -263,7 +263,7 @@ enum NativeLifecycleChecks {
             if let noAutoDismiss { item["noAutoDismiss"] = noAutoDismiss }
             guard let data = try? JSONSerialization.data(withJSONObject: item),
                   (try? data.write(to: directory.appendingPathComponent(product + ".json"))) != nil else { return nil }
-            return try? NativeTitleLaunchProfile.read(productID: product, defaults: defaults)
+            return try? JSONDecoder().decode(NativeTitleLaunchProfile.self, from: data).validatedForChecks()
         }
         check(NativeAutoDismissRules.productID(for: "fh6-compat") == NativeFH6Recipe.productID
               && rules("9TESTRULES00", "fh6-compat", noAutoDismiss: nil) == nil
