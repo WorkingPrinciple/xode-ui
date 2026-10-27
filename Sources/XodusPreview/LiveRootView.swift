@@ -6,10 +6,36 @@ private struct CatalogPresentationActiveKey: EnvironmentKey {
     static let defaultValue = true
 }
 
+private struct BrowseTabSelectedKey: EnvironmentKey {
+    static let defaultValue = true
+}
+
+/// REQ-75: what tab selection and window focus may and may not change. Background startup work (loads,
+/// prechecks, hero playback) runs only for the selected tab of an active window; whether resolved content is
+/// usable, and whether "finish starting" is said, depends only on the app's real startup state.
+enum BrowseGate {
+    static let startupNotice = "Wait for \(AppBrand.displayName) to finish starting."
+
+    static func startupTasks(startupComplete: Bool, selected: Bool, sceneActive: Bool) -> Bool {
+        startupComplete && selected && sceneActive
+    }
+    /// A retained tab that isn't selected is hidden and not hit-testable, but its content is never disabled.
+    static func disablesContent(selected: Bool) -> Bool { false }
+    static func installEnabled(startupComplete: Bool, canReview: Bool) -> Bool { startupComplete && canReview }
+    static func installDisabledReason(startupComplete: Bool, otherwise: String?) -> String? {
+        startupComplete ? otherwise : startupNotice
+    }
+}
+
 extension EnvironmentValues {
     var catalogPresentationActive: Bool {
         get { self[CatalogPresentationActiveKey.self] }
         set { self[CatalogPresentationActiveKey.self] = newValue }
+    }
+    /// The browse tab this view lives in is the selected one (keyboard focus stays out of hidden tabs).
+    var browseTabSelected: Bool {
+        get { self[BrowseTabSelectedKey.self] }
+        set { self[BrowseTabSelectedKey.self] = newValue }
     }
 }
 
@@ -750,10 +776,12 @@ struct LiveRootView: View {
             if destination == .library { libraryScrollCommand += 1 }
         })
         .environment(\.catalogPresentationActive, active)
+        .environment(\.browseTabSelected, selected)
         .opacity(selected ? 1 : 0)
         .zIndex(selected ? 1 : 0)
         .allowsHitTesting(selected)
-        .disabled(!selected)
+        // REQ-75: hidden, not disabled; a retained tab's resolved cards stay viewable.
+        .disabled(BrowseGate.disablesContent(selected: selected))
         .accessibilityHidden(!selected)
     }
 
@@ -800,7 +828,9 @@ struct LiveRootView: View {
                 LiveLibraryView(library: state.pcGames, installed: state.installedGames,
                                 operations: state.gameOperations,
                                 query: state.query(for: .library).trimmingCharacters(in: .whitespacesAndNewlines),
-                                allowsStartupTasks: startupAllowed && state.destination == .library && scenePhase == .active,
+                                allowsStartupTasks: BrowseGate.startupTasks(startupComplete: startupAllowed,
+                                    selected: state.destination == .library, sceneActive: scenePhase == .active),
+                                startupComplete: startupAllowed,
                                 allowsArtworkLoading: libraryArtworkAllowed,
                                 allowsHeroAnimation: heroAnimationAllowed && state.destination == .library && scenePhase == .active,
                                 browse: { state.navigate(.discover) },
@@ -861,7 +891,9 @@ struct LiveRootView: View {
                         operations: state.gameOperations,
                         query: state.query(for: .discover).trimmingCharacters(in: .whitespacesAndNewlines),
                         allowsArtworkLoading: libraryArtworkAllowed,
-                        allowsStartupTasks: startupAllowed && state.destination == .discover && scenePhase == .active,
+                        allowsStartupTasks: BrowseGate.startupTasks(startupComplete: startupAllowed,
+                            selected: state.destination == .discover, sceneActive: scenePhase == .active),
+                        startupComplete: startupAllowed,
                         allowsHeroAnimation: heroAnimationAllowed && state.destination == .discover && scenePhase == .active,
                         clearSearch: { state.query = "" }, selection: state.discoverSelection,
                         searchLibrary: { query in

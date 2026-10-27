@@ -1303,6 +1303,22 @@ enum BrandUXChecks {
               && !AccountGatePresentation.defers(statusSettled: false, failed: false, waitElapsed: true)
               && AccountGatePresentation.launchWait == .seconds(3),
               "Warm launch: the welcome sheet waits only while the first sign-in read is outstanding (≤3 s, never after an error), so no empty sheet window is left behind")
+        // REQ-75 (L10 REQ-134 on 624): a hidden tab or an inactive window never disables resolved cards or
+        // claims X Ode is still starting; only the real startup state does.
+        let hiddenOrInactive = [(false, true), (true, false), (false, false)]
+        check(hiddenOrInactive.allSatisfy { selected, active in
+                !BrowseGate.startupTasks(startupComplete: true, selected: selected, sceneActive: active)
+                    && !BrowseGate.disablesContent(selected: selected)
+                    && BrowseGate.installEnabled(startupComplete: true, canReview: true)
+                    && BrowseGate.installDisabledReason(startupComplete: true, otherwise: nil) == nil
+              }
+              && BrowseGate.installDisabledReason(startupComplete: true, otherwise: "Access pending") == "Access pending"
+              && BrowseGate.startupTasks(startupComplete: true, selected: true, sceneActive: true),
+              "REQ-75: Switching tabs or deactivating the window pauses startup work only; resolved cards stay enabled and no 'finish starting' copy appears")
+        check(!BrowseGate.startupTasks(startupComplete: false, selected: true, sceneActive: true)
+              && !BrowseGate.installEnabled(startupComplete: false, canReview: true)
+              && BrowseGate.installDisabledReason(startupComplete: false, otherwise: "Access pending") == BrowseGate.startupNotice,
+              "REQ-75: 'Wait for X Ode to finish starting.' appears only while startup is genuinely incomplete")
         let faultFile = FileManager.default.temporaryDirectory.appendingPathComponent("xodus-fault-\(UUID().uuidString)")
         let faultEnvironment = ["XODUS_DEBUG_FAULT_FILE": faultFile.path]
         let faultAbsent = !DebugFaultInjection.active(.catalog, environment: faultEnvironment)
