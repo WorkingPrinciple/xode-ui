@@ -241,7 +241,7 @@ struct LiveProductView: View {
         if checksTitleAccess {
             if titleAccess.checking { return nil }
             if session.nativeLifecycleConfiguration == nil { return "Account settings" }
-            return titleAccess.errors[product.id] != nil ? InstalledProductAccess.tryAgainTitle : "Check access for this game"
+            return titleAccess.errors[product.id] != nil ? titleAccess.tryAgainTitle() : "Check access for this game"
         }
         return installRecovery.title
     }

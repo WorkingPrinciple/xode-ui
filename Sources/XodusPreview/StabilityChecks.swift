@@ -89,11 +89,18 @@ import XodusManagement
         check(pausedText.hasPrefix("Access checks are paused until")
               && access.reviewNotice(for: installed[11], account: account, now: start.addingTimeInterval(720)) == pausedText
               && access.pausedNotice(now: start.addingTimeInterval(5_000)) == nil,
-              "72450bd3 L1: during a pause an unchecked game and Retry say until when, not a silent wait")
+              "72450bd3 L1: during a pause an unchecked game's notice and Play say until when, not a silent wait")
+        let pauseEnd = access.pausedEnd(now: start.addingTimeInterval(720)) ?? "?"
+        check(access.reviewNotice(for: other, account: account, now: start.addingTimeInterval(720))
+                == "Couldn't confirm access right now. Try again after \(pauseEnd)."
+              && access.tryAgainTitle(now: start.addingTimeInterval(720)) == "Try Again after \(pauseEnd)"
+              && access.tryAgainTitle(now: start.addingTimeInterval(5_000)) == InstalledProductAccess.tryAgainTitle
+              && access.unavailableNotice(now: start.addingTimeInterval(5_000)) == InstalledProductAccess.unavailableNotice,
+              "4ea60eb3 F2: a failed game's error, Retry and Try Again say when checks resume during a pause, and return to the plain copy after")
         failing = true
         await access.refresh(account: account, installedIDs: installed, now: start.addingTimeInterval(800),
                              force: true, selectedProductID: installed[12], read: reader)
-        check(access.pausedUntil == start.addingTimeInterval(800 + 120),
+        check(access.pausedUntil.map { abs($0.timeIntervalSince(start.addingTimeInterval(800 + 120))) < 1 } == true,
               "72450bd3 L2: a second consecutive failure on another game doubles the global pause (120 s)")
         // Review 72450bd3 M2: a product page shares this store; repeat visits reuse one answer for 10 minutes.
         failing = false
@@ -107,6 +114,21 @@ import XodusManagement
             }
             page.track(account: account, installedIDs: installed)
         }
+        // 4ea60eb3 F3: Play/Retry over the installed list never evicts a page's cached answer.
+        await page.refresh(account: account, installedIDs: installed, now: start.addingTimeInterval(300), force: true,
+                           selectedProductID: installed[0]) { id in pageReads += 1; return try await reader(id) }
+        let keptAfterPrioritize = page.permits(pageProduct, account: account, now: start.addingTimeInterval(300))
+        // 4ea60eb3 F1: at most 20 page products stay tracked, and they don't count toward the 100-game bound.
+        for index in 0..<25 {
+            await page.checkProduct(String(format: "9LRUPAGE%04d", index), account: account,
+                                    now: start.addingTimeInterval(310)) { id in try await reader(id) }
+        }
+        page.track(account: account, installedIDs: installed)
+        let lruKept = page.permits("9LRUPAGE0024", account: account, now: start.addingTimeInterval(320))
+            && !page.permits("9LRUPAGE0000", account: account, now: start.addingTimeInterval(320))
+            && !page.permits(pageProduct, account: account, now: start.addingTimeInterval(320))
+        check(keptAfterPrioritize && lruKept && InstalledProductAccess.pagedLimit == 20,
+              "4ea60eb3 F1/F3: Play over the installed list keeps product-page answers; only the 20 most recent pages stay tracked")
         let productSource = (try? String(contentsOfFile: "Sources/XodusPreview/LiveProductView.swift", encoding: .utf8)) ?? ""
         let appSource = (try? String(contentsOfFile: "Sources/XodusPreview/XodusPreviewApp.swift", encoding: .utf8)) ?? ""
         check(pageReads == 1 && page.permits(pageProduct, account: account, now: start.addingTimeInterval(240))

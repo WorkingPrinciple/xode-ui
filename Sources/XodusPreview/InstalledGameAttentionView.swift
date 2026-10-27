@@ -10,7 +10,7 @@ enum InstalledGameActionCopy {
     static let deleteGameFiles = "Delete Game Files"
     /// Review 53f2edf1: the inventory compares layout (type and size), not contents, so the copy never claims
     /// "only unmodified files".
-    static let uninstallExplanation = "Remove (Keep Files) takes the game out of your library and leaves every file, save and prefix in place. Delete Game Files deletes only the files the game's own package installed, and keeps saves, Wine prefixes, changed files and anything else in the folder."
+    static let uninstallExplanation = "Remove (Keep Files) takes the game out of your library and leaves every file, save and prefix in place. Delete Game Files deletes the files the game's own package installed, including package files you edited if their size didn't change, and keeps saves, Wine prefixes, package files whose size changed and anything else in the folder."
     static let removeKeepingFilesConfirm = "Remove (Keep Files)"
     static let removeKeepingFilesHelp = "Removes this game from the library. The game folder and saves aren't deleted."
     static func removeKeepingFilesTitle(_ title: String) -> String { "Remove \(title) from the library?" }

@@ -30,8 +30,16 @@ final class InstalledProductAccess: ObservableObject {
     private var failures: [String: Int] = [:]
     /// 72450bd3 L2: consecutive failures across all products set the global pause length.
     private var globalFailures = 0
-    /// 72450bd3 M2: products checked from their product page stay tracked (cached) across installed-set updates.
-    private var pagedIDs = Set<String>()
+    /// 72450bd3 M2 / 4ea60eb3 F1: the most recent product pages stay tracked (cached) across installed-set
+    /// updates; at most `pagedLimit`, least recently viewed first out, and outside the installed bound.
+    nonisolated static let pagedLimit = 20
+    private var pagedOrder: [String] = []
+    private var pagedIDs: Set<String> { Set(pagedOrder) }
+    private func rememberPaged(_ id: String) {
+        pagedOrder.removeAll { $0 == id }
+        pagedOrder.append(id)
+        if pagedOrder.count > Self.pagedLimit { pagedOrder.removeFirst(pagedOrder.count - Self.pagedLimit) }
+    }
     private(set) var pausedUntil: Date?
     /// Every licence read this object started; a fixture bounds it.
     private(set) var readCount = 0
@@ -63,29 +71,44 @@ final class InstalledProductAccess: ObservableObject {
     /// 72450bd3 M2: one shared, cached check for a product page; never its own store or a retire on disappear.
     func checkProduct(_ productID: String, session: LiveSession, force: Bool = false) async {
         guard PCGamesClient.validProductID(productID) else { return }
-        pagedIDs.insert(productID)
+        rememberPaged(productID)
         await refresh(session: session, installedIDs: Array(installed.union([productID])), force: force,
                       selectedProductID: productID)
-        pagedIDs.insert(productID)
+        rememberPaged(productID)
     }
 
     func checkProduct(_ productID: String, account: String?, now: Date = Date(), force: Bool = false,
                       read: @escaping @MainActor (String) async throws -> OdeAccountRead) async {
         guard PCGamesClient.validProductID(productID) else { return }
-        pagedIDs.insert(productID)
+        rememberPaged(productID)
         await refresh(account: account, installedIDs: Array(installed.union([productID])), now: now, force: force,
                       selectedProductID: productID, read: read)
         // A first account binding retires the store; keep this page's product tracked afterwards.
-        pagedIDs.insert(productID)
+        rememberPaged(productID)
     }
 
     /// 72450bd3 L1: while reads are paused after a failure, say until when instead of waiting silently.
     func pausedNotice(now: Date = Date()) -> String? {
+        pausedEnd(now: now).map { "Access checks are paused until \($0) after a failed check. Try again then." }
+    }
+
+    /// The pause's end time as shown to people (short time), while a pause is in effect.
+    func pausedEnd(now: Date = Date()) -> String? {
         guard let pausedUntil, now < pausedUntil else { return nil }
         let formatter = DateFormatter()
         formatter.dateStyle = .none
         formatter.timeStyle = .short
-        return "Access checks are paused until \(formatter.string(from: pausedUntil)) after a failed check. Try again then."
+        return formatter.string(from: pausedUntil)
+    }
+
+    /// 4ea60eb3 F2: a failed read's error and Retry state also say when checks resume.
+    func unavailableNotice(now: Date = Date()) -> String {
+        pausedEnd(now: now).map { "Couldn't confirm access right now. Try again after \($0)." } ?? Self.unavailableNotice
+    }
+
+    /// The Try Again title, carrying the pause's end time while Retry can't read.
+    func tryAgainTitle(now: Date = Date()) -> String {
+        pausedEnd(now: now).map { "Try Again after \($0)" } ?? Self.tryAgainTitle
     }
 
     /// REQ-159: a current answer that this account can't play the product; until then Play stays offered and
@@ -146,7 +169,7 @@ final class InstalledProductAccess: ObservableObject {
         }
         if checking { return "Checking access for this game." }
         if errors[productID] == nil, facts[productID] == nil, let paused = pausedNotice(now: now) { return paused }
-        if errors[productID] != nil { return Self.unavailableNotice }
+        if errors[productID] != nil { return unavailableNotice(now: now) }
         if permits(productID, account: account, now: now) { return nil }
         guard let fact = facts[productID] else { return "Access for this game hasn't been checked." }
         if now.timeIntervalSince(fact.checkedAt) < 0 || now.timeIntervalSince(fact.checkedAt) >= Self.freshness
@@ -175,7 +198,7 @@ final class InstalledProductAccess: ObservableObject {
         attempts = [:]
         failures = [:]
         globalFailures = 0
-        pagedIDs = []
+        pagedOrder = []
         pausedUntil = nil
         installed = []
         checking = false
@@ -228,8 +251,8 @@ final class InstalledProductAccess: ObservableObject {
             accountHash = account
         }
         guard let account, XboxAccountBinding.valid(account) else { return }
-        let currentInstalled = Set(installedIDs.filter(PCGamesClient.validProductID))
-        guard currentInstalled.count <= 100 else {
+        let currentInstalled = Set(installedIDs.filter(PCGamesClient.validProductID)).union(pagedIDs)
+        guard currentInstalled.subtracting(pagedIDs).count <= 100 else {
             logger.error("Installed product access scan exceeds the 100-product bound")
             return
         }
@@ -276,6 +299,7 @@ final class InstalledProductAccess: ObservableObject {
                 guard !Task.isCancelled, generation == epoch, accountHash == account else { return }
                 guard installed.contains(id) else { continue }
                 attempts[id] = now
+                let requestStarted = Date()
                 do {
                     let licenseSpan = LoadSignposts.begin("LicenseRead",
                         "operation=installedProductAccess")
@@ -313,7 +337,9 @@ final class InstalledProductAccess: ObservableObject {
                     errors[id] = LiveSession.describe(error)
                     failures[id] = (failures[id] ?? 0) + 1
                     globalFailures += 1
-                    pausedUntil = now.addingTimeInterval(Self.backoff(afterFailures: globalFailures))
+                    // 4ea60eb3 F4: the pause runs from when the read failed, not from when the request began.
+                    pausedUntil = now.addingTimeInterval(Date().timeIntervalSince(requestStarted)
+                        + Self.backoff(afterFailures: globalFailures))
                     logger.error("Product access \(id, privacy: .public) failed: \(LiveSession.describe(error), privacy: .public)")
                 }
                 await Task.yield()

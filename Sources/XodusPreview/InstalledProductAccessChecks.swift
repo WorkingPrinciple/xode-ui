@@ -155,9 +155,10 @@ enum InstalledProductAccessChecks {
             now: now.addingTimeInterval(301)), "Transport failure cannot extend a stale permission or become denial")
         check(!controller.permitsReview(product, account: account, pcCandidate: true, now: now.addingTimeInterval(301))
               && controller.reviewNotice(for: product, account: account, now: now.addingTimeInterval(301))
-                == InstalledProductAccess.unavailableNotice
+                == controller.unavailableNotice(now: now.addingTimeInterval(301))
               && controller.reviewNotice(for: product, account: account, publicGamePassExcludes: true,
-                                         now: now.addingTimeInterval(301)) == "Couldn't confirm access right now. Try again."
+                                         now: now.addingTimeInterval(301))?.hasPrefix("Couldn't confirm access right now. Try again") == true
+              && controller.unavailableNotice(now: now.addingTimeInterval(3_000)) == "Couldn't confirm access right now. Try again."
               && InstalledProductAccess.tryAgainTitle == "Try Again",
               "QA A1: A failed or timed-out access read says \"Couldn't confirm access right now. Try again.\" with Try Again, never 'not included', a denial or a successful review")
         check(controller.facts[denied] == nil && controller.facts[unknown] == nil,

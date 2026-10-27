@@ -786,6 +786,8 @@ final class InstalledGamesController: ObservableObject {
 
     private func launchRequestOutcome(_ game: InstalledGame, engine: String?, timeout: Duration) async -> String? {
         if let refusal = Self.newerBuildRefusal() { return refusal }
+        // 4ea60eb3 F2: a deep-link Play during a pause reports it instead of waiting out the timeout.
+        if !canRequestPlay(game.storeId), let paused = productAccess.pausedNotice() { return paused }
         if !canRequestPlay(game.storeId), let session = unifiedSession {
             // A just-registered game shouldn't wait behind the full background access sweep.
             Task { @MainActor in
