@@ -50,14 +50,15 @@ struct NativeToolbarMaterial: ViewModifier {
             content.padding(.horizontal, 10).padding(.vertical, 6)
                 .background(.background, in: Capsule())
         } else if #available(macOS 26, *) {
-            // REQ-19: clear glass alone left the section labels at 1.2:1 over scrolled artwork (build 624).
-            // A thick system material under the glass keeps them legible while staying native and adaptive.
+            // REQ-19: clear glass alone left the section labels at 1.2:1 over scrolled artwork (build 624), and
+            // thick material still measured 3.1:1 in dark appearance over bright art. The system toolbar
+            // material (.bar) under the glass keeps them at 8:1 or more while staying native and adaptive.
             content.padding(.horizontal, 10).padding(.vertical, 6)
-                .background(.thickMaterial, in: Capsule())
+                .background(.bar, in: Capsule())
                 .glassEffect(.regular, in: Capsule())
         } else {
             content.padding(.horizontal, 10).padding(.vertical, 6)
-                .background(.thickMaterial, in: Capsule())
+                .background(.bar, in: Capsule())
         }
     }
 }

@@ -225,34 +225,43 @@ enum AccessibilityAuditChecks {
     // MARK: REQ-19 toolbar over scrolled artwork
 
     /// Build 624 showed the section labels at 1.19-1.27:1 over scrolled Library artwork. This renders the real
-    /// section picker inside NativeToolbarMaterial over white, black and busy artwork, in light and dark, and
-    /// requires every section label to reach 4.5:1 against its own backing.
+    /// section picker inside NativeToolbarMaterial over white, black and two artworks, in light and dark, once with
+    /// each section selected, and requires every unselected label to reach 4.5:1 against its own backing.
+    /// The selected tab's label is drawn in the active-selection colour on an inactive pill in a never-key
+    /// offscreen window (white on white), which the real app never shows; it is measured on the live capture
+    /// (REQ-134 step 06/07) instead of here.
     static func toolbarOverArtwork(check: (Bool, String) -> Void) {
-        let artwork = ArtAssets.images.sorted { $0.key < $1.key }.prefix(2).map { AnyView(Image(nsImage: $0.value).resizable().scaledToFill()) }
+        let artwork = ArtAssets.images.sorted { $0.key < $1.key }.prefix(2)
+            .map { AnyView(Image(nsImage: $0.value).resizable().scaledToFill()) }
         let backdrops: [(String, AnyView)] = [("white", AnyView(Color.white)), ("black", AnyView(Color.black))]
             + artwork.enumerated().map { ("artwork\($0.offset)", $0.element) }
         check(backdrops.count == 4, "REQ-19: toolbar contrast uses white, black and two real artworks as backdrops")
-        let labels = Destination.allCases.map(\.rawValue)
         for (appearance, suffix) in [(NSAppearance.Name.aqua, "light"), (.darkAqua, "dark")] {
             for (name, backdrop) in backdrops {
-                let view = ZStack {
-                    backdrop.frame(width: 520, height: 120).clipped()
-                    XodusToolbar.navigationPicker(selection: .constant(.library)).fixedSize()
-                        .modifier(NativeToolbarMaterial())
+                var measuredLabels: [String: Double] = [:]
+                for selected in Destination.allCases {
+                    let view = ZStack {
+                        backdrop.frame(width: 520, height: 120).clipped()
+                        XodusToolbar.navigationPicker(selection: .constant(selected)).fixedSize()
+                            .modifier(NativeToolbarMaterial())
+                    }
+                    .frame(width: 520, height: 120)
+                    let (host, window) = host(view, size: CGSize(width: 520, height: 120), appearance: appearance)
+                    defer { window.contentView = nil }
+                    guard let bitmap = host.bitmapImageRepForCachingDisplay(in: host.bounds) else { continue }
+                    host.cacheDisplay(in: host.bounds, to: bitmap)
+                    BrandUXChecks.save(bitmap, name: "req19-toolbar-\(name)-\(suffix)-\(selected.rawValue.lowercased())")
+                    let lines = (try? measure(bitmap, scale: Double(bitmap.pixelsWide) / 520)) ?? []
+                    for label in Destination.allCases where label != selected {
+                        // OCR can join neighbouring segments into one line; that line's ratio applies to each.
+                        for line in lines where line.text.localizedCaseInsensitiveContains(label.rawValue) {
+                            measuredLabels[label.rawValue] = min(measuredLabels[label.rawValue] ?? .infinity, line.ratio)
+                        }
+                    }
                 }
-                .frame(width: 520, height: 120)
-                let (host, window) = host(view, size: CGSize(width: 520, height: 120), appearance: appearance)
-                defer { window.contentView = nil }
-                guard let bitmap = host.bitmapImageRepForCachingDisplay(in: host.bounds) else {
-                    check(false, "REQ-19: toolbar renders over \(name) (\(suffix))"); continue
-                }
-                host.cacheDisplay(in: host.bounds, to: bitmap)
-                BrandUXChecks.save(bitmap, name: "req19-toolbar-\(name)-\(suffix)")
-                let measured = (try? measure(bitmap, scale: Double(bitmap.pixelsWide) / 520)) ?? []
-                let sections = measured.filter { m in labels.contains { m.text.localizedCaseInsensitiveContains($0) } }
-                let lowest = sections.map(\.ratio).min() ?? 0
-                check(sections.count >= 2 && lowest >= 4.5 && !window.isVisible,
-                      "REQ-19: Toolbar section labels over \(name) in \(suffix) reach 4.5:1 (\(sections.map { "\($0.text) \(String(format: "%.2f", $0.ratio))" }))")
+                let lowest = measuredLabels.values.min() ?? 0
+                check(measuredLabels.count == Destination.allCases.count && lowest >= 4.5,
+                      "REQ-19: Unselected toolbar section labels over \(name) in \(suffix) reach 4.5:1 (\(measuredLabels.sorted { $0.key < $1.key }.map { "\($0.key) \(String(format: "%.2f", $0.value))" }))")
             }
         }
     }
