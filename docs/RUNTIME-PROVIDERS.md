@@ -520,6 +520,19 @@ which its own run evidence used. Runtimes are staged locally under
 `~/Library/Application Support/Ode to X/Runtime/candidates/<primary sha>/`,
 with `SHA256SUMS` and `provenance.json`. They are not bundled in the app.
 
+### Runtime pair e63bc66 (supersedes efcbf2a for FH6 and Hades)
+
+L12 commit `e63bc665c9d2ab276b2dea533bcef538456ce749` (tree `91982592`): primary
+`ce316019739a4f80fb893af64f2e91f77d6de111af70bb260a7b19970d54a360`
+(5,062,605 bytes), legacy
+`3cae73b96d3a38cbef57aa63e4146614cd7e35517a1ce15b1f1877550509c1d1`
+(8,988,323 bytes). Unsigned Windows PE, verified by SHA-256 before launch. It
+contains `efcbf2a`, `073b317` (silent registration for protocol activation and
+audio endpoint changes), and `user_GetAuthorization` now converts with
+`WC_ERR_INVALID_CHARS`, which fixes XSTS token acquisition for every title. The
+qualification runs below were on `efcbf2a`; the coordinator directed this pin.
+The scope is still FH6 and Hades. The pair is staged at `Runtime/candidates/ce316019…/`.
+
 ### Runtime pair efcbf2a (supersedes eec6a13 for FH6 and Hades)
 
 L12 commit `efcbf2ac52e07f57099e52b1704fe2e884983e39`: primary
