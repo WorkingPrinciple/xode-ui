@@ -270,6 +270,12 @@
         "XODUS_PRIVATE_RUNTIME_COM_STA",
         "XODUS_PRIVATE_CALLER_OWNS_COM",
         "CX_APPLEGPTK_LIBD3DSHARED_PATH"
+      ],
+      "gameArguments": [
+        "-usebundles",
+        "-splitcook",
+        "-dlcinstall",
+        "-goty"
       ]
     }
   ],

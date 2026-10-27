@@ -91,6 +91,13 @@ import Foundation
         let content = ["data.pck", "game.exe", "microsoftgame.config", "textures.bin", "level01.pak"]
         check(saves.allSatisfy(Ops.looksLikeSave) && !content.contains(where: Ops.looksLikeSave),
               "fc2f17d1 M1: save-like names and extensions are recognised; ordinary package files are not")
+        let witcher = (try? NativeTitleLaunchProfile.bundledProfiles())?.first { $0.productID == "C261457LCNMJ" }
+        let args = witcher?.playArguments ?? []
+        check(witcher?.runtime == nil && args.filter { $0 == "--game-arg" }.count == 4
+              && Array(args.suffix(8)) == ["--game-arg", "-usebundles", "--game-arg", "-splitcook",
+                                           "--game-arg", "-dlcinstall", "--game-arg", "-goty"]
+              && args.starts(with: ["--exe", "bin/Gaming.Desktop.x64/witcher3.exe"]),
+              "REQ-140: the Witcher 3 candidate passes its commandline.txt tokens once each as --game-arg and uses the app-default runtime")
     }
 
     // MARK: REQ-135 Uninstall

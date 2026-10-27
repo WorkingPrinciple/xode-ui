@@ -239,6 +239,9 @@ struct NativeTitleLaunchProfile: Codable {
     var gameRecipe: String? = nil
     /// Reviewed scoped popup rules (L6 producer #2 `--auto-dismiss-rules`); conflicts with `noAutoDismiss`.
     var autoDismissRules: String? = nil
+    /// The package's own commandline.txt arguments (the backend never reads that file); each becomes one
+    /// `--game-arg`, which the adapter appends once.
+    var gameArguments: [String]? = nil
 
     func enginePinsMatch(_ inspection: EngineInspection) -> Bool {
         guard let engine else { return true }
@@ -404,6 +407,11 @@ struct NativeTitleLaunchProfile: Codable {
                 throw NativeLaunchError.invalidProfile
             }
         }
+        if let gameArguments {
+            guard !gameArguments.isEmpty, gameArguments.count <= 16, gameArguments.allSatisfy({
+                !$0.isEmpty && $0.utf8.count <= 256 && !$0.utf8.contains(0) && !$0.contains("\n")
+            }) else { throw NativeLaunchError.invalidProfile }
+        }
         if let gameRecipe {
             guard NativeGameRecipe.productID(for: gameRecipe) == productID, let engine,
                   engine != NativeFH6Recipe.engineName, CalimochoReleasePin.named(engine) != nil,
@@ -466,6 +474,7 @@ struct NativeTitleLaunchProfile: Codable {
         if noAutoDismiss == true { result += ["--no-auto-dismiss"] }
         if let autoDismissRules { result += ["--auto-dismiss-rules", autoDismissRules] }
         if let gameRecipe { result += ["--game-recipe", gameRecipe] }
+        for argument in gameArguments ?? [] { result += ["--game-arg", argument] }
         return result
     }
 
@@ -476,6 +485,7 @@ struct NativeTitleLaunchProfile: Codable {
         if noAutoDismiss == true { result += ["--no-auto-dismiss"] }
         if let autoDismissRules { result += ["--auto-dismiss-rules", autoDismissRules] }
         if let gameRecipe { result += ["--game-recipe", gameRecipe] }
+        for argument in gameArguments ?? [] { result += ["--game-arg", argument] }
         return result
     }
 
