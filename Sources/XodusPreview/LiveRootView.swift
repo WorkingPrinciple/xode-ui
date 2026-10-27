@@ -6,10 +6,39 @@ private struct CatalogPresentationActiveKey: EnvironmentKey {
     static let defaultValue = true
 }
 
+private struct BrowseTabSelectedKey: EnvironmentKey {
+    static let defaultValue = true
+}
+
+/// REQ-75: what tab selection and window focus may and may not change. Background startup work (loads,
+/// prechecks, hero playback) runs only for the selected tab of an active window; whether resolved content is
+/// usable, and whether "finish starting" is said, depends only on the app's real startup state.
+enum BrowseGate {
+    static let startupNotice = "Wait for \(AppBrand.displayName) to finish starting."
+
+    static func startupTasks(startupComplete: Bool, selected: Bool, sceneActive: Bool) -> Bool {
+        startupComplete && selected && sceneActive
+    }
+    /// What LiveRootView passes a browse tab: background work follows tab and focus; interaction doesn't.
+    static func inputs(startupAllowed: Bool, selected: Bool, sceneActive: Bool)
+        -> (allowsStartupTasks: Bool, startupComplete: Bool) {
+        (startupTasks(startupComplete: startupAllowed, selected: selected, sceneActive: sceneActive), startupAllowed)
+    }
+    static func installEnabled(startupComplete: Bool, canReview: Bool) -> Bool { startupComplete && canReview }
+    static func installDisabledReason(startupComplete: Bool, otherwise: String?) -> String? {
+        startupComplete ? otherwise : startupNotice
+    }
+}
+
 extension EnvironmentValues {
     var catalogPresentationActive: Bool {
         get { self[CatalogPresentationActiveKey.self] }
         set { self[CatalogPresentationActiveKey.self] = newValue }
+    }
+    /// The browse tab this view lives in is the selected one (keyboard focus stays out of hidden tabs).
+    var browseTabSelected: Bool {
+        get { self[BrowseTabSelectedKey.self] }
+        set { self[BrowseTabSelectedKey.self] = newValue }
     }
 }
 
@@ -698,6 +727,15 @@ struct LiveRootView: View {
         searchFocused = false
     }
 
+    private var libraryInputs: (allowsStartupTasks: Bool, startupComplete: Bool) {
+        BrowseGate.inputs(startupAllowed: startupAllowed, selected: state.destination == .library,
+                          sceneActive: scenePhase == .active)
+    }
+    private var discoverInputs: (allowsStartupTasks: Bool, startupComplete: Bool) {
+        BrowseGate.inputs(startupAllowed: startupAllowed, selected: state.destination == .discover,
+                          sceneActive: scenePhase == .active)
+    }
+
     private func retainedBrowse(_ destination: Destination) -> some View {
         let selected = state.destination == destination
         let active = selected && scenePhase == .active
@@ -718,6 +756,9 @@ struct LiveRootView: View {
                         })
                     } else { catalog }
                 }
+                // REQ-75 F1: hidden at the content level too. An ancestor's accessibilityHidden(false) (the
+                // first-load cover once it lifts) re-exposes a container-level hide in AppKit's AX tree.
+                .accessibilityHidden(!selected)
                 .padding(immersive ? 0 : 30)
                 .frame(minHeight: destination == .library ? libraryContainerSize.flatMap {
                     state.librarySelection.scopeMinimumHeight(viewport: $0)
@@ -725,6 +766,7 @@ struct LiveRootView: View {
                        alignment: .top)
             }
             .scrollPosition(id: scrollID)
+            .accessibilityElement(children: selected ? .contain : .ignore)
             .scrollIndicators(destination == .discover ? .never : .automatic)
             .modifier(LibraryScrollMeasurementObserver(
                 selection: destination == .library ? state.librarySelection : nil,
@@ -750,9 +792,12 @@ struct LiveRootView: View {
             if destination == .library { libraryScrollCommand += 1 }
         })
         .environment(\.catalogPresentationActive, active)
+        .environment(\.browseTabSelected, selected)
         .opacity(selected ? 1 : 0)
         .zIndex(selected ? 1 : 0)
         .allowsHitTesting(selected)
+        // Inert and out of keyboard focus while hidden; its cards are never shown disabled to assistive tech,
+        // because the hidden tab isn't in the accessibility tree at all.
         .disabled(!selected)
         .accessibilityHidden(!selected)
     }
@@ -800,7 +845,8 @@ struct LiveRootView: View {
                 LiveLibraryView(library: state.pcGames, installed: state.installedGames,
                                 operations: state.gameOperations,
                                 query: state.query(for: .library).trimmingCharacters(in: .whitespacesAndNewlines),
-                                allowsStartupTasks: startupAllowed && state.destination == .library && scenePhase == .active,
+                                allowsStartupTasks: libraryInputs.allowsStartupTasks,
+                                startupComplete: libraryInputs.startupComplete,
                                 allowsArtworkLoading: libraryArtworkAllowed,
                                 allowsHeroAnimation: heroAnimationAllowed && state.destination == .library && scenePhase == .active,
                                 browse: { state.navigate(.discover) },
@@ -861,7 +907,8 @@ struct LiveRootView: View {
                         operations: state.gameOperations,
                         query: state.query(for: .discover).trimmingCharacters(in: .whitespacesAndNewlines),
                         allowsArtworkLoading: libraryArtworkAllowed,
-                        allowsStartupTasks: startupAllowed && state.destination == .discover && scenePhase == .active,
+                        allowsStartupTasks: discoverInputs.allowsStartupTasks,
+                        startupComplete: discoverInputs.startupComplete,
                         allowsHeroAnimation: heroAnimationAllowed && state.destination == .discover && scenePhase == .active,
                         clearSearch: { state.query = "" }, selection: state.discoverSelection,
                         searchLibrary: { query in

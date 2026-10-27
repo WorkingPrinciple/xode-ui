@@ -334,6 +334,9 @@ struct LiveCatalogView: View {
     let query: String
     var allowsArtworkLoading = true
     var allowsStartupTasks = true
+    /// REQ-75: the app's real startup state; tab selection and window focus never change it.
+    var startupComplete = true
+    @Environment(\.browseTabSelected) private var tabSelected
     var allowsHeroAnimation = true
     @Environment(\.catalogPresentationActive) private var presentationActive
     let clearSearch: () -> Void
@@ -846,7 +849,7 @@ struct LiveCatalogView: View {
             }
             .buttonStyle(.plain).accessibilityLabel("View \(game.title)")
             .accessibilityValue(game.facts.badgeLabels().joined(separator: ", "))
-            .focusable()
+            .focusable(tabSelected)
             .focused($focusedResult, equals: game.id)
             .onKeyPress(.return) { open(game); return .handled }
             if let status = GameInstallAction(game: PCGame(id: game.id, title: game.title, artwork: nil),
@@ -1079,12 +1082,13 @@ struct LiveCatalogView: View {
 
     private func installAction(_ game: LibraryGame, pc: PCGame, primary: Bool) -> GameInstallAction {
         GameInstallAction(game: pc, operations: operations,
-                          enabled: allowsStartupTasks && canReviewInstall(game), primary: primary,
+                          enabled: BrowseGate.installEnabled(startupComplete: startupComplete,
+                                                             canReview: canReviewInstall(game)), primary: primary,
                           showsDiagnostics: false,
-                          disabledReason: !allowsStartupTasks ? "Wait for \(AppBrand.displayName) to finish starting."
-                            : game.pc == nil && game.product?.pcCatalogCandidate != true
+                          disabledReason: BrowseGate.installDisabledReason(startupComplete: startupComplete,
+                            otherwise: game.pc == nil && game.product?.pcCatalogCandidate != true
                                 ? "PC availability for this title hasn't been confirmed. Installation is unavailable."
-                                : library.installAccessNotice(for: game.id))
+                                : library.installAccessNotice(for: game.id)))
     }
 
     @ViewBuilder private func actions(_ game: LibraryGame, primary: Bool) -> some View {

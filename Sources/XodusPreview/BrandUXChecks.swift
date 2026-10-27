@@ -1303,6 +1303,22 @@ enum BrandUXChecks {
               && !AccountGatePresentation.defers(statusSettled: false, failed: false, waitElapsed: true)
               && AccountGatePresentation.launchWait == .seconds(3),
               "Warm launch: the welcome sheet waits only while the first sign-in read is outstanding (≤3 s, never after an error), so no empty sheet window is left behind")
+        // REQ-75 (L10 REQ-134 on 624): the install reason LiveRootView's real inputs produce for a hidden tab or an
+        // inactive window is the game's own reason, never "finish starting"; only incomplete startup says that.
+        for (selected, active) in [(true, true), (false, true), (true, false), (false, false)] {
+            let inputs = BrowseGate.inputs(startupAllowed: true, selected: selected, sceneActive: active)
+            check(inputs.allowsStartupTasks == (selected && active) && inputs.startupComplete
+                  && BrowseGate.installEnabled(startupComplete: inputs.startupComplete, canReview: true)
+                  && BrowseGate.installDisabledReason(startupComplete: inputs.startupComplete,
+                                                      otherwise: "Access pending") == "Access pending",
+                  "REQ-75: Tab selected=\(selected), window active=\(active): startup work \(selected && active ? "runs" : "pauses"); install stays enabled with its own reason")
+        }
+        let starting = BrowseGate.inputs(startupAllowed: false, selected: true, sceneActive: true)
+        check(!starting.allowsStartupTasks && !starting.startupComplete
+              && !BrowseGate.installEnabled(startupComplete: starting.startupComplete, canReview: true)
+              && BrowseGate.installDisabledReason(startupComplete: starting.startupComplete,
+                                                  otherwise: "Access pending") == BrowseGate.startupNotice,
+              "REQ-75: 'Wait for X Ode to finish starting.' appears only while startup is genuinely incomplete")
         let faultFile = FileManager.default.temporaryDirectory.appendingPathComponent("xodus-fault-\(UUID().uuidString)")
         let faultEnvironment = ["XODUS_DEBUG_FAULT_FILE": faultFile.path]
         let faultAbsent = !DebugFaultInjection.active(.catalog, environment: faultEnvironment)

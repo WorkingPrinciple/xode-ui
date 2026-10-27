@@ -30,6 +30,9 @@ struct LiveLibraryView: View {
     @EnvironmentObject private var session: LiveSession
     let query: String
     var allowsStartupTasks = true
+    /// REQ-75: the app's real startup state; tab selection and window focus never change it.
+    var startupComplete = true
+    @Environment(\.browseTabSelected) private var tabSelected
     var allowsArtworkLoading: Bool? = nil
     var allowsHeroAnimation = true
     let browse: () -> Void
@@ -313,14 +316,14 @@ struct LiveLibraryView: View {
             selection.measureAncestor("root", frame: $0)
         }
         .preference(key: LibraryHeroPresenceKey.self, value: query.isEmpty && !heroGames.isEmpty)
-        .gameDetailSheet(item: $selection.localDetail, operations: operations, allowed: allowsStartupTasks,
+        .gameDetailSheet(item: $selection.localDetail, operations: operations, allowed: startupComplete,
                          accountHash: session.accountHash, onDismiss: {
             restoreDetailFocus()
         }) { entry, reviewInstall in
             if let product = entry.product {
                 LiveProductView(product: product, library: library, installedLibrary: installed,
                     operations: operations, installationID: entry.game.id,
-                    allowsStartupTasks: allowsStartupTasks, allowsArtworkLoading: artworkAllowed,
+                    allowsStartupTasks: startupComplete, allowsArtworkLoading: artworkAllowed,
                     reviewInstall: reviewInstall)
             } else {
                 LocalInstalledGameView(game: entry.game, installed: installed, operations: operations)
@@ -458,13 +461,14 @@ struct LiveLibraryView: View {
             } else {
                 let install = (game.pc ?? game.product.map(PCGame.init(product:))).map { pc in
                     GameInstallAction(game: pc, operations: operations,
-                        enabled: allowsStartupTasks && DiscoverBrowse.canReviewInstall(
-                            owned: game.pc != nil, accessIsCurrent: library.accessIsCurrent(for: game.id),
-                            gamePass: game.gamePass, subscriptionActive: operations.gamePassActive,
-                            pcCandidate: true),
+                        enabled: BrowseGate.installEnabled(startupComplete: startupComplete,
+                            canReview: DiscoverBrowse.canReviewInstall(
+                                owned: game.pc != nil, accessIsCurrent: library.accessIsCurrent(for: game.id),
+                                gamePass: game.gamePass, subscriptionActive: operations.gamePassActive,
+                                pcCandidate: true)),
                         showsDiagnostics: false,
-                        disabledReason: allowsStartupTasks ? library.installAccessNotice(for: game.id)
-                            : "Wait for \(AppBrand.displayName) to finish starting.")
+                        disabledReason: BrowseGate.installDisabledReason(startupComplete: startupComplete,
+                            otherwise: library.installAccessNotice(for: game.id)))
                 }
                 let blockedReason = install?.heroReplacementReason
                 if let install, blockedReason == nil { install }
@@ -540,7 +544,7 @@ struct LiveLibraryView: View {
                                     .clipShape(RoundedRectangle(cornerRadius: 12))
                             }
                             .buttonStyle(.plain)
-                            .focusable()
+                            .focusable(tabSelected)
                             .focused($focusedGameID, equals: "installed-\(game.id)")
                             .focusEffectDisabled()
                             .onKeyPress(.return) {
@@ -617,7 +621,7 @@ struct LiveLibraryView: View {
                                     .clipShape(RoundedRectangle(cornerRadius: 12))
                             }
                             .buttonStyle(.plain)
-                            .focusable()
+                            .focusable(tabSelected)
                             .focused($focusedGameID, equals: "recent-\(game.id)")
                             .focusEffectDisabled()
                             .onKeyPress(.return) {

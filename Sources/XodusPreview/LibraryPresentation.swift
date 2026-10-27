@@ -1001,6 +1001,7 @@ struct GameCard<Artwork: View, Status: View>: View {
     var searchFocus: (FocusState<String?>.Binding, String)? = nil
     var focusReturn: (FocusState<String?>.Binding, String)? = nil
     let open: () -> Void
+    @Environment(\.browseTabSelected) private var tabSelected
     @ViewBuilder let artwork: () -> Artwork
     @ViewBuilder let status: () -> Status
 
@@ -1088,7 +1089,7 @@ struct GameCard<Artwork: View, Status: View>: View {
         .help(coverStatusDescription)
         .accessibilityValue(coverStatusDescription)
         .accessibilityHint("Open game details for play, installation and compatibility")
-        .focusable()
+        .focusable(tabSelected)
         .onKeyPress(.return, action: openFromKeyboard)
     }
 
