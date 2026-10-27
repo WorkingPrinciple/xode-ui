@@ -10,7 +10,7 @@ enum NativeLaunchSupport: Equatable {
     case notSupported(String)
     /// The title has an admitted setup, but its engine isn't usable on this Mac.
     case engineMissing(String)
-    /// Owner decision (REQ-150): an installed title with no tested launch setup still offers Play
+    /// Owner decision (REQ-153): an installed title with no tested launch setup still offers Play
     /// through the generic Calimocho launch and the user's chosen engine, labelled honestly.
     case untested
 
