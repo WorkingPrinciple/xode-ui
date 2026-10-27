@@ -181,6 +181,12 @@ struct XodusPreviewApp: App {
                 selfPID: ProcessInfo.processInfo.processIdentifier) {
             ConcurrentAppGuard.refuse(peer: peer)
         }
+        // Two apps launched at the same moment can both miss each other in the process list; the shared
+        // lock admits exactly one of them.
+        if let bundleID = Bundle.main.bundleIdentifier, ConcurrentAppGuard.peers[bundleID] != nil,
+           !ConcurrentAppGuard.holdInstanceLock() {
+            ConcurrentAppGuard.refuse(peer: "Another X Ode app")
+        }
         QualificationDiagnostics.importOrdinaryPreferences()
 #if XODUS_SHIPPING
         if !CommandLine.arguments.dropFirst().isEmpty,
@@ -458,6 +464,38 @@ enum ConcurrentAppGuard {
 
     static func message(peer: String) -> String {
         "\(peer) is already running. Quit it first; both apps share the same games and game service."
+    }
+
+    /// REQ-138: one exclusive flock shared by the ordinary and Qualification apps, held for the process's life.
+    static var instanceLockFile: URL {
+        URL(fileURLWithPath: NSHomeDirectory())
+            .appendingPathComponent("Library/Application Support/Xodus/app-instance.lock")
+    }
+    nonisolated(unsafe) private static var heldInstanceLock: Int32 = -1
+
+    enum InstanceLock: Equatable { case held(Int32), busy, unavailable }
+
+    /// `busy` when another process (or another open of the file here) holds the lock. A lock file that can't be
+    /// opened is `unavailable` and doesn't block launch; the process-list check still applies.
+    static func acquireInstanceLock(_ url: URL) -> InstanceLock {
+        try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true,
+                                                 attributes: [.posixPermissions: 0o700])
+        let fd = open(url.path, O_CREAT | O_RDWR | O_NOFOLLOW | O_CLOEXEC, 0o600)
+        guard fd >= 0 else { return .unavailable }
+        guard flock(fd, LOCK_EX | LOCK_NB) == 0 else {
+            close(fd)
+            return .busy
+        }
+        return .held(fd)
+    }
+
+    static func holdInstanceLock() -> Bool {
+        guard heldInstanceLock < 0 else { return true }
+        switch acquireInstanceLock(instanceLockFile) {
+        case .busy: return false
+        case .held(let fd): heldInstanceLock = fd; return true
+        case .unavailable: return true
+        }
     }
 
     @MainActor static func refuse(peer: String) {
