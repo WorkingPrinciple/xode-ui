@@ -641,10 +641,16 @@ enum LibraryAccessChecks {
         let heroUnknown = GameFacts(pc: nil, gamePass: false, installed: installedHeld, accessIsCurrent: false)
         let heroStale = GameFacts(pc: PCGame(id: held.id, title: held.title, artwork: nil,
             acquisitionKind: .subscription), gamePass: true, installed: installedHeld, accessIsCurrent: false)
-        check(heroCatalogOnly.heroAccessLabels() == ["In PC Game Pass catalog"]
-              && heroUnknown.heroAccessLabels().isEmpty
-              && heroStale.heroAccessLabels() == ["In PC Game Pass catalog"],
+        check(heroCatalogOnly.heroAccessLabels() == ["Ownership not confirmed", "In PC Game Pass catalog"]
+              && heroUnknown.heroAccessLabels() == ["Ownership not confirmed"]
+              && heroStale.heroAccessLabels() == ["Ownership not confirmed", "In PC Game Pass catalog"],
               "REQ-77: Public membership, stale subscription and installed/launchable files cannot invent current account provenance")
+        let heroAbsent = GameFacts(pc: nil, gamePass: false, installed: nil, accessIsCurrent: true)
+        check(heroAbsent.heroAccessLabels() == ["Ownership not confirmed"]
+              && ([heroPurchase, heroSubscription, heroBoth, heroCatalogOnly, heroUnknown, heroStale, heroAbsent]
+                .allSatisfy { facts in !facts.heroAccessLabels().contains { $0.contains("Not owned")
+                    || $0.contains("Not in") || $0.contains("Ultimate") } }),
+              "L21: Hero always states access provenance; library absence (REQ-7) and catalogue gaps never become Not owned, non-membership or an inferred plan")
         check([heroPurchase, heroSubscription, heroBoth, heroCatalogOnly, heroUnknown, heroStale]
             .allSatisfy { !$0.heroAccessLabels().contains("Installed on this Mac") },
               "REQ-77: All playable hero evidence combinations omit the redundant prominent installed subtitle")
