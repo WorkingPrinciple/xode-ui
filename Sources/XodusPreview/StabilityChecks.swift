@@ -12,6 +12,10 @@ import Foundation
                                                 attributes: [.posixPermissions: 0o700])
         defer { try? FileManager.default.removeItem(at: root) }
         try uninstallChecks(root: root.appendingPathComponent("uninstall"), check: check)
+        do { try await uninstallActionChecks(root: root.appendingPathComponent("uninstall-actions"), check: check) }
+        catch { check(false, "REQ-135 action fixture: \(error)") }
+        do { try await twoProcessChecks(root: root.appendingPathComponent("two-process"), check: check) }
+        catch { check(false, "REQ-136 two-process fixture: \(error)") }
         try await journalChecks(root: root.appendingPathComponent("journal"), check: check)
         do { try await registryChecks(root: root.appendingPathComponent("registry"), check: check) }
         catch { check(false, "REQ-136 registry fixture: \(error)") }
@@ -62,17 +66,98 @@ import Foundation
         try Data("save".utf8).write(to: separatePrefix.appendingPathComponent("progress.sav"))
         try FileManager.default.createSymbolicLink(at: linked.appendingPathComponent("saves-link"),
                                                    withDestinationURL: separatePrefix)
+        // F1: an unreadable folder that sorts before the saves must not end the walk as "safe".
+        let unreadable = root.appendingPathComponent("unreadable-first")
+        try game(unreadable)
+        try FileManager.default.createDirectory(at: unreadable.appendingPathComponent("AAA-locked"), withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: unreadable.appendingPathComponent("ZZZ/Saves"), withIntermediateDirectories: true)
+        try Data("slot".utf8).write(to: unreadable.appendingPathComponent("ZZZ/Saves/slot.sav"))
+        chmod(unreadable.appendingPathComponent("AAA-locked").path, 0)
+        defer { chmod(unreadable.appendingPathComponent("AAA-locked").path, 0o700) }
+        // F2: Unreal keeps saves deep under …/Saved/SaveGames.
+        let unreal = root.appendingPathComponent("unreal")
+        try game(unreal)
+        try FileManager.default.createDirectory(at: unreal.appendingPathComponent("Game/Content/Paks/a/b/Saved/SaveGames"),
+                                                withIntermediateDirectories: true)
+        try Data("slot".utf8).write(to: unreal.appendingPathComponent("Game/Content/Paks/a/b/Saved/SaveGames/0.sav"))
         let before = snapshot(root)
-        let verdicts = [clean, inRootSave, nestedPrefix, unknown, otherProduct, linked].map {
+        let verdicts = [clean, inRootSave, nestedPrefix, unknown, otherProduct, linked, unreadable, unreal].map {
             Ops.uninstallSafety(folder: $0, productID: "FIXTURE00077")
         }
         check(verdicts[0] == .safe && verdicts.dropFirst().allSatisfy { $0 == .unsafe(Ops.uninstallUnsafeMessage) },
-              "REQ-135: only a verified game folder can be deleted; in-root saves, a nested prefix, an unknown layout, another product and a symlink all fail closed: \(verdicts)")
+              "REQ-135: only a verified game folder can be deleted; in-root saves, a nested prefix, an unknown layout, another product and a symlink an unreadable entry before Saves and a deep Unreal Saved all fail closed: \(verdicts)")
         check(snapshot(root) == before,
               "REQ-135: the safety check leaves every sentinel (in-root save, nested prefix, separate prefix) unchanged")
         check(InstalledGameActionCopy.uninstallExplanation.contains("Keep Files")
               && InstalledGameActionCopy.deleteGameFiles == "Delete Game Files",
               "REQ-135: Uninstall defaults to Remove (Keep Files); deleting is the explicit secondary action")
+    }
+
+    /// Review ea4dda97 F2: the real Remove and Delete Game Files actions, with sentinels inside and beside the root.
+    static func uninstallActionChecks(root: URL, check: (Bool, String) -> Void) async throws {
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+        let folder = root.appendingPathComponent("Game")
+        try game(folder)
+        try FileManager.default.createDirectory(at: folder.appendingPathComponent("Saved"), withIntermediateDirectories: true)
+        try Data("inside".utf8).write(to: folder.appendingPathComponent("Saved/slot.sav"))
+        let beside = root.appendingPathComponent("prefix/drive_c/users/save.dat")
+        try FileManager.default.createDirectory(at: beside.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data("beside".utf8).write(to: beside)
+        let sentinels = { snapshot(folder).merging(snapshot(root.appendingPathComponent("prefix"))) { a, _ in a } }
+        let before = sentinels()
+        let entry = InstalledGame(id: UUID(), title: "Sentinel", identityName: "Fixture.Game", version: "1.0.0.0",
+                                  storeId: "FIXTURE00077", folder: folder.path, launcher: "", importedAt: Date(),
+                                  usesNativeLifecycle: true)
+        let store = InstalledGameStore(file: root.appendingPathComponent("registry/installed-games.json"))
+        try await store.save([entry])
+        let library = InstalledGamesController(store: store, inspectPackage: { _ in .msixvc }, mountedStorageRoots: { [] })
+        await library.load()
+        let paths = GameScriptPaths(scripts: root.appendingPathComponent("scripts"),
+            processed: root.appendingPathComponent("processed"), logs: root.appendingPathComponent("logs"),
+            games: root.appendingPathComponent("Games"), journal: root.appendingPathComponent("private/operation.json"))
+        let operations = GameOperationsController(installed: library, paths: paths)
+        guard let loaded = library.games.first else { check(false, "REQ-135 action fixture must load"); return }
+        operations.prepareUninstall(loaded)
+        operations.confirmUninstall(loaded)
+        let deadline = ContinuousClock.now.advanced(by: .seconds(5))
+        while operations.error == nil, operations.operation != nil || operations.uninstallConsent != nil,
+              ContinuousClock.now < deadline { try await Task.sleep(for: .milliseconds(20)) }
+        let deleteRefused = operations.error?.contains("won't be deleted") == true && sentinels() == before
+        operations.prepareUninstall(loaded)
+        await operations.uninstallKeepingFiles(loaded)
+        check(deleteRefused && library.games.isEmpty && sentinels() == before,
+              "REQ-135 F2: Delete Game Files refuses a folder with saves and Remove (Keep Files) only unregisters it; sentinels inside and beside the root are unchanged (error \(operations.error ?? "nil"))")
+    }
+
+    /// Review ea4dda97 F3: a separate process (python, flock) writes while this one does; nothing is lost.
+    static func twoProcessChecks(root: URL, check: (Bool, String) -> Void) async throws {
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+        let journalFile = root.appendingPathComponent("game-operation.json")
+        let foreign = record("xodus-20261027T200000Z-000000aa", product: "FIXTURE00120", destination: root.path + "/foreign")
+        let foreignJSON = String(decoding: try JSONEncoder().encode(foreign), as: UTF8.self)
+        // The helper holds the lease, writes its run's journal, then holds a little longer before releasing.
+        let helper = Process()
+        helper.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
+        helper.arguments = ["-c", """
+            import fcntl, os, sys, time
+            lock = open(sys.argv[1] + ".lock", "a"); fcntl.flock(lock, fcntl.LOCK_EX)
+            open(sys.argv[2], "w").write("ready")
+            fd = os.open(sys.argv[1], os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600); os.write(fd, sys.argv[3].encode()); os.close(fd)
+            time.sleep(0.6); fcntl.flock(lock, fcntl.LOCK_UN)
+            """, journalFile.path, root.appendingPathComponent("helper-ready").path, foreignJSON]
+        try helper.run()
+        let ready = ContinuousClock.now.advanced(by: .seconds(5))
+        while !FileManager.default.fileExists(atPath: root.appendingPathComponent("helper-ready").path), ContinuousClock.now < ready {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        let journal = GameOperationJournal(file: journalFile)
+        let ours = record("xodus-20261027T200001Z-000000bb", product: "FIXTURE00121", destination: root.path + "/ours")
+        var refused = false
+        do { try await journal.save(ours) } catch GameScriptError.busy { refused = true }
+        helper.waitUntilExit()
+        let survivor = try? await journal.load()
+        check(refused && survivor == foreign,
+              "REQ-136 F3: while another process holds the journal lease, this process waits, then refuses rather than overwriting its run")
     }
 
     // MARK: REQ-136 journal and registry
@@ -170,11 +255,13 @@ import Foundation
 
     static func gatingChecks(check: (Bool, String) -> Void) {
         let ordinary = "io.github.dragoshont.xodus.development", qual = "io.github.dragoshont.xodus.qualification"
-        check(ConcurrentAppGuard.runningPeer(bundleID: ordinary, running: [ordinary, qual]) == "X Ode Qualification"
-              && ConcurrentAppGuard.runningPeer(bundleID: qual, running: [qual, ordinary]) == "X Ode"
-              && ConcurrentAppGuard.runningPeer(bundleID: ordinary, running: [ordinary]) == nil
-              && ConcurrentAppGuard.runningPeer(bundleID: nil, running: [ordinary, qual]) == nil,
-              "REQ-138: the ordinary and Qualification apps refuse to run at the same time")
+        typealias Run = ConcurrentAppGuard.Running
+        check(ConcurrentAppGuard.runningPeer(bundleID: ordinary, running: [Run(bundleID: ordinary, pid: 10), Run(bundleID: qual, pid: 11)], selfPID: 10) == "X Ode Qualification"
+              && ConcurrentAppGuard.runningPeer(bundleID: qual, running: [Run(bundleID: qual, pid: 11), Run(bundleID: ordinary, pid: 10)], selfPID: 11) == "X Ode"
+              && ConcurrentAppGuard.runningPeer(bundleID: ordinary, running: [Run(bundleID: ordinary, pid: 10), Run(bundleID: ordinary, pid: 12)], selfPID: 12) == "Another copy of X Ode"
+              && ConcurrentAppGuard.runningPeer(bundleID: ordinary, running: [Run(bundleID: ordinary, pid: 10)], selfPID: 10) == nil
+              && ConcurrentAppGuard.runningPeer(bundleID: nil, running: [Run(bundleID: ordinary, pid: 10)], selfPID: 99) == nil,
+              "REQ-138 F4: the ordinary and Qualification apps, and a second copy of either, refuse to run at the same time")
         let fh6 = NativeLaunchSupport.notSupported(NativeLaunchSupport.inTestingReason)
         check(fh6.unavailableTitle == "In testing on Mac" && !fh6.unavailableTitle.contains("Not available")
               && NativeLaunchSupport.notSupported("x").unavailableTitle == NativeLaunchSupport.notSupportedTitle,
@@ -194,6 +281,8 @@ import Foundation
         let unproven = [status("INSTALL_IDENTITY_UNPROVEN", success: true), status("INSTALL_IDENTITY_UNPROVEN", success: false)]
         check(repairs.allSatisfy { $0.action == .repair }
               && unproven.allSatisfy { $0.action == .remove && $0.explanation == NativeInstallationStatus.identityUnprovenExplanation }
+              && status("INSTALL_PRODUCT_MISMATCH", success: false).action == .remove
+              && status("INSTALL_PRODUCT_MISMATCH", success: true).explanation == NativeInstallationStatus.productMismatchExplanation
               && status("SOMETHING_ELSE", success: false).action == .check,
               "REQ-141: INSTALL_REPAIR_REQUIRED offers Repair and INSTALL_IDENTITY_UNPROVEN offers Remove (Keep Files) with its reason, never Retry")
         check(NativeGameResult.failureCodes.contains("UNINSTALL_FAILED")

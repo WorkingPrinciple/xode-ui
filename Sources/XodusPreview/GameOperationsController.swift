@@ -1345,8 +1345,9 @@ final class GameOperationsController: ObservableObject {
         case unsafe(String)
     }
 
-    nonisolated static let saveMarkers: Set<String> = ["saves", "save", "savegames", "saved games", "savedata", "userdata",
-                                           "profiles", "xodusprivatelocalsaves", "wgs", "connectedstorage"]
+    nonisolated static let saveMarkers: Set<String> = ["saves", "save", "saved", "savegames", "savegame", "saved games",
+                                           "savedgames", "save games", "savedata", "userdata", "profiles",
+                                           "xodusprivatelocalsaves", "wgs", "connectedstorage"]
     nonisolated static let prefixMarkers: Set<String> = ["drive_c", "dosdevices", "pfx", "prefix", "prefixes", "wineprefix",
                                              "system.reg", "user.reg", "userdef.reg"]
     nonisolated static let uninstallUnsafeMessage = "This folder may hold saves, a Wine prefix or files X Ode can't identify, so it won't be deleted. Use Remove from Library (Keep Files) instead."
@@ -1357,8 +1358,14 @@ final class GameOperationsController: ObservableObject {
         guard let config = try? MicrosoftGameConfig.read(folder: folder), config.storeId == productID else {
             return .unsafe(uninstallUnsafeMessage)
         }
+        // Review ea4dda97 F1: any entry that can't be read makes the whole folder unsafe; the walk never
+        // skips past it and reports "safe".
+        let walkFailed = WalkFailure()
         guard let walker = FileManager.default.enumerator(at: folder, includingPropertiesForKeys: [.isSymbolicLinkKey],
-                                                          options: [], errorHandler: { _, _ in false }) else {
+                                                          options: [], errorHandler: { _, _ in
+                                                              walkFailed.failed = true
+                                                              return false
+                                                          }) else {
             return .unsafe(uninstallUnsafeMessage)
         }
         var count = 0
@@ -1368,13 +1375,16 @@ final class GameOperationsController: ObservableObject {
                   (try? url.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) != true else {
                 return .unsafe(uninstallUnsafeMessage)
             }
+            // F2: save and prefix names are refused at any depth (Unreal keeps saves under …/Saved).
             let name = url.lastPathComponent.lowercased()
-            if walker.level <= 4, saveMarkers.contains(name) || prefixMarkers.contains(name) {
+            if saveMarkers.contains(name) || prefixMarkers.contains(name) {
                 return .unsafe(uninstallUnsafeMessage)
             }
         }
-        return .safe
+        return walkFailed.failed ? .unsafe(uninstallUnsafeMessage) : .safe
     }
+
+    private final class WalkFailure: @unchecked Sendable { var failed = false }
 
     func prepareUninstall(_ game: InstalledGame) {
         guard canStartMutation, !recoveryRequired, installed.games.contains(game),
@@ -2078,6 +2088,7 @@ final class GameOperationsController: ObservableObject {
         if let typed = error as? GameInstallLocationError { return typed.localizedDescription }
         if let typed = error as? GameScriptError { return typed.localizedDescription }
         if let typed = error as? InstalledGameError { return typed.localizedDescription }
+        if let typed = error as? UninstallRefused { return typed.message }
         return GameScriptError.invalidReceipt.localizedDescription
     }
 }

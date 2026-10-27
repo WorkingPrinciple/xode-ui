@@ -172,7 +172,9 @@ struct XodusPreviewApp: App {
     init() {
         ProcessInfo.processInfo.processName = AppBrand.displayName
         if let peer = ConcurrentAppGuard.runningPeer(bundleID: Bundle.main.bundleIdentifier,
-                running: NSWorkspace.shared.runningApplications.compactMap(\.bundleIdentifier)) {
+                running: NSWorkspace.shared.runningApplications.compactMap { app in
+                    app.bundleIdentifier.map { ConcurrentAppGuard.Running(bundleID: $0, pid: app.processIdentifier) } },
+                selfPID: ProcessInfo.processInfo.processIdentifier) {
             ConcurrentAppGuard.refuse(peer: peer)
         }
         QualificationDiagnostics.importOrdinaryPreferences()
@@ -415,9 +417,13 @@ enum ConcurrentAppGuard {
     static let peers = ["io.github.dragoshont.xodus.development": "X Ode",
                         "io.github.dragoshont.xodus.qualification": "X Ode Qualification"]
 
-    static func runningPeer(bundleID: String?, running: [String]) -> String? {
-        guard let bundleID, peers[bundleID] != nil else { return nil }
-        return peers.first { $0.key != bundleID && running.contains($0.key) }?.value
+    struct Running: Equatable { let bundleID: String; let pid: Int32 }
+
+    /// Another X Ode app, or a second copy of this one (same bundle ID, different process), already running.
+    static func runningPeer(bundleID: String?, running: [Running], selfPID: Int32) -> String? {
+        guard let bundleID, let ownName = peers[bundleID] else { return nil }
+        if running.contains(where: { $0.bundleID == bundleID && $0.pid != selfPID }) { return "Another copy of \(ownName)" }
+        return peers.first { peer in peer.key != bundleID && running.contains { $0.bundleID == peer.key } }?.value
     }
 
     static func message(peer: String) -> String {

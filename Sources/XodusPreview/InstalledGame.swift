@@ -431,17 +431,19 @@ actor InstalledGameStore {
     /// Persist a per-game engine override (or clear it with `nil`).
     func setEngineOverride(id: UUID, override: RuntimeProviderKind?,
                            selection: AdmittedEngineSelection? = nil) throws -> [InstalledGame] {
-        var games = try load()
-        guard let index = games.firstIndex(where: { $0.id == id }) else { return games }
-        if override == .calimocho {
-            guard let selection, let engine = selection.inspection.engineName,
-                  let digest = selection.inspection.registrySha256 else { throw NativeLaunchError.engineNotSelected }
-            try selection.validate(registryPath: selection.registryPath, engineName: engine, registryDigest: digest)
+        return try GameScriptFiles.withExclusiveLock(lockFile) {
+            var games = try load()
+            guard let index = games.firstIndex(where: { $0.id == id }) else { return games }
+            if override == .calimocho {
+                guard let selection, let engine = selection.inspection.engineName,
+                      let digest = selection.inspection.registrySha256 else { throw NativeLaunchError.engineNotSelected }
+                try selection.validate(registryPath: selection.registryPath, engineName: engine, registryDigest: digest)
+            }
+            games[index].engineOverride = override
+            games[index].engineSelection = override == .calimocho ? selection : nil
+            try save(games)
+            return games
         }
-        games[index].engineOverride = override
-        games[index].engineSelection = override == .calimocho ? selection : nil
-        try save(games)
-        return games
     }
 
     func setEngineOverrideV2(id: UUID, selection: AdmittedEngineSelection?) throws -> [InstalledGame] {

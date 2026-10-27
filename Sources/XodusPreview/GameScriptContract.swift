@@ -644,6 +644,10 @@ actor GameOperationJournal {
     }
 
     func retainResumable(_ record: GameOperationRecord) throws {
+        try withExclusiveLock { try retainResumableUnlocked(record) }
+    }
+
+    private func retainResumableUnlocked(_ record: GameOperationRecord) throws {
         try record.validate()
         guard record.kind == .install, record.installedID == nil else { return }
         var records = try loadResumable()
@@ -667,12 +671,17 @@ actor GameOperationJournal {
             guard try loadResumable()[record.productID] == record else { throw GameScriptError.busy }
             guard try !registeredFolders().contains(where: overlaps) else { throw GameScriptError.busy }
             let found = try delete()
-            try removeResumable(record)
+            try removeResumableUnlocked(record)
             return found
         }
     }
 
     func removeResumable(_ record: GameOperationRecord) throws {
+        try withExclusiveLock { try removeResumableUnlocked(record) }
+    }
+
+    /// For callers already holding the journal lease (flock is per open file, so it must not be re-taken).
+    private func removeResumableUnlocked(_ record: GameOperationRecord) throws {
         var records = try loadResumable()
         guard records[record.productID]?.destination == record.destination else { return }
         records[record.productID] = nil

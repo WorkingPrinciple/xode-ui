@@ -11,6 +11,8 @@ struct NativeInstallationStatus: Codable, Equatable, Sendable {
     /// can't be proven offers Remove from Library (Keep Files) with the reason, never an endless Retry.
     static let repairRequiredCode = "INSTALL_REPAIR_REQUIRED"
     static let identityUnprovenCode = "INSTALL_IDENTITY_UNPROVEN"
+    static let productMismatchCode = "INSTALL_PRODUCT_MISMATCH"
+    static let productMismatchExplanation = "This folder holds a different game than the one in your library, so X Ode won't repair or play it. Remove it from the Library (its files are kept), then download the game again."
     static let identityUnprovenExplanation = "X Ode can't prove this folder holds your copy of the game, so it won't repair or play it. Remove it from the Library (its files are kept), then download the game again."
 
     let version: Int
@@ -39,7 +41,7 @@ struct NativeInstallationStatus: Codable, Equatable, Sendable {
     var action: Action {
         let code = reasonCode ?? errorCode
         if code == Self.repairRequiredCode { return .repair }
-        if code == Self.identityUnprovenCode { return .remove }
+        if code == Self.identityUnprovenCode || code == Self.productMismatchCode { return .remove }
         guard success else { return .check }
         return switch status {
         case .complete: .play
@@ -53,6 +55,7 @@ struct NativeInstallationStatus: Codable, Equatable, Sendable {
 
     var explanation: String? {
         if (reasonCode ?? errorCode) == Self.identityUnprovenCode { return Self.identityUnprovenExplanation }
+        if (reasonCode ?? errorCode) == Self.productMismatchCode { return Self.productMismatchExplanation }
         if errorCode == "RESOURCE_BUSY" {
             return "This installation is in use. Wait for its current operation to finish, then check again."
         }
