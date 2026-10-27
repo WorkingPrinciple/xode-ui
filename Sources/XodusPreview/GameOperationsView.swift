@@ -694,18 +694,6 @@ struct GameInstallConsentView: View {
                         .accessibilityIdentifier("xodus.install.notSupported")
                     }
                 }
-                if consent.installedID == nil, operations.launchSupport(productID: consent.game.id).isUntested {
-                    Section {
-                        Label {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(NativeLaunchSupport.untestedTitle).font(.headline)
-                                Text(NativeLaunchSupport.untestedReason).foregroundStyle(.secondary)
-                            }
-                        } icon: { Image(systemName: "questionmark.circle") }
-                        .fixedSize(horizontal: false, vertical: true)
-                        .accessibilityIdentifier("xodus.install.untested")
-                    }
-                }
                 if operations.checkingCompatibility || consent.compatibility?.supported == false || consent.checkError != nil {
                     Section {
                         if operations.checkingCompatibility {

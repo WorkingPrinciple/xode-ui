@@ -432,13 +432,6 @@ struct InstalledPlayButton: View {
             InstalledLaunchSupportStatus(support: support, gameTitle: actionGameTitle, showsReason: showsDiagnostics)
         } else {
             actionButton
-            if !canStop, !launching, !opensAttention, !needsRepair, library.launchSupport(for: game).isUntested {
-                Label(NativeLaunchSupport.untestedTitle, systemImage: "questionmark.circle")
-                    .font(.caption).foregroundStyle(.secondary)
-                    .help(NativeLaunchSupport.untestedReason)
-                    .accessibilityLabel("\(NativeLaunchSupport.untestedTitle). \(NativeLaunchSupport.untestedReason)")
-                    .accessibilityIdentifier("xodus.installed.untested")
-            }
             if library.updateStatus(for: game).hasUpdate {
                 Label("Update available", systemImage: "arrow.down.circle").font(.caption)
             }

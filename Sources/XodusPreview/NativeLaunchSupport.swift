@@ -25,8 +25,6 @@ enum NativeLaunchSupport: Equatable {
         return reason == Self.inTestingReason ? Self.inTestingTitle : Self.notSupportedTitle
     }
     static let notSupportedReason = "There's no tested launch setup for this game yet, so Play isn't offered."
-    static let untestedTitle = "Not tested on Mac yet"
-    static let untestedReason = "This game hasn't been tested with X Ode. It may not start or run well."
     static let untestedEngineMissingReason = "No engine is set up on this Mac yet. Open Engines to set one up, or choose one for this game from its … menu."
 
     var canPlay: Bool { self == .supported || self == .untested }
@@ -66,7 +64,7 @@ enum NativeLaunchSupport: Equatable {
         }
         guard let profile else {
             // No tested setup: the generic launch uses the user's per-game or default engine, so Play is
-            // offered (labelled untested) only when that engine is actually usable here.
+            // offered (as normal Play) only when that engine is actually usable here.
             let status = engineStatus(engine: nil, registrySHA256: nil, hasEngineOverride: hasEngineOverride,
                                       defaults: defaults, engineDefaults: engineDefaults,
                                       registryDigest: registryDigest, releaseStatus: releaseStatus)
