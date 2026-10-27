@@ -517,3 +517,19 @@ Every other title keeps the `7106d07…` candidate (`6c9d97d3…`/`cfe7e5f8…`)
 which its own run evidence used. Runtimes are staged locally under
 `~/Library/Application Support/Ode to X/Runtime/candidates/<primary sha>/`,
 with `SHA256SUMS` and `provenance.json`. They are not bundled in the app.
+
+### Runtime pair eec6a13 (supersedes 15e6d1e for FH6 and Hades)
+
+L12 commit `eec6a1390b1af1e037ed0590f9ddbea2c2f629e7`: primary
+`35c1430522b9cf3f9940803512959700418cfc7b3ab3d72958cbafa8e47d139f`
+(5,062,605 bytes), legacy
+`a791b0285988229e7b95702f4611a415e46a25aaeed87f9aa13059956ca77aca`
+(8,987,889 bytes). Unsigned Windows PE, like every earlier runtime pair; the
+app verifies the pair by SHA-256 before launch. Its verified licence catalogue
+now covers FH6 and 44 more titles, so `XStoreQueryGameLicense` succeeds for owned
+full SKUs; trials are excluded. This fixes FH6 quitting about 150 s after going
+online. The `cdd54e5` pair with the same code was live-checked (licence
+validated, FH6 stable for 762 s, exit 0). `eec6a13` adds catalogue entries only
+and was not run again; the coordinator waived that run. The scope is still FH6
+and Hades only. The pair is staged at
+`Runtime/candidates/35c14305…/` with `SHA256SUMS` and `provenance.json`.
