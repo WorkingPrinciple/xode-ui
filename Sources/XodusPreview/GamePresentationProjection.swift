@@ -28,9 +28,10 @@ struct CatalogCardIndex {
     let games: [String: LibraryGame]
 
     init(query: String, owned: [PCGame], products: [CatalogProduct], gamePass: [CatalogProduct],
-         gamePassIDs: Set<String>, installed: [InstalledGame], accessIsCurrent: Bool) {
+         gamePassIDs: Set<String>, installed: [InstalledGame], accessIsCurrent: Bool,
+         local: [CatalogProduct] = []) {
         results = CatalogSearchResults(query: query, ownedGames: owned, storeProducts: products,
-            gamePassProductIDs: gamePassIDs, gamePassProducts: gamePass)
+            gamePassProductIDs: gamePassIDs, gamePassProducts: gamePass, localProducts: local)
         let local = Dictionary(installed.map { ($0.storeId, $0) }, uniquingKeysWith: { first, _ in first })
         let catalog = Dictionary(products.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         var indexed: [String: LibraryGame] = [:]
@@ -64,6 +65,7 @@ struct CatalogProjectionKey: Equatable {
     let genre: String?
     var scope: GameSearchScope = .allGames
     let showsUnsupported: Bool
+    var local: [CatalogProduct] = []
 }
 
 struct CatalogProjection {
@@ -88,7 +90,7 @@ struct CatalogProjection {
          isVisible: (LibraryGame) -> Bool) {
         let index = CatalogCardIndex(query: key.query, owned: key.owned, products: key.products,
             gamePass: key.gamePass, gamePassIDs: key.gamePassIDs, installed: key.installed,
-            accessIsCurrent: key.accessIsCurrent)
+            accessIsCurrent: key.accessIsCurrent, local: key.local)
         self.index = index
         self.facts = facts
         let games = GameSurfaceFilter.games(index.results.storeProducts, facts: facts)

@@ -19,6 +19,8 @@ final class DiscoverSelection: ObservableObject {
     private var pagingHasMore = false
     @Published var recentSearches = UserDefaults.standard.stringArray(forKey: "Xodus.recentGameSearches") ?? []
     private(set) var previousResults = CatalogProjection.empty
+    /// Products last shown on the Discover browse page, kept for immediate local search matches.
+    private(set) var browseIDs: [String] = []
     private var query: String?
     private var accountScope: String?
 
@@ -37,6 +39,7 @@ final class DiscoverSelection: ObservableObject {
         browseLimit = 16
         projection.clear(to: .empty)
         previousResults = .empty
+        browseIDs = []
         query = nil
         accountScope = nil
     }
@@ -46,12 +49,14 @@ final class DiscoverSelection: ObservableObject {
         if self.accountScope != accountScope {
             projection.clear(to: .empty)
             previousResults = .empty
+            browseIDs = []
             self.accountScope = accountScope
         } else if query != key.query,
                   (!projection.current.visible.isEmpty || !projection.current.owned.isEmpty) {
             previousResults = projection.current
         }
         query = key.query
+        if key.query.isEmpty, !key.products.isEmpty { browseIDs = key.products.map(\.id) }
         projection.prepare(key, build: build)
     }
 
@@ -366,7 +371,7 @@ struct LiveCatalogView: View {
     }
     private var hiddenUnsupportedCount: Int { projection.hiddenCount }
     private var retainedPublicIDs: Set<String> {
-        session.retainedPublicIDs(query: query, pending: pending)
+        session.retainedPublicIDs(query: query, pending: pending).subtracting(results.localIDs)
     }
     private var canRefresh: Bool {
         allowsStartupTasks && session.isReady && (session.supports(.search)
@@ -406,7 +411,18 @@ struct LiveCatalogView: View {
             gamePassIDs: session.gamePassProductIDs,
             installed: installed.games, accessIsCurrent: library.accessIsCurrent,
             metadataRevision: art.revision, compatibility: operations.compatibility,
-            genre: selection.genre, scope: selection.scope, showsUnsupported: showsUnsupportedGames)
+            genre: selection.genre, scope: selection.scope, showsUnsupported: showsUnsupportedGames,
+            local: localSearchProducts)
+    }
+
+    /// REQ-10/59: installed and already-loaded Discover games match by title immediately, so a pending
+    /// public query or a library refresh never hides a game the app already shows.
+    private var localSearchProducts: [CatalogProduct] {
+        guard !query.isEmpty else { return [] }
+        var seen = Set<String>()
+        return (installed.games.map(\.storeId) + selection.browseIDs)
+            .filter { seen.insert($0).inserted }
+            .compactMap { art.images[$0]?.product }
     }
 
     var body: some View {

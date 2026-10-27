@@ -5,11 +5,15 @@ import XodusManagement
 struct CatalogSearchResults {
     let ownedMatches: [PCGame]
     let storeProducts: [CatalogProduct]
+    /// REQ-10/59: title matches among games the app already holds (installed or loaded on Discover).
+    /// They show at once and stay valid while a public query or a library refresh is still running.
+    let localIDs: Set<String>
     private let ownedByID: [String: PCGame]
     private let gamePassProductIDs: Set<String>
 
     init(query: String, ownedGames: [PCGame], storeProducts: [CatalogProduct],
-         gamePassProductIDs: Set<String>, gamePassProducts: [CatalogProduct] = []) {
+         gamePassProductIDs: Set<String>, gamePassProducts: [CatalogProduct] = [],
+         localProducts: [CatalogProduct] = []) {
         let query = query.trimmingCharacters(in: .whitespacesAndNewlines)
         var byID: [String: PCGame] = [:]
         for game in ownedGames where byID[game.id] == nil { byID[game.id] = game }
@@ -23,7 +27,12 @@ struct CatalogSearchResults {
         let passMatches = query.isEmpty ? [] : gamePassProducts.filter {
             $0.title.localizedCaseInsensitiveContains(query)
         }
-        self.storeProducts = (storeProducts + passMatches).filter { visibleIDs.insert($0.id).inserted }
+        let localMatches = query.isEmpty ? [] : localProducts.filter {
+            $0.title.localizedCaseInsensitiveContains(query)
+        }
+        localIDs = Set(localMatches.map(\.id))
+        // Live search and catalogue records win; local copies only fill in games they don't yet include.
+        self.storeProducts = (storeProducts + passMatches + localMatches).filter { visibleIDs.insert($0.id).inserted }
         self.gamePassProductIDs = gamePassProductIDs
     }
 
