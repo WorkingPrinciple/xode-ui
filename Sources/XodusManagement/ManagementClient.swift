@@ -404,9 +404,7 @@ public actor ManagementClient {
                 guard let stage = AuthenticatedReadFailure(error: error) else {
                     throw ManagementError.invalidPayload
                 }
-                failure = stage == .throttled
-                    ? .authenticatedReadThrottled(retryAfterSeconds: AuthenticatedReadFailure.retryAfterSeconds(error: error))
-                    : .authenticatedReadFailed(stage)
+                failure = .authenticatedReadFailed(stage)
             } else if waiter.command == .libraryRecent,
                       error["details"]?["category"]?.string == "recentLibraryFailure" {
                 guard let stage = RecentLibraryFailure(error: error) else {

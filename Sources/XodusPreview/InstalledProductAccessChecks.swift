@@ -235,7 +235,7 @@ enum InstalledProductAccessChecks {
         clock = now.addingTimeInterval(615)
         await batch.refresh(account: account, installedIDs: ids, now: clock, read: batchReader)
         check(readsWithinCache == 36 && batchReads == 72 && ids.allSatisfy {
-            batch.permits($0, account: account, now: now.addingTimeInterval(650))
+            batch.permits($0, account: account, now: now.addingTimeInterval(700))
         }, "REQ-159: an explicit 36-title sweep isn't repeated within the ten-minute cache, and its renewal keeps every title permitted past the original boundary")
         let local = InstalledGamesController()
         local.useUnifiedAccount(LiveSession())

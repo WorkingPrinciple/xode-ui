@@ -31,14 +31,6 @@ final class InstalledProductAccess: ObservableObject {
     private(set) var pausedUntil: Date?
     /// Every licence read this object started; a fixture bounds it.
     private(set) var readCount = 0
-    /// REQ-160: a throttled read pauses every read for Microsoft's delay, or 10 minutes when it gave none.
-    nonisolated static func pause(after error: Error, failures count: Int) -> TimeInterval {
-        if case let ManagementError.authenticatedReadThrottled(seconds) = error {
-            return max(backoff(afterFailures: count), TimeInterval(seconds ?? 600))
-        }
-        return backoff(afterFailures: count)
-    }
-
     nonisolated static func backoff(afterFailures count: Int) -> TimeInterval {
         min(maximumBackoff, 60 * pow(2, Double(max(0, count - 1))))
     }
@@ -285,7 +277,7 @@ final class InstalledProductAccess: ObservableObject {
                     errors[id] = LiveSession.describe(error)
                     let count = (failures[id] ?? 0) + 1
                     failures[id] = count
-                    pausedUntil = now.addingTimeInterval(Self.pause(after: error, failures: count))
+                    pausedUntil = now.addingTimeInterval(Self.backoff(afterFailures: count))
                     logger.error("Product access \(id, privacy: .public) failed: \(LiveSession.describe(error), privacy: .public)")
                 }
                 await Task.yield()
