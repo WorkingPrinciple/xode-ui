@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
 enum ShippingProducerPins {
-    static let commit = "406790341cf0c0fb5e46ee61f41ab4a8fcc176a1"
-    static let tree = "287f6e2dfb436b5e6bace750ecacbfac2d7b4ec0"
+    static let commit = "db8eb8393dfaedec4d119b3e681304bc6ccb5dfc"
+    static let tree = "cfb5117b20445c896482e020cb3c967e613a49ea"
 }
