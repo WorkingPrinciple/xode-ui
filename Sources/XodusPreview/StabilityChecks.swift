@@ -27,6 +27,57 @@ import Foundation
         do { try await installVerdictChecks(root: root.appendingPathComponent("verdicts"), check: check) }
         catch { check(false, "fc2f17d1 H1 fixture: \(error)") }
         heuristicChecks(check: check)
+        do { try await accessReadBudgetChecks(check: check) }
+        catch { check(false, "REQ-159 fixture: \(error)") }
+    }
+
+    /// REQ-159: the app polled every installed product's licence every minute and got this device throttled
+    /// by login.live.com. Reads are now on demand for one product, cached 10 minutes and backed off on failure.
+    static func accessReadBudgetChecks(check: (Bool, String) -> Void) async throws {
+        let account = String(repeating: "a", count: 64)
+        let installed = (0..<25).map { String(format: "9BUDGET%05d", $0) }
+        let played = installed[3]
+        let start = ISO8601DateFormatter().date(from: "2030-01-01T00:00:00Z")!
+        var reads: [String] = []
+        var failing = false
+        let reader: @MainActor (String) async throws -> OdeAccountRead = { id in
+            reads.append(id)
+            if failing { throw ManagementError.disconnected }
+            let payload: [String: Any] = ["section": "license", "accountHash": account,
+                "checkedAt": "2030-01-01T00:00:00Z",
+                "payload": ["productID": id, "access": "permitted", "reason": NSNull(), "expiresAt": NSNull()]]
+            return try JSONDecoder().decode(OdeAccountRead.self, from: JSONSerialization.data(withJSONObject: payload))
+        }
+        let access = InstalledProductAccess()
+        for minute in 0..<10 {
+            await access.refresh(account: account, installedIDs: installed, now: start.addingTimeInterval(Double(minute) * 60),
+                                 read: reader)
+        }
+        check(reads.isEmpty && access.readCount == 0,
+              "REQ-159: ten minutes of library refreshes over 25 installed games make no licence reads (\(reads.count))")
+        for minute in 0..<9 {
+            await access.refresh(account: account, installedIDs: installed, now: start.addingTimeInterval(Double(minute) * 60),
+                                 force: true, selectedProductID: played, read: reader)
+        }
+        check(reads == [played] && access.permits(played, account: account, now: start.addingTimeInterval(540)),
+              "REQ-159: playing one game reads only its licence, once per 10 minutes (\(reads.count) reads in 9 Play presses)")
+        await access.refresh(account: account, installedIDs: installed, now: start.addingTimeInterval(601),
+                             force: true, selectedProductID: played, read: reader)
+        check(reads.count == 2, "REQ-159: after 10 minutes the next Play reads that licence again")
+        failing = true
+        let other = installed[7]
+        await access.refresh(account: account, installedIDs: installed, now: start.addingTimeInterval(700),
+                             force: true, selectedProductID: other, read: reader)
+        let afterFailure = reads.count
+        await access.refresh(account: account, installedIDs: installed, now: start.addingTimeInterval(720),
+                             force: true, selectedProductID: other, read: reader)
+        await access.refresh(account: account, installedIDs: installed, now: start.addingTimeInterval(730),
+                             force: true, selectedProductID: installed[9], read: reader)
+        check(afterFailure == 3 && reads.count == 3 && access.pausedUntil != nil
+              && InstalledProductAccess.backoff(afterFailures: 1) == 60
+              && InstalledProductAccess.backoff(afterFailures: 3) == 240
+              && InstalledProductAccess.backoff(afterFailures: 10) == InstalledProductAccess.maximumBackoff,
+              "REQ-159: a failed read backs off for every product (60 s doubling to 15 min) instead of retrying")
     }
 
     /// Review fc2f17d1 H1: producer #7 sends installation verdicts as a lifecycle error_code. Each is a receipt,

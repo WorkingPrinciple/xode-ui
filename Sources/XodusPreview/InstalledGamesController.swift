@@ -715,6 +715,21 @@ final class InstalledGamesController: ObservableObject {
         return !usesUnifiedAccount || productAccess.permits(productID, account: unifiedSession?.accountHash)
     }
 
+    /// REQ-159: Play stays offered until a current answer denies access; pressing it checks this product
+    /// (and only this product) first.
+    func canOfferPlay(_ productID: String) -> Bool {
+        guard accountAccessAllowed else { return false }
+        return !usesUnifiedAccount || canRequestPlay(productID)
+            || !productAccess.deniedRecently(productID, account: unifiedSession?.accountHash)
+    }
+
+    func playRequested(_ game: InstalledGame) async {
+        if canRequestPlay(game.storeId) { await play(game); return }
+        if let message = await playFromLaunchRequest(game, engine: nil, timeout: .seconds(30)) {
+            playErrors[game.id] = message
+        }
+    }
+
     /// Whether the access check for this product has an answer (permitted, denied or failed) for the
     /// current account. Until then a deep-link Play waits instead of failing.
     func productAccessSettled(_ productID: String) -> Bool {

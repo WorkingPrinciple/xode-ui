@@ -455,13 +455,10 @@ struct LiveRootView: View {
                 message: "Your Xbox Live account is being checked. Try again when it finishes.")
         }
         .task(id: "\(session.accountCatalogScope):\(unifiedAccountVerified):\(backgroundAccountReadsAllowed):\(state.installedGames.games.map(\.storeId).sorted().joined(separator: ","))") {
+            // REQ-159: no background licence loop; this only keeps the installed set current (no reads).
             guard startupAllowed, unifiedAccountMode, backgroundAccountReadsAllowed else { return }
-            while !Task.isCancelled {
-                await state.installedGames.productAccess.refresh(session: session,
-                    installedIDs: state.installedGames.games.map(\.storeId))
-                do { try await Task.sleep(for: .seconds(60)) }
-                catch { return }
-            }
+            await state.installedGames.productAccess.refresh(session: session,
+                installedIDs: state.installedGames.games.map(\.storeId))
         }
         .onReceive(state.installedGames.$games) { games in
             guard startupAllowed, unifiedAccountMode, backgroundAccountReadsAllowed else { return }
