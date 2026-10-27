@@ -58,6 +58,17 @@ import Foundation
                   && repair.installVerdict == action && repair.failureMessage == message,
                   "fc2f17d1 H1: a producer \(code) launch or repair result is a valid receipt that offers \(action) with its reason")
         }
+        let preflight = NativeGameResult.launchPreflightCodes.sorted()
+        let preflightResults = try preflight.map { try producerResult("launch", $0) }
+        check(preflight.count == 10 && preflightResults.allSatisfy {
+                  $0.installVerdict == nil && $0.preflightMessage != nil
+                  && $0.launchFailureMessage(stoppedByUser: false) == $0.preflightMessage
+                  && $0.launchFailureMessage(stoppedByUser: false) != InstalledGameActionCopy.launchUnavailable
+              } && Set(preflightResults.compactMap(\.preflightMessage)).count >= 8,
+              "producer #8/L12: \(preflight.joined(separator: ", ")) are valid launch receipts with their own explanation, never recovery")
+        let required = try producerResult("launch", "TITLE_RECIPE_REQUIRED")
+        check(NativeGameResult.failureCodes.contains("TITLE_RECIPE_REQUIRED") && required.installVerdict == nil,
+              "REQ-153: TITLE_RECIPE_REQUIRED is a valid launch receipt")
         let recipe = try producerResult("launch", "TITLE_RECIPE_REJECTED")
         check(recipe.installVerdict == nil && recipe.launchFailureMessage(stoppedByUser: false) == InstalledGameActionCopy.launchUnavailable,
               "fc2f17d1 H1: TITLE_RECIPE_REJECTED is a valid launch receipt, not a broken one")

@@ -81,7 +81,8 @@ struct NativeGameResult: Codable, Equatable, Sendable {
     static let launchPreflightCodes: Set<String> = [
         "PREFIX_OS_UNSUPPORTED", "PREFIX_OS_TOO_OLD", "PREFIX_OS_UNREADABLE",
         "PACKAGE_OS_REQUIREMENT_INVALID", "PACKAGE_COMMAND_LINE_INVALID",
-        "RUNTIME_CAPABILITY_MISSING", "EXECUTABLE_AMBIGUOUS"
+        "RUNTIME_CAPABILITY_MISSING", "EXECUTABLE_AMBIGUOUS",
+        "COMPATIBILITY_BLOCKED", "COMPATIBILITY_DB_INVALID", "GENERIC_PREFIX_REQUIRED"
     ]
 
     var preflightMessage: String? {
@@ -96,6 +97,12 @@ struct NativeGameResult: Codable, Equatable, Sendable {
             "This game's package information is damaged, so it wasn't started. Nothing was changed. Repair the installation, then play again."
         case "RUNTIME_CAPABILITY_MISSING":
             "This game needs a newer runtime than this version of X Ode includes, so it wasn't started. Update X Ode to play this game. Use Copy Diagnostics to share the details."
+        case "COMPATIBILITY_BLOCKED":
+            "This game can't run in X Ode yet (for example, it uses anti-cheat or isn't a supported package), so it wasn't started. Nothing was changed."
+        case "COMPATIBILITY_DB_INVALID":
+            "X Ode's game compatibility list couldn't be verified, so the game wasn't started. Nothing was changed. Update X Ode, then try again."
+        case "GENERIC_PREFIX_REQUIRED":
+            "This engine choice needs its own separate prefix for this game, so the game wasn't started and its existing prefix and saves weren't touched. Choose the engine again from the game's … menu."
         case "EXECUTABLE_AMBIGUOUS":
             "This game's package lists more than one program, and X Ode can't tell which one to start, so the game wasn't started. Nothing was changed."
         default: nil

@@ -54,6 +54,10 @@ def close(run_dir, exe, evidence, wait_seconds):
     command = [wine, "taskkill", "/im", exe]
     environment = {"HOME": os.environ["HOME"], "PATH": "/usr/bin:/bin", "WINEPREFIX": prefix,
                    "WINEDEBUG": "-all"}
+    # CrossOver's wine wrapper ignores WINEPREFIX and looks for a named bottle; point it at the run's prefix.
+    if "/CrossOver.app/" in wine:
+        environment["CX_BOTTLE_PATH"] = os.path.dirname(prefix)
+        environment["CX_BOTTLE"] = os.path.basename(prefix)
     sent_at = utc_now()
     result = subprocess.run(command, env=environment, capture_output=True, text=True, timeout=60)
     deadline = time.monotonic() + wait_seconds

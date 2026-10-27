@@ -958,6 +958,7 @@ final class GameOperationsController: ObservableObject {
 
     func repair(_ game: PCGame, installed installedGame: InstalledGame, resuming: Bool = false,
                 intent: GameLifecycleIntent? = nil) async {
+        if refuseWhilePlaying(installedGame) { return }
         guard canStartMutation, !installingDirectly, installed.games.contains(installedGame),
               installedGame.storeId == game.id, !resuming || usesUnifiedAccount,
               !installed.checkingInstallations.contains(installedGame.id) else { return }
@@ -1431,13 +1432,25 @@ final class GameOperationsController: ObservableObject {
 
     private final class WalkFailure: @unchecked Sendable { var failed = false }
 
+    /// Review d6d729c0 LOW: a lifecycle action on the game that's playing explains itself instead of doing nothing.
+    static func finishPlayingMessage(_ title: String) -> String { "Finish playing \(title) first, then try again." }
+
+    @discardableResult
+    private func refuseWhilePlaying(_ game: InstalledGame) -> Bool {
+        guard installed.runningGameID == game.id else { return false }
+        error = Self.finishPlayingMessage(game.title)
+        return true
+    }
+
     func prepareUninstall(_ game: InstalledGame) {
+        if refuseWhilePlaying(game) { return }
         guard canStartMutation, !recoveryRequired, installed.games.contains(game),
               installed.runningGameID != game.id else { return }
         uninstallConsent = game
     }
 
     func confirmUninstall(_ game: InstalledGame) {
+        if refuseWhilePlaying(game) { uninstallConsent = nil; return }
         guard uninstallConsent?.id == game.id, canStartMutation, !recoveryRequired,
               installed.games.contains(game), installed.runningGameID != game.id else { return }
         uninstallConsent = nil

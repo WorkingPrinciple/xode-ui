@@ -55,6 +55,7 @@ struct NativeInstallationStatus: Codable, Equatable, Sendable {
     }
 
     var explanation: String? {
+        if (reasonCode ?? errorCode) == Self.repairRequiredCode { return Self.repairRequiredExplanation }
         if (reasonCode ?? errorCode) == Self.identityUnprovenCode { return Self.identityUnprovenExplanation }
         if [Self.productMismatchCode, "PRODUCT_MISMATCH"].contains(reasonCode ?? errorCode ?? "") {
             return Self.productMismatchExplanation

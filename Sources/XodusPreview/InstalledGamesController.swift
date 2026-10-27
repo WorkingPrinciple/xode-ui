@@ -31,6 +31,7 @@ final class InstalledGamesController: ObservableObject {
     @Published private(set) var historyError: String?
     @Published private(set) var packageErrors: [UUID: String] = [:]
     @Published private(set) var checkingInstallations = Set<UUID>()
+    static let inFlightCheckWait: Duration = .seconds(120)
     @Published private(set) var installationStatuses: [UUID: NativeInstallationStatus] = [:]
     /// fc2f17d1 H1: a launch's installation verdict (Repair or Remove) until the next installation check.
     @Published private(set) var launchVerdicts: [UUID: NativeInstallationStatus.Action] = [:]
@@ -1210,6 +1211,10 @@ final class InstalledGamesController: ObservableObject {
         launchStarted = false
         do {
             let preparation = Task { @MainActor in
+                // A check already in flight (opening the app, or a deep-link Play) is awaited, not refused.
+                if !hasFreshCompleteInstallation(game), checkingInstallations.contains(game.id) {
+                    _ = await Self.waitUntil(timeout: Self.inFlightCheckWait) { !checkingInstallations.contains(game.id) }
+                }
                 if !hasFreshCompleteInstallation(game) {
                     let status = await inspectNativeInstallation(game)
                     try Task.checkCancellation()
