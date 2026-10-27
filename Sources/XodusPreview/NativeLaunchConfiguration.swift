@@ -376,6 +376,10 @@ struct NativeTitleLaunchProfile: Codable {
             try NativeFH6Recipe.validate(profile: self)
         }
         if preservedPrefixPath != nil || registrySHA256 != nil {
+            #if XODUS_SHIPPING
+            // Packaging drops the developer-local preserved-prefix profile with its engine binding.
+            throw NativeLaunchError.invalidProfile
+            #else
             guard productID == "BQVQTL3PCH05",
                   engine == "calimocho-wine11.20-gptk4b3-tls-vulkan-private",
                   preservedPrefixPath == "${HOME}/Library/Application Support/XodusCLI/prefixes/req71-nms-calimocho-port11b-v1",
@@ -387,6 +391,7 @@ struct NativeTitleLaunchProfile: Codable {
                   prefixRegistryImports == nil, prefixOverlays == nil, dllOverrides == nil else {
                 throw NativeLaunchError.invalidProfile
             }
+            #endif
         }
         if let autoDismissRules {
             guard noAutoDismiss != true, NativeAutoDismissRules.productID(for: autoDismissRules) == productID else {
