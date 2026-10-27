@@ -809,8 +809,17 @@ struct NativeLaunchConfiguration {
         throw NativeLaunchError.engineNotSelected
     }
 
-    func arguments() async throws -> [String] {
+    /// Untested titles have no profile; the manifest's only executable is passed when it is unambiguous.
+    static func untestedExecutableArguments(profile: NativeTitleLaunchProfile?, manifestExecutables: [String]) -> [String] {
+        guard profile?.executable == nil, manifestExecutables.count == 1,
+              let executable = manifestExecutables.first else { return [] }
+        return ["--exe", executable]
+    }
+
+    func arguments(manifestExecutables: [String] = []) async throws -> [String] {
         _ = try await prefixNotice()
+        let untestedExecutable = Self.untestedExecutableArguments(profile: profile,
+                                                                  manifestExecutables: manifestExecutables)
         if admittedSelection != nil {
             guard profile?.prefixRegistryImports == nil, profile?.prefixOverlays == nil,
                   profile?.dllOverrides == nil else { throw NativeLaunchError.invalidProfile }
@@ -831,11 +840,11 @@ struct NativeLaunchConfiguration {
                     "--expected-registry-sha256", digest, "--prefix", prefix.path,
                     "--runtime-dll", dll.path]
                 + (engine == NativeFH6Recipe.engineName ? NativeFH6Recipe.arguments : ["--shim-dir", shims.directory.path])
-                + (profile?.playArguments ?? [])
+                + (profile?.playArguments ?? []) + untestedExecutable
                 + QualificationDiagnostics.arguments(provider: admittedSelection.inspection.admittedProvider)
         }
         return ["--engine", engine, "--registry", selectedRegistry.path, "--prefix", prefix.path,
-                "--runtime-dll", dll.path, "--shim-dir", shims.directory.path] + (profile?.playArguments ?? [])
+                "--runtime-dll", dll.path, "--shim-dir", shims.directory.path] + (profile?.playArguments ?? []) + untestedExecutable
     }
 
     func prefixNotice() async throws -> String? {
