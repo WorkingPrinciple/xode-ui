@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-only
 """Copy only runtime-consumed management resources, never private QA queues."""
+import json
 from pathlib import Path
+import re
 import shutil
 import sys
 
@@ -28,6 +30,34 @@ PRIVATE_QA_RESOURCES = frozenset({
     "LaunchRecipes/small-game-candidates.json",
     "mac-game-evidence-v1.json",
 })
+
+
+# REQ-52: developer source trees, worktrees and branch names never ship, templated or not.
+DEVELOPER_SOURCE_PATH = re.compile(
+    r"(\$\{HOME\}|\$HOME|~)/(src|\.copilot)/|copilot-worktrees|/Users/[^/\s\"']+/src/")
+ENGINE_DEFAULTS = "LaunchRecipes/engine-defaults-v1.json"
+
+
+def staged_engine_defaults(data):
+    """Drops developer-local bindings whose registry lives in a source tree or worktree."""
+    value = json.loads(data)
+    bindings = value.get("bindings", [])
+    kept = [binding for binding in bindings
+            if not (binding.get("developerLocal") is True
+                    and DEVELOPER_SOURCE_PATH.search(binding.get("registryPath") or ""))]
+    require(all(binding.get("engineName") != value.get("defaultEngine") for binding in bindings
+                if binding not in kept), "The default engine cannot be a developer source-tree binding")
+    if len(kept) == len(bindings):
+        return data
+    value["bindings"] = kept
+    return (json.dumps(value, indent=2, ensure_ascii=False) + "\n").encode()
+
+
+def require_no_developer_paths(root):
+    for name in sorted(RUNTIME_RESOURCES):
+        text = (root / name).read_bytes().decode("utf-8", errors="replace")
+        require(DEVELOPER_SOURCE_PATH.search(text) is None,
+                "Developer source-tree or worktree path in staged resource: " + name)
 
 
 def resource_layout(bundle):
@@ -64,6 +94,7 @@ def verify_resources(bundle):
             + ", ".join(sorted(files ^ RUNTIME_RESOURCES)))
     for name in RUNTIME_RESOURCES:
         owned_bytes(root / name)
+    require_no_developer_paths(root)
 
 
 def copy_resources(source, destination):
@@ -86,7 +117,10 @@ def copy_resources(source, destination):
     for name in sorted(RUNTIME_RESOURCES):
         target = destination / (root.relative_to(source)) / name
         target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(root / name, target)
+        if name == ENGINE_DEFAULTS:
+            target.write_bytes(staged_engine_defaults((root / name).read_bytes()))
+        else:
+            shutil.copyfile(root / name, target)
     info = source / "Contents/Info.plist"
     if root != source and info.is_file():
         owned_bytes(info)

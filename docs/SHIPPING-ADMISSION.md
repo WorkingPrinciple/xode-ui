@@ -74,9 +74,12 @@ The producer's `eappx`, `msixvc`, `msixvc-common`, `xodus`, `xodus-cli`,
 via the producer repository's root `LICENSE`; the corresponding source archive
 includes that file.
 
-Beta release notes disclose the temporary No Man's Sky developer-local engine
-binding: another Mac without the exact tested engine reports it missing, and
-X Ode does not substitute a different engine.
+Packaging strips developer-local engine bindings whose registry lives in a source
+tree or worktree (`${HOME}/src/…`, `copilot-worktrees`), and fails if any staged
+resource still names such a path (REQ-52). The former No Man's Sky private
+Calimocho binding therefore never ships. Packaged builds offer No Man's Sky only
+through its admitted CrossOver route (COR-224). Development builds keep the
+source-tree binding.
 
 The inventory's own hashes and packaged resource seal do not establish
 completeness. The independently approved digest binds the exact producer

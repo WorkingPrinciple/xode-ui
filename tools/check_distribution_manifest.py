@@ -188,14 +188,16 @@ class DistributionChecks(unittest.TestCase):
                 self.resolve_fixture_obligations(app)
                 resource = management / "LaunchRecipes/engine-defaults-v1.json"
                 resource.write_text(json.dumps({"bindings": [{"registryPath": private}]}))
-                with self.assertRaisesRegex(ValueError, "Development-machine reference") as error:
+                with self.assertRaisesRegex(ValueError, "Development-machine reference|Developer source-tree") as error:
                     self.blockers(app)
                 self.assertIn("engine-defaults-v1.json", str(error.exception))
                 self.assertNotIn(private, str(error.exception))
-                with self.assertRaisesRegex(ValueError, "Development-machine"):
+                with self.assertRaisesRegex(ValueError, "Development-machine|Developer source-tree"):
                     self.require_ready(app)
 
-    def test_only_the_recorded_nms_developer_local_binding_is_allowed(self):
+    def test_the_former_nms_developer_local_binding_never_ships(self):
+        # REQ-52 (review 2bca9f39): source-tree/worktree registry paths are stripped at staging and
+        # refused in any staged resource, including the formerly approved NMS developer binding.
         with tempfile.TemporaryDirectory() as tmp:
             app, management = self.fixture(Path(tmp).resolve())
             self.resolve_fixture_obligations(app)
@@ -205,40 +207,9 @@ class DistributionChecks(unittest.TestCase):
                 "engineName": "calimocho-wine11.20-gptk4b3-tls-vulkan-private",
                 "developerLocal": True,
             }]}))
-            self.assertEqual(self.blockers(app), [])
-            for mutation in ("wrong-binding", "not-developer-local"):
-                with self.subTest(mutation=mutation):
-                    value = {"bindings": [{
-                        "registryPath": NMS_DEVELOPER_LOCAL_REGISTRY,
-                        "engineName": "calimocho-wine11.20-gptk4b3-tls-vulkan-private",
-                        "developerLocal": True,
-                    }]}
-                    if mutation == "wrong-binding":
-                        value["bindings"][0]["engineName"] = "unrelated"
-                    else:
-                        value["bindings"][0]["developerLocal"] = False
-                    resource.write_text(json.dumps(value))
-                    with self.assertRaisesRegex(ValueError, "NMS developer-local exception"):
-                        self.blockers(app)
-            resource.write_text(json.dumps({"bindings": [{
-                "registryPath": NMS_DEVELOPER_LOCAL_REGISTRY,
-                "engineName": "calimocho-wine11.20-gptk4b3-tls-vulkan-private",
-                "developerLocal": True,
-            }]}))
-            (app / "Contents/Resources/distribution-components.json").unlink()
-            inventory = resource_inventory(app)
-            self.assertEqual(inventory["exceptions"], [{
-                "type": "approved-developer-local-engine-binding",
-                "resource": "XodusAppFoundation_XodusManagement.bundle/LaunchRecipes/engine-defaults-v1.json",
-                "path": NMS_DEVELOPER_LOCAL_REGISTRY,
-                "engine": "calimocho-wine11.20-gptk4b3-tls-vulkan-private",
-            }])
-            flat_resource = (
-                "XodusAppFoundation_XodusManagement.bundle/Contents/Resources/"
-                "engine-defaults-v1.json"
-            )
-            self.assertEqual(developer_path_findings(flat_resource, resource.read_bytes())["exceptions"][0]["resource"],
-                             flat_resource)
+            with self.assertRaisesRegex(ValueError, "Developer source-tree or worktree path") as error:
+                self.blockers(app)
+            self.assertNotIn(NMS_DEVELOPER_LOCAL_REGISTRY, str(error.exception))
 
     def test_resource_inventory_hashes_every_resource_and_rejects_qa_json(self):
         with tempfile.TemporaryDirectory() as tmp:
