@@ -651,7 +651,8 @@ struct NativeLaunchConfiguration {
         }
         var entry = try selectEngine(registry: registry,
                                      provider: selected != nil || qualified != nil || profile?.engine != nil || candidate != nil || profile?.dllOverrides != nil ? nil : provider, defaults: defaults,
-                                     provenEngine: selected?.inspection.engineName ?? profile?.engine ?? provenEngine)
+                                     provenEngine: selected?.inspection.engineName ?? profile?.engine ?? provenEngine,
+                                     scopedAdmission: titleScoped)
         if let selected {
             guard entry.sha256 == selected.inspection.wineSha256,
                   entry.wineserver_sha256 == selected.inspection.wineserverSha256,
@@ -743,8 +744,11 @@ struct NativeLaunchConfiguration {
             }
     }
 
+    /// `scopedAdmission`: a CrossOver/Highball engine whose title-scoped backend admission was freshly
+    /// verified; its availability is that admission plus an executable Wine, not a registry smoke test.
     static func selectEngine(registry: NativeEngineRegistry, provider: RuntimeProviderKind?,
-                             defaults: UserDefaults, provenEngine: String?) throws -> NativeEngineRegistry.Entry {
+                             defaults: UserDefaults, provenEngine: String?,
+                             scopedAdmission: Bool = false) throws -> NativeEngineRegistry.Entry {
         let selected = provider.flatMap { defaults.string(forKey: "Xodus.lifecycle.engine.\($0.rawValue)") }
         if provider != nil || provenEngine != nil {
             guard let name = provider != nil ? selected : provenEngine,
@@ -752,7 +756,8 @@ struct NativeLaunchConfiguration {
                   provider.map({ EngineManagementPolicy.matches(entry, provider: $0)
                       || ($0 == .standaloneWine && entry.provider?.id == "calimocho"
                           && defaults.data(forKey: AdmittedEngineSelection.preferenceKey) != nil) }) ?? true,
-                  entry.isAvailable else {
+                  entry.isAvailable || scopedAdmission && entry.wine.hasPrefix("/")
+                    && RunnerAvailabilityDetector.isExecutable(URL(fileURLWithPath: entry.wine)) else {
                 throw NativeLaunchError.engineUnavailable
             }
             return entry

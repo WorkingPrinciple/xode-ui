@@ -458,6 +458,21 @@ enum EngineManagementChecks {
         check(try NativeLaunchConfiguration.selectEngine(registry: registry, provider: .crossover,
             defaults: defaults, provenEngine: nil).name == "cross",
               "REQ79 valid explicit provider selection resolves the exact record")
+        let scopedBytes = try JSONSerialization.data(withJSONObject: ["engines": [
+            ["name": "crossover-26.3-mvk142", "kind": "CrossOver", "wine": executable.path,
+             "provider": ["id": "crossover", "contract_version": 1]],
+            ["name": "missing-wine", "kind": "CrossOver", "wine": root.appendingPathComponent("absent/wine").path]
+        ]])
+        let scopedURL = root.appendingPathComponent("scoped-registry.json")
+        try scopedBytes.write(to: scopedURL)
+        let scoped = try NativeEngineRegistry.read(scopedURL)
+        func picks(_ name: String, scoped admitted: Bool) -> Bool {
+            (try? NativeLaunchConfiguration.selectEngine(registry: scoped, provider: nil, defaults: defaults,
+                provenEngine: name, scopedAdmission: admitted))?.name == name
+        }
+        check(picks("crossover-26.3-mvk142", scoped: true) && !picks("crossover-26.3-mvk142", scoped: false)
+              && !picks("missing-wine", scoped: true),
+              "COR224 e2e: A freshly admitted title-scoped engine needs no registry smoke test, only an executable Wine; unadmitted records still do")
         defaults.set("removed", forKey: "Xodus.lifecycle.engine.crossover")
         do {
             _ = try NativeLaunchConfiguration.selectEngine(registry: registry, provider: .crossover,
