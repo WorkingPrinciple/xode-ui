@@ -50,11 +50,15 @@ struct NativeToolbarMaterial: ViewModifier {
             content.padding(.horizontal, 10).padding(.vertical, 6)
                 .background(.background, in: Capsule())
         } else if #available(macOS 26, *) {
+            // REQ-19: clear glass alone left the section labels at 1.2:1 over scrolled artwork (build 624), and
+            // thick material still measured 3.1:1 in dark appearance over bright art. The system toolbar
+            // material (.bar) under the glass keeps them at 8:1 or more while staying native and adaptive.
             content.padding(.horizontal, 10).padding(.vertical, 6)
+                .background(.bar, in: Capsule())
                 .glassEffect(.regular, in: Capsule())
         } else {
             content.padding(.horizontal, 10).padding(.vertical, 6)
-                .background(.regularMaterial, in: Capsule())
+                .background(.bar, in: Capsule())
         }
     }
 }
@@ -131,17 +135,17 @@ struct XodusToolbar: ToolbarContent {
                             recentSearchesContent: recentSearchesContent)
     }
 
-    private var picker: some View {
-        Picker("Navigate \(AppBrand.displayName)", selection: selection) {
+    private var navigation: some View { Self.navigationPicker(selection: selection) }
+
+    /// The section picker, shared with the REQ-19 rendered-contrast check.
+    @ViewBuilder static func navigationPicker(selection: Binding<Destination>) -> some View {
+        let picker = Picker("Navigate \(AppBrand.displayName)", selection: selection) {
             ForEach(Destination.allCases) { destination in
                 Text(destination.rawValue).tag(destination)
                     .accessibilityIdentifier("xodus.navigation.\(destination.rawValue.lowercased())")
             }
         }
         .labelsHidden()
-    }
-
-    @ViewBuilder private var navigation: some View {
         if #available(macOS 27, *) {
             picker.pickerStyle(.tabs)
         } else {
