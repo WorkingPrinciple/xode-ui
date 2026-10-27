@@ -96,7 +96,7 @@ enum InstalledProductAccessChecks {
               && !controller.notIncluded(product, account: account, publicGamePassExcludes: true, now: now)
               && !controller.notIncluded(unknown, account: other, publicGamePassExcludes: true, now: now)
               && !controller.notIncluded(unknown, account: account, publicGamePassExcludes: true,
-                                         now: now.addingTimeInterval(301)),
+                                         now: now.addingTimeInterval(601)),
               "COR186 A1: Without a complete exclusion, a denial, a permit, another account or a stale fact never claims 'not included'")
         check(controller.permits(product, account: account, now: now)
               && !controller.permits(denied, account: account, now: now)
@@ -108,13 +108,14 @@ enum InstalledProductAccessChecks {
         let selected = InstalledProductAccess()
         defer { selected.retire() }
         await selected.refresh(account: account, installedIDs: [product, denied, unknown], now: now) { id in
-            try response(id, access: id == product ? "permitted" : "unknown",
+            if id == unknown { throw ManagementError.requestTimedOut }
+            return try response(id, access: id == product ? "permitted" : "unknown",
                          reason: id == product ? nil : "productNotListed")
         }
         let preservedFact = selected.facts[product]?.checkedAt
         var selectedRequests: [String] = []
-        await selected.refresh(account: account, installedIDs: [product, denied, unknown], now: now,
-            force: true, selectedProductID: unknown) { id in
+        await selected.refresh(account: account, installedIDs: [product, denied, unknown],
+            now: now.addingTimeInterval(61), force: true, selectedProductID: unknown) { id in
                 selectedRequests.append(id)
                 return try response(id, access: "unknown", reason: "productNotListed")
             }
@@ -145,7 +146,8 @@ enum InstalledProductAccessChecks {
         check(requests.count == 3, "Warm account access is cached without repeated provider calls")
         await controller.refresh(account: account, installedIDs: [product, denied, unknown],
             now: now.addingTimeInterval(61), read: reader)
-        check(requests.count == 6, "Unknown and denied facts retry after cooldown; short grants renew before actual expiry")
+        check(requests.count == 4,
+              "REQ-159: unknown and denied answers are reused for 10 minutes; only a short grant renews before its actual expiry")
         await controller.refresh(account: account, installedIDs: [product], now: now.addingTimeInterval(301)) { _ in
             throw ManagementError.requestTimedOut
         }
@@ -180,28 +182,28 @@ enum InstalledProductAccessChecks {
         await controller.refresh(account: account, installedIDs: [product], now: now) { id in
             try response(id)
         }
-        check(controller.permits(product, account: account, now: now.addingTimeInterval(299))
-              && !controller.permits(product, account: account, now: now.addingTimeInterval(300)),
-              "Perpetual grants still have a finite five-minute account cache")
+        check(controller.permits(product, account: account, now: now.addingTimeInterval(599))
+              && !controller.permits(product, account: account, now: now.addingTimeInterval(600)),
+              "REQ-159: perpetual grants still have a finite ten-minute account cache")
         var explicitRetries = 0
         await controller.refresh(account: account, installedIDs: [product], now: now, force: true) { id in
             explicitRetries += 1
             return try response(id)
         }
-        check(explicitRetries == 1
-              && !controller.permitsReview(product, account: account, pcCandidate: true, now: now.addingTimeInterval(300)),
-              "COR89: Explicit exact-ID retry bypasses cooldown once, never bypassing finite account-cache expiry")
+        check(explicitRetries == 0
+              && !controller.permitsReview(product, account: account, pcCandidate: true, now: now.addingTimeInterval(600)),
+              "REQ-159/COR89: an explicit retry reuses a current answer instead of re-reading, and never extends the finite account cache")
         var renewals = 0
         var preservedDuringRenewal = false
-        await controller.refresh(account: account, installedIDs: [product], now: now.addingTimeInterval(121)) { id in
+        await controller.refresh(account: account, installedIDs: [product], now: now.addingTimeInterval(541)) { id in
             renewals += 1
-            preservedDuringRenewal = controller.permits(product, account: account, now: now.addingTimeInterval(121))
-            return try response(id, checkedAt: "2030-01-01T00:02:01Z")
+            preservedDuringRenewal = controller.permits(product, account: account, now: now.addingTimeInterval(541))
+            return try response(id, checkedAt: "2030-01-01T00:09:01Z")
         }
         check(preservedDuringRenewal,
               "Proactive refresh preserves a still-valid same-account fact while its request runs")
-        check(renewals == 1 && controller.permits(product, account: account, now: now.addingTimeInterval(301)),
-              "Background renewal starts before cache expiry instead of flickering Library and Play off at five minutes")
+        check(renewals == 1 && controller.permits(product, account: account, now: now.addingTimeInterval(601)),
+              "Renewal starts a minute before the ten-minute cache expires instead of flickering Play off")
         let short = InstalledProductAccess()
         defer { short.retire() }
         await short.refresh(account: account, installedIDs: [product], now: now) { id in
@@ -229,9 +231,12 @@ enum InstalledProductAccessChecks {
         await batch.refresh(account: account, installedIDs: ids, now: clock, read: batchReader)
         clock = now.addingTimeInterval(204)
         await batch.refresh(account: account, installedIDs: ids, now: clock, read: batchReader)
-        check(batchReads == 72 && ids.allSatisfy {
-            batch.permits($0, account: account, now: now.addingTimeInterval(373))
-        }, "Two-minute renewal threshold covers a 72-second sequential batch plus 60-second ticks without crossing the original cache boundary")
+        let readsWithinCache = batchReads
+        clock = now.addingTimeInterval(615)
+        await batch.refresh(account: account, installedIDs: ids, now: clock, read: batchReader)
+        check(readsWithinCache == 36 && batchReads == 72 && ids.allSatisfy {
+            batch.permits($0, account: account, now: now.addingTimeInterval(650))
+        }, "REQ-159: an explicit 36-title sweep isn't repeated within the ten-minute cache, and its renewal keeps every title permitted past the original boundary")
         let local = InstalledGamesController()
         local.useUnifiedAccount(LiveSession())
         local.setAccountAccessAllowed(true)

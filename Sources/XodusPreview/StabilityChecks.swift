@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import Darwin
 import Foundation
+import XodusManagement
 
 /// REQ-135–139 (owner COR-286/287, L19 d4a04aa3): game actions never lose saves, prefixes or another
 /// process's operation, and gated titles say why. Synthetic folders only; no game or service.
@@ -49,12 +50,11 @@ import Foundation
             return try JSONDecoder().decode(OdeAccountRead.self, from: JSONSerialization.data(withJSONObject: payload))
         }
         let access = InstalledProductAccess()
-        for minute in 0..<10 {
-            await access.refresh(account: account, installedIDs: installed, now: start.addingTimeInterval(Double(minute) * 60),
-                                 read: reader)
-        }
-        check(reads.isEmpty && access.readCount == 0,
-              "REQ-159: ten minutes of library refreshes over 25 installed games make no licence reads (\(reads.count))")
+        for _ in 0..<10 { access.track(account: account, installedIDs: installed) }
+        let source = (try? String(contentsOfFile: "Sources/XodusPreview/LiveRootView.swift", encoding: .utf8)) ?? ""
+        check(reads.isEmpty && access.readCount == 0 && !source.isEmpty
+              && !source.contains("productAccess.refresh(") && source.contains("productAccess.track("),
+              "REQ-159: library, foreground and installed-set updates only track the 25 installed games and make no licence reads (\(reads.count))")
         for minute in 0..<9 {
             await access.refresh(account: account, installedIDs: installed, now: start.addingTimeInterval(Double(minute) * 60),
                                  force: true, selectedProductID: played, read: reader)
@@ -78,6 +78,38 @@ import Foundation
               && InstalledProductAccess.backoff(afterFailures: 3) == 240
               && InstalledProductAccess.backoff(afterFailures: 10) == InstalledProductAccess.maximumBackoff,
               "REQ-159: a failed read backs off for every product (60 s doubling to 15 min) instead of retrying")
+        // REQ-160: producer #9's throttled stage, with and without Microsoft's delay.
+        func wire(_ text: String) throws -> JSONValue { try JSONDecoder().decode(JSONValue.self, from: Data(text.utf8)) }
+        let plain = try wire(#"{"code":"NETWORK_UNAVAILABLE","retryable":true,"message":"Authenticated read failed: throttled.","details":{"category":"authenticatedReadFailure","stage":"throttled"}}"#)
+        let delayed = try wire(#"{"code":"NETWORK_UNAVAILABLE","retryable":true,"message":"Authenticated read failed: throttled.","details":{"category":"authenticatedReadFailure","stage":"throttled","retryAfterSeconds":900}}"#)
+        let misplaced = try wire(#"{"code":"NETWORK_UNAVAILABLE","retryable":true,"message":"Authenticated read failed: transportFailed.","details":{"category":"authenticatedReadFailure","stage":"transportFailed","retryAfterSeconds":30}}"#)
+        let negative = try wire(#"{"code":"NETWORK_UNAVAILABLE","retryable":true,"message":"Authenticated read failed: throttled.","details":{"category":"authenticatedReadFailure","stage":"throttled","retryAfterSeconds":-1}}"#)
+        check(AuthenticatedReadFailure(error: plain) == .throttled && AuthenticatedReadFailure(error: delayed) == .throttled
+              && AuthenticatedReadFailure.retryAfterSeconds(error: delayed) == 900
+              && AuthenticatedReadFailure.retryAfterSeconds(error: plain) == nil
+              && AuthenticatedReadFailure(error: misplaced) == nil && AuthenticatedReadFailure(error: negative) == nil,
+              "REQ-160: a throttled read is a valid retryable receipt; only it may carry retryAfterSeconds (0–86400)")
+        check(LiveSession.describe(ManagementError.authenticatedReadThrottled(retryAfterSeconds: 90))
+                == "Microsoft is limiting requests from this Mac. Try again in 2 min."
+              && LiveSession.describe(ManagementError.authenticatedReadThrottled(retryAfterSeconds: nil)).contains("10 min")
+              && !LiveSession.describe(ManagementError.authenticatedReadThrottled(retryAfterSeconds: nil)).contains("network"),
+              "REQ-160: throttling says Microsoft is limiting requests and when to try again, never 'check your network'")
+        let throttled = InstalledProductAccess()
+        let throttleStart = start.addingTimeInterval(5_000)
+        var throttledReads = 0
+        await throttled.refresh(account: account, installedIDs: installed, now: throttleStart, force: true,
+                                selectedProductID: played) { _ in
+            throttledReads += 1
+            throw ManagementError.authenticatedReadThrottled(retryAfterSeconds: 900)
+        }
+        for (offset, id) in [(60.0, played), (600, installed[1]), (899, installed[2])] {
+            await throttled.refresh(account: account, installedIDs: installed, now: throttleStart.addingTimeInterval(offset),
+                                    force: true, selectedProductID: id) { _ in throttledReads += 1; throw ManagementError.disconnected }
+        }
+        check(throttledReads == 1 && throttled.pausedUntil == throttleStart.addingTimeInterval(900)
+              && InstalledProductAccess.pause(after: ManagementError.authenticatedReadThrottled(retryAfterSeconds: nil),
+                                              failures: 1) == 600,
+              "REQ-160: a throttled read pauses every licence read for Microsoft's delay (10 minutes when it gives none); no fan-out per product")
     }
 
     /// Review fc2f17d1 H1: producer #7 sends installation verdicts as a lifecycle error_code. Each is a receipt,

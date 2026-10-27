@@ -84,6 +84,8 @@ public enum ManagementError: Error, Equatable, Sendable, LocalizedError {
     case discoveryFailed(CatalogDiscovery)
     case queryFailed(CatalogQuery)
     case authenticatedReadFailed(AuthenticatedReadFailure)
+    /// REQ-160: a throttled authenticated read and the delay Microsoft asked for, if any.
+    case authenticatedReadThrottled(retryAfterSeconds: Int?)
     case recentLibraryFailed(RecentLibraryFailure)
 
     public var errorDescription: String? {
@@ -118,6 +120,7 @@ public enum ManagementError: Error, Equatable, Sendable, LocalizedError {
         case .discoveryFailed: "The attempted public products could not be checked. Their failures are listed; no empty owned library or successful discovery was assumed."
         case .queryFailed: "The Store search results could not be checked. Their failures are listed; no successful empty search or ownership was assumed."
         case .authenticatedReadFailed(let failure): failure.message
+        case .authenticatedReadThrottled: AuthenticatedReadFailure.throttled.message
         case .recentLibraryFailed(let failure): failure.message
         case .invalidEvent: "The activity stream is inconsistent. Reload the authoritative snapshot."
         }

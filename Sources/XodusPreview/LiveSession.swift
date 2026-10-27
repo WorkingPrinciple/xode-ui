@@ -2411,6 +2411,12 @@ final class LiveSession: ObservableObject {
             && language.range(of: "^[a-z]{2,3}(-[A-Z]{2})?$", options: .regularExpression) != nil
     }
 
+    /// REQ-160: truthful copy for Microsoft rate-limiting this device; never "check your network".
+    static func throttledMessage(retryAfterSeconds: Int?) -> String {
+        let minutes = max(1, Int((Double(retryAfterSeconds ?? 600) / 60).rounded(.up)))
+        return "Microsoft is limiting requests from this Mac. Try again in \(minutes) min."
+    }
+
     static func describe(_ error: Error) -> String {
         if case let ManagementError.authenticatedReadFailed(failure) = error {
             switch failure {
@@ -2421,7 +2427,11 @@ final class LiveSession: ObservableObject {
             case .transportFailed: return "The connection didn't finish. Check your network and try again."
             case .responseInvalid: return "Microsoft returned details that couldn't be read safely. Reload to try again."
             case .packageUnavailable: return "The requested content isn't available."
+            case .throttled: return throttledMessage(retryAfterSeconds: nil)
             }
+        }
+        if case let ManagementError.authenticatedReadThrottled(seconds) = error {
+            return throttledMessage(retryAfterSeconds: seconds)
         }
         if case let ManagementError.backendError(code, _) = error {
             switch code {

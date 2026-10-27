@@ -457,15 +457,13 @@ struct LiveRootView: View {
         .task(id: "\(session.accountCatalogScope):\(unifiedAccountVerified):\(backgroundAccountReadsAllowed):\(state.installedGames.games.map(\.storeId).sorted().joined(separator: ","))") {
             // REQ-159: no background licence loop; this only keeps the installed set current (no reads).
             guard startupAllowed, unifiedAccountMode, backgroundAccountReadsAllowed else { return }
-            await state.installedGames.productAccess.refresh(session: session,
+            state.installedGames.productAccess.track(account: session.accountHash,
                 installedIDs: state.installedGames.games.map(\.storeId))
         }
         .onReceive(state.installedGames.$games) { games in
             guard startupAllowed, unifiedAccountMode, backgroundAccountReadsAllowed else { return }
-            Task {
-                await state.installedGames.productAccess.refresh(session: session,
-                    installedIDs: games.map(\.storeId))
-            }
+            state.installedGames.productAccess.track(account: session.accountHash,
+                installedIDs: games.map(\.storeId))
         }
         .task(id: "\(session.accountHash ?? ""):\(state.pcGames.accountHash ?? ""):\(state.gameOperations.serviceStatus?.accountHash ?? "")") {
             guard accountBindingMismatch else { return }
@@ -486,7 +484,7 @@ struct LiveRootView: View {
                 await session.revalidateAccountOnForeground()
                 await state.pcGames.refreshInBackground()
                 guard backgroundAccountReadsAllowed else { return }
-                await state.installedGames.productAccess.refresh(session: session,
+                state.installedGames.productAccess.track(account: session.accountHash,
                     installedIDs: state.installedGames.games.map(\.storeId))
             }
         }

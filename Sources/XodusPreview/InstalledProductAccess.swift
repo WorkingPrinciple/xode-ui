@@ -31,6 +31,14 @@ final class InstalledProductAccess: ObservableObject {
     private(set) var pausedUntil: Date?
     /// Every licence read this object started; a fixture bounds it.
     private(set) var readCount = 0
+    /// REQ-160: a throttled read pauses every read for Microsoft's delay, or 10 minutes when it gave none.
+    nonisolated static func pause(after error: Error, failures count: Int) -> TimeInterval {
+        if case let ManagementError.authenticatedReadThrottled(seconds) = error {
+            return max(backoff(afterFailures: count), TimeInterval(seconds ?? 600))
+        }
+        return backoff(afterFailures: count)
+    }
+
     nonisolated static func backoff(afterFailures count: Int) -> TimeInterval {
         min(maximumBackoff, 60 * pow(2, Double(max(0, count - 1))))
     }
@@ -41,6 +49,20 @@ final class InstalledProductAccess: ObservableObject {
     private var expiryNotification: Task<Void, Never>?
     private var generation = UUID()
     private let logger = Logger(subsystem: "io.github.dragoshont.xodus", category: "product-access")
+
+    private func fresh(_ id: String, now: Date) -> Bool {
+        guard let fact = facts[id], now.timeIntervalSince(fact.checkedAt) >= 0,
+              now.timeIntervalSince(fact.checkedAt) < Self.freshness - 60 else { return false }
+        return fact.expiresAt.map { $0.timeIntervalSince(now) > 180 } ?? true
+    }
+
+    /// REQ-159: keeps the installed set current without reading any licence.
+    func track(account: String?, installedIDs: [String]) {
+        guard account == accountHash else { return }
+        installed = Set(installedIDs.filter(PCGamesClient.validProductID))
+        facts = facts.filter { installed.contains($0.key) }
+        errors = errors.filter { installed.contains($0.key) }
+    }
 
     /// REQ-159: a current answer that this account can't play the product; until then Play stays offered and
     /// checks access when pressed.
@@ -198,17 +220,16 @@ final class InstalledProductAccess: ObservableObject {
             await operation.value
             guard !Task.isCancelled, generation == requestEpoch, accountHash == account else { return }
         }
-        // REQ-159: no background sweep over installed products; only the product being played or retried.
-        guard let selectedProductID, installed.contains(selectedProductID) else { return }
+        // REQ-159: every read, swept or selected, reuses a 10-minute answer and respects the per-product and
+        // global backoff after a failure; production never sweeps (it only calls `track`).
         if let pausedUntil, now < pausedUntil { return }
-        let ids = [selectedProductID].filter { id in
+        let ids = installed.sorted { (attempts[$0] == nil ? 0 : 1, $0) < (attempts[$1] == nil ? 0 : 1, $1) }.filter { id in
+            if let selectedProductID, id != selectedProductID { return false }
             if let failed = failures[id], let last = attempts[id],
                now.timeIntervalSince(last) < Self.backoff(afterFailures: failed) { return false }
-            if errors[id] == nil, let fact = facts[id], now.timeIntervalSince(fact.checkedAt) >= 0,
-               now.timeIntervalSince(fact.checkedAt) < Self.freshness,
-               fact.expiresAt.map({ $0 <= now }) != true { return false }
-            _ = force
-            return true
+            if force { return errors[id] != nil || facts[id] == nil || !fresh(id, now: now) }
+            guard let last = attempts[id] else { return true }
+            return now.timeIntervalSince(last) >= 60 && (errors[id] != nil || !fresh(id, now: now))
         }
         guard !ids.isEmpty else { return }
         let epoch = generation
@@ -264,7 +285,7 @@ final class InstalledProductAccess: ObservableObject {
                     errors[id] = LiveSession.describe(error)
                     let count = (failures[id] ?? 0) + 1
                     failures[id] = count
-                    pausedUntil = now.addingTimeInterval(Self.backoff(afterFailures: count))
+                    pausedUntil = now.addingTimeInterval(Self.pause(after: error, failures: count))
                     logger.error("Product access \(id, privacy: .public) failed: \(LiveSession.describe(error), privacy: .public)")
                 }
                 await Task.yield()
