@@ -1297,6 +1297,12 @@ enum BrandUXChecks {
                              now: t0 + .seconds(1))
         check(warmSaved.phase == .finished(.ready) && !warmSaved.covers && savedButEmpty.covers,
               "REQ-119: A warm launch with the saved library on screen ends setup inside the grace delay, so no overlay; an empty one doesn't")
+        check(AccountGatePresentation.defers(statusSettled: false, failed: false, waitElapsed: false)
+              && !AccountGatePresentation.defers(statusSettled: true, failed: false, waitElapsed: false)
+              && !AccountGatePresentation.defers(statusSettled: false, failed: true, waitElapsed: false)
+              && !AccountGatePresentation.defers(statusSettled: false, failed: false, waitElapsed: true)
+              && AccountGatePresentation.launchWait == .seconds(3),
+              "Warm launch: the welcome sheet waits only while the first sign-in read is outstanding (≤3 s, never after an error), so no empty sheet window is left behind")
         let faultFile = FileManager.default.temporaryDirectory.appendingPathComponent("xodus-fault-\(UUID().uuidString)")
         let faultEnvironment = ["XODUS_DEBUG_FAULT_FILE": faultFile.path]
         let faultAbsent = !DebugFaultInjection.active(.catalog, environment: faultEnvironment)

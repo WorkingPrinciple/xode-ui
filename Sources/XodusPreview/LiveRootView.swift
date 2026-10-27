@@ -24,6 +24,8 @@ struct LiveRootView: View {
     @State private var libraryContainerSize: CGSize?
     @State private var libraryHasHero = false
     @State private var launchArgumentHandled = false
+    /// The launch sign-in decision has had its bounded wait; the account gate may show even if undecided.
+    @State private var launchGateWaitElapsed = false
     @State private var libraryVisited = false
     @State private var discoverVisited = false
     @State private var firstLoad = LibraryFirstLoad()
@@ -82,6 +84,12 @@ struct LiveRootView: View {
         return values.count >= 2 && Set(values).count > 1
     }
     private var requiresAccountGate: Bool { unifiedAccountMode ? requiresSignIn : !unifiedAccountVerified }
+    /// A warm launch's saved sign-in is still being read: the welcome sheet waits, so it never flashes and
+    /// leaves an empty sheet window behind when sign-in confirms a moment later.
+    private var accountGateDeferred: Bool {
+        AccountGatePresentation.defers(statusSettled: session.initialStatusSettled,
+                                       failed: session.errorMessage != nil, waitElapsed: launchGateWaitElapsed)
+    }
     private var accountContentAllowed: Bool { startupAllowed && (unifiedAccountMode ? !requiresSignIn : unifiedAccountVerified) }
     private var heroAnimationAllowed: Bool {
         startupAllowed && !state.showingAccount && session.selectedProduct == nil
@@ -534,7 +542,11 @@ struct LiveRootView: View {
                 state.accountDestination = .account
             }
         }
-        .sheet(isPresented: Binding(get: { requiresAccountGate || state.showingAccount
+        .task {
+            try? await Task.sleep(for: AccountGatePresentation.launchWait)
+            launchGateWaitElapsed = true
+        }
+        .sheet(isPresented: Binding(get: { (requiresAccountGate && !accountGateDeferred) || state.showingAccount
                                         || (state.showingReadiness && !firstLoadOutstanding) },
                                     set: { presented in
                                         if !presented { state.showingReadiness = false }
