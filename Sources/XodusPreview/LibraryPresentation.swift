@@ -375,9 +375,11 @@ struct LibraryGame: Identifiable {
     /// Spotlight order: launchable installs first (most recently played first), then held games that
     /// aren't installed, then installed records that can't launch (missing folder, incomplete or
     /// unverified), which only fill the remaining slots. Membership still prefers subscription-held,
-    /// then purchased, then any qualified, then catalogue titles.
+    /// then purchased, then other accessible titles. Public membership alone never qualifies.
     static func heroCandidates(qualified: [Self], catalogue: [Self], continuingIDs: [UUID],
                                launchableIDs: Set<UUID>? = nil) -> [Self] {
+        let qualified = qualified.filter { $0.heroEligible }
+        let catalogue = catalogue.filter { $0.heroEligible }
         let order = Dictionary(continuingIDs.enumerated().map { ($1, $0) },
                                uniquingKeysWith: { first, _ in first })
         let subscriptions = qualified.filter { $0.pc?.acquisitionKind == .subscription }
@@ -393,10 +395,18 @@ struct LibraryGame: Identifiable {
             if let launchableIDs, !launchableIDs.contains(installed.id) { return 3_000 }
             return order[installed.id] ?? 1_000
         }
+
         return Array(pool.sorted {
             let left = rank($0), right = rank($1)
             return left == right ? $0.title.localizedStandardCompare($1.title) == .orderedAscending : left < right
         }.prefix(6))
+    }
+
+    var heroEligible: Bool {
+        guard LibrarySupportVisibility.issues(productID: id, installed: installed != nil,
+            packageFormat: installed?.packageType?.label, compatibility: nil).isEmpty else { return false }
+        return installed != nil || owned || availableWithGamePass
+            || (accessIsCurrent && pc?.acquisitionKind == .subscription)
     }
 
     static func displayCollection(installed: [InstalledGame], account: [Self]) -> [Self] {

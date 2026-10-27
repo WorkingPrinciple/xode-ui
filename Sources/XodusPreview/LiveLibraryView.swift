@@ -447,7 +447,8 @@ struct LiveLibraryView: View {
             LibraryLandscapeView(references: art.images[id]?.cover.map { [$0] } ?? (game.cover.map { [$0] } ?? []),
                                  installed: game.installed, allowsLoading: artworkAllowed)
         } information: {
-            GameHeroAccess(facts: game.facts)
+            GameHeroAccess(facts: game.heroFacts(cachedAccessAt: library.representedSnapshot?.updatedAt,
+                freeToPlay: art.freeToPlayIDs.contains(id)))
             information(id: id, showsAccessBadges: false)
             if let details = art.images[id]?.detail { GameHeroMetadata(details: details) }
         } actions: {
@@ -475,7 +476,8 @@ struct LiveLibraryView: View {
                 if let install, blockedReason == nil { install }
                 Button(blockedReason == nil ? "View game" : "View Details") { open(game) }
                     .modifier(LibraryActionStyle(primary: install != nil && blockedReason != nil))
-                if let blockedReason {
+                if let blockedReason,
+                   library.error == nil || blockedReason != library.installAccessNotice(for: game.id) {
                     Label(blockedReason, systemImage: "info.circle")
                         .font(.callout).lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)

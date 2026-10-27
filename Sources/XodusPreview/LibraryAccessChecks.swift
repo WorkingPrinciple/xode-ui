@@ -600,9 +600,9 @@ enum LibraryAccessChecks {
               continuingIDs: []).map(\.id) == purchase.map(\.id),
               "Without subscription-held titles the hero features purchased PC games")
         let browsingHeroes = LibraryGame.heroCandidates(qualified: [], catalogue: catalogue, continuingIDs: [])
-        check(!browsingHeroes.isEmpty && browsingHeroes.allSatisfy { $0.pc == nil || $0.pc?.id == held.id }
-              && browsingHeroes.contains { $0.eligibility == nil && !$0.owned },
-              "A new or empty account still gets real catalogue heroes without fabricated account access")
+        check(browsingHeroes.allSatisfy { $0.installed != nil || $0.owned || $0.availableWithGamePass }
+              && !browsingHeroes.contains { $0.id == publicPC.id },
+              "REQ-162: public catalogue membership without account access never becomes a Library hero")
         check(LibraryGame.visible(catalogue, query: "Public PC", filter: .gamePass, sort: .title).count == 1,
               "Game Pass filter searches the catalogue instead of only the owned-library overlap")
         check(LibraryGame.continuing(both, launchableIDs: [local.id]).map(\.id) == [local.id]
@@ -641,16 +641,42 @@ enum LibraryAccessChecks {
         let heroUnknown = GameFacts(pc: nil, gamePass: false, installed: installedHeld, accessIsCurrent: false)
         let heroStale = GameFacts(pc: PCGame(id: held.id, title: held.title, artwork: nil,
             acquisitionKind: .subscription), gamePass: true, installed: installedHeld, accessIsCurrent: false)
-        check(heroCatalogOnly.heroAccessLabels() == ["Ownership not confirmed", "In PC Game Pass catalog"]
-              && heroUnknown.heroAccessLabels() == ["Ownership not confirmed"]
-              && heroStale.heroAccessLabels() == ["Ownership not confirmed", "In PC Game Pass catalog"],
-              "REQ-77: Public membership, stale subscription and installed/launchable files cannot invent current account provenance")
+        check(heroCatalogOnly.heroAccessLabels() == ["In PC Game Pass catalog"]
+              && heroUnknown.heroAccessLabels().isEmpty
+              && heroStale.heroAccessLabels() == ["In PC Game Pass catalog"],
+              "REQ-162: no cached entitlement means no ownership line, never an ownership warning")
         let heroAbsent = GameFacts(pc: nil, gamePass: false, installed: nil, accessIsCurrent: true)
-        check(heroAbsent.heroAccessLabels() == ["Ownership not confirmed"]
+        check(heroAbsent.heroAccessLabels().isEmpty
               && ([heroPurchase, heroSubscription, heroBoth, heroCatalogOnly, heroUnknown, heroStale, heroAbsent]
                 .allSatisfy { facts in !facts.heroAccessLabels().contains { $0.contains("Not owned")
                     || $0.contains("Not in") || $0.contains("Ultimate") } }),
-              "L21: Hero always states access provenance; library absence (REQ-7) and catalogue gaps never become Not owned, non-membership or an inferred plan")
+              "REQ-162: Library absence and catalogue gaps never become ownership claims or warnings")
+        let cachedAt = Date(timeIntervalSince1970: 1_700_000_000)
+        var savedPurchase = purchase[0]
+        savedPurchase.accessIsCurrent = false
+        let cachedFacts = savedPurchase.heroFacts(cachedAccessAt: cachedAt, freeToPlay: false)
+        check(cachedFacts.heroAccessLabels() == ["Owned"] && cachedFacts.cachedAccessAt == cachedAt
+              && !cachedFacts.accessIsCurrent && cachedFacts.badgeLabels().isEmpty,
+              "REQ-162: a failed refresh retains cached ownership and its date for the hero, never current authorization")
+        let noCache = savedPurchase.heroFacts(cachedAccessAt: nil, freeToPlay: false)
+        check(noCache.heroAccessLabels().isEmpty && noCache.cachedAccessAt == nil,
+              "REQ-162: failed refresh with no same-account cache has no ownership line")
+        let freeFacts = savedPurchase.heroFacts(cachedAccessAt: cachedAt, freeToPlay: true)
+        check(freeFacts.heroAccessLabels().isEmpty,
+              "REQ-162: an officially listed free-to-play title has no ownership line, even with a collection grant")
+        let blockedGame = LibraryGame(id: "BT5P2X999VH2", title: "Fortnite", installed: installedHeld,
+            pc: nil, product: nil, owned: true, gamePass: false)
+        check(!blockedGame.heroEligible
+              && LibraryCompatibilityRegistry.issues(productID: blockedGame.id).contains { $0.kind == .antiCheat }
+              && LibraryGame.heroCandidates(qualified: [blockedGame], catalogue: [], continuingIDs: []).isEmpty,
+              "REQ-162: Fortnite's sourced anti-cheat excludes it even when installed, owned or free-to-play")
+        let freeCache = LibraryCatalogArtwork()
+        freeCache.recordFreeToPlay([held.id], market: "US", language: "en-US")
+        check(freeCache.freeToPlayIDs == [held.id],
+              "REQ-162: the already-loaded official free-to-play shelf supplies shared facts without another request")
+        freeCache.retireScope()
+        check(freeCache.freeToPlayIDs.isEmpty,
+              "REQ-162: free-to-play facts are cleared when the public catalogue scope retires")
         check([heroPurchase, heroSubscription, heroBoth, heroCatalogOnly, heroUnknown, heroStale]
             .allSatisfy { !$0.heroAccessLabels().contains("Installed on this Mac") },
               "REQ-77: All playable hero evidence combinations omit the redundant prominent installed subtitle")

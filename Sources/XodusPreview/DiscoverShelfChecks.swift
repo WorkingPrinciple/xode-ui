@@ -213,7 +213,7 @@ enum DiscoverShelfChecks {
         let noPlan = LibraryGame(id: brotato.id, title: brotato.id, installed: nil, pc: nil, product: brotato,
                                  owned: false, gamePass: true, accessIsCurrent: true)
         check(!noPlan.facts.badgeLabels().contains(GameFacts.availableWithGamePassLabel)
-              && noPlan.facts.heroAccessLabels() == ["Ownership not confirmed", "In PC Game Pass catalog"],
+              && noPlan.facts.heroAccessLabels() == ["In PC Game Pass catalog"],
               "REQ-63: catalogue membership alone never claims the account can play it")
     }
 

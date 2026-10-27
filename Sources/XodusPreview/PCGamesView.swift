@@ -2,6 +2,27 @@
 import SwiftUI
 import XodusManagement
 
+struct LibraryRefreshNotice: View {
+    let message: String
+    let retryEnabled: Bool
+    let retry: () -> Void
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Label(message, systemImage: "exclamationmark.circle")
+                .foregroundStyle(.secondary)
+                .lineLimit(nil)
+                .fixedSize(horizontal: false, vertical: true)
+            Button("Retry", action: retry)
+                .disabled(!retryEnabled)
+                .accessibilityIdentifier("xodus.pcGames.retryRefresh")
+        }
+        .font(.callout)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("xodus.pcGames.error")
+    }
+}
+
 /// A quiet, non-actionable line; recovery is automatic (P0: no Retry button to babysit).
 struct LibraryDetailsRecoveryNotice: View {
     let message: String
@@ -146,11 +167,11 @@ struct PCGamesView: View {
                         .accessibilityIdentifier("xodus.library.openRecentActivity")
                 } }
             }
-            // P0: a library-read error is only shown when no game can be shown; otherwise it retries silently.
-            if let error = library.surfacedError, library.representedGames.isEmpty {
-                Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("xodus.pcGames.error")
+            if let error = library.error {
+                LibraryRefreshNotice(message: error,
+                    retryEnabled: !library.busy && !library.restoringPresence && !library.needsKeychainApproval) {
+                    library.refresh()
+                }
             }
         }
         .task { if allowsStartupTasks && showsCollection { await library.loadOnAppear() } }
