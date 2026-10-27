@@ -183,7 +183,7 @@ struct NativeTitleLaunchProfile: Codable {
         static func bundled() throws -> Self {
             let bytes = try Data(contentsOf: LaunchRecipeResources.runtimeProfilesURL())
             guard SHA256.hash(data: bytes).map({ String(format: "%02x", $0) }).joined()
-                    == "fc329ccc269927b9ddfacbe640e1215cf32760f94fd2a7285f697c7c7f7203ff" else {
+                    == "62a4cf4569da72f37d8f8a5b8bc87df77dba09d13c6d4346febcebf5b7de6a84" else {
                 throw NativeLaunchError.invalidProfile
             }
             let catalogue = try JSONDecoder().decode(Self.self, from: bytes)
@@ -993,9 +993,9 @@ enum QualificationDiagnostics {
     static let releasePrimarySHA256 = "21171669a4c2b8b72addd923127587feba9b924fdae2337f679e83bb9ed31913"
     static let releaseLegacySHA256 = "e81010448dbea50a1957dafbf5bd2543dbb353b11d60da7e5223c05157d9deb5"
     #if XODUS_QUALIFICATION
-    /// Qualification builds only: L12 8e39d8f (e0c0038 plus leftover-key handling; review 03e02ca4 PASS; FH6 Gaming Services and E:0-17-4 fixed) over the release pair.
-    static let pinnedPrimarySHA256 = "c25283c4143923e9c0f8568ae08e1ad3604e4cf2ceaf014ff4e7d1cf58bbe8f1"
-    static let pinnedLegacySHA256 = "9cddad398fc692658d763933bf34240c420f1c3f19d38703acbdaf15de46e3ec"
+    /// Qualification builds only: L12 49c423d (capability line ODE-RUNTIME-CAPS/1, required by producer #8; owner FH6 play PASS) over the release pair.
+    static let pinnedPrimarySHA256 = "165da019717825ad1930be77ca673d83929632ff720647245934dec79ae47f85"
+    static let pinnedLegacySHA256 = "0d1f4fbfa314af5317e825c04c3e768b95afa5da0bf44fffeee3e0b4dbf9158f"
     #else
     static let pinnedPrimarySHA256 = releasePrimarySHA256
     static let pinnedLegacySHA256 = releaseLegacySHA256
