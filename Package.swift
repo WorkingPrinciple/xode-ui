@@ -8,7 +8,10 @@ let previewOnly = ["NativeCheckOCR.swift", "SearchPresentationChecks.swift", "Ar
                    "PreviewExporter.swift", "LibraryPreviewExporter.swift", "PreviewChecks.swift", "NativeChecks.swift",
                    "NativeUIChecks.swift", "CalimochoReleaseInstallerChecks.swift", "AccountCountryChecks.swift", "ApplicationTerminationChecks.swift", "CrossOverDependencyChecks.swift", "LaunchAssociationChecks.swift",
                    "OdeRuntimeChecks.swift", "RecentLibraryChecks.swift", "CatalogMediaChecks.swift", "LibraryStatsChecks.swift", "LibraryAccessChecks.swift", "InstalledGameChecks.swift", "PCGamesChecks.swift", "GameOperationChecks.swift", "DownloadQueueChecks.swift", "InstalledGameUpdateChecks.swift", "EngineManagementChecks.swift", "EngineConfiguratorChecks.swift", "CatalogDetailLoadingChecks.swift", "PresentationPerformanceChecks.swift", "SearchPerformanceChecks.swift", "PublicDescriptorChecks.swift", "BrandUXChecks.swift", "AccessibilityAuditChecks.swift", "Resources"]
-let shippingSettings: [SwiftSetting] = shipping ? [.define("XODUS_SHIPPING")] : []
+// A qualification variant (never the ordinary install) adds fixed diagnostic channels and the FH6 Play gate.
+let qualification = ProcessInfo.processInfo.environment["XODUS_QUALIFICATION"] == "1"
+let shippingSettings: [SwiftSetting] = (shipping ? [.define("XODUS_SHIPPING")] : [])
+    + (qualification ? [.define("XODUS_QUALIFICATION"), .define("XODUS_FH6_QUALIFICATION")] : [])
 
 let package = Package(
     name: "XodusAppFoundation",

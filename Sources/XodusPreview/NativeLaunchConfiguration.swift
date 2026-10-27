@@ -826,6 +826,7 @@ struct NativeLaunchConfiguration {
                     "--runtime-dll", dll.path]
                 + (engine == NativeFH6Recipe.engineName ? NativeFH6Recipe.arguments : ["--shim-dir", shims.directory.path])
                 + (profile?.playArguments ?? [])
+                + QualificationDiagnostics.arguments(provider: admittedSelection.inspection.admittedProvider)
         }
         return ["--engine", engine, "--registry", selectedRegistry.path, "--prefix", prefix.path,
                 "--runtime-dll", dll.path, "--shim-dir", shims.directory.path] + (profile?.playArguments ?? [])
@@ -923,4 +924,19 @@ enum NativeGameRecipe {
 enum NativeAutoDismissRules {
     static let known: [String: String] = ["fh6-compat": "9NR1R1XWLCNB"]
     static func productID(for rules: String) -> String? { known[rules] }
+}
+
+/// REQ-32: a qualification build records sign-in and licence outcomes on admitted Calimocho routes.
+/// The channel list is fixed; ordinary builds compile no diagnostic arguments and keep `WINEDEBUG=-all`.
+enum QualificationDiagnostics {
+    static let channels = "warn+gdkc"
+
+    static func arguments(provider: String?) -> [String] {
+        #if XODUS_QUALIFICATION
+        guard provider == nil || provider == AdmittedProviderScope.calimocho else { return [] }
+        return ["--diagnostic-wine-debug", channels]
+        #else
+        return []
+        #endif
+    }
 }

@@ -1088,8 +1088,20 @@ enum EngineManagementChecks {
         let arguments = try await launch.arguments()
         check(arguments == ["--engine", resolved.engine, "--registry", registry.path,
                             "--expected-registry-sha256", hash(bytes), "--prefix", prefix.path,
-                            "--runtime-dll", primary.path, "--shim-dir", shimFolder.path],
+                            "--runtime-dll", primary.path, "--shim-dir", shimFolder.path]
+                            + QualificationDiagnostics.arguments(provider: selection.inspection.admittedProvider),
               "REQ95 actual launch arguments carry the reloaded exact registry digest/engine/prefix/runtime, not an enum selector")
+        #if XODUS_QUALIFICATION
+        check(QualificationDiagnostics.arguments(provider: nil) == ["--diagnostic-wine-debug", "warn+gdkc"]
+              && QualificationDiagnostics.arguments(provider: AdmittedProviderScope.calimocho) == ["--diagnostic-wine-debug", "warn+gdkc"]
+              && QualificationDiagnostics.arguments(provider: AdmittedProviderScope.crossOver).isEmpty
+              && QualificationDiagnostics.arguments(provider: AdmittedProviderScope.highball).isEmpty,
+              "REQ32 qualification build adds only the fixed warn+gdkc channel, and only on Calimocho routes")
+        #else
+        check([nil, AdmittedProviderScope.calimocho, AdmittedProviderScope.crossOver, AdmittedProviderScope.highball]
+                .allSatisfy { QualificationDiagnostics.arguments(provider: $0).isEmpty },
+              "REQ32 ordinary builds pass no diagnostic Wine channels")
+        #endif
         check(
             try await launch.prefixNotice() == nil && !FileManager.default.fileExists(atPath: prefix.path),
             "REQ95 fresh-prefix preflight is read-only and does not claim or create a prefix")

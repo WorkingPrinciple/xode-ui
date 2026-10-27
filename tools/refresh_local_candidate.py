@@ -156,6 +156,11 @@ def refresh(installed, output_root, identity, selected_cli=None, producer_source
     bundle_info["CFBundleName"] = bundle_info["CFBundleDisplayName"] = "X Ode"
     bundle_info["CFBundleVersion"] = str(source_build_number(project))
     bundle_info["XodeReleaseChannel"] = "Beta"
+    if environment.get("XODUS_QUALIFICATION") == "1":
+        # Installed side by side; never replaces the ordinary candidate.
+        bundle_info["CFBundleName"] = bundle_info["CFBundleDisplayName"] = "X Ode Qualification"
+        bundle_info["XodeReleaseChannel"] = "Qualification"
+        bundle_info["XodeQualificationBuild"] = bundle_info["CFBundleVersion"] + "-qual"
     with (app / "Contents/Info.plist").open("wb") as output:
         plistlib.dump(bundle_info, output)
     copy_release_notices(source, resources)
@@ -167,7 +172,8 @@ def refresh(installed, output_root, identity, selected_cli=None, producer_source
         "version": 1, "sha256": helper_record["sha256"],
         "sourceCommit": source_identity_before["commit"]}, sort_keys=True) + "\n")
     receipt = {
-        "kind": "local-ui-refresh", "productionQualified": False, "notarized": False,
+        "kind": "local-ui-refresh", "productionQualified": False,
+        "qualificationVariant": environment.get("XODUS_QUALIFICATION") == "1", "notarized": False,
         "appSource": source_identity_before, "certificateSHA1": identity.upper(),
         "preservedCLI": cli_record,
         "producerBuildPerformed": False, "priorReceiptAvailable": False,
