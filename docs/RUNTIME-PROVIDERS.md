@@ -520,6 +520,23 @@ which its own run evidence used. Runtimes are staged locally under
 `~/Library/Application Support/Ode to X/Runtime/candidates/<primary sha>/`,
 with `SHA256SUMS` and `provenance.json`. They are not bundled in the app.
 
+### Runtime pair efcbf2a (supersedes eec6a13 for FH6 and Hades)
+
+L12 commit `efcbf2ac52e07f57099e52b1704fe2e884983e39`: primary
+`b28f3546413cdf3c6629c250bb7752159882183c901ba8efbb88cd1c846fd17e`
+(5,062,605 bytes), legacy
+`e077a50e03ea2f9c1b68f1094d2f273169d78a4d2b22981dc5c66b0cb9198fb5`
+(8,988,287 bytes). Unsigned Windows PE, verified by SHA-256 before launch.
+Over `eec6a13` it accepts a GUID `MSAAppId` for SISU, makes
+`XSystemGetXboxLiveSandboxId`'s `sandboxIdUsed` optional, and resolves `wss`/`ws`
+token URLs through their `https`/`http` endpoint. L12 qualified it on fresh
+prefixes with no input and WM_CLOSE: FH6 run `4efdf51d` (fh6-compat pressed
+"Ignore Warning", sign-in and licence completed, 331 s, no self-exit, exit 0) and
+Hades run `175cb421` (`hades-mscoree-v1`, title window for 75 s, expected
+REQ-32 line, exit 0). L12 also ran DREDGE on the equivalent `848819f` pair, but
+its visual check is pending and DREDGE has no title profile yet, so the scope here
+stays FH6 and Hades. The pair is staged at `Runtime/candidates/b28f3546…/`.
+
 ### Runtime pair eec6a13 (supersedes 15e6d1e for FH6 and Hades)
 
 L12 commit `eec6a1390b1af1e037ed0590f9ddbea2c2f629e7`: primary

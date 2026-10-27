@@ -42,9 +42,9 @@
       "executable": "forzahorizon6.exe",
       "environment": {},
       "runtime": {
-        "primaryPath": "${HOME}/Library/Application Support/Ode to X/Runtime/candidates/35c1430522b9cf3f9940803512959700418cfc7b3ab3d72958cbafa8e47d139f/xgameruntime.dll",
-        "primarySHA256": "35c1430522b9cf3f9940803512959700418cfc7b3ab3d72958cbafa8e47d139f",
-        "legacySHA256": "a791b0285988229e7b95702f4611a415e46a25aaeed87f9aa13059956ca77aca"
+        "primaryPath": "${HOME}/Library/Application Support/Ode to X/Runtime/candidates/b28f3546413cdf3c6629c250bb7752159882183c901ba8efbb88cd1c846fd17e/xgameruntime.dll",
+        "primarySHA256": "b28f3546413cdf3c6629c250bb7752159882183c901ba8efbb88cd1c846fd17e",
+        "legacySHA256": "e077a50e03ea2f9c1b68f1094d2f273169d78a4d2b22981dc5c66b0cb9198fb5"
       },
       "autoDismissRules": "fh6-compat"
     },
@@ -74,7 +74,7 @@
       "version": 1,
       "productID": "9P8DL6W0JBB8",
       "title": "Hades",
-      "qualification": "L12 run hades-03 (136cf1b4) on Calimocho 0.1120.4.6 with game recipe hades-mscoree-v1 (27 Oct), and app route on X Ode 611 (run d9787390): title rendered without Wine Mono, WM_CLOSE exit 0. Runtime now L12 eec6a13 (licence catalogue additions only over the 15e6d1e pair those runs used). Xbox sign-in fails at the RPS ticket bridge (0x89245115, REQ-32); gameplay, saves and controller untested.",
+      "qualification": "L12 run hades-03 (136cf1b4) on Calimocho 0.1120.4.6 with game recipe hades-mscoree-v1 (27 Oct), and app route on X Ode 611 (run d9787390): title rendered without Wine Mono, WM_CLOSE exit 0. Runtime now L12 efcbf2a; L12 run 175cb421 on that pair (hades-mscoree-v1): \"Hades\" window for 75 s, expected REQ-32 line, exit 0. Xbox sign-in fails at the RPS ticket bridge (0x89245115, REQ-32); gameplay, saves and controller untested.",
       "engine": "calimocho-11.20-4.0b3-06",
       "wineSha256": "803a62d101303bb3160da4aa8a506857c3d1e1146aa4a0c9ee8250357ef12505",
       "wineserverSha256": "7102d70405e7667acf143e710723f58fb24d32eee81468b1f0f02279343601d0",
@@ -91,9 +91,9 @@
         "CX_APPLEGPTK_LIBD3DSHARED_PATH"
       ],
       "runtime": {
-        "primaryPath": "${HOME}/Library/Application Support/Ode to X/Runtime/candidates/35c1430522b9cf3f9940803512959700418cfc7b3ab3d72958cbafa8e47d139f/xgameruntime.dll",
-        "primarySHA256": "35c1430522b9cf3f9940803512959700418cfc7b3ab3d72958cbafa8e47d139f",
-        "legacySHA256": "a791b0285988229e7b95702f4611a415e46a25aaeed87f9aa13059956ca77aca"
+        "primaryPath": "${HOME}/Library/Application Support/Ode to X/Runtime/candidates/b28f3546413cdf3c6629c250bb7752159882183c901ba8efbb88cd1c846fd17e/xgameruntime.dll",
+        "primarySHA256": "b28f3546413cdf3c6629c250bb7752159882183c901ba8efbb88cd1c846fd17e",
+        "legacySHA256": "e077a50e03ea2f9c1b68f1094d2f273169d78a4d2b22981dc5c66b0cb9198fb5"
       }
     },
     {

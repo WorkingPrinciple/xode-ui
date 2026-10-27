@@ -858,20 +858,20 @@ enum NativeLifecycleChecks {
         let profile = try NativeTitleLaunchProfile.bundledProfiles().first { $0.productID == NativeFH6Recipe.productID }
         guard let profile else { throw NativeLaunchError.invalidProfile }
         try NativeFH6Recipe.validate(profile: profile)
-        check(profile.runtime?.primarySHA256 == "35c1430522b9cf3f9940803512959700418cfc7b3ab3d72958cbafa8e47d139f"
-              && profile.runtime?.legacySHA256 == "a791b0285988229e7b95702f4611a415e46a25aaeed87f9aa13059956ca77aca",
-              "REQ125/32/30: FH6 binds L12 runtime eec6a13 (licence catalogue; cdd54e5 pair live 762 s, exit 0)")
+        check(profile.runtime?.primarySHA256 == "b28f3546413cdf3c6629c250bb7752159882183c901ba8efbb88cd1c846fd17e"
+              && profile.runtime?.legacySHA256 == "e077a50e03ea2f9c1b68f1094d2f273169d78a4d2b22981dc5c66b0cb9198fb5",
+              "REQ125/32/30: FH6 binds L12 runtime efcbf2a (run 4efdf51d: sign-in and licence complete, 331 s, exit 0)")
         let otherProfiles = try NativeTitleLaunchProfile.bundledProfiles().filter {
             ![NativeFH6Recipe.productID, "9P8DL6W0JBB8"].contains($0.productID) && $0.runtime != nil
         }
         let hades = try NativeTitleLaunchProfile.bundledProfiles().first { $0.productID == "9P8DL6W0JBB8" }
-        check(hades?.runtime?.primarySHA256 == "35c1430522b9cf3f9940803512959700418cfc7b3ab3d72958cbafa8e47d139f" && hades?.runtime?.legacySHA256 == "a791b0285988229e7b95702f4611a415e46a25aaeed87f9aa13059956ca77aca"
+        check(hades?.runtime?.primarySHA256 == "b28f3546413cdf3c6629c250bb7752159882183c901ba8efbb88cd1c846fd17e" && hades?.runtime?.legacySHA256 == "e077a50e03ea2f9c1b68f1094d2f273169d78a4d2b22981dc5c66b0cb9198fb5"
               && hades?.gameRecipe == "hades-mscoree-v1",
-              "REQ32/130: Hades binds runtime eec6a13 with its game recipe")
+              "REQ32/130: Hades binds runtime efcbf2a with its game recipe")
         check(!otherProfiles.isEmpty && otherProfiles.allSatisfy {
             $0.runtime?.primarySHA256 == "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8"
                 && $0.runtime?.legacySHA256 == "cfe7e5f837fabc51b8066809ca69c2ee0a7852512afbb1979190ec495b0b8b96"
-        }, "REQ125: no title other than FH6 and Hades inherits the eec6a13 pair without its own run")
+        }, "REQ125: no title other than FH6 and Hades inherits the efcbf2a pair without its own run")
         var oldRuntime = profile
         oldRuntime.runtime = try JSONDecoder().decode(NativeLocalRuntime.self, from: Data("""
         {"primaryPath":"/synthetic/xgameruntime.dll",
