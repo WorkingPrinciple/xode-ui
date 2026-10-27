@@ -231,7 +231,7 @@ enum PackageInventoryRemoval {
 @MainActor
 final class NativeInstallInventoryQuery {
     static let timeout: Duration = .seconds(300)
-    static let maximumOutputBytes = 64 * 1_048_576
+    nonisolated static let maximumOutputBytes = 64 * 1_048_576
 
     func run(configuration: BackendConfiguration, product: String, gameDirectory: URL) async throws -> NativeInstallInventory {
         guard PCGamesClient.validProductID(product) else { throw GameScriptError.invalidDestination }
