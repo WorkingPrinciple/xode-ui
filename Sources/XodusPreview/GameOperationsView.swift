@@ -698,8 +698,9 @@ struct GameInstallConsentView: View {
                         Label {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(operations.launchSupport(productID: consent.game.id).unavailableTitle).font(.headline)
-                                Text("You can install it, but Play won't be offered until a tested launch setup is available for this game.")
-                                    .foregroundStyle(.secondary)
+                                if let reason = operations.launchSupport(productID: consent.game.id).reason {
+                                    Text(reason).foregroundStyle(.secondary)
+                                }
                             }
                         } icon: { Image(systemName: "info.circle") }
                         .fixedSize(horizontal: false, vertical: true)
