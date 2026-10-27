@@ -530,6 +530,11 @@ enum BrandUXChecks {
     }
 
     static func libraryAccessPresentation(check: (Bool, String) -> Void) {
+        let now = Date()
+        check(!LibraryRefreshNotice.canRetry(pausedUntil: now.addingTimeInterval(60), now: now)
+              && LibraryRefreshNotice.canRetry(pausedUntil: now, now: now)
+              && LibraryRefreshNotice.canRetry(pausedUntil: nil, now: now),
+              "REQ-162/159: Library Retry respects the shared licence cooldown and becomes available at expiry")
         let purchase = LibraryGame(id: "FIXTURE00001", title: "Cached purchase", installed: nil,
             pc: PCGame(id: "FIXTURE00001", title: "Cached purchase", artwork: nil, acquisitionKind: .purchased),
             product: nil, owned: true, gamePass: false, accessIsCurrent: false)

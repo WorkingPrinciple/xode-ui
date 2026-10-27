@@ -7,6 +7,10 @@ struct LibraryRefreshNotice: View {
     let retryEnabled: Bool
     let retry: () -> Void
 
+    static func canRetry(pausedUntil: Date?, now: Date) -> Bool {
+        pausedUntil.map { now >= $0 } ?? true
+    }
+
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             Label(message, systemImage: "exclamationmark.circle")
@@ -168,9 +172,15 @@ struct PCGamesView: View {
                 } }
             }
             if let error = library.error {
-                LibraryRefreshNotice(message: error,
-                    retryEnabled: !library.busy && !library.restoringPresence && !library.needsKeychainApproval) {
-                    library.refresh()
+                TimelineView(.periodic(from: .now, by: 1)) { context in
+                    LibraryRefreshNotice(message: error,
+                        retryEnabled: !library.busy && !library.restoringPresence && !library.needsKeychainApproval
+                            && LibraryRefreshNotice.canRetry(pausedUntil: installed.productAccess.pausedUntil,
+                                                             now: context.date)) {
+                        guard LibraryRefreshNotice.canRetry(pausedUntil: installed.productAccess.pausedUntil,
+                                                            now: Date()) else { return }
+                        library.refresh()
+                    }
                 }
             }
         }
