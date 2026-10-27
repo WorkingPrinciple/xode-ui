@@ -1108,13 +1108,25 @@ enum EngineManagementChecks {
                   "REQ109 CrossOver is never offered in the Default Engine picker, even when admitted or failing")
             let app = CrossOverInstallation(location: URL(fileURLWithPath: "/Applications/CrossOver.app"),
                                             version: "26.3", buildVersion: "26.3.0")
-            check(CrossOverEngineRow.presentation(state: .installed(app))
-                    == .init(state: .detected, detail: "26.3 · No Man's Sky only")
-                  && EngineRowState.detected.title == "Detected"
-                  && CrossOverEngineRow.presentation(state: .unverified) == .init(state: .unverified, detail: "No Man's Sky only")
-                  && CrossOverEngineRow.presentation(state: .absent) == nil
-                  && CrossOverEngineRow.presentation(state: .notChecked) == nil,
-                  "REQ109 Engines list shows CrossOver as \"Detected · 26.3 · No Man's Sky only\" when installed, and no row when absent")
+check(CrossOverEngineRow.presentation(state: .installed(app)) == .init(state: .ready, detail: "26.3 · No Man's Sky only")
+                  && CrossOverEngineRow.presentation(state: .absent)
+                    == .init(state: .notInstalled, detail: "No Man's Sky only · from CodeWeavers")
+                  && CrossOverEngineRow.presentation(state: .unverified) == .init(state: .couldntVerify, detail: "No Man's Sky only")
+                  && CrossOverEngineRow.presentation(state: .notChecked).state == .verifying
+                  && CrossOverEngineRow.presentation(state: .checking).state == .verifying,
+                  "COR-279 step 1: CrossOver is always listed (Ready 26.3 / Not Installed / Verifying / Couldn't Verify), No Man's Sky only")
+            check(HighballEngineRow.presentation(.missing) == (.notInstalled, "Brotato only · open source")
+                  && HighballEngineRow.presentation(.qualified(version: "1.2", productID: "9P9VNSQK1W3K")) == (.ready, "1.2 · Brotato only")
+                  && HighballEngineRow.presentation(.detected(version: "1.2", blocker: nil)) == (.notQualified, "1.2 · Brotato only"),
+                  "COR-279 step 1: Highball is always listed (Ready / Not Installed / Not Qualified), Brotato only")
+            check(EngineRowState.allCases.map(\.title)
+                    == ["Ready", "Update Available", "Not Installed", "Verifying", "Couldn't Verify", "Not Qualified", "Testing Only"]
+                  && EngineRowState.subtitle(["Wine 11.20"], isDefault: true) == "Wine 11.20 · Default"
+                  && EngineConfiguratorSections<EmptyView>.state(for: EngineChoice.named("x", ready: true), checking: false) == .ready
+                  && EngineConfiguratorSections<EmptyView>.state(for: EngineChoice.named("x", ready: true, playable: false), checking: false) == .testingOnly
+                  && EngineConfiguratorSections<EmptyView>.state(for: EngineChoice.named("x", ready: false), checking: true) == .verifying
+                  && EngineConfiguratorSections<EmptyView>.state(for: EngineChoice.named("x", ready: false), checking: false) == .couldntVerify,
+                  "COR-279 step 2: one status vocabulary; Default is a subtitle suffix that keeps readiness visible")
         }
         #if XODUS_QUALIFICATION
         check(QualificationDiagnostics.arguments(provider: nil) == ["--diagnostic-wine-debug", "warn+gdkc"]

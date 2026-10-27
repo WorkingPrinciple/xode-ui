@@ -208,23 +208,40 @@ struct HighballRow: View {
     }
 }
 
-/// Detects off the main thread; the verdict stays "Detected" until a backend inspection supplies one.
-struct HighballSection: View {
-    /// Backend `highball-inspect`; nil or a nil result means no verdict is available.
-    var inspect: (@MainActor () async -> HighballState?)? = nil
-    var refreshID = 0
-    @State private var state: HighballState = .missing
+/// Detection off the main thread, reconciled with the backend verdict when one is available.
+enum HighballSection {
+    @MainActor static func resolve(inspect: (@MainActor () async -> HighballState?)?) async -> HighballState? {
+        let local = await Task.detached(priority: .utility) { HighballContract.detect() }.value
+        guard !Task.isCancelled else { return nil }
+        guard let inspect else { return local }
+        let verdict = await inspect()
+        guard !Task.isCancelled else { return local }
+        return HighballContract.reconcile(local: local, backend: verdict)
+    }
+}
+
+/// Highball in the Engines list (COR-279): always listed, Brotato only, never a default choice.
+struct HighballEngineRow: View {
+    var state: HighballState
+
+    static func presentation(_ state: HighballState) -> (state: EngineRowState, detail: String) {
+        let scope = "\(HighballContract.qualifiedTitle) only"
+        switch state {
+        case .missing: return (.notInstalled, "\(scope) · open source")
+        case .detected(let version, _): return (.notQualified, [version, scope].compactMap { $0 }.joined(separator: " · "))
+        case .qualified(let version, _): return (.ready, [version, scope].compactMap { $0 }.joined(separator: " · "))
+        }
+    }
 
     var body: some View {
-        HighballRow(state: state)
-            .task(id: refreshID) {
-                let local = await Task.detached(priority: .utility) { HighballContract.detect() }.value
-                guard !Task.isCancelled else { return }
-                state = local
-                guard let inspect else { return }
-                let verdict = await inspect()
-                guard !Task.isCancelled else { return }
-                state = HighballContract.reconcile(local: local, backend: verdict)
+        let row = Self.presentation(state)
+        EngineRow(name: "Highball", detail: row.detail, state: row.state) {
+            if state.offersGet {
+                Link("Get…", destination: HighballContract.repository).accessibleLink()
+                    .accessibilityLabel("Get Highball")
+                    .accessibilityIdentifier("xodus.engines.highball.row.get")
             }
+        }
+        .accessibilityIdentifier("xodus.engines.highball.row")
     }
 }

@@ -325,16 +325,16 @@ struct UserEngineList: View {
 
     var body: some View {
         ForEach(model.engines) { engine in
-            EngineRow(name: engine.name,
-                      detail: [engine.version, EnginesCopy.testingOnly].compactMap { $0 }.joined(separator: " · "),
-                      location: engine.location, state: .configured) {
+            EngineRow(name: engine.name, detail: engine.version,
+                      location: engine.location, state: .testingOnly) {
                 Button("Remove", role: .destructive) { model.remove(engine) }
                     .disabled(!model.storeReadable || model.terminating())
                     .accessibilityLabel("Remove \(engine.name)")
             }
         }
         ForEach(model.suggestions) { engine in
-            EngineRow(name: engine.name, detail: engine.version, location: engine.location, state: .detected) {
+            EngineRow(name: engine.name, detail: EngineRowState.subtitle([engine.version, "Found on This Mac"]),
+                      location: engine.location, state: .testingOnly) {
                 Button("Add") { model.add(engine) }
                     .disabled(!model.storeReadable || model.pending)
                     .accessibilityLabel("Add \(engine.name)")
@@ -408,27 +408,37 @@ struct UserEngineRows: View {
     }
 }
 
-enum EngineRowState: Equatable {
-    case isDefault, ready, unverified, configured, detected
+/// The one status vocabulary for every engine row (COR-279). "Default" is a subtitle suffix, not a status.
+enum EngineRowState: Equatable, CaseIterable {
+    case ready, updateAvailable, notInstalled, verifying, couldntVerify, notQualified, testingOnly
 
     var title: String {
         switch self {
-        case .isDefault: "Default"
         case .ready: "Ready"
-        case .unverified: "Not Verified"
-        case .configured: "Not Launch-Ready"
-        case .detected: "Detected"
+        case .updateAvailable: "Update Available"
+        case .notInstalled: "Not Installed"
+        case .verifying: "Verifying"
+        case .couldntVerify: "Couldn't Verify"
+        case .notQualified: "Not Qualified"
+        case .testingOnly: "Testing Only"
         }
     }
 
     var symbol: String {
         switch self {
-        case .isDefault: "checkmark.circle.fill"
-        case .ready: "checkmark.circle"
-        case .unverified: "exclamationmark.triangle"
-        case .configured: "slash.circle"
-        case .detected: "magnifyingglass"
+        case .ready: "checkmark.circle.fill"
+        case .updateAvailable: "arrow.down.circle"
+        case .notInstalled: "minus.circle"
+        case .verifying: "clock"
+        case .couldntVerify: "exclamationmark.triangle"
+        case .notQualified: "slash.circle"
+        case .testingOnly: "flask"
         }
+    }
+
+    /// Subtitle with the default marker appended, so readiness stays visible on the default engine.
+    static func subtitle(_ parts: [String?], isDefault: Bool = false) -> String? {
+        (parts + [isDefault ? "Default" : nil]).compactMap { $0 }.joined(separator: " · ").nilIfEmpty
     }
 }
 
@@ -444,7 +454,7 @@ struct EngineRow<Actions: View>: View {
             HStack(spacing: 10) {
                 Label(state.title, systemImage: state.symbol)
                     .labelStyle(.titleAndIcon)
-                    .foregroundStyle(state == .isDefault ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
+                    .foregroundStyle(state == .ready ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
                 actions()
             }
         } label: {
@@ -455,7 +465,7 @@ struct EngineRow<Actions: View>: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(name)
-        .accessibilityValue(state.title)
+        .accessibilityValue([state.title, detail].compactMap { $0 }.joined(separator: ", "))
     }
 }
 
@@ -463,12 +473,9 @@ extension EngineRow {
     /// Transitional signature for the pre-COR-167 picker body until the integrator adopts EngineConfiguratorForm.
     init(name: String, version: String?, location: String?, status: String,
          @ViewBuilder actions: @escaping () -> Actions) {
-        let state: EngineRowState = switch status {
-        case "Default": .isDefault
-        case "Ready": .ready
-        default: .unverified
-        }
-        self.init(name: name, detail: version, location: location, state: state, actions: actions)
+        let state: EngineRowState = ["Default", "Ready"].contains(status) ? .ready : .couldntVerify
+        self.init(name: name, detail: EngineRowState.subtitle([version], isDefault: status == "Default"),
+                  location: location, state: state, actions: actions)
     }
 }
 
@@ -828,6 +835,7 @@ struct EngineConfiguratorSections<Advanced: View>: View {
     private var calimochoInstaller: CalimochoReleaseInstallController { ownedCalimochoInstaller }
     @State private var advancedExpanded = false
     @FocusState private var crossOverLocationFocused: Bool
+    @State private var highball: HighballState = .missing
 
     init(choices: [EngineChoice], defaultID: String?, defaultName: String, checking: Bool, error: String?,
          settings: RuntimeProviderSettings, allowsFileReads: Bool, userEngineStore: UserDefaults,
@@ -873,7 +881,35 @@ struct EngineConfiguratorSections<Advanced: View>: View {
     }
     private var checkingAny: Bool { checking || settings.checkingDependency }
 
-    var body: some View {
+    @ViewBuilder private var enginesList: some View {
+        Section("Engines") {
+            if choices.isEmpty, let placeholder = calimocho.emptyListMessage {
+                Text(placeholder).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("xodus.engines.empty")
+            }
+            ForEach(choices) { choice in
+                EngineRow(name: choice.name,
+                          detail: EngineRowState.subtitle([choice.version.flatMap { choice.name.contains($0) ? nil : $0 }],
+                                                          isDefault: choice.id == defaultID),
+                          state: Self.state(for: choice, checking: checking)) {
+                    EmptyView()
+                }
+            }
+            CrossOverEngineRow(presentation: CrossOverEngineRow.presentation(state: settings.crossOverDependency)) {
+                crossOverLocationFocused = true
+            }
+            HighballEngineRow(state: highball)
+            UserEngineList(model: users, allowsFileReads: allowsFileReads)
+        }
+    }
+
+    static func state(for choice: EngineChoice, checking: Bool) -> EngineRowState {
+        if !choice.ready { return checking ? .verifying : .couldntVerify }
+        return choice.playable ? .ready : .testingOnly
+    }
+
+    @ViewBuilder private var statusSection: some View {
         Section {
             HStack(alignment: .firstTextBaseline, spacing: 12) {
                 Text(EnginesCopy.lead)
@@ -906,6 +942,9 @@ struct EngineConfiguratorSections<Advanced: View>: View {
                     }
             }
         }
+    }
+
+    @ViewBuilder private var defaultSection: some View {
         Section {
             Picker("Default Engine", selection: Binding(
                 get: { defaultID ?? "" },
@@ -927,34 +966,29 @@ struct EngineConfiguratorSections<Advanced: View>: View {
                 Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
             }
         }
-        Section("Engines") {
-            if choices.isEmpty, let placeholder = calimocho.emptyListMessage {
-                Text(placeholder).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("xodus.engines.empty")
-            }
-            ForEach(choices) { choice in
-                EngineRow(name: choice.name,
-                          detail: [choice.version.flatMap { choice.name.contains($0) ? nil : $0 },
-                                   choice.playable ? nil : EnginesCopy.testingOnly].compactMap { $0 }
-                                   .joined(separator: " · ").nilIfEmpty,
-                          state: !choice.ready ? .unverified : choice.id == defaultID ? .isDefault : .ready) {
-                    EmptyView()
-                }
-            }
-            if let row = CrossOverEngineRow.presentation(state: settings.crossOverDependency) {
-                CrossOverEngineRow(presentation: row) { crossOverLocationFocused = true }
-            }
-            UserEngineList(model: users, allowsFileReads: allowsFileReads)
+    }
+
+    private func refreshHighball() async {
+        guard allowsFileReads else { return }
+        let inspect: (@MainActor () async -> HighballState?)?
+        if backendPath.isEmpty {
+            inspect = nil
+        } else {
+            let settings = settings, backendPath = backendPath
+            inspect = { await settings.inspectHighball(backendPath: backendPath) }
         }
+        if let resolved = await HighballSection.resolve(inspect: inspect) { highball = resolved }
+    }
+
+    var body: some View {
+        statusSection
+        defaultSection
+        enginesList
         CrossOverLocationRow(settings: settings, allowsCheck: allowsFileReads, focused: $crossOverLocationFocused)
         UserEngineAddSection(model: users, allowsFileReads: allowsFileReads)
             .onAppear { users.terminating = { [settings] in settings.applicationTerminating } }
-        if allowsFileReads {
-            HighballSection(inspect: backendPath.isEmpty ? nil : { [settings, backendPath] in
-                await settings.inspectHighball(backendPath: backendPath)
-            }, refreshID: providerRefresh)
-        }
+        HighballRow(state: highball)
+            .task(id: "\(allowsFileReads):\(providerRefresh)") { await refreshHighball() }
         if showsAdvanced {
             Section {
                 DisclosureGroup("Advanced", isExpanded: $advancedExpanded) { advanced() }
@@ -963,7 +997,7 @@ struct EngineConfiguratorSections<Advanced: View>: View {
     }
 }
 
-/// CrossOver in the Engines list (REQ-109): shown when detected, scoped to No Man's Sky, never a default choice.
+/// CrossOver in the Engines list (REQ-109, COR-279): always listed, scoped to No Man's Sky, never a default choice.
 /// Its button moves focus to the CrossOver location field, which scrolls that section into view.
 struct CrossOverEngineRow: View {
     struct Presentation: Equatable {
@@ -978,18 +1012,25 @@ struct CrossOverEngineRow: View {
 
     var body: some View {
         EngineRow(name: "CrossOver", detail: presentation.detail, state: presentation.state) {
-            Button("Location…", action: showLocation)
-                .accessibilityLabel("Show CrossOver location")
-                .accessibilityIdentifier("xodus.engines.crossover.row.location")
+            if presentation.state == .notInstalled {
+                Link("Get…", destination: CrossOverDependencyState.trialDownloadURL).accessibleLink()
+                    .accessibilityLabel("Get CrossOver")
+                    .accessibilityIdentifier("xodus.engines.crossover.row.get")
+            } else {
+                Button("Location…", action: showLocation)
+                    .accessibilityLabel("Show CrossOver location")
+                    .accessibilityIdentifier("xodus.engines.crossover.row.location")
+            }
         }
         .accessibilityIdentifier("xodus.engines.crossover.row")
     }
 
-    static func presentation(state: CrossOverDependencyState) -> Presentation? {
+    static func presentation(state: CrossOverDependencyState) -> Presentation {
         switch state {
-        case .installed(let app): Presentation(state: .detected, detail: "\(app.version) · \(scope)")
-        case .unverified: Presentation(state: .unverified, detail: scope)
-        case .notChecked, .checking, .absent: nil
+        case .installed(let app): Presentation(state: .ready, detail: "\(app.version) · \(scope)")
+        case .absent: Presentation(state: .notInstalled, detail: "\(scope) · from CodeWeavers")
+        case .unverified: Presentation(state: .couldntVerify, detail: scope)
+        case .notChecked, .checking: Presentation(state: .verifying, detail: scope)
         }
     }
 }

@@ -274,10 +274,10 @@ enum BrandUXChecks {
                           && joined.contains("Check Again") && hasDownloadControl,
                           "REQ-115: Missing Calimocho offers in-app installation without manual folder instructions (\(scheme))")
                 case "invalid":
-                    check(joined.contains("couldn't be verified") && joined.contains("Not Verified")
-                          && !labels.contains("Default") && !hasDownloadControl
+                    check(joined.contains("couldn't be verified") && joined.contains("Couldn't Verify")
+                          && !joined.contains("Default ·") && !hasDownloadControl
                           && joined.contains("Remove Calimocho"),
-                          "REQ-114(4): Invalid Calimocho gives the verification reason, marks it Not Verified, and offers safe removal (\(scheme))")
+                          "REQ-114(4): Invalid Calimocho gives the verification reason, marks it Couldn't Verify, and offers safe removal (\(scheme))")
                 case "pending":
                     check(joined.contains("will be ready once") && !joined.contains("isn't available for download")
                           && !joined.contains("Reinstall") && !hasDownloadControl,
