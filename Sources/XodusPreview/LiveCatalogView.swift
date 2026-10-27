@@ -245,6 +245,15 @@ enum DiscoverSearchOverlayLayout {
               let first = searches.first else { return nil }
         return .search(first)
     }
+
+    /// REQ-91: Up/Down move through the visible recent searches and then Clear; nil above the first
+    /// entry returns focus to the search field.
+    static func moving(from current: DiscoverSearchFocus?, down: Bool, searches: [String]) -> DiscoverSearchFocus? {
+        let order = searches.prefix(8).map(DiscoverSearchFocus.search) + [.clear]
+        guard let current, let index = order.firstIndex(of: current) else { return down ? order.first : nil }
+        let next = index + (down ? 1 : -1)
+        return next < 0 ? nil : order[min(next, order.count - 1)]
+    }
 }
 
 struct DiscoverRecentSearches: View {
@@ -252,6 +261,18 @@ struct DiscoverRecentSearches: View {
     @FocusState.Binding var focused: DiscoverSearchFocus?
     var select: (String) -> Void
     var dismiss: () -> Void
+    var returnToField: () -> Void = {}
+
+    private func move(down: Bool) -> KeyPress.Result {
+        if let next = DiscoverSearchOverlayLayout.moving(from: focused, down: down,
+                                                          searches: selection.recentSearches) {
+            focused = next
+        } else {
+            focused = nil
+            returnToField()
+        }
+        return .handled
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -288,6 +309,8 @@ struct DiscoverRecentSearches: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Recent searches")
         .accessibilityIdentifier("xodus.discover.recentSearches")
+        .onKeyPress(.downArrow) { move(down: true) }
+        .onKeyPress(.upArrow) { move(down: false) }
         .onExitCommand(perform: dismiss)
     }
 }
