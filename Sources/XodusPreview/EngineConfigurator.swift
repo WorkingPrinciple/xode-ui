@@ -827,6 +827,7 @@ struct EngineConfiguratorSections<Advanced: View>: View {
     private var users: UserEngineModel { ownedUsers }
     private var calimochoInstaller: CalimochoReleaseInstallController { ownedCalimochoInstaller }
     @State private var advancedExpanded = false
+    @FocusState private var crossOverLocationFocused: Bool
 
     init(choices: [EngineChoice], defaultID: String?, defaultName: String, checking: Bool, error: String?,
          settings: RuntimeProviderSettings, allowsFileReads: Bool, userEngineStore: UserDefaults,
@@ -941,11 +942,14 @@ struct EngineConfiguratorSections<Advanced: View>: View {
                     EmptyView()
                 }
             }
+            if let row = CrossOverEngineRow.presentation(state: settings.crossOverDependency) {
+                CrossOverEngineRow(presentation: row) { crossOverLocationFocused = true }
+            }
             UserEngineList(model: users, allowsFileReads: allowsFileReads)
         }
+        CrossOverLocationRow(settings: settings, allowsCheck: allowsFileReads, focused: $crossOverLocationFocused)
         UserEngineAddSection(model: users, allowsFileReads: allowsFileReads)
             .onAppear { users.terminating = { [settings] in settings.applicationTerminating } }
-        CrossOverLocationRow(settings: settings, allowsCheck: allowsFileReads)
         if allowsFileReads {
             HighballSection(inspect: backendPath.isEmpty ? nil : { [settings, backendPath] in
                 await settings.inspectHighball(backendPath: backendPath)
@@ -959,10 +963,42 @@ struct EngineConfiguratorSections<Advanced: View>: View {
     }
 }
 
+/// CrossOver in the Engines list (REQ-109): shown when detected, scoped to No Man's Sky, never a default choice.
+/// Its button moves focus to the CrossOver location field, which scrolls that section into view.
+struct CrossOverEngineRow: View {
+    struct Presentation: Equatable {
+        let state: EngineRowState
+        let detail: String
+    }
+
+    static let scope = "No Man's Sky only"
+
+    let presentation: Presentation
+    let showLocation: () -> Void
+
+    var body: some View {
+        EngineRow(name: "CrossOver", detail: presentation.detail, state: presentation.state) {
+            Button("Location…", action: showLocation)
+                .accessibilityLabel("Show CrossOver location")
+                .accessibilityIdentifier("xodus.engines.crossover.row.location")
+        }
+        .accessibilityIdentifier("xodus.engines.crossover.row")
+    }
+
+    static func presentation(state: CrossOverDependencyState) -> Presentation? {
+        switch state {
+        case .installed(let app): Presentation(state: .detected, detail: "\(app.version) · \(scope)")
+        case .unverified: Presentation(state: .unverified, detail: scope)
+        case .notChecked, .checking, .absent: nil
+        }
+    }
+}
+
 /// CrossOver configuration: detected or saved location, editable, never the launch default.
 struct CrossOverLocationRow: View {
     @ObservedObject var settings: RuntimeProviderSettings
     var allowsCheck = true
+    var focused: FocusState<Bool>.Binding
     @State private var location = ""
     @State private var error: String?
     @State private var fence = EngineRequestFence()
@@ -988,6 +1024,7 @@ struct CrossOverLocationRow: View {
                         .onExitCommand(perform: discardDraft)
                         .accessibilityLabel("CrossOver application")
                         .accessibilityIdentifier("xodus.engines.crossover.location")
+                        .focused(focused)
                     Button("Choose…", action: choose).disabled(!allowsCheck || fence.pending)
                         .accessibilityLabel("Choose CrossOver application")
                     if fence.pending { ProgressView().controlSize(.small).accessibilityLabel("Checking CrossOver") }

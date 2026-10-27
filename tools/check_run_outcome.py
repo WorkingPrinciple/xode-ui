@@ -23,14 +23,36 @@ class RunOutcomeChecks(unittest.TestCase):
     def test_outcome_lines_are_kept_and_redacted(self):
         with tempfile.TemporaryDirectory() as tmp:
             outcome = extract(run_fixture(tmp, [
-                "1.0:01:warn:gdkc:user_Initialize xodus outcome: sign-in OK status 0",
-                "1.1:01:warn:gdkc:x_user_XUserAddResult xodus outcome: XUserAddResult status 0 xuid(2533274800000000)",
+                "1.0:01:warn:gdkc:user_Initialize xodus outcome: sign-in OK status 0.",
+                "1.1:01:warn:gdkc:x_user_XUserAddResult xodus outcome: XUserAddResult status 0.",
+                "1.15:01:warn:gdkc:x_user_url xuid(2533274800000000) xodus outcome: XUserAddResult trace",
                 "1.2:01:warn:gdkc:x_store_game_license_provider Microsoft-issued matching full-game licence validated; no identity or token logged.",
-                "1.3:01:warn:gdkc:x_store xodus outcome: XStoreQueryGameLicenseResult status 0 isActive 1",
+                "1.25:01:warn:gdkc:x_store_game_license_provider xodus outcome: game licence validated status 0.",
+                "1.3:01:warn:gdkc:x_store xodus outcome: XStoreQueryGameLicenseResult status 0 isActive 1.",
                 "1.4:01:fixme:other:unrelated line"]))
             self.assertEqual(outcome["missing"], [])
-            self.assertIn("xuid(N)", outcome["outcomes"]["userAddResult"][0])
+            self.assertIn("xuid(N)", outcome["outcomes"]["userAddResult"][1])
             self.assertNotIn("2533274800000000", json.dumps(outcome))
+
+    def test_success_verdicts(self):
+        good = ["1:01:warn:gdkc:f xodus outcome: sign-in OK status 0.",
+                "1:01:warn:gdkc:f xodus outcome: XUserAddResult status 0.",
+                "1:01:warn:gdkc:f xodus outcome: game licence validated status 0.",
+                "1:01:warn:gdkc:f xodus outcome: XStoreQueryGameLicenseResult status 0 isActive 1."]
+        with tempfile.TemporaryDirectory() as tmp:
+            outcome = extract(run_fixture(tmp, good))
+            self.assertTrue(outcome["pass"])
+            self.assertEqual(set(outcome["verdicts"].values()), {"pass"})
+        for index, bad in ((0, "1:01:warn:gdkc:f xodus outcome: sign-in FAILED status 0x89245115."),
+                           (2, "1:01:warn:gdkc:f xodus outcome: game licence FAILED status 0x80004005."),
+                           (3, "1:01:warn:gdkc:f xodus outcome: XStoreQueryGameLicenseResult status 0 isActive 0.")):
+            lines = list(good)
+            lines[index] = bad
+            with self.subTest(bad=bad[-40:]), tempfile.TemporaryDirectory() as tmp:
+                outcome = extract(run_fixture(tmp, lines))
+                self.assertEqual(outcome["missing"], [])
+                self.assertFalse(outcome["pass"])
+                self.assertIn("fail", outcome["verdicts"].values())
 
     def test_missing_outcomes_are_reported(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -38,6 +60,8 @@ class RunOutcomeChecks(unittest.TestCase):
                                                 "1.1:01:warn:gdkc:f user initialization failed at rps with status 0x89245115"]))
             self.assertEqual(outcome["missing"], ["gameLicence", "storeLicenseResult", "userAddResult"])
             self.assertEqual(len(outcome["outcomes"]["signInFailure"]), 1)
+            self.assertEqual(outcome["verdicts"]["signIn"], "fail")
+            self.assertFalse(outcome["pass"])
 
     def test_token_like_content_fails_closed(self):
         pre = "1.0:01:warn:gdkc:f xodus outcome: sign-in OK "

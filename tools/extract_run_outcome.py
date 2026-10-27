@@ -22,6 +22,22 @@ OUTCOMES = {
     "signInFailure": re.compile(r"gdkc:.*user initialization failed at "),
 }
 REQUIRED = ("signIn", "userAddResult", "gameLicence", "storeLicenseResult")
+# A kept line only passes when it carries the explicit success form; FAILED or non-zero status fails.
+SUCCESS = {
+    "signIn": re.compile(r"xodus outcome: sign-in OK status 0\.?$"),
+    "userAddResult": re.compile(r"xodus outcome: XUserAddResult status 0\.?$"),
+    "gameLicence": re.compile(r"xodus outcome: game licence validated status 0\.?$"),
+    "storeLicenseResult": re.compile(r"xodus outcome: XStoreQueryGameLicenseResult status 0 isActive 1\.?$"),
+}
+
+
+def verdict(name, lines):
+    if not lines:
+        return "missing"
+    outcome_lines = [line for line in lines if "xodus outcome:" in line]
+    if not outcome_lines:
+        return "missing"
+    return "pass" if all(SUCCESS[name].search(line) for line in outcome_lines) else "fail"
 MAX_LINES_PER_OUTCOME = 8
 MAX_LINE_BYTES = 400
 
@@ -78,6 +94,9 @@ def extract(run_dir):
         "logTruncated": (diagnostic.get("log") or {}).get("truncated"),
         "outcomes": outcomes,
         "missing": sorted(name for name in REQUIRED if not outcomes[name]),
+        "verdicts": {name: verdict(name, outcomes[name]) for name in REQUIRED},
+        "pass": all(verdict(name, outcomes[name]) == "pass" for name in REQUIRED)
+                and not outcomes["signInFailure"] and result.get("exit_code") == 0,
     }
 
 
@@ -94,8 +113,8 @@ def main():
     text = json.dumps(outcome, indent=2, sort_keys=True) + "\n"
     require_token_free_document(text)
     args.output.write_text(text)
-    print(json.dumps({"missing": outcome["missing"], "exitCode": outcome["exitCode"]}))
-    return 0
+    print(json.dumps({"pass": outcome["pass"], "verdicts": outcome["verdicts"], "exitCode": outcome["exitCode"]}))
+    return 0 if outcome["pass"] else 1
 
 
 def require_token_free_document(text):

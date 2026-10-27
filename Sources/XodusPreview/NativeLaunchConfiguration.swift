@@ -961,6 +961,25 @@ enum QualificationDiagnostics {
         return result
     }
 
+    static let ordinaryBundleIdentifier = "io.github.dragoshont.xodus.development"
+    static let preferencesImportedKey = "Xodus.qualification.preferencesImported"
+
+    /// Qualification builds only: the variant has its own bundle ID, so it imports the ordinary app's
+    /// preferences once, read-only, to run the same configured routes. The ordinary domain is never written.
+    static func importOrdinaryPreferences(into defaults: UserDefaults = .standard,
+                                          bundleIdentifier: String? = Bundle.main.bundleIdentifier,
+                                          ordinary: String = ordinaryBundleIdentifier) {
+        #if XODUS_QUALIFICATION
+        guard let bundleIdentifier, bundleIdentifier != ordinary,
+              !defaults.bool(forKey: preferencesImportedKey) else { return }
+        for (key, value) in defaults.persistentDomain(forName: ordinary) ?? [:]
+            where defaults.object(forKey: key) == nil {
+            defaults.set(value, forKey: key)
+        }
+        defaults.set(true, forKey: preferencesImportedKey)
+        #endif
+    }
+
     static func arguments(provider: String?) -> [String] {
         #if XODUS_QUALIFICATION
         guard provider == nil || provider == AdmittedProviderScope.calimocho else { return [] }

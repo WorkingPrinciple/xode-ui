@@ -46,15 +46,22 @@ struct RuntimeInstallationPicker: View {
 
     private var allowsFileReads: Bool { !settings.applicationTerminating }
 
-    private var configurator: EngineConfiguratorForm<NativeEngineSettings> {
-        let defaultID = try? NativeEngineSettings.defaultAdmissionName()
-        let choices = installed.availableEngineOverrides.filter(NativeEngineDefaults.permitsGlobalDefault).compactMap { selection in
+    /// Default Engine and Engines-list choices: global-default engines only. Title-scoped providers
+    /// (CrossOver for No Man's Sky, Highball for Brotato) never appear here; CrossOver has its own row.
+    static func defaultEngineChoices(available: [AdmittedEngineSelection], failed: Set<String>) -> [EngineChoice] {
+        available.filter(NativeEngineDefaults.permitsGlobalDefault).compactMap { selection in
             selection.inspection.engineName.map {
                 EngineChoice.named($0, ready: true,
                                    playable: EngineChoice.playsInBeta(admittedProvider: selection.inspection.admittedProvider))
             }
-        } + installed.failedEngineOverrides.subtracting(NativeEngineDefaults.titleScopedEngineNames)
+        } + failed.subtracting(NativeEngineDefaults.titleScopedEngineNames)
             .filter { $0 != NativeFH6Recipe.engineName }.sorted().map { EngineChoice.named($0, ready: false) }
+    }
+
+    private var configurator: EngineConfiguratorForm<NativeEngineSettings> {
+        let defaultID = try? NativeEngineSettings.defaultAdmissionName()
+        let choices = Self.defaultEngineChoices(available: installed.availableEngineOverrides,
+                                                failed: installed.failedEngineOverrides)
         return EngineConfiguratorForm(
             choices: choices,
             defaultID: defaultID, defaultName: defaultID.map { EngineDisplayName.name($0) } ?? "Unavailable",

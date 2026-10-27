@@ -52,6 +52,9 @@ def validate_payload_pair(cli, helper, producer, tree):
     return cli_record, helper_record
 
 
+QUALIFICATION_BUNDLE_IDENTIFIER = "io.github.dragoshont.xodus.qualification"
+
+
 def refresh(installed, output_root, identity, selected_cli=None, producer_source=None, producer_commit=None,
             selected_helper=None, producer_notices=None, producer_notices_sha256=None,
             engine_notice=None):
@@ -161,6 +164,9 @@ def refresh(installed, output_root, identity, selected_cli=None, producer_source
         bundle_info["CFBundleName"] = bundle_info["CFBundleDisplayName"] = "X Ode Qualification"
         bundle_info["XodeReleaseChannel"] = "Qualification"
         bundle_info["XodeQualificationBuild"] = bundle_info["CFBundleVersion"] + "-qual"
+        # Its own bundle ID, so LaunchServices never routes a deep link to the ordinary app. Neither
+        # app registers a URL scheme. The signing identifier stays fixed so Keychain access is unchanged.
+        bundle_info["CFBundleIdentifier"] = QUALIFICATION_BUNDLE_IDENTIFIER
     with (app / "Contents/Info.plist").open("wb") as output:
         plistlib.dump(bundle_info, output)
     copy_release_notices(source, resources)

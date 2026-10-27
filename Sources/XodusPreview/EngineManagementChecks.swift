@@ -1091,6 +1091,31 @@ enum EngineManagementChecks {
                             "--runtime-dll", primary.path, "--shim-dir", shimFolder.path]
                             + QualificationDiagnostics.arguments(provider: selection.inspection.admittedProvider),
               "REQ95 actual launch arguments carry the reloaded exact registry digest/engine/prefix/runtime, not an enum selector")
+        do {
+            func admitted(_ name: String, _ provider: String) -> AdmittedEngineSelection {
+                AdmittedEngineSelection(registryPath: "/tmp/\(name).json", inspection: EngineInspection(
+                    schemaVersion: 1, capability: "engineAdmissionV1", registrySha256: String(repeating: "a", count: 64),
+                    engineName: name, declaredProvider: provider, admittedProvider: provider, admission: "admitted",
+                    ready: true, qualified: false, wineSha256: String(repeating: "b", count: 64),
+                    wineserverSha256: String(repeating: "c", count: 64), error: nil))
+            }
+            let picker = RuntimeInstallationPicker.defaultEngineChoices(
+                available: [admitted("calimocho-11.20-4.0b3-06", "calimocho"), admitted("crossover-26.3-mvk142", "crossover"),
+                            admitted("highball-x64-crossover26.3-r27", "highball")],
+                failed: ["crossover-26.3-mvk142"])
+            check(picker.map(\.id) == ["calimocho-11.20-4.0b3-06"]
+                  && !picker.contains { $0.id.hasPrefix("crossover") || $0.name.localizedCaseInsensitiveContains("CrossOver") },
+                  "REQ109 CrossOver is never offered in the Default Engine picker, even when admitted or failing")
+            let app = CrossOverInstallation(location: URL(fileURLWithPath: "/Applications/CrossOver.app"),
+                                            version: "26.3", buildVersion: "26.3.0")
+            check(CrossOverEngineRow.presentation(state: .installed(app))
+                    == .init(state: .detected, detail: "26.3 · No Man's Sky only")
+                  && EngineRowState.detected.title == "Detected"
+                  && CrossOverEngineRow.presentation(state: .unverified) == .init(state: .unverified, detail: "No Man's Sky only")
+                  && CrossOverEngineRow.presentation(state: .absent) == nil
+                  && CrossOverEngineRow.presentation(state: .notChecked) == nil,
+                  "REQ109 Engines list shows CrossOver as \"Detected · 26.3 · No Man's Sky only\" when installed, and no row when absent")
+        }
         #if XODUS_QUALIFICATION
         check(QualificationDiagnostics.arguments(provider: nil) == ["--diagnostic-wine-debug", "warn+gdkc"]
               && QualificationDiagnostics.arguments(provider: AdmittedProviderScope.calimocho) == ["--diagnostic-wine-debug", "warn+gdkc"]
@@ -1101,6 +1126,22 @@ enum EngineManagementChecks {
                 .map(\.productID).sorted() == ["9NR1R1XWLCNB", "9P8DL6W0JBB8", "9PDC8J1BSV8B"]
               && QualificationDiagnostics.pinnedPrimarySHA256 != QualificationDiagnostics.releasePrimarySHA256,
               "REQ32 qualification build runs FH6, Hades and EDC on the f1a154b outcome-lines pair")
+        do {
+            let ordinary = "io.github.xodus.qual-import-check.\(UUID().uuidString)"
+            let suite = "io.github.xodus.qual-target-check.\(UUID().uuidString)"
+            let target = UserDefaults(suiteName: suite)!
+            target.set("kept", forKey: "existing")
+            UserDefaults.standard.setPersistentDomain(["existing": "ordinary", "imported": "value"], forName: ordinary)
+            QualificationDiagnostics.importOrdinaryPreferences(into: target, bundleIdentifier: "qual", ordinary: ordinary)
+            let firstImport = target.string(forKey: "imported") == "value" && target.string(forKey: "existing") == "kept"
+            UserDefaults.standard.setPersistentDomain(["imported": "changed"], forName: ordinary)
+            QualificationDiagnostics.importOrdinaryPreferences(into: target, bundleIdentifier: "qual", ordinary: ordinary)
+            let untouched = UserDefaults.standard.persistentDomain(forName: ordinary)?["imported"] as? String == "changed"
+            check(firstImport && target.string(forKey: "imported") == "value" && untouched,
+                  "REQ32 qualification variant imports the ordinary preferences once, read-only, without overwriting its own")
+            UserDefaults.standard.removePersistentDomain(forName: ordinary)
+            UserDefaults.standard.removePersistentDomain(forName: suite)
+        }
         #else
         check([nil, AdmittedProviderScope.calimocho, AdmittedProviderScope.crossOver, AdmittedProviderScope.highball]
                 .allSatisfy { QualificationDiagnostics.arguments(provider: $0).isEmpty },

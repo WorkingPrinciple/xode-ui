@@ -171,6 +171,7 @@ struct XodusPreviewApp: App {
 
     init() {
         ProcessInfo.processInfo.processName = AppBrand.displayName
+        QualificationDiagnostics.importOrdinaryPreferences()
 #if XODUS_SHIPPING
         if !CommandLine.arguments.dropFirst().isEmpty,
            GameLaunchArguments.parse(Array(CommandLine.arguments.dropFirst())) == nil {
