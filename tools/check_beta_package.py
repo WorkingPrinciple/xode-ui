@@ -20,14 +20,14 @@ from package_beta import (IDENTITY, TEAM_ID,
 PRODUCER_SOURCE_ARCHIVE_BYTES = b"Neutral private tester source archive"
 PRODUCER_SOURCE_ARCHIVE_SHA256 = hashlib.sha256(PRODUCER_SOURCE_ARCHIVE_BYTES).hexdigest()
 assert beta.PRODUCER_NOTICES_SHA256 == (
-    "f7ea18df92d24cee4fd09854cbe598996a05ed9a3d7c99e01ad5ee687a75f62d")
+    "b03c13d0f2bfe0417ad3479f565df893acb52504ee516f47cb13b928bdf5aa82")
 assert beta.PRODUCER_NOTICES_EVIDENCE_SHA256 == (
-    "9a111886e2a66d5d84a33c6cce990ee4b751191463e07f321d28aa96d26cf97b")
-assert beta.PRODUCER_SOURCE_COMMIT == "0a5d1dad7d94fa204c5d61abb43f068252f37bd1"
-assert beta.PRODUCER_SOURCE_TREE == "2b70033fcaff869d8598fe7f5256e41d94142106"
+    "e3f98ee551d968a4c7e95bc58229f9042fcc2fdf2c59d6dd038d46e8cc645d92")
+assert beta.PRODUCER_SOURCE_COMMIT == "681ee2bab71750601322aef65597ed2e5b7fb3da"
+assert beta.PRODUCER_SOURCE_TREE == "ad43166ecf3e3675d00ffc32e745bac444d18823"
 assert beta.PRODUCER_SOURCE_ARCHIVE_SHA256 == (
-    "d639992229a9a289aae12c0d232e02c004f002d0ea725121485b20dd81faef28")
-assert beta.PRODUCER_SOURCE_ARCHIVE_BYTES == 9_625_600
+    "5e2f32d3791755757a9250d438a35ca86989f7075614b4754f6bbdb4e120274c")
+assert beta.PRODUCER_SOURCE_ARCHIVE_BYTES == 9_707_520
 shipping.SOURCE_ARCHIVE_SHA256 = PRODUCER_SOURCE_ARCHIVE_SHA256
 shipping.SOURCE_ARCHIVE_BYTES = len(PRODUCER_SOURCE_ARCHIVE_BYTES)
 INVENTORY = {
@@ -270,7 +270,7 @@ with tempfile.TemporaryDirectory(prefix="xodus-beta-package-") as temporary:
     assert "installer are signed" not in beta.RELEASE_INSTALL_NOTE
     assert "disk image are stapled" not in beta.RELEASE_INSTALL_NOTE
     assert "PRIVATE-TESTER-SOURCE.tar" not in beta.RELEASE_INSTALL_NOTE
-    assert "xodus-cli-beta-0a5d1dad-source.tar" in beta.RELEASE_INSTALL_NOTE
+    assert "xodus-cli-beta-681ee2ba-source.tar" in beta.RELEASE_INSTALL_NOTE
     assert "Attach that exact archive to the GitHub draft release before publication" in beta.RELEASE_INSTALL_NOTE
     assert "Acknowledge every open-source project" not in beta.PUBLIC_RELEASE_NOTES
     assert "must be attached to" in beta.PUBLIC_RELEASE_NOTES
