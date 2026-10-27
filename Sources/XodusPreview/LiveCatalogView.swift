@@ -169,14 +169,12 @@ enum DiscoverBrowse {
 
     /// Spotlight picks from the leading store-order window, ranking only known facts: playable titles
     /// first, then supported ones, keeping store order within a tier. Titles with a known support
-    /// issue are dropped unless nothing else is available.
+    /// issue are never featured; with nothing else, there is no hero (owner: no blocked heroes).
     static func spotlight<Item>(_ items: [Item], limit: Int = 5, window: Int = 48,
                                 tier: (Item) -> SpotlightTier) -> [Item] {
         let ranked = items.prefix(max(limit, window)).enumerated()
             .map { (offset: $0.offset, item: $0.element, tier: tier($0.element)) }
-        let usable = ranked.filter { $0.tier != .unsupported }
-        guard !usable.isEmpty else { return Array(items.prefix(limit)) }
-        return usable.sorted { $0.tier == $1.tier ? $0.offset < $1.offset : $0.tier < $1.tier }
+        return ranked.filter { $0.tier != .unsupported }.sorted { $0.tier == $1.tier ? $0.offset < $1.offset : $0.tier < $1.tier }
             .prefix(limit).map(\.item)
     }
 }
@@ -491,7 +489,7 @@ struct LiveCatalogView: View {
                     .padding(.horizontal, 56).padding(.top, 24)
                     .accessibilityIdentifier("xodus.catalog.installStatus")
             }
-            if query.isEmpty, !visible.isEmpty { featuredCarousel }
+            if query.isEmpty, !featuredGames.isEmpty { featuredCarousel }
             VStack(alignment: .leading, spacing: 28) {
                 if query.isEmpty {
                     if !genres.isEmpty { browseGenres }
@@ -707,7 +705,7 @@ struct LiveCatalogView: View {
                 }
             }
             .padding(.horizontal, 56).padding(.bottom, 32)
-            .padding(.top, DiscoverLayout.contentTopInset(query: query, hasFeatured: !visible.isEmpty))
+            .padding(.top, DiscoverLayout.contentTopInset(query: query, hasFeatured: !featuredGames.isEmpty))
         }
         .onChange(of: query) { _, value in
             selection.genre = nil
