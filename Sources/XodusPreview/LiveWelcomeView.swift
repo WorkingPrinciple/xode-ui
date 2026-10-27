@@ -12,7 +12,7 @@ struct LiveWelcomeView: View {
                 VStack(spacing: 24) {
                     Spacer(minLength: 24)
                     VStack(spacing: 16) {
-                        XOdeLogo().fill(XboxBrand.green)
+                        OdeMarkTile()
                             .frame(width: 112, height: 112).accessibilityHidden(true)
                         Text("Ode").font(.largeTitle.weight(.medium))
                             .accessibilityLabel("Ode")

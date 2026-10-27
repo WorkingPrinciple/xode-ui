@@ -13,7 +13,7 @@ enum AppIconRenderer {
         }
         let directory = URL(fileURLWithPath: CommandLine.arguments[1], isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        let colorSpace = CGColorSpace(name: CGColorSpace.sRGB)!
         for size in [16, 32, 128, 256, 512] {
             for scale in [1, 2] {
                 let pixels = size * scale
@@ -32,7 +32,8 @@ enum AppIconRenderer {
                 context.translateBy(x: 0, y: 1024)
                 context.scaleBy(x: 1, y: -1)
                 context.addPath(XOdeMark.path(in: CGRect(x: 220, y: 232, width: 584, height: 560)))
-                context.setFillColor(CGColor(red: 16 / 255, green: 124 / 255, blue: 16 / 255, alpha: 1))
+                // W1: the original X in burgundy #7A1E3A on the white tile; no green.
+                context.setFillColor(CGColor(srgbRed: 122 / 255, green: 30 / 255, blue: 58 / 255, alpha: 1))
                 context.fillPath()
                 guard let image = context.makeImage() else { fatalError("Ode icon rendering failed.") }
                 let name = "icon_\(size)x\(size)\(scale == 2 ? "@2x" : "").png"

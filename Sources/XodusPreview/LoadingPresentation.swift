@@ -84,7 +84,7 @@ struct LibraryLoadingPlaceholders: View {
 struct OdeStartupBackdrop: View {
     var body: some View {
         VStack(spacing: 16) {
-            XOdeLogo().fill(XboxBrand.green).frame(width: 80, height: 80)
+            OdeMarkTile().frame(width: 80, height: 80)
             Text("Ode to X").font(.largeTitle.weight(.medium))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

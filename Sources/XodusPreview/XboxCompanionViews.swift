@@ -18,16 +18,47 @@ enum XboxCompanionCopy {
     static let connectionsTitle = "Friends and following"
 }
 
-enum XboxBrand {
-    static let green = Color(red: 16 / 255, green: 124 / 255, blue: 16 / 255)
-    static let lightGreen = Color(red: 82 / 255, green: 176 / 255, blue: 67 / 255)
-    static let gradient = LinearGradient(colors: [lightGreen, green], startPoint: .topLeading, endPoint: .bottomTrailing)
+/// Ode's own burgundy identity; no Xbox green is used anywhere in the brand.
+enum OdeBrand {
+    /// The mark colour, #7A1E3A, always drawn on a white tile.
+    static let mark = Color(red: 122 / 255, green: 30 / 255, blue: 58 / 255)
+    /// Control accent: #7A1E3A in Light, #C2485A in Dark for legibility.
+    static let accent = Color(nsColor: NSColor(name: nil) { appearance in
+        appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+            ? NSColor(srgbRed: 194 / 255, green: 72 / 255, blue: 90 / 255, alpha: 1)
+            : NSColor(srgbRed: 122 / 255, green: 30 / 255, blue: 58 / 255, alpha: 1)
+    })
+    static let gradient = LinearGradient(
+        colors: [Color(red: 158 / 255, green: 42 / 255, blue: 74 / 255), mark],
+        startPoint: .topLeading, endPoint: .bottomTrailing)
+}
+
+/// The W1 mark: the original X in burgundy on a white rounded tile in both appearances,
+/// using the packaged app icon's tile and mark proportions.
+struct OdeMarkTile: View {
+    var body: some View {
+        GeometryReader { geometry in
+            let side = min(geometry.size.width, geometry.size.height)
+            let unit = side / 836
+            ZStack(alignment: .topLeading) {
+                RoundedRectangle(cornerRadius: 184 * unit, style: .continuous).fill(Color.white)
+                    .overlay(RoundedRectangle(cornerRadius: 184 * unit, style: .continuous)
+                        .strokeBorder(Color.black.opacity(0.14), lineWidth: max(0.5, 4 * unit)))
+                XOdeLogo().fill(OdeBrand.mark)
+                    .frame(width: 584 * unit, height: 560 * unit)
+                    .offset(x: 126 * unit, y: 138 * unit)
+            }
+            .frame(width: side, height: side)
+        }
+        .aspectRatio(1, contentMode: .fit)
+        .accessibilityHidden(true)
+    }
 }
 
 struct XboxProminentButton: ViewModifier {
     let enabled: Bool
     @ViewBuilder func body(content: Content) -> some View {
-        if enabled { content.buttonStyle(.borderedProminent).tint(XboxBrand.green) } else { content }
+        if enabled { content.buttonStyle(.borderedProminent).tint(OdeBrand.accent) } else { content }
     }
 }
 
@@ -336,7 +367,7 @@ struct XboxAccountSummaryView: View {
                         if let reference = XboxCompanionArtwork.reference(profile.avatarURL) {
                             CatalogArtworkView(reference: reference, status: .available)
                                 .frame(width: 88, height: 88).clipShape(Circle())
-                                .overlay(Circle().strokeBorder(XboxBrand.gradient, lineWidth: 3))
+                                .overlay(Circle().strokeBorder(OdeBrand.gradient, lineWidth: 3))
                                 .accessibilityLabel("\(profile.gamertag) gamer picture")
                         }
                         Text(profile.gamertag).font(.title2.bold()).accessibilityAddTraits(.isHeader)
@@ -347,7 +378,7 @@ struct XboxAccountSummaryView: View {
                             Label("\(score.formatted()) G", systemImage: "trophy.fill")
                                 .font(.callout.weight(.semibold)).foregroundStyle(.white)
                                 .padding(.horizontal, 12).padding(.vertical, 4)
-                                .background(XboxBrand.gradient, in: Capsule())
+                                .background(OdeBrand.gradient, in: Capsule())
                         }
                     }
                 }
@@ -371,7 +402,7 @@ struct XboxAccountSummaryView: View {
                                 }
                             }
                             Button("See all achievements") { state.accountDestination = .achievements }
-                                .buttonStyle(.plain).foregroundStyle(XboxBrand.green).font(.callout.weight(.medium))
+                                .buttonStyle(.plain).foregroundStyle(OdeBrand.accent).font(.callout.weight(.medium))
                                 .accessibilityIdentifier("xodus.account.achievements")
                         }
                     }
@@ -396,7 +427,7 @@ struct XboxAccountSummaryView: View {
                             }
                             if friends.count > 5 {
                                 Button("See all \(friends.count.formatted()) friends") { state.accountDestination = .profile }
-                                    .buttonStyle(.plain).foregroundStyle(XboxBrand.green).font(.callout.weight(.medium))
+                                    .buttonStyle(.plain).foregroundStyle(OdeBrand.accent).font(.callout.weight(.medium))
                             }
                         }
                     }
@@ -444,7 +475,7 @@ struct XboxAccountSummaryView: View {
                 }
             }
         }
-        .tint(XboxBrand.green)
+        .tint(OdeBrand.accent)
         .frame(maxWidth: 420)
     }
 
@@ -458,7 +489,7 @@ struct XboxAccountSummaryView: View {
         } label: {
             Label(title, systemImage: symbol)
                 .font(.headline)
-                .foregroundStyle(XboxBrand.green)
+                .foregroundStyle(OdeBrand.accent)
         }
     }
 
@@ -489,7 +520,7 @@ private struct XboxLibraryAccessSummary: View {
                 let plan = status.planLabel ?? "Game Pass"
                 let expiry = status.expiryDate.map { " · renews or ends \($0.formatted(date: .abbreviated, time: .omitted))" } ?? ""
                 Label("\(plan) active\(expiry)", systemImage: "checkmark.seal.fill")
-                    .font(.callout.weight(.medium)).foregroundStyle(XboxBrand.green)
+                    .font(.callout.weight(.medium)).foregroundStyle(OdeBrand.accent)
                 if gamePassCatalogCount > 0 {
                     Text("\(gamePassCatalogCount.formatted()) PC games available with Game Pass")
                         .font(.caption).foregroundStyle(.secondary)
@@ -508,7 +539,7 @@ private struct XboxAchievementSummary: View {
         VStack(alignment: .leading, spacing: 4) {
             if let unlocked = game.achievementsUnlocked, let total = game.achievementsTotal, total > 0 {
                 ProgressView(value: Double(min(unlocked, total)), total: Double(total))
-                    .tint(XboxBrand.green).accessibilityHidden(true)
+                    .tint(OdeBrand.accent).accessibilityHidden(true)
             }
             details
         }
