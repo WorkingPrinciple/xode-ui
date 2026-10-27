@@ -51,6 +51,10 @@ enum PresentationPerformanceChecks {
               && !DiscoverSearchOverlayLayout.isPresented(searchFocused: true, suggestionFocused: false,
                   query: "", searches: []),
               "Recent searches appear only for an empty active Discover search and dismiss on selection, blur or clear")
+        check(!DiscoverGamePassShelf.mayStart(firstPageSettled: false, firstViewPending: false)
+              && !DiscoverGamePassShelf.mayStart(firstPageSettled: true, firstViewPending: true)
+              && DiscoverGamePassShelf.mayStart(firstPageSettled: true, firstViewPending: false),
+              "REQ-81: Game Pass shelves start only after the first browse page and its first-view metadata settle")
         check(DiscoverSearchOverlayLayout.moving(from: .search("Halo"), down: true, searches: recent) == .search("Forza")
               && DiscoverSearchOverlayLayout.moving(from: .search("Forza"), down: true, searches: recent) == .clear
               && DiscoverSearchOverlayLayout.moving(from: .clear, down: true, searches: recent) == .clear

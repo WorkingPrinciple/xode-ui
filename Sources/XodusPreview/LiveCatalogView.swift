@@ -395,6 +395,7 @@ struct LiveCatalogView: View {
     @State private var detailFocusReturnID: String?
     @State private var seasonalDate = Date()
     @StateObject private var halloweenCatalog = HalloweenCatalog()
+    @State private var shelvesAdmittedScope: String?
     @StateObject private var gamePassShelves = GamePassCollections(artwork: .shared,
                                                                    keys: DiscoverGamePassShelf.keys)
 
@@ -737,6 +738,9 @@ struct LiveCatalogView: View {
         }
         .onExitCommand(perform: exitSearchResults)
         .task(id: halloweenScope) { await loadHalloween() }
+        .onChange(of: shelvesMayStart, initial: true) { _, ready in
+            if ready, query.isEmpty { shelvesAdmittedScope = session.accountCatalogScope }
+        }
         .task(id: gamePassShelvesScope) { await loadGamePassShelves() }
         .task(id: CatalogArtworkLoadKey(market: session.market, language: session.language,
                                        ids: presentationActive ? metadataIDs : [])) {
@@ -777,8 +781,16 @@ struct LiveCatalogView: View {
 
     private var gamePassShelvesScope: String? {
         guard query.isEmpty, presentationActive, allowsStartupTasks, session.isReady,
-              session.accountCountryReady else { return nil }
+              session.accountCountryReady, shelvesAdmittedScope == session.accountCatalogScope else { return nil }
         return session.accountCatalogScope
+    }
+
+    /// Latched per account scope so later paging or metadata work never restarts loaded shelves.
+    private var shelvesMayStart: Bool {
+        DiscoverGamePassShelf.mayStart(
+            firstPageSettled: (session.catalogMatches(query: "") && !session.searching)
+                || session.catalogError != nil || session.catalogStopped || !canRefresh,
+            firstViewPending: metadataIDs.prefix(DiscoverBrowse.pageSize).contains { art.pendingIDs.contains($0) })
     }
 
     private func loadGamePassShelves() async {
