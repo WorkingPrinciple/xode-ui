@@ -616,7 +616,7 @@ struct GameInstallConsentView: View {
                     Section {
                         Label {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(NativeLaunchSupport.notSupportedTitle).font(.headline)
+                                Text(operations.launchSupport(productID: consent.game.id).unavailableTitle).font(.headline)
                                 Text("You can install it, but Play won't be offered until a tested launch setup is available for this game.")
                                     .foregroundStyle(.secondary)
                             }
@@ -768,18 +768,22 @@ struct GameOperationPresentation: View {
                 VStack(alignment: .leading, spacing: 18) {
                     Text("Uninstall \(game.title)?").font(.title2.bold())
                         .fixedSize(horizontal: false, vertical: true)
-                    Text(operations.usesUnifiedAccount
-                         ? "Deletes this game's installation folder. Back up any saves stored inside that folder first. Saves in separate bottles are not removed."
-                         : "Deletes the game files. Your saves are kept.").foregroundStyle(.secondary)
+                    Text(InstalledGameActionCopy.uninstallExplanation).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                     HStack {
+                        Button(InstalledGameActionCopy.deleteGameFiles, role: .destructive) { operations.confirmUninstall(game) }
+                            .disabled(!operations.canStartMutation)
+                            .accessibilityIdentifier("xodus.installed.confirmUninstall")
                         Spacer()
                         Button("Cancel") { operations.uninstallConsent = nil }.keyboardShortcut(.cancelAction)
                             .accessibilityIdentifier("xodus.installed.cancelUninstall")
-                        Button("Uninstall", role: .destructive) { operations.confirmUninstall(game) }
-                            .disabled(!operations.canStartMutation)
-                            .accessibilityIdentifier("xodus.installed.confirmUninstall")
+                        Button(InstalledGameActionCopy.removeKeepingFilesConfirm) {
+                            Task { await operations.uninstallKeepingFiles(game) }
+                        }
+                        .keyboardShortcut(.defaultAction)
+                        .accessibilityIdentifier("xodus.installed.uninstallKeepFiles")
                     }
-                }.padding(28).frame(width: 480)
+                }.padding(28).frame(width: 520)
             }
     }
 }
@@ -852,13 +856,17 @@ struct InstalledGameActions: View {
 }
 
 struct InstalledGameManagement: View {
+    /// L19 MED 5: in-place Update has no rollback; off until it can restore the previous version.
+    static let offersInPlaceUpdate = false
+
     @ObservedObject var library: InstalledGamesController
     @ObservedObject var operations: GameOperationsController
     let game: InstalledGame
 
     var body: some View {
         Group {
-            if library.updateStatus(for: game).hasUpdate {
+            // L19 MED 5: Update repairs in place with no rollback, so it stays off in this build.
+            if Self.offersInPlaceUpdate, library.updateStatus(for: game).hasUpdate {
                 Button("Update") {
                     Task { await operations.repair(PCGame(id: game.storeId, title: game.title, artwork: nil),
                                                   installed: game, intent: .update) }

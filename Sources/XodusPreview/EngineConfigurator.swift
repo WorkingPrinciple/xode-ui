@@ -869,6 +869,17 @@ struct EngineChoice: Identifiable, Equatable {
     /// The default and per-game choices offer only engines Play uses, so a choice is never ignored.
     static func playsInBeta(admittedProvider: String?) -> Bool { admittedProvider == "calimocho" }
 
+    /// Any names still shared after display naming get their engine ID appended, so no two rows or
+    /// Default choices read the same (review 03188939).
+    static func disambiguated(_ choices: [EngineChoice]) -> [EngineChoice] {
+        let counts = Dictionary(grouping: choices, by: \.name).mapValues(\.count)
+        return choices.map { choice in
+            guard counts[choice.name, default: 0] > 1 else { return choice }
+            return EngineChoice(id: choice.id, name: "\(choice.name) (\(choice.id))", version: choice.version,
+                                ready: choice.ready, playable: choice.playable)
+        }
+    }
+
     /// A choice named from its engine ID, with the secondary line users see under it.
     static func named(_ id: String, ready: Bool, playable: Bool = true) -> Self {
         let presentation = EngineDisplayName.presentation(for: id)

@@ -20,6 +20,8 @@ OUTCOMES = {
                               r"|Authoritative Microsoft game licen[cs]e validation failed)"),
     "storeLicenseResult": re.compile(r"gdkc:.*xodus outcome: XStoreQueryGameLicenseResult "),
     "signInFailure": re.compile(r"gdkc:.*user initialization failed at "),
+    # L12 0fec3d7: XStore product queries report counts only.
+    "storeProducts": re.compile(r"gdkc:.*xodus outcome: XStore (entitled|by-id|associated) products "),
 }
 REQUIRED = ("signIn", "userAddResult", "gameLicence", "storeLicenseResult")
 SIGN_IN_ONLY = ("signIn", "userAddResult")

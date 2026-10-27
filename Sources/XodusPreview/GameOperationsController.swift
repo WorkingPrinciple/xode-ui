@@ -61,7 +61,9 @@ struct GameReadyAnnouncement: Equatable, Sendable {
     let productID: String
     let title: String
     let folder: String
-    var body: String { "\(title) is ready to play." }
+    /// L19 MED 3: only a title Play can start is announced as ready to play.
+    var playable = true
+    var body: String { playable ? "\(title) is ready to play." : "\(title) was installed. Play isn't offered for it in this build yet." }
 }
 
 /// M2: Repair, Update, Resume and Download Full Game each start a large download; the user confirms first.
@@ -418,8 +420,10 @@ final class GameOperationsController: ObservableObject {
             catalogue: compatibilityCatalogue)
     }
 
+    /// L19-6: Repair waits for a running installation check instead of silently doing nothing.
     func canRepair(_ game: InstalledGame) -> Bool {
         canStartMutation && !installed.unavailableDriveIDs.contains(game.id) && installed.runningGameID != game.id
+            && !installed.checkingInstallations.contains(game.id)
             && supportIssues(productID: game.storeId, packageFormat: game.packageType?.label,
                              includeRuntime: false).isEmpty
     }
@@ -774,8 +778,10 @@ final class GameOperationsController: ObservableObject {
         }
     }
 
+    /// L19-5: stopping the game this app started never waits on an unrelated download or account check.
     func stop(_ game: InstalledGame) {
-        guard canStartMutation, installConsent == nil, uninstallConsent == nil else { return }
+        guard installed.canStop(game), !installed.applicationTerminating,
+              installConsent == nil, uninstallConsent == nil else { return }
         if usesUnifiedAccount {
             stopTask = Task {
                 await installed.stopNative(game)
@@ -1320,10 +1326,54 @@ final class GameOperationsController: ObservableObject {
         removalConsent = game
     }
 
+    /// The Uninstall sheet's default: remove from the library and keep every file (REQ-135).
+    func uninstallKeepingFiles(_ game: InstalledGame) async {
+        guard uninstallConsent?.id == game.id else { return }
+        uninstallConsent = nil
+        await installed.remove(game)
+    }
+
     func confirmRemoval(_ game: InstalledGame) async {
         guard removalConsent?.id == game.id else { return }
         removalConsent = nil
         await installed.remove(game)
+    }
+
+    /// REQ-135/L19-1: whether deleting a game's folder can only remove validated package content.
+    enum UninstallSafety: Equatable {
+        case safe
+        case unsafe(String)
+    }
+
+    nonisolated static let saveMarkers: Set<String> = ["saves", "save", "savegames", "saved games", "savedata", "userdata",
+                                           "profiles", "xodusprivatelocalsaves", "wgs", "connectedstorage"]
+    nonisolated static let prefixMarkers: Set<String> = ["drive_c", "dosdevices", "pfx", "prefix", "prefixes", "wineprefix",
+                                             "system.reg", "user.reg", "userdef.reg"]
+    nonisolated static let uninstallUnsafeMessage = "This folder may hold saves, a Wine prefix or files X Ode can't identify, so it won't be deleted. Use Remove from Library (Keep Files) instead."
+
+    /// Fails closed: only a folder whose MicrosoftGame.config names this product, with no symlinks and no
+    /// save or prefix layout within four levels, may be deleted.
+    nonisolated static func uninstallSafety(folder: URL, productID: String, entryLimit: Int = 200_000) -> UninstallSafety {
+        guard let config = try? MicrosoftGameConfig.read(folder: folder), config.storeId == productID else {
+            return .unsafe(uninstallUnsafeMessage)
+        }
+        guard let walker = FileManager.default.enumerator(at: folder, includingPropertiesForKeys: [.isSymbolicLinkKey],
+                                                          options: [], errorHandler: { _, _ in false }) else {
+            return .unsafe(uninstallUnsafeMessage)
+        }
+        var count = 0
+        for case let url as URL in walker {
+            count += 1
+            guard count <= entryLimit,
+                  (try? url.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) != true else {
+                return .unsafe(uninstallUnsafeMessage)
+            }
+            let name = url.lastPathComponent.lowercased()
+            if walker.level <= 4, saveMarkers.contains(name) || prefixMarkers.contains(name) {
+                return .unsafe(uninstallUnsafeMessage)
+            }
+        }
+        return .safe
     }
 
     func prepareUninstall(_ game: InstalledGame) {
@@ -1405,6 +1455,9 @@ final class GameOperationsController: ObservableObject {
                         if let storageVolume, !storageVolume.identifies(GameStorageVolume.read(at: folder)) {
                             throw GameInstallLocationError.driveChanged
                         }
+                        if case .unsafe(let reason) = Self.uninstallSafety(folder: folder, productID: record.productID) {
+                            throw UninstallRefused(message: reason)
+                        }
                     }
                 } catch {
                     self.error = Self.message(error)
@@ -1446,7 +1499,7 @@ final class GameOperationsController: ObservableObject {
                                                 childStarted: childStarted, error: error) {
                     do {
                         try await updateResumableInstallation(record, completed: false)
-                        try await journal.clear()
+                        try await journal.clear(expectedRunID: record.id)
                         operation = nil
                         installed.releaseMutation()
                     } catch {
@@ -1526,7 +1579,8 @@ final class GameOperationsController: ObservableObject {
                                                                expectedStoreID: record.productID)
                 notice = record.kind == .repair ? "\(record.title) was repaired." : "\(record.title) was installed."
                 announceReady?(GameReadyAnnouncement(productID: record.productID, title: record.title,
-                                                     folder: record.destination))
+                                                     folder: record.destination,
+                                                     playable: launchSupport(productID: record.productID).canPlay))
             }
         } else {
             let cancelled = result?.errorCode == "CANCELLED" || result == nil
@@ -1545,7 +1599,7 @@ final class GameOperationsController: ObservableObject {
         }
         if result?.success == true, let id = record.installedID { damagedInstallations[id] = nil }
         try await updateResumableInstallation(record, completed: result?.success == true)
-        try await journal.clear()
+        try await journal.clear(expectedRunID: record.id)
         operation = nil
         recoveryRequired = false
         recoveryUnreadable = false
@@ -1556,6 +1610,11 @@ final class GameOperationsController: ObservableObject {
     @Published private(set) var discardingPartialProductID: String?
 
     /// Deletes only the retained partial folder for this exact product and retires only its record.
+    struct UninstallRefused: LocalizedError { let message: String; var errorDescription: String? { message } }
+
+    static let discardChangedElsewhereMessage =
+        "This download changed in another X Ode window or is in use, so nothing was deleted. Check again before discarding."
+
     func discardPartialDownload(productID: String) async {
         guard canStartMutation, operation == nil, !recoveryRequired, discardingPartialProductID == nil,
               let record = resumableInstallations[productID] else { return }
@@ -1575,8 +1634,10 @@ final class GameOperationsController: ObservableObject {
             discardingPartialProductID = nil
             installed.releaseMutation()
         }
+        let registry = installed.registryFile
         do {
-            let found = try await storageProbe.read { () -> Bool in
+            // Read-only preflight; the delete itself happens under the shared journal lease.
+            let present = try await storageProbe.read { () -> Bool in
                 // L1: only an unmounted /Volumes drive keeps the record; otherwise a missing folder means no files.
                 if GameStorageVolume.unmountedVolumeRoot(for: destination.path,
                                                          mountedRoots: GameStorageVolume.mountedRoots()) != nil {
@@ -1590,11 +1651,25 @@ final class GameOperationsController: ObservableObject {
                                                              path: destination.deletingLastPathComponent().path)
                 }
                 try GameInstallLocation.validateDestination(destination, productID: productID, managedRecord: record)
-                guard FileManager.default.fileExists(atPath: destination.path) else { return false }
-                try FileManager.default.removeItem(at: destination)
-                return true
+                return FileManager.default.fileExists(atPath: destination.path)
             }
-            try await journal.removeResumable(record)
+            // L19-3/REQ-137: recheck the shared journal, stopped-download list and registry and delete under
+            // one cross-process lease; anything changed elsewhere or unreadable deletes nothing.
+            let found: Bool
+            do {
+                found = try await journal.discardStopped(record,
+                    registeredFolders: { try InstalledGameStore.registeredFolders(file: registry) },
+                    delete: {
+                        guard present, FileManager.default.fileExists(atPath: destination.path) else { return false }
+                        try GameInstallLocation.validateDestination(destination, productID: productID, managedRecord: record)
+                        try FileManager.default.removeItem(at: destination)
+                        return true
+                    })
+            } catch GameScriptError.busy {
+                resumableInstallations = (try? await journal.loadResumable()) ?? resumableInstallations
+                error = Self.discardChangedElsewhereMessage
+                return
+            }
             resumableInstallations = try await journal.loadResumable()
             notice = found ? "The partial download of \(record.title) was deleted."
                 : "No downloaded files were found for \(record.title). Its stopped download was removed from the list."
@@ -1662,7 +1737,9 @@ final class GameOperationsController: ObservableObject {
                     try GameScriptFiles.checkPath(launcher)
                 }.value
                 try await installed.registerInstallation(folder: folder, launcher: launcher, expectedStoreID: record.productID)
-                notice = record.kind == .repair ? "\(record.title) is ready to play." : "\(record.title) was installed."
+                notice = record.kind == .repair && launchSupport(productID: record.productID).canPlay
+                    ? "\(record.title) is ready to play." : record.kind == .repair ? "\(record.title) was repaired."
+                    : "\(record.title) was installed."
                 announceReady?(GameReadyAnnouncement(productID: record.productID, title: record.title,
                                                      folder: result.folder))
             }
@@ -1693,7 +1770,7 @@ final class GameOperationsController: ObservableObject {
             }
         }
         try await updateResumableInstallation(record, completed: outcome.code == 0)
-        try await journal.clear()
+        try await journal.clear(expectedRunID: record.id)
         operation = nil
         recoveryRequired = false
         recoveryUnreadable = false
@@ -1804,7 +1881,7 @@ final class GameOperationsController: ObservableObject {
                     return !FileManager.default.fileExists(atPath: state.path)
                 }) {
                     try await updateResumableInstallation(record, completed: false)
-                    try await journal.clear()
+                    try await journal.clear(expectedRunID: record.id)
                     operation = nil
                     recoveryRequired = false
                     recoveryUnreadable = false
@@ -1925,7 +2002,7 @@ final class GameOperationsController: ObservableObject {
         let record = operation
         do {
             if let record { try? await updateResumableInstallation(record, completed: false) }
-            try await journal.clear()
+            try await journal.clear(expectedRunID: record?.id)
         } catch {
             self.error = GameScriptError.storage.localizedDescription
             return

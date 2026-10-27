@@ -75,6 +75,11 @@ class RunOutcomeChecks(unittest.TestCase):
             forced = extract(Path(tmp) / "run-fixture", expect=["signIn", "userAddResult"])
             self.assertTrue(forced["pass"])
 
+    def test_store_product_lines_are_kept(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            outcome = extract(run_fixture(tmp, ["1:01:warn:gdkc:f xodus outcome: XStore entitled products status 0 count 3."]))
+            self.assertEqual(len(outcome["outcomes"]["storeProducts"]), 1)
+
     def test_missing_outcomes_are_reported(self):
         with tempfile.TemporaryDirectory() as tmp:
             outcome = extract(run_fixture(tmp, ["1.0:01:warn:gdkc:f xodus outcome: sign-in FAILED status 0x89245115",

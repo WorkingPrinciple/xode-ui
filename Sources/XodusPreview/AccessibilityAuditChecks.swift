@@ -351,10 +351,14 @@ enum AccessibilityAuditChecks {
               && message.contains("use Uninstall") && InstalledGameActionCopy.removeKeepingFiles.contains("Keep Files"),
               "REQ-41: Remove from Library keeps files, says so and confirms from a mounted host (menus cannot present dialogs); it never deletes")
         let consent = view.range(of: "Text(\"Uninstall \\(game.title)?\")").map { String(view[$0.lowerBound...].prefix(1_200)) } ?? ""
-        check(consent.contains("Deletes this game's installation folder") && consent.contains("Deletes the game files")
+        let destructive = consent.range(of: "Button(InstalledGameActionCopy.deleteGameFiles, role: .destructive)")
+            .map { String(consent[$0.lowerBound...].prefix(while: { _ in true })) }
+            .flatMap { block in block.range(of: "Spacer()").map { String(block[..<$0.lowerBound]) } } ?? ""
+        check(consent.contains("InstalledGameActionCopy.uninstallExplanation") && !destructive.isEmpty
               && consent.contains("Button(\"Cancel\")") && consent.contains(".keyboardShortcut(.cancelAction)")
-              && !consent.contains(".keyboardShortcut(.defaultAction)") && consent.contains("role: .destructive"),
-              "REQ-41: Uninstall consent names the deletion, Escape cancels and Return never confirms the destructive action")
+              && !destructive.contains(".keyboardShortcut(.defaultAction)")
+              && consent.contains("operations.uninstallKeepingFiles(game)"),
+              "REQ-41/REQ-135: Uninstall consent names the deletion, Escape cancels, and Return keeps files rather than confirming the destructive action")
     }
 
     // MARK: REQ-18 keyboard focus

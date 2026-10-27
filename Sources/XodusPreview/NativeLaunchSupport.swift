@@ -12,6 +12,15 @@ enum NativeLaunchSupport: Equatable {
     case engineMissing(String)
 
     static let notSupportedTitle = "Not available on Mac yet"
+    /// REQ-139: a title gated to the test build has played on this Mac, so it isn't "not available".
+    static let inTestingTitle = "In testing on Mac"
+    static let inTestingReason = "This game runs in the X Ode test build while it's being qualified, so Play isn't offered in this build yet."
+
+    /// The heading shown when Play isn't offered.
+    var unavailableTitle: String {
+        if offersEngines { return "Engine needed" }
+        return reason == Self.inTestingReason ? Self.inTestingTitle : Self.notSupportedTitle
+    }
     static let notSupportedReason = "There's no tested launch setup for this game yet, so Play isn't offered."
 
     var canPlay: Bool { self == .supported }
@@ -37,7 +46,7 @@ enum NativeLaunchSupport: Equatable {
                          registryDigest: (String) -> String? = Self.fileDigest,
                          releaseStatus: (CalimochoReleasePin) -> CalimochoReleaseError? = Self.releaseManifestStatus) -> Self {
         guard productID != NativeFH6Recipe.productID || NativeFH6Recipe.enabled else {
-            return .notSupported(NativeLaunchError.titleRecipeUnavailable.localizedDescription)
+            return .notSupported(inTestingReason)
         }
         let profile: NativeTitleLaunchProfile?
         do {

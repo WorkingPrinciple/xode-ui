@@ -171,7 +171,14 @@ def refresh(installed, output_root, identity, selected_cli=None, producer_source
         plistlib.dump(bundle_info, output)
     copy_release_notices(source, resources)
     engine_notice_record = copy_engine_notice(engine_notice, resources) if engine_notice else None
-    shutil.copyfile(installed / "Contents/Resources/Xodus.icns", resources / "Xodus.icns")
+    # Render the icon from this source (as build_local_candidate does) so a changed mark ships;
+    # copying the installed app's icon kept the previous artwork.
+    run(["swiftc", "Sources/XodusCore/XOdeMark.swift", "tools/RenderAppIcon.swift",
+         "-o", str(stage / "RenderAppIcon")], source, log)
+    iconset = stage / "Xodus.iconset"
+    run([str(stage / "RenderAppIcon"), str(iconset)], source, log)
+    run(["iconutil", "-c", "icns", str(iconset), "-o", str(resources / "Xodus.icns")], source, log)
+    shutil.rmtree(iconset)
     copy_resources(binary_dir / "XodusAppFoundation_XodusManagement.bundle",
                    resources / "XodusAppFoundation_XodusManagement.bundle")
     (resources / "XodusAuthHost.json").write_text(json.dumps({

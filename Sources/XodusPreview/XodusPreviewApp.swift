@@ -171,6 +171,10 @@ struct XodusPreviewApp: App {
 
     init() {
         ProcessInfo.processInfo.processName = AppBrand.displayName
+        if let peer = ConcurrentAppGuard.runningPeer(bundleID: Bundle.main.bundleIdentifier,
+                running: NSWorkspace.shared.runningApplications.compactMap(\.bundleIdentifier)) {
+            ConcurrentAppGuard.refuse(peer: peer)
+        }
         QualificationDiagnostics.importOrdinaryPreferences()
 #if XODUS_SHIPPING
         if !CommandLine.arguments.dropFirst().isEmpty,
@@ -401,5 +405,31 @@ struct XodusPreviewApp: App {
         }
             .defaultSize(width: 480, height: 360)
             .windowResizability(.contentSize)
+    }
+}
+
+
+/// REQ-138: the ordinary and Qualification apps share one game service, journal and registry, so only one
+/// may run at a time. The second one explains and quits before touching any state.
+enum ConcurrentAppGuard {
+    static let peers = ["io.github.dragoshont.xodus.development": "X Ode",
+                        "io.github.dragoshont.xodus.qualification": "X Ode Qualification"]
+
+    static func runningPeer(bundleID: String?, running: [String]) -> String? {
+        guard let bundleID, peers[bundleID] != nil else { return nil }
+        return peers.first { $0.key != bundleID && running.contains($0.key) }?.value
+    }
+
+    static func message(peer: String) -> String {
+        "\(peer) is already running. Quit it first; both apps share the same games and game service."
+    }
+
+    @MainActor static func refuse(peer: String) {
+        let alert = NSAlert()
+        alert.messageText = "\(AppBrand.displayName) can't open while \(peer) is running"
+        alert.informativeText = message(peer: peer)
+        alert.addButton(withTitle: "Quit")
+        alert.runModal()
+        exit(0)
     }
 }

@@ -4,6 +4,9 @@ import XodusManagement
 
 enum InstalledGameActionCopy {
     static let removeKeepingFiles = "Remove from Library (Keep Files)…"
+    /// REQ-135: keeping files is the default; deleting is limited to a verified game folder.
+    static let deleteGameFiles = "Delete Game Files"
+    static let uninstallExplanation = "Remove (Keep Files) takes the game out of your library and leaves every file, save and prefix in place. Delete Game Files removes only a verified game folder, and is refused if the folder holds saves, a Wine prefix or anything X Ode can't identify."
     static let removeKeepingFilesConfirm = "Remove (Keep Files)"
     static let removeKeepingFilesHelp = "Removes this game from the library. The game folder and saves aren't deleted."
     static func removeKeepingFilesTitle(_ title: String) -> String { "Remove \(title) from the library?" }

@@ -1141,6 +1141,18 @@ enum EngineManagementChecks {
                   && labels[4] == "Calimocho for Forza Horizon 6" && labels[3] == "Calimocho for Forza Horizon 6 (0.1120.4.1)"
                   && labels[1] == "Calimocho 0.1120.4.4",
                   "Review 76fe346a M1: no two engine rows or Default choices share a label on a Mac with several releases: \(labels)")
+            let twins = EngineChoice.disambiguated([EngineChoice.named("calimocho-wine11.20-gptk4b3-tls-vulkan", ready: true),
+                                                    EngineChoice.named("calimocho-wine11.21-gptk4b3-tls-vulkan", ready: true),
+                                                    EngineChoice.named(CalimochoRelease.engineID, ready: true)])
+            check(Set(twins.map(\.name)).count == 3 && twins[2].name == "Calimocho"
+                  && twins[0].name.hasSuffix("(calimocho-wine11.20-gptk4b3-tls-vulkan)"),
+                  "Review 03188939: fallback names that still collide get their engine ID, so every row stays unique: \(twins.map(\.name))")
+            let externalDrive = InstalledGamesController.isBootVolumeFolder("/Volumes/NoSuchDrive/Games/Fixture")
+            let homeGame = InstalledGamesController.isBootVolumeFolder(NSHomeDirectory() + "/Games/no-such-game-\(UUID().uuidString)/missing")
+            check(!externalDrive && homeGame
+                  && InstalledGamesController.inspectionQueueLimit == .seconds(600)
+                  && !InstalledGamesController.inspectionQueueTimeoutMessage.contains("Retry"),
+                  "Review 03188939: only a startup-disk missing folder means Download; queued checks wait at most 10 minutes with a plain reason (external \(externalDrive), home \(homeGame))")
             func calimochoRow(_ availability: CalimochoAvailability, folder: Bool = true, progress: String? = nil,
                               update: Bool = false) -> CalimochoEngineRow.Presentation {
                 CalimochoEngineRow.presentation(availability: availability, hasFolder: folder, progress: progress,
@@ -1190,7 +1202,7 @@ enum EngineManagementChecks {
         check(try NativeTitleLaunchProfile.bundledProfiles().filter { $0.runtime?.primarySHA256 == QualificationDiagnostics.pinnedPrimarySHA256 }
                 .map(\.productID).sorted() == ["9NR1R1XWLCNB", "9P8DL6W0JBB8", "9PDC8J1BSV8B"]
               && QualificationDiagnostics.pinnedPrimarySHA256 != QualificationDiagnostics.releasePrimarySHA256,
-              "REQ32 qualification build runs FH6, Hades and EDC on the c3a0fe3 outcome-lines pair")
+              "REQ32 qualification build runs FH6, Hades and EDC on the 0fec3d7 outcome-lines pair")
         do {
             let ordinary = "io.github.xodus.qual-import-check.\(UUID().uuidString)"
             let suite = "io.github.xodus.qual-target-check.\(UUID().uuidString)"

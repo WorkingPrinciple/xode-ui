@@ -311,6 +311,17 @@ struct GameScriptPaths: Sendable {
 }
 
 enum GameScriptFiles {
+    /// An exclusive advisory lock (flock) on `lock`, shared by every X Ode process, held for `body`.
+    static func withExclusiveLock<T>(_ lock: URL, _ body: () throws -> T) throws -> T {
+        try FileManager.default.createDirectory(at: lock.deletingLastPathComponent(), withIntermediateDirectories: true)
+        let fd = open(lock.path, O_CREAT | O_RDWR | O_CLOEXEC | O_NOFOLLOW, 0o600)
+        guard fd >= 0 else { throw GameScriptError.storage }
+        defer { close(fd) }
+        guard flock(fd, LOCK_EX) == 0 else { throw GameScriptError.storage }
+        defer { flock(fd, LOCK_UN) }
+        return try body()
+    }
+
     static func writePrivate(_ data: Data, to file: URL) throws {
         let parent = file.deletingLastPathComponent()
         try checkPath(parent, allowMissing: true)
@@ -550,7 +561,7 @@ actor GameScriptRunner {
     }
 }
 
-struct GameOperationRecord: Codable, Identifiable, Sendable {
+struct GameOperationRecord: Codable, Identifiable, Sendable, Equatable {
     enum Kind: String, Codable {
         case install, resume, repair, uninstall
         var nativeOperation: String { self == .resume ? "install" : rawValue }
@@ -585,13 +596,35 @@ actor GameOperationJournal {
         return record
     }
 
-    func save(_ record: GameOperationRecord) throws {
-        try record.validate()
-        try GameScriptFiles.writePrivate(JSONEncoder().encode(record), to: file)
+    /// L19-2: several X Ode processes share this journal. Every read-modify-write holds an exclusive
+    /// cross-process lock, a save never replaces another run's pending record, and a clear removes only
+    /// the caller's own run.
+    private var lockFile: URL { file.appendingPathExtension("lock") }
+
+    private func withExclusiveLock<T>(_ body: () throws -> T) throws -> T {
+        try GameScriptFiles.withExclusiveLock(lockFile, body)
     }
 
-    func clear() throws {
-        if unlink(file.path) != 0 && errno != ENOENT { throw GameScriptError.storage }
+    func save(_ record: GameOperationRecord) throws {
+        try record.validate()
+        try withExclusiveLock {
+            if let current = try load(), current.id != record.id { throw GameScriptError.busy }
+            try GameScriptFiles.writePrivate(JSONEncoder().encode(record), to: file)
+        }
+    }
+
+    /// Removes the journal only when it still belongs to `expectedRunID`; another run's record stays.
+    func clear(expectedRunID: String?) throws {
+        try withExclusiveLock {
+            if let expectedRunID {
+                guard let current = try? load() else {
+                    if unlink(file.path) != 0 && errno != ENOENT { throw GameScriptError.storage }
+                    return
+                }
+                guard current.id == expectedRunID else { return }
+            }
+            if unlink(file.path) != 0 && errno != ENOENT { throw GameScriptError.storage }
+        }
     }
 
     private var resumableFile: URL { file.appendingPathExtension("resumable.json") }
@@ -617,6 +650,26 @@ actor GameOperationJournal {
         records[record.productID] = record
         guard records.count <= 128 else { throw GameScriptError.storage }
         try GameScriptFiles.writePrivate(JSONEncoder().encode(records), to: resumableFile)
+    }
+
+    /// L19-3/REQ-137: rechecks and deletes a stopped download under the shared journal lease, so no other
+    /// X Ode process can start, resume, finish or register that folder between the check and the delete.
+    /// An absent journal is no conflict; any unreadable state refuses.
+    func discardStopped(_ record: GameOperationRecord, registeredFolders: @Sendable () throws -> [String],
+                        delete: @Sendable () throws -> Bool) throws -> Bool {
+        try withExclusiveLock {
+            let target = record.destination.lowercased()
+            func overlaps(_ path: String) -> Bool {
+                let other = path.lowercased()
+                return other == target || other.hasPrefix(target + "/") || target.hasPrefix(other + "/")
+            }
+            if let active = try load(), overlaps(active.destination) { throw GameScriptError.busy }
+            guard try loadResumable()[record.productID] == record else { throw GameScriptError.busy }
+            guard try !registeredFolders().contains(where: overlaps) else { throw GameScriptError.busy }
+            let found = try delete()
+            try removeResumable(record)
+            return found
+        }
     }
 
     func removeResumable(_ record: GameOperationRecord) throws {

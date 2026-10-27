@@ -1063,6 +1063,10 @@ final class InstalledGamesController: ObservableObject {
         explicitCheck || isMountedGame(game) ? NativeInstallationQuery.largeInstallTimeout : NativeInstallationQuery.defaultTimeout
     }
 
+    /// How long a queued check waits for one of the two check slots before saying so plainly.
+    static let inspectionQueueLimit: Duration = .seconds(600)
+    static let inspectionQueueTimeoutMessage = "Other games are still being checked. Try again in a moment."
+
     static func permitsNativeInspection(activeChecks: Int, preparingLaunch: Bool) -> Bool {
         activeChecks < 2 || preparingLaunch
     }
@@ -1141,9 +1145,14 @@ final class InstalledGamesController: ObservableObject {
         }
         // At most two read-only checks run at once; the rest wait their turn (showing Checking…)
         // instead of recording a Retry. Only a real CLI result or failure sets an error.
+        let waitDeadline = ContinuousClock.now.advanced(by: Self.inspectionQueueLimit)
         while !Self.permitsNativeInspection(activeChecks: nativeInspectionTasks.count,
                                             preparingLaunch: runningGameID == game.id && playState == .launching) {
             guard !Task.isCancelled, loaded, !mutationActive, !applicationTerminating, games.contains(game) else { return nil }
+            guard ContinuousClock.now < waitDeadline else {
+                installationErrors[game.id] = Self.inspectionQueueTimeoutMessage
+                return nil
+            }
             try? await Task.sleep(for: .milliseconds(100))
             if nativeInspectionTasks[game.id] != nil { return await inspectNativeInstallation(game, timeout: timeout) }
         }
@@ -1354,9 +1363,10 @@ final class InstalledGamesController: ObservableObject {
         return status != 0
     }
 
+    /// L19-5: stopping the owned running game depends only on that game, not on an unrelated
+    /// download, mutation or sign-in.
     func canStop(_ game: InstalledGame) -> Bool {
-        loaded && !editing && !choosing && !mutationActive && !serviceSignInActive && !accountDisconnecting
-            && !applicationTerminating && stoppingGameID == nil && runningGameID == game.id
+        loaded && !applicationTerminating && stoppingGameID == nil && runningGameID == game.id
             && launchStarted && (usesUnifiedAccount ? nativeLauncher.isRunning : process?.isRunning == true)
             && games.contains(where: {
                 $0.id == game.id && $0.storeId == game.storeId && $0.launcher == game.launcher
@@ -1763,8 +1773,33 @@ final class InstalledGamesController: ObservableObject {
         }
     }
 
+    /// The registry file every X Ode process shares (L19-3).
+    var registryFile: URL { store.file }
+
     static func isMountedGame(_ game: InstalledGame) -> Bool {
         game.folder.hasPrefix("/Volumes/") || game.folder.hasPrefix(NSHomeDirectory() + "/Mounts/")
+    }
+
+    /// True only when the folder's nearest existing ancestor, with symlinks resolved, is on the boot volume.
+    /// A missing folder there means "not installed"; anywhere else it may be a disconnected drive.
+    nonisolated static func isBootVolumeFolder(_ path: String, fileManager: FileManager = .default) -> Bool {
+        var url = URL(fileURLWithPath: path).standardizedFileURL
+        guard !url.path.hasPrefix("/Volumes/") else { return false }
+        while !fileManager.fileExists(atPath: url.path) {
+            let parent = url.deletingLastPathComponent()
+            guard parent.path != url.path else { return false }
+            url = parent
+        }
+        // Resolve symlinks first, so a link to an external drive is judged by where it really points.
+        let resolved = url.resolvingSymlinksInPath()
+        guard !resolved.path.hasPrefix("/Volumes/"),
+              let volume = try? resolved.resourceValues(forKeys: [.volumeIdentifierKey]).volumeIdentifier as? NSObject
+        else { return false }
+        // The sealed system volume ("/") and the Data volume that holds home folders are both the startup disk.
+        let startup = ["/", NSHomeDirectory()].compactMap {
+            try? URL(fileURLWithPath: $0).resourceValues(forKeys: [.volumeIdentifierKey]).volumeIdentifier as? NSObject
+        }
+        return startup.contains { volume.isEqual($0) }
     }
 
     private func observeLaunchableGame(_ game: InstalledGame) async {
@@ -1779,7 +1814,9 @@ final class InstalledGamesController: ObservableObject {
         let mountedStorageRoots = mountedStorageRoots
         let nativeIDs = Set(entries.filter(requiresNativeInstallationStatus).map(\.id))
         // On an external drive a missing folder may only mean the drive isn't connected.
-        let localNativeIDs = Set(entries.filter { nativeIDs.contains($0.id) && !Self.isMountedGame($0) }.map(\.id))
+        let localNativeIDs = Set(entries.filter {
+            nativeIDs.contains($0.id) && !Self.isMountedGame($0) && Self.isBootVolumeFolder($0.folder)
+        }.map(\.id))
         let read = Task { try await probe.read(timeout: .seconds(3)) {
             var launchable: Set<UUID> = []
             var publishers: [UUID: String] = [:]
@@ -1805,13 +1842,21 @@ final class InstalledGamesController: ObservableObject {
                 }
                 do { packageTypes[game.id] = try inspectPackage(folder) }
                 catch {
-                    failures[game.id] = "Package format couldn't be inspected. Reconnect the game drive or reimport the game."
+                    if !nativeIDs.contains(game.id) {
+                        failures[game.id] = "Package format couldn't be inspected. Reconnect the game drive or reimport the game."
+                    }
                 }
                 do {
                     try InstalledGameFiles.checkFolder(folder)
                     try GameScriptFiles.checkPath(folder)
                     if !nativeIDs.contains(game.id) {
                         try InstalledGameFiles.checkLauncher(URL(fileURLWithPath: game.launcher))
+                    }
+                    // L19-4: a native game with a missing or unreadable manifest goes to install-status, whose
+                    // MANIFEST_INVALID result offers Repair; it is not a package failure that loops on Retry.
+                    if nativeIDs.contains(game.id), (try? MicrosoftGameConfig.read(folder: folder)) == nil {
+                        validNativeFolders.insert(game.id)
+                        continue
                     }
                     let config = try MicrosoftGameConfig.read(folder: folder)
                     guard config.storeId == game.storeId else { throw InstalledGameError.invalidConfig }

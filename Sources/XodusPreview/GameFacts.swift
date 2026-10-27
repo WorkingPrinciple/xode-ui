@@ -112,16 +112,20 @@ struct GameFacts: Equatable {
             }
             if subscriptionAcquisition, !availableWithGamePass { labels.append("Subscription (plan unknown)") }
         }
-        // Absence from the library is inconclusive (REQ-7), so never claim "Not owned".
-        if labels.isEmpty { labels.append("Ownership not confirmed") }
+        var catalogue: [String] = []
         for plan in Plan.allCases where memberships.contains(where: { $0.plan == plan }) {
             if plan == .pcGamePass, availableWithGamePass {
-                labels.append(Self.availableWithGamePassLabel)
+                catalogue.append(Self.availableWithGamePassLabel)
             } else {
-                labels.append("In \(plan == .pcGamePass ? "PC Game Pass" : plan.label) catalog")
+                catalogue.append("In \(plan == .pcGamePass ? "PC Game Pass" : plan.label) catalog")
             }
         }
-        return labels
+        // Absence from the library is inconclusive (REQ-7), so never claim "Not owned". Unless ownership,
+        // a subscription or Game Pass availability already states access, say it isn't confirmed (L21).
+        if labels.isEmpty, !catalogue.contains(Self.availableWithGamePassLabel) {
+            labels.append("Ownership not confirmed")
+        }
+        return labels + catalogue
     }
 }
 

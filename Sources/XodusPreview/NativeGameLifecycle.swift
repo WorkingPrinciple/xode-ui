@@ -65,7 +65,7 @@ struct NativeGameResult: Codable, Equatable, Sendable {
     static let failureCodes: Set<String> = [
         "ACCOUNT_UNAVAILABLE", "ACCOUNT_MISMATCH", "ACCOUNT_CHANGED", "TIMEOUT", "CANCELLED", "OPERATION_FAILED",
         "RESOURCE_BUSY", "DISK_SPACE_FLOOR", "DISK_SPACE_FLOOR_INVALID",
-        "UNINSTALL_PERMISSION_DENIED", "UNINSTALL_NOT_A_GAME", "UNINSTALL_UNSAFE_TREE",
+        "UNINSTALL_PERMISSION_DENIED", "UNINSTALL_NOT_A_GAME", "UNINSTALL_UNSAFE_TREE", "UNINSTALL_FAILED",
         "PREFIX_MISSING_RESTORE_REQUIRED"
     ]
 
@@ -112,6 +112,8 @@ struct NativeGameResult: Codable, Equatable, Sendable {
             "This folder no longer looks like an installed game, so it wasn't deleted. Repair the installation, or remove it from the Library and keep its files."
         case "UNINSTALL_UNSAFE_TREE":
             "Nothing was deleted because the game folder contains links or special files. Review \(gameDirectory) in Finder, or remove it from the Library and keep its files."
+        case "UNINSTALL_FAILED":
+            "The game folder couldn't be fully deleted. Some files in \(gameDirectory) may remain. Check it in Finder, or remove the game from the Library and keep its files."
         default: "The game operation failed. Open its log to review the cause before retrying."
         }
     }

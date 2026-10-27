@@ -142,7 +142,7 @@ struct InstalledLaunchSupportStatus: View {
     var showsReason = true
 
     private var title: String {
-        support.offersEngines ? "Engine needed" : NativeLaunchSupport.notSupportedTitle
+        support.unavailableTitle
     }
 
     var body: some View {
@@ -310,6 +310,7 @@ struct InstalledPlayButton: View {
         case .resume: return GameDownloadCopy.downloadAgain
         case .repair: return "Repair"
         case .check: return "Retry"
+        case .remove: return "Remove…"
         }
     }
 
@@ -342,6 +343,7 @@ struct InstalledPlayButton: View {
                 case .resume: await operations.resume(product, installed: game)
                 case .repair: await operations.repair(product, installed: game)
                 case .play: await library.play(game)
+                case .remove: operations.prepareRemoval(game)
                 }
             }
         } label: {
@@ -433,7 +435,7 @@ struct InstalledPlayButton: View {
         .modifier(LibraryHeroControlSize(enabled: heroStyle))
         .disabled(opensAttention ? library.editing || library.choosing || library.accountDisconnecting
                    || library.applicationTerminating
-                   : canStop ? !library.canStop(game) || !operations.canStartMutation
+                   : canStop ? !library.canStop(game)
                   : needsRepair ? !operations.canStartMutation || !library.accountAccessAllowed
                     || library.runningGameID != nil || library.stoppingGameID != nil
                   : library.runningGameID != nil || library.stoppingGameID != nil || library.editing || library.choosing

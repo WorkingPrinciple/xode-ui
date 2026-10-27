@@ -241,6 +241,10 @@ enum InstalledGameFiles {
 }
 
 actor InstalledGameStore {
+    /// L19-2: every registry read-modify-write holds a cross-process lock, so two X Ode processes can't
+    /// lose each other's edits.
+    private var lockFile: URL { file.appendingPathExtension("lock") }
+
     static var defaultFile: URL {
         URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true)
             .appendingPathComponent("Library/Application Support/Xodus/installed-games.json")
@@ -248,6 +252,18 @@ actor InstalledGameStore {
     let file: URL
 
     init(file: URL = InstalledGameStore.defaultFile) { self.file = file }
+
+    /// Synchronous read of the registered folders straight from disk, for checks made while another
+    /// lock is held (L19-3). Throws when the registry can't be read, so callers fail closed.
+    static func registeredFolders(file: URL) throws -> [String] {
+        var info = stat()
+        if lstat(file.path, &info) != 0 {
+            guard errno == ENOENT else { throw InstalledGameError.invalidRegistry }
+            return []
+        }
+        let data = try InstalledGameFiles.readRegular(file, maximumBytes: 1_048_576, privateFile: true)
+        return try JSONDecoder().decode([InstalledGame].self, from: data).map(\.folder)
+    }
 
     func load() throws -> [InstalledGame] {
         var info = stat()
@@ -306,33 +322,37 @@ actor InstalledGameStore {
     }
 
     func upsert(_ game: InstalledGame) throws -> [InstalledGame] {
-        var games = try load()
-        var updated = game
-        if let previous = games.first(where: { $0.id == game.id }) {
-            updated.lastPlayedAt = previous.lastPlayedAt
-            updated.lastSessionSeconds = previous.lastSessionSeconds
-            updated.packageType = game.packageType ?? previous.packageType
-            updated.engineOverride = game.engineOverride ?? previous.engineOverride
-            updated.engineSelection = game.engineSelection ?? previous.engineSelection
-            updated.engineOverrideV2 = game.engineOverrideV2 ?? previous.engineOverrideV2
-            updated.storageVolume = game.storageVolume ?? previous.storageVolume
-            updated.installedOn = previous.installedOn
+        return try GameScriptFiles.withExclusiveLock(lockFile) {
+            var games = try load()
+            var updated = game
+            if let previous = games.first(where: { $0.id == game.id }) {
+                updated.lastPlayedAt = previous.lastPlayedAt
+                updated.lastSessionSeconds = previous.lastSessionSeconds
+                updated.packageType = game.packageType ?? previous.packageType
+                updated.engineOverride = game.engineOverride ?? previous.engineOverride
+                updated.engineSelection = game.engineSelection ?? previous.engineSelection
+                updated.engineOverrideV2 = game.engineOverrideV2 ?? previous.engineOverrideV2
+                updated.storageVolume = game.storageVolume ?? previous.storageVolume
+                updated.installedOn = previous.installedOn
+            }
+            for previous in games where previous.folder == game.folder && previous.id != game.id {
+                try rememberPrefixInstallation(previous)
+            }
+            games.removeAll { $0.folder == game.folder }
+            games.append(updated)
+            try save(games)
+            return games
         }
-        for previous in games where previous.folder == game.folder && previous.id != game.id {
-            try rememberPrefixInstallation(previous)
-        }
-        games.removeAll { $0.folder == game.folder }
-        games.append(updated)
-        try save(games)
-        return games
     }
 
     func remove(id: UUID) throws -> [InstalledGame] {
-        var games = try load()
-        if let game = games.first(where: { $0.id == id }) { try rememberPrefixInstallation(game) }
-        games.removeAll { $0.id == id }
-        try save(games)
-        return games
+        return try GameScriptFiles.withExclusiveLock(lockFile) {
+            var games = try load()
+            if let game = games.first(where: { $0.id == id }) { try rememberPrefixInstallation(game) }
+            games.removeAll { $0.id == id }
+            try save(games)
+            return games
+        }
     }
 
     func prefixInstallationIDs(productID: String) throws -> [UUID] {
@@ -369,37 +389,43 @@ actor InstalledGameStore {
     }
 
     func recordSession(id: UUID, startedAt: Date, seconds: Double?) throws {
-        var games = try load()
-        guard let index = games.firstIndex(where: { $0.id == id }),
-              games[index].lastPlayedAt.map({ $0 <= startedAt }) ?? true else { return }
-        games[index].lastPlayedAt = startedAt
-        games[index].lastSessionSeconds = seconds
-        try save(games)
+        try GameScriptFiles.withExclusiveLock(lockFile) {
+            var games = try load()
+            guard let index = games.firstIndex(where: { $0.id == id }),
+                  games[index].lastPlayedAt.map({ $0 <= startedAt }) ?? true else { return }
+            games[index].lastPlayedAt = startedAt
+            games[index].lastSessionSeconds = seconds
+            try save(games)
+        }
     }
 
     /// Persist the detected package format. Returns the saved list, or the current
     /// list unchanged when the value already matches, so backfill is idempotent.
     func recordPackageType(id: UUID, type: PackageType, observedAtImport: Date? = nil) throws -> [InstalledGame] {
-        var games = try load()
-        guard type != .unknown,
-              let index = games.firstIndex(where: { $0.id == id }), games[index].packageType != type else {
+        return try GameScriptFiles.withExclusiveLock(lockFile) {
+            var games = try load()
+            guard type != .unknown,
+                  let index = games.firstIndex(where: { $0.id == id }), games[index].packageType != type else {
+                return games
+            }
+            if let observedAtImport, games[index].importedAt != observedAtImport { return games }
+            games[index].packageType = type
+            try save(games)
             return games
         }
-        if let observedAtImport, games[index].importedAt != observedAtImport { return games }
-        games[index].packageType = type
-        try save(games)
-        return games
     }
 
     func recordStorageVolume(id: UUID, volume: GameStorageVolume, observedAtImport: Date) throws -> [InstalledGame] {
-        var games = try load()
-        guard let index = games.firstIndex(where: { $0.id == id }),
-              games[index].importedAt == observedAtImport,
-              games[index].storageVolume != volume else { return games }
-        guard volume.contains(games[index].folder) else { throw InstalledGameError.invalidRegistry }
-        games[index].storageVolume = volume
-        try save(games)
-        return games
+        return try GameScriptFiles.withExclusiveLock(lockFile) {
+            var games = try load()
+            guard let index = games.firstIndex(where: { $0.id == id }),
+                  games[index].importedAt == observedAtImport,
+                  games[index].storageVolume != volume else { return games }
+            guard volume.contains(games[index].folder) else { throw InstalledGameError.invalidRegistry }
+            games[index].storageVolume = volume
+            try save(games)
+            return games
+        }
     }
 
     /// Persist a per-game engine override (or clear it with `nil`).
@@ -419,36 +445,40 @@ actor InstalledGameStore {
     }
 
     func setEngineOverrideV2(id: UUID, selection: AdmittedEngineSelection?) throws -> [InstalledGame] {
-        var games = try load()
-        guard let index = games.firstIndex(where: { $0.id == id }) else { throw InstalledGameError.invalidRegistry }
-        if let selection {
-            try NativeFH6Recipe.requireEnabled(productID: games[index].storeId)
-            guard let name = selection.inspection.engineName,
-                  let digest = selection.inspection.registrySha256 else { throw NativeLaunchError.engineUnavailable }
-            try NativeFH6Recipe.validate(game: games[index], engine: name)
-            try selection.validate(registryPath: selection.registryPath, engineName: name, registryDigest: digest)
+        return try GameScriptFiles.withExclusiveLock(lockFile) {
+            var games = try load()
+            guard let index = games.firstIndex(where: { $0.id == id }) else { throw InstalledGameError.invalidRegistry }
+            if let selection {
+                try NativeFH6Recipe.requireEnabled(productID: games[index].storeId)
+                guard let name = selection.inspection.engineName,
+                      let digest = selection.inspection.registrySha256 else { throw NativeLaunchError.engineUnavailable }
+                try NativeFH6Recipe.validate(game: games[index], engine: name)
+                try selection.validate(registryPath: selection.registryPath, engineName: name, registryDigest: digest)
+            }
+            games[index].engineOverrideV2 = selection.map { GameEngineOverride(selection: $0) }
+            try save(games)
+            return games
         }
-        games[index].engineOverrideV2 = selection.map { GameEngineOverride(selection: $0) }
-        try save(games)
-        return games
     }
 
     func retargetCalimochoTitles(_ selection: AdmittedEngineSelection, replacing oldEngine: String) throws -> [InstalledGame] {
-        var games = try load()
-        for index in games.indices where ["9P9VNSQK1W3K", "9NMNMS626R59"].contains(games[index].storeId) {
-            let legacyMatches = games[index].engineOverride == .calimocho
-                && games[index].engineSelection?.inspection.admittedProvider == "calimocho"
-                && games[index].engineSelection?.inspection.engineName == oldEngine
-            let currentMatches = games[index].engineOverrideV2?.selection.inspection.admittedProvider == "calimocho"
-                && games[index].engineOverrideV2?.selection.inspection.engineName == oldEngine
-                && (games[index].engineOverride == nil || games[index].engineOverride == .calimocho)
-            if legacyMatches || currentMatches {
-                try NativeLaunchConfiguration.validateOverride(selection, game: games[index])
+        return try GameScriptFiles.withExclusiveLock(lockFile) {
+            var games = try load()
+            for index in games.indices where ["9P9VNSQK1W3K", "9NMNMS626R59"].contains(games[index].storeId) {
+                let legacyMatches = games[index].engineOverride == .calimocho
+                    && games[index].engineSelection?.inspection.admittedProvider == "calimocho"
+                    && games[index].engineSelection?.inspection.engineName == oldEngine
+                let currentMatches = games[index].engineOverrideV2?.selection.inspection.admittedProvider == "calimocho"
+                    && games[index].engineOverrideV2?.selection.inspection.engineName == oldEngine
+                    && (games[index].engineOverride == nil || games[index].engineOverride == .calimocho)
+                if legacyMatches || currentMatches {
+                    try NativeLaunchConfiguration.validateOverride(selection, game: games[index])
+                }
+                if legacyMatches { games[index].engineSelection = selection }
+                if currentMatches { games[index].engineOverrideV2 = GameEngineOverride(selection: selection) }
             }
-            if legacyMatches { games[index].engineSelection = selection }
-            if currentMatches { games[index].engineOverrideV2 = GameEngineOverride(selection: selection) }
+            try save(games)
+            return games
         }
-        try save(games)
-        return games
     }
 }

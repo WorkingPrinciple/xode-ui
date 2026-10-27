@@ -49,6 +49,10 @@ struct RuntimeInstallationPicker: View {
     /// Default Engine and Engines-list choices: global-default engines only. Title-scoped providers
     /// (CrossOver for No Man's Sky, Highball for Brotato) never appear here; CrossOver has its own row.
     static func defaultEngineChoices(available: [AdmittedEngineSelection], failed: Set<String>) -> [EngineChoice] {
+        EngineChoice.disambiguated(rawEngineChoices(available: available, failed: failed))
+    }
+
+    private static func rawEngineChoices(available: [AdmittedEngineSelection], failed: Set<String>) -> [EngineChoice] {
         available.filter(NativeEngineDefaults.permitsGlobalDefault).compactMap { selection in
             selection.inspection.engineName.map {
                 EngineChoice.named($0, ready: true,
