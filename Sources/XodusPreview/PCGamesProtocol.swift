@@ -241,6 +241,8 @@ struct PCGamesSnapshot: Sendable {
     let unresolvedCount: Int
     let unresolvedKinds: [String: PCGameAcquisitionKind]
     let detailFailureCount: Int
+    /// REQ-119: drawn from the saved last library at launch, not read from the account in this run.
+    let restored: Bool
     var isComplete: Bool { unresolvedCount == 0 }
     func hasResolvedGame(_ productID: String) -> Bool {
         !unresolvedIDs.contains(productID) && games.contains { $0.id == productID }
@@ -248,7 +250,8 @@ struct PCGamesSnapshot: Sendable {
 
     init(games: [PCGame], excludedCount: Int, updatedAt: Date, accountID: String? = nil,
          boundAccountHash: String? = nil, unresolvedIDs: Set<String> = [], unresolvedCount: Int = 0,
-         unresolvedKinds: [String: PCGameAcquisitionKind] = [:], detailFailureCount: Int? = nil) {
+         unresolvedKinds: [String: PCGameAcquisitionKind] = [:], detailFailureCount: Int? = nil,
+         restored: Bool = false) {
         self.games = games
         self.excludedCount = excludedCount
         self.updatedAt = updatedAt
@@ -258,6 +261,7 @@ struct PCGamesSnapshot: Sendable {
         self.unresolvedCount = unresolvedCount
         self.unresolvedKinds = unresolvedKinds
         self.detailFailureCount = detailFailureCount ?? unresolvedCount
+        self.restored = restored
     }
 
     func retainingUnresolved(from previous: Self?) -> Self {
@@ -763,6 +767,25 @@ struct PCGamesClient: Sendable {
 
     static let descriptorConcurrency = 2
 
+    typealias DescriptorBatchResult = (index: Int, batch: [String], result: Result<PublicCatalogDescriptors.Read, any Error>)
+
+    /// P1: starts one bounded descriptor read. Every input is an explicit parameter copied into the task's
+    /// capture list, and the IDs come back with the result, so each result is validated against the batch it
+    /// actually read. (A nested function capturing a mutable `next` counter paired results with the wrong
+    /// batch in optimized builds: only 4 of 91 owned games resolved.)
+    static func addDescriptorRead(_ group: inout ThrowingTaskGroup<DescriptorBatchResult, any Error>,
+                                  index: Int, batch: [String], descriptors: PublicCatalogDescriptors,
+                                  market: String, language: String, refresh: Bool = false,
+                                  background: Bool = false) {
+        group.addTask { [index, batch, descriptors, market, language, refresh, background] in
+            do {
+                let read = try await descriptors.read(ids: batch, market: market, language: language,
+                                                      refresh: refresh, background: background)
+                return (index, batch, .success(read))
+            } catch { return (index, batch, .failure(error)) }
+        }
+    }
+
     func resolveCollection(ids: [String], kinds: [String: PCGameAcquisitionKind], candidateCount: Int,
                            market: String, language: String, accountID: String? = nil,
                            accountHash: String? = nil,
@@ -812,20 +835,14 @@ struct PCGamesClient: Sendable {
         // REQ-119: two independent descriptor reads at a time, inside the producer's four-operation limit;
         // LIMIT_EXCEEDED stays a retried descriptor failure. Results are merged as they arrive.
         // REQ-121: saved descriptors resolve at once and are revalidated before the final snapshot.
-        try await withThrowingTaskGroup(of: (Int, Result<PublicCatalogDescriptors.Read, any Error>).self) { group in
-            var next = 0
-            func start(_ group: inout ThrowingTaskGroup<(Int, Result<PublicCatalogDescriptors.Read, any Error>), any Error>) {
-                guard next < batches.count else { return }
-                let index = next, batch = batches[index]
-                next += 1
-                group.addTask {
-                    do { return (index, .success(try await descriptors.read(ids: batch, market: market, language: language))) }
-                    catch { return (index, .failure(error)) }
-                }
+        try await withThrowingTaskGroup(of: DescriptorBatchResult.self) { group in
+            var started = 0
+            while started < min(Self.descriptorConcurrency, batches.count) {
+                Self.addDescriptorRead(&group, index: started, batch: batches[started], descriptors: descriptors,
+                                       market: market, language: language)
+                started += 1
             }
-            for _ in 0..<Self.descriptorConcurrency { start(&group) }
-            while let (index, result) = try await group.next() {
-                let batch = batches[index]
+            while let (index, batch, result) = try await group.next() {
                 do {
                     let read = try result.get()
                     let readable = try products(read.data, batch: batch)
@@ -843,7 +860,11 @@ struct PCGamesClient: Sendable {
                 }
                 try Task.checkCancellation()
                 await progress?(snapshot())
-                start(&group)
+                if started < batches.count {
+                    Self.addDescriptorRead(&group, index: started, batch: batches[started], descriptors: descriptors,
+                                       market: market, language: language)
+                    started += 1
+                }
             }
         }
         guard ids.isEmpty || completedBatches > 0 else { throw PCGamesError.incompleteCatalog(0) }

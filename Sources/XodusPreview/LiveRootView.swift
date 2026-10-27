@@ -162,7 +162,7 @@ struct LiveRootView: View {
             needsAccountAction: library.needsSignIn || library.needsKeychainApproval
                 || (library.error != nil && !session.accountCountryReady),
             artworkTotal: firstScreenArtwork.total, artworkReady: firstScreenArtwork.ready,
-            artworkSettled: firstScreenArtwork.settled)
+            artworkSettled: firstScreenArtwork.settled, showingSavedLibrary: library.showingSavedLibrary)
     }
     private var firstLoadArtworkKey: String {
         guard firstLoad.active, LibraryFirstLoad.gamesReady(firstLoadInputs) else { return "idle" }
@@ -498,7 +498,11 @@ struct LiveRootView: View {
         .onChange(of: session.hasConfirmedSignIn) { _, confirmed in
             if confirmed {
                 FirstLoadTimeline.begin(state.unifiedSignInRequested ? "interactive" : "restored")
-                if startupAllowed, unifiedAccountMode, firstLoadDoneFor != session.accountHash,
+                // REQ-119: with a saved library for this account, the window opens on it; no setup view.
+                if startupAllowed, unifiedAccountMode, !state.unifiedSignInRequested,
+                   state.pcGames.restoreSavedLibrary() {
+                    firstLoadDoneFor = session.accountHash
+                } else if startupAllowed, unifiedAccountMode, firstLoadDoneFor != session.accountHash,
                    LibraryFirstLoad.shouldBegin(signedIn: true) {
                     firstScreenArtwork = FirstScreenArtwork()
                     firstScreenRequested = []

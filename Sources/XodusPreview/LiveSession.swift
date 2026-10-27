@@ -320,6 +320,7 @@ final class LiveSession: ObservableObject {
     /// REQ-121: after a confirmed sign-out, saved artwork and saved public descriptors (whose product IDs
     /// reflect the library and whose market reflects the country) are removed. Injectable for checks.
     var signOutCleanup: @MainActor () async -> Void = {
+        LibrarySnapshotStore.production?.clear()
         try? await CatalogArtworkStore.shared.clearForSignOut()
     }
 

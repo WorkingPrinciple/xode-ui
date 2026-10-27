@@ -146,7 +146,26 @@ final class PCGamesController: ObservableObject {
             : "Showing available details from an incomplete library."
     }
     var accessIsCurrent: Bool {
-        snapshot?.isComplete == true && accountAccessIsCurrent
+        snapshot?.isComplete == true && snapshot?.restored == false && accountAccessIsCurrent
+    }
+    /// REQ-119: the library on screen is the saved copy, still being read again from the account.
+    var showingSavedLibrary: Bool { representedSnapshot?.restored == true }
+    /// REQ-119: injectable saved-library store; nil keeps checks and previews isolated.
+    var savedLibrary: LibrarySnapshotStore? = LibrarySnapshotStore.production
+
+    /// REQ-119: draws the saved library for this account and catalogue scope at once on a warm launch.
+    /// Only fills an empty library; the account read replaces it. Returns whether a saved library is shown.
+    @discardableResult
+    func restoreSavedLibrary() -> Bool {
+        guard usesUnifiedAccount, snapshot == nil, let session = unifiedSession, session.hasConfirmedSignIn,
+              session.accountCountryReady, let account = session.accountHash,
+              let saved = savedLibrary?.load(accountHash: account, market: session.market,
+                                             language: session.language) else { return false }
+        snapshot = saved.snapshot()
+        snapshotScope = session.accountCatalogScope
+        FirstLoadTimeline.mark("savedLibraryShown", "games=\(saved.games.count)")
+        logger.notice("Showing the saved library while the account is read again")
+        return true
     }
     private var accountAccessIsCurrent: Bool {
         accountReadiness == .ready
@@ -382,6 +401,7 @@ final class PCGamesController: ObservableObject {
                 let scope = session.accountCatalogScope
                 if snapshotScope != scope { snapshot = nil }
                 snapshotScope = scope
+                restoreSavedLibrary()
                 // This task has not entered readUnifiedAccount yet, so accountBusy cannot include itself.
                 session.beginLibraryReadPriority()
                 var prioritized = true
@@ -424,7 +444,10 @@ final class PCGamesController: ObservableObject {
                               !self.terminating, !self.accountDisconnecting,
                               session.hasConfirmedSignIn, session.accountHash == read.accountHash,
                               session.accountCatalogScope == scope else { return }
-                        self.snapshot = partial.retainingUnresolved(from: self.snapshot)
+                        // A saved library stays whole until the account read completes (no shrinking mid-load).
+                        if self.snapshot?.restored != true {
+                            self.snapshot = partial.retainingUnresolved(from: self.snapshot)
+                        }
                         if !partial.games.isEmpty { FirstLoadTimeline.mark("firstGames", "count=\(partial.games.count)") }
                     }
                 try current(token)
@@ -433,6 +456,10 @@ final class PCGamesController: ObservableObject {
                 }
                 guard session.accountCatalogScope == scope else { throw CancellationError() }
                 snapshot = result.retainingUnresolved(from: snapshot)
+                if let saved = SavedLibrary(result, accountHash: read.accountHash, market: market,
+                                            language: language, savedAt: Date()) {
+                    savedLibrary?.save(saved)
+                }
                 FirstLoadTimeline.mark("libraryResolved", "games=\(result.games.count)")
                 logger.notice("Account PC resolution: \(result.games.count) games, \(result.excludedCount) excluded, \(result.unresolvedCount) unresolved")
                 if result.detailFailureCount > 0, detailRetriesLeft > 0 {
