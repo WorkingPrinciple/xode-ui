@@ -183,7 +183,7 @@ struct NativeTitleLaunchProfile: Codable {
         static func bundled() throws -> Self {
             let bytes = try Data(contentsOf: LaunchRecipeResources.runtimeProfilesURL())
             guard SHA256.hash(data: bytes).map({ String(format: "%02x", $0) }).joined()
-                    == "a58efeee3409a778adbb4c25d7174874510d6448265b05cc44b3d434823bc450" else {
+                    == "71c9b271d607c06083e3010bb43f100b72c444f1694a4d1de4a9e14babcbe0b3" else {
                 throw NativeLaunchError.invalidProfile
             }
             let catalogue = try JSONDecoder().decode(Self.self, from: bytes)
