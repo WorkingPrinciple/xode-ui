@@ -1109,6 +1109,18 @@ enum EngineManagementChecks {
                          EngineChoice.named("c", ready: true, playable: false)]).map(\.id) == ["a"]
                   && !picker.contains { $0.id.hasPrefix("crossover") || $0.name.localizedCaseInsensitiveContains("CrossOver") },
                   "REQ109 CrossOver is never offered in the Default Engine picker, even when admitted or failing")
+            let ready = EngineChoice.named("calimocho-11.20-4.0b3-06", ready: true)
+            let other = EngineChoice.named("calimocho-old", ready: true)
+            let unverified = EngineChoice.named("calimocho-11.20-4.0b3-06", ready: false)
+            check(EngineConfiguratorSections<EmptyView>.defaultValue(choices: [ready], defaultID: ready.id, defaultName: "Calimocho")
+                    == "Calimocho"
+                  && EngineConfiguratorSections<EmptyView>.defaultValue(choices: [other], defaultID: ready.id, defaultName: "Calimocho")
+                    == "Calimocho · Not Installed"
+                  && EngineConfiguratorSections<EmptyView>.defaultValue(choices: [unverified], defaultID: unverified.id,
+                                                                        defaultName: "Calimocho") == "Calimocho · Couldn't Verify"
+                  && EngineConfiguratorSections<EmptyView>.defaultValue(choices: [ready], defaultID: nil, defaultName: "Unavailable")
+                    == "None Ready",
+                  "Review 7c5beadb M1: the Default row names the actual default and its state; None Ready only without a default")
             let app = CrossOverInstallation(location: URL(fileURLWithPath: "/Applications/CrossOver.app"),
                                             version: "26.3", buildVersion: "26.3.0")
             check(CrossOverEngineRow.presentation(state: .installed(app)) == .init(state: .ready, detail: "26.3 · No Man's Sky only")
@@ -1141,7 +1153,7 @@ enum EngineManagementChecks {
         check(try NativeTitleLaunchProfile.bundledProfiles().filter { $0.runtime?.primarySHA256 == QualificationDiagnostics.pinnedPrimarySHA256 }
                 .map(\.productID).sorted() == ["9NR1R1XWLCNB", "9P8DL6W0JBB8", "9PDC8J1BSV8B"]
               && QualificationDiagnostics.pinnedPrimarySHA256 != QualificationDiagnostics.releasePrimarySHA256,
-              "REQ32 qualification build runs FH6, Hades and EDC on the 39088c3 outcome-lines pair")
+              "REQ32 qualification build runs FH6, Hades and EDC on the c3a0fe3 outcome-lines pair")
         do {
             let ordinary = "io.github.xodus.qual-import-check.\(UUID().uuidString)"
             let suite = "io.github.xodus.qual-target-check.\(UUID().uuidString)"

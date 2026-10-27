@@ -70,13 +70,18 @@ struct EngineDetailSheet: View {
                     .accessibilityLabel("Remove \(engine.name) from the list")
                 }
                 Spacer()
+                // Escape closes the sheet the way Done does (review 7c5beadb L3).
+                Button("Close", action: close)
+                    .keyboardShortcut(.cancelAction)
+                    .frame(width: 0, height: 0).opacity(0)
+                    .accessibilityHidden(true)
                 Button("Done", action: close)
                     .keyboardShortcut(.defaultAction)
                     .accessibilityIdentifier("xodus.engines.detail.done")
             }
             .padding(16)
         }
-        .frame(width: 520, height: 600)
+        .frame(width: 520, height: Self.height)
         .onExitCommand(perform: close)
         .accessibilityIdentifier("xodus.engines.detail")
         .navigationTitle(detail.title)
@@ -133,7 +138,7 @@ struct EngineDetailSheet: View {
             LabeledContent("Version") { Text(version).textSelection(.enabled) }
             LabeledContent("Status") {
                 if let status { Label(status.title, systemImage: status.symbol).foregroundStyle(.secondary) }
-                else { Text("Not Checked Yet").foregroundStyle(.secondary) }
+                else { Text("—").foregroundStyle(.secondary).accessibilityLabel("Not checked yet") }
             }
         }
     }
@@ -147,6 +152,9 @@ struct EngineDetailSheet: View {
             .disabled(!allowsFileReads)
         }
     }
+
+    /// Tall enough that every row, including the licence links, shows without scrolling.
+    static let height: CGFloat = 680
 
     static func crossOverVersion(_ state: CrossOverDependencyState) -> String {
         switch state {
@@ -166,7 +174,7 @@ struct EngineDetailSheet: View {
 
     static func licence(_ detail: EngineDetail) -> [String] {
         switch detail {
-        case .crossOver: [EnginesCopy.crossOver, EnginesCopy.crossOverLicense]
+        case .crossOver: [EnginesCopy.crossOverLicense]
         case .highball: [HighballCopy.explanation, HighballCopy.license]
         case .engine: ["Built on Wine and other open-source components. Their licences are in \(FeaturedCredits.menuPath)."]
         case .user: ["An engine you added. \(AppBrand.displayName) only reads it and never changes it."]

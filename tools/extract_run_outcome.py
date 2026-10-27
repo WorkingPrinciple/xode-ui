@@ -22,6 +22,19 @@ OUTCOMES = {
     "signInFailure": re.compile(r"gdkc:.*user initialization failed at "),
 }
 REQUIRED = ("signIn", "userAddResult", "gameLicence", "storeLicenseResult")
+SIGN_IN_ONLY = ("signIn", "userAddResult")
+# Titles that query their licence at startup must show the licence lines; others pass on sign-in alone.
+EXPECTED = {
+    "9NR1R1XWLCNB": REQUIRED,      # Forza Horizon 6
+    "9PDC8J1BSV8B": REQUIRED,      # Easy Delivery Co.
+    "9P8DL6W0JBB8": SIGN_IN_ONLY,  # Hades: no licence query observed (run c6f0ac9f)
+}
+
+
+def expected(product, override=None):
+    if override:
+        return tuple(override)
+    return EXPECTED.get(product, REQUIRED)
 # A kept line only passes when it carries the explicit success form; FAILED or non-zero status fails.
 SUCCESS = {
     "signIn": re.compile(r"xodus outcome: sign-in OK status 0\.?$"),
@@ -73,9 +86,10 @@ def require_token_free(line):
             raise OutcomeError("Token-like content survived redaction; nothing was written")
 
 
-def extract(run_dir):
+def extract(run_dir, expect=None):
     run_dir = Path(run_dir)
     result = json.loads((run_dir / "result.json").read_text())
+    required = expected(result.get("product"), expect)
     diagnostic = result.get("diagnostic") or {}
     outcomes = {name: [] for name in OUTCOMES}
     with (run_dir / "stderr.log").open("r", encoding="utf-8", errors="replace") as log:
@@ -93,9 +107,13 @@ def extract(run_dir):
         "wineDebug": diagnostic.get("wine_debug"),
         "logTruncated": (diagnostic.get("log") or {}).get("truncated"),
         "outcomes": outcomes,
-        "missing": sorted(name for name in REQUIRED if not outcomes[name]),
+        "product": result.get("product"),
+        "expected": list(required),
+        "missing": sorted(name for name in required if not outcomes[name]),
         "verdicts": {name: verdict(name, outcomes[name]) for name in REQUIRED},
-        "pass": all(verdict(name, outcomes[name]) == "pass" for name in REQUIRED)
+        # A logged outcome must be a success even when not required; an absent optional one is fine.
+        "pass": all(verdict(name, outcomes[name]) == "pass" for name in required)
+                and all(verdict(name, outcomes[name]) != "fail" for name in REQUIRED)
                 and not outcomes["signInFailure"] and result.get("exit_code") == 0,
     }
 
@@ -104,9 +122,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("run_dir", type=Path)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--expect", choices=REQUIRED, action="append",
+                        help="Override the per-title expected outcomes (repeatable)")
     args = parser.parse_args()
     try:
-        outcome = extract(args.run_dir)
+        outcome = extract(args.run_dir, args.expect)
     except OutcomeError as error:
         print(error, file=sys.stderr)
         return 2
@@ -119,7 +139,7 @@ def main():
 
 def require_token_free_document(text):
     for line in text.splitlines():
-        if "\"run\"" in line or "\"wineDebug\"" in line:
+        if "\"run\"" in line or "\"wineDebug\"" in line or "\"product\"" in line:
             continue
         require_token_free(line)
 

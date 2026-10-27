@@ -747,6 +747,7 @@ enum EnginesCopy {
     /// Why a non-Calimocho engine can't be the default (REQ-109/COR-201: custom-engine launching isn't in 0.2.0).
     static let testingOnly = "Saved for testing. In this beta, games play with Calimocho."
     static let listFooter = "Calimocho is built in and runs every game unless a game needs a specific engine."
+    static let listFooterPending = "Once Calimocho is ready, it runs every game unless a game needs a specific engine."
     static let defaultFooter = "New games use this engine. Change a game's engine from its menu in the Library."
     static let crossOver = "CrossOver is reserved for No Man's Sky once it qualifies; every other game plays with Calimocho."
     static let crossOverLicense = "Use your own licensed copy of CrossOver; \(AppBrand.displayName) doesn't include it."
@@ -920,7 +921,7 @@ struct EngineConfiguratorSections<Advanced: View>: View {
         } header: {
             Text("Engines")
         } footer: {
-            Text(EnginesCopy.listFooter)
+            Text(choices.contains(where: { $0.ready && $0.playable }) ? EnginesCopy.listFooter : EnginesCopy.listFooterPending)
                 .multilineTextAlignment(.leading)
                 .font(.callout).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -932,6 +933,16 @@ struct EngineConfiguratorSections<Advanced: View>: View {
             EngineDetailSheet(detail: item, settings: settings, highball: highball, users: users,
                               defaultID: defaultID, allowsFileReads: allowsFileReads) { detail = nil }
         }
+    }
+
+    /// The plain Default row: the saved default's name, with its state when it isn't ready (review 7c5beadb M1).
+    static func defaultValue(choices: [EngineChoice], defaultID: String?, defaultName: String) -> String {
+        guard let defaultID else { return "None Ready" }
+        guard let choice = choices.first(where: { $0.id == defaultID }) else {
+            return "\(defaultName) · \(EngineRowState.notInstalled.title)"
+        }
+        let rowState = Self.state(for: choice, checking: false)
+        return rowState == .ready ? defaultName : "\(defaultName) · \(rowState.title)"
     }
 
     /// Default Engine offers only engines Play can use; with one or none it is a plain value (COR-279 step 7).
@@ -997,8 +1008,10 @@ struct EngineConfiguratorSections<Advanced: View>: View {
                 .disabled(!allowsFileReads || settings.applicationTerminating || calimochoInstaller.isWorking)
                 .accessibilityIdentifier("xodus.engines.default")
             } else {
-                LabeledContent("Default Engine") { Text(selectable.first?.name ?? "None Ready") }
-                    .accessibilityIdentifier("xodus.engines.default")
+                LabeledContent("Default Engine") {
+                    Text(Self.defaultValue(choices: choices, defaultID: defaultID, defaultName: defaultName))
+                }
+                .accessibilityIdentifier("xodus.engines.default")
             }
             if let error {
                 Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
@@ -1087,7 +1100,7 @@ struct CrossOverLocationRow: View {
         Section {
             if showsStatus { LabeledContent("Status") {
                 let row = CrossOverEngineRow.presentation(state: settings.crossOverDependency)
-                Text(row.state?.title ?? "Not Checked Yet").foregroundStyle(.secondary)
+                Text(row.state?.title ?? "—").foregroundStyle(.secondary)
                     .accessibilityIdentifier("xodus.engines.crossover.status")
             } }
             LabeledContent("Application") {

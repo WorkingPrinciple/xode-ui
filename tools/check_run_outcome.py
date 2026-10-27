@@ -9,11 +9,11 @@ import unittest
 from extract_run_outcome import OutcomeError, extract
 
 
-def run_fixture(root, lines):
+def run_fixture(root, lines, product="9NR1R1XWLCNB"):
     run = Path(root) / "run-fixture"
     run.mkdir()
     (run / "result.json").write_text(json.dumps({
-        "exit_code": 0, "engine": "calimocho-fixture",
+        "exit_code": 0, "engine": "calimocho-fixture", "product": product,
         "diagnostic": {"wine_debug": "warn+gdkc", "log": {"truncated": False}}}))
     (run / "stderr.log").write_text("\n".join(lines) + "\n")
     return run
@@ -53,6 +53,27 @@ class RunOutcomeChecks(unittest.TestCase):
                 self.assertEqual(outcome["missing"], [])
                 self.assertFalse(outcome["pass"])
                 self.assertIn("fail", outcome["verdicts"].values())
+
+    def test_per_title_expectations(self):
+        sign_in = ["1:01:warn:gdkc:f xodus outcome: sign-in OK status 0.",
+                   "1:01:warn:gdkc:f xodus outcome: XUserAddResult status 0."]
+        with tempfile.TemporaryDirectory() as tmp:
+            hades = extract(run_fixture(tmp, sign_in, product="9P8DL6W0JBB8"))
+            self.assertTrue(hades["pass"])
+            self.assertEqual(hades["missing"], [])
+        with tempfile.TemporaryDirectory() as tmp:
+            fh6 = extract(run_fixture(tmp, sign_in, product="9NR1R1XWLCNB"))
+            self.assertFalse(fh6["pass"])
+            self.assertEqual(fh6["missing"], ["gameLicence", "storeLicenseResult"])
+        with tempfile.TemporaryDirectory() as tmp:
+            failed = extract(run_fixture(tmp, sign_in + [
+                "1:01:warn:gdkc:f xodus outcome: game licence FAILED status 0x80004005."], product="9P8DL6W0JBB8"))
+            self.assertFalse(failed["pass"])
+        with tempfile.TemporaryDirectory() as tmp:
+            unknown = extract(run_fixture(tmp, sign_in, product="9ZZZZZZZZZZZ"))
+            self.assertFalse(unknown["pass"])
+            forced = extract(Path(tmp) / "run-fixture", expect=["signIn", "userAddResult"])
+            self.assertTrue(forced["pass"])
 
     def test_missing_outcomes_are_reported(self):
         with tempfile.TemporaryDirectory() as tmp:
