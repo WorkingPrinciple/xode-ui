@@ -1121,6 +1121,23 @@ enum EngineManagementChecks {
                   && EngineConfiguratorSections<EmptyView>.defaultValue(choices: [ready], defaultID: nil, defaultName: "Unavailable")
                     == "None Ready",
                   "Review 7c5beadb M1: the Default row names the actual default and its state; None Ready only without a default")
+            func calimochoRow(_ availability: CalimochoAvailability, folder: Bool = true, progress: String? = nil,
+                              update: Bool = false) -> CalimochoEngineRow.Presentation {
+                CalimochoEngineRow.presentation(availability: availability, hasFolder: folder, progress: progress,
+                                                updateAvailable: update, downloadPublished: true, isDefault: true)
+            }
+            check(calimochoRow(.ready) == .init(state: .ready, subtitle: "Wine 11.20 · GPTK 4.0 beta 3 · Default", action: .none)
+                  && calimochoRow(.ready, update: true).state == .updateAvailable && calimochoRow(.ready, update: true).action == .update
+                  && calimochoRow(.missing, folder: false)
+                    == .init(state: .notInstalled, subtitle: "Built-in engine · used by all games", action: .get)
+                  && calimochoRow(.invalid("x")).state == .couldntVerify
+                  && calimochoRow(.pendingVerification).state == .verifying
+                  && calimochoRow(.notChecked).state == nil
+                  && calimochoRow(.missing, folder: false, progress: "Downloading…") == .init(state: nil, subtitle: "Downloading…", action: .cancel),
+                  "COR-279 step 5: Calimocho is one row with one status and at most one inline action (Get, Update or Cancel)")
+            check(EngineDisplayName.name(CalimochoRelease.engineID) == "Calimocho"
+                  && EngineDisplayName.releaseVersion(CalimochoRelease.engineID)?.version == "0.1120.4.6",
+                  "COR-279 step 8: the release is called Calimocho; its 0.x version code appears only in the detail sheet")
             let app = CrossOverInstallation(location: URL(fileURLWithPath: "/Applications/CrossOver.app"),
                                             version: "26.3", buildVersion: "26.3.0")
             check(CrossOverEngineRow.presentation(state: .installed(app)) == .init(state: .ready, detail: "26.3 · No Man's Sky only")

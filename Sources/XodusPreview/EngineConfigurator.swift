@@ -322,26 +322,38 @@ final class UserEngineModel: ObservableObject {
 struct UserEngineList: View {
     @ObservedObject var model: UserEngineModel
     var allowsFileReads = true
+    /// The user engine – removes; nil when the list is used without +/– controls.
+    var selection: Binding<UUID?>? = nil
     var info: ((UserEngine) -> Void)? = nil
 
     var body: some View {
         ForEach(model.engines) { engine in
+            let selected = selection?.wrappedValue == engine.id
             EngineRow(name: engine.name, detail: engine.version,
                       location: engine.location, state: .testingOnly, info: info.map { show in { show(engine) } }) {
-                Button("Remove", role: .destructive) { model.remove(engine) }
-                    .disabled(!model.storeReadable || model.terminating())
-                    .accessibilityLabel("Remove \(engine.name)")
+                if selection == nil {
+                    Button("Remove", role: .destructive) { model.remove(engine) }
+                        .disabled(!model.storeReadable || model.terminating())
+                        .accessibilityLabel("Remove \(engine.name)")
+                }
+            }
+            .contentShape(Rectangle())
+            .listRowBackground(selected ? Color.accentColor.opacity(0.18) : nil)
+            .onTapGesture { selection?.wrappedValue = selected ? nil : engine.id }
+            .accessibilityAddTraits(selected ? .isSelected : [])
+            .onDeleteCommand { if selection != nil { model.remove(engine); selection?.wrappedValue = nil } }
+        }
+        if selection == nil {
+            ForEach(model.suggestions) { engine in
+                EngineRow(name: engine.name, detail: EngineRowState.subtitle([engine.version, "Found on This Mac"]),
+                          location: engine.location, state: .testingOnly) {
+                    Button("Add") { model.add(engine) }
+                        .disabled(!model.storeReadable || model.pending)
+                        .accessibilityLabel("Add \(engine.name)")
+                }
             }
         }
-        ForEach(model.suggestions) { engine in
-            EngineRow(name: engine.name, detail: EngineRowState.subtitle([engine.version, "Found on This Mac"]),
-                      location: engine.location, state: .testingOnly) {
-                Button("Add") { model.add(engine) }
-                    .disabled(!model.storeReadable || model.pending)
-                    .accessibilityLabel("Add \(engine.name)")
-            }
-        }
-        if let storeError = model.storeError, storeError == .unreadable {
+        if let storeError = model.storeError, storeError == .unreadable || storeError == .full {
             Label(storeError.message, systemImage: "exclamationmark.triangle")
                 .foregroundStyle(.secondary)
         }
@@ -350,6 +362,85 @@ struct UserEngineList: View {
                 guard allowsFileReads else { return }
                 await model.refreshSuggestions()
             }
+    }
+}
+
+/// Advanced engine settings in a sheet (COR-279 step 8), not an inline disclosure.
+struct EngineAdvancedSheet<Content: View>: View {
+    @ViewBuilder let content: () -> Content
+    let close: () -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Text("Advanced").font(.title3.weight(.semibold))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 20).padding(.top, 16)
+                .accessibilityAddTraits(.isHeader)
+            Form { content() }.formStyle(.grouped)
+            Divider()
+            HStack {
+                Spacer()
+                Button("Close", action: close).keyboardShortcut(.cancelAction)
+                    .frame(width: 0, height: 0).opacity(0).accessibilityHidden(true)
+                Button("Done", action: close).keyboardShortcut(.defaultAction)
+            }
+            .padding(16)
+        }
+        .frame(width: 620, height: 560)
+    }
+}
+
+/// +/– under the Engines list (Login Items pattern, COR-279 step 6). + offers Add Engine… (an open panel)
+/// and engines found on this Mac; – removes the selected user engine. Add errors appear as an alert.
+struct EngineListControls: View {
+    @ObservedObject var model: UserEngineModel
+    var allowsFileReads = true
+    @Binding var selection: UUID?
+
+    var body: some View {
+        HStack(spacing: 0) {
+            Menu {
+                Button("Add Engine…", action: model.choose)
+                if !model.suggestions.isEmpty {
+                    Section("Found on This Mac") {
+                        ForEach(model.suggestions) { engine in
+                            Button([engine.name, engine.version].compactMap { $0 }.joined(separator: " ")) {
+                                model.add(engine)
+                            }
+                        }
+                    }
+                }
+            } label: {
+                Image(systemName: "plus")
+            }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .fixedSize()
+            .disabled(!allowsFileReads || !model.storeReadable || model.pending)
+            .accessibilityLabel("Add Engine")
+            .accessibilityIdentifier("xodus.engines.add")
+            Divider().frame(height: 16).padding(.horizontal, 6)
+            Button {
+                guard let id = selection, let engine = model.engines.first(where: { $0.id == id }) else { return }
+                model.remove(engine)
+                selection = nil
+            } label: {
+                Image(systemName: "minus")
+            }
+            .buttonStyle(.borderless)
+            .disabled(selection == nil || !model.storeReadable || model.terminating())
+            .accessibilityLabel("Remove Engine")
+            .accessibilityIdentifier("xodus.engines.remove")
+            if model.pending { ProgressView().controlSize(.small).padding(.leading, 8).accessibilityLabel("Checking engine") }
+            Spacer()
+        }
+        .alert("Couldn't Add Engine", isPresented: Binding(
+            get: { model.error != nil },
+            set: { if !$0 { model.discardDraft() } })) {
+            Button("OK") { model.discardDraft() }
+        } message: {
+            Text(model.error ?? "")
+        }
     }
 }
 
@@ -538,8 +629,9 @@ enum EngineDisplayName {
                 "Wine \(parts[1]) · GPTK \(gptk.output.1).\(gptk.output.2)\(beta)")
     }
 
+    /// Release engines are plainly "Calimocho"; the 0.x version code is shown in the detail sheet (COR-279 F8).
     private static func releaseName(_ id: String) -> String? {
-        releaseVersion(id).map { "Calimocho \($0.version)" }
+        releaseVersion(id).map { _ in "Calimocho" }
     }
 
     private static func wineVersion(_ id: String) -> String? {
@@ -848,10 +940,11 @@ struct EngineConfiguratorSections<Advanced: View>: View {
     @StateObject private var ownedCalimochoInstaller: CalimochoReleaseInstallController
     private var users: UserEngineModel { ownedUsers }
     private var calimochoInstaller: CalimochoReleaseInstallController { ownedCalimochoInstaller }
-    @State private var advancedExpanded = false
     /// nil until detection has run; Highball is never called Not Installed without one.
     @State private var highball: HighballState?
     @State private var detail: EngineDetail?
+    @State private var selectedUserEngine: UUID?
+    @State private var showingAdvanced = false
 
     init(choices: [EngineChoice], defaultID: String?, defaultName: String, checking: Bool, error: String?,
          settings: RuntimeProviderSettings, allowsFileReads: Bool, userEngineStore: UserDefaults,
@@ -904,7 +997,12 @@ struct EngineConfiguratorSections<Advanced: View>: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("xodus.engines.empty")
             }
-            ForEach(choices) { choice in
+            CalimochoEngineRow(installer: calimochoInstaller, availability: calimocho,
+                               isDefault: defaultID == CalimochoRelease.engineID || defaultID == nil,
+                               showsUpdates: showsCalimochoUpdates,
+                               refreshAdmission: refreshReleaseAdmission, beginUpdate: beginCalimochoUpdate,
+                               showDetails: { detail = .calimocho })
+            ForEach(choices.filter { $0.id != CalimochoRelease.engineID }) { choice in
                 EngineRow(name: choice.name,
                           detail: EngineRowState.subtitle([choice.version.flatMap { choice.name.contains($0) ? nil : $0 }],
                                                           isDefault: choice.id == defaultID),
@@ -917,7 +1015,8 @@ struct EngineConfiguratorSections<Advanced: View>: View {
                 detail = .crossOver
             }
             HighballEngineRow(state: highball) { detail = .highball }
-            UserEngineList(model: users, allowsFileReads: allowsFileReads) { detail = .user($0) }
+            UserEngineList(model: users, allowsFileReads: allowsFileReads, selection: $selectedUserEngine) { detail = .user($0) }
+            EngineListControls(model: users, allowsFileReads: allowsFileReads, selection: $selectedUserEngine)
         } header: {
             Text("Engines")
         } footer: {
@@ -929,9 +1028,19 @@ struct EngineConfiguratorSections<Advanced: View>: View {
                 .accessibilityIdentifier("xodus.engines.footer")
         }
         .task(id: "\(allowsFileReads):\(providerRefresh)") { await refreshHighball() }
+        .task(id: checkCalimochoUpdatesOnOpen) {
+            guard showsCalimochoUpdates, checkCalimochoUpdatesOnOpen, allowsFileReads else { return }
+            await calimochoInstaller.checkForUpdates(automatic: true)
+        }
         .sheet(item: $detail) { item in
             EngineDetailSheet(detail: item, settings: settings, highball: highball, users: users,
-                              defaultID: defaultID, allowsFileReads: allowsFileReads) { detail = nil }
+                              defaultID: defaultID, allowsFileReads: allowsFileReads,
+                              calimocho: .init(installer: calimochoInstaller, isBusy: engineRemovalBusy,
+                                               refreshAdmission: refreshReleaseAdmission,
+                                               showsUpdates: showsCalimochoUpdates,
+                                               beginUpdate: beginCalimochoUpdate, removeOld: removeOldCalimocho)) {
+                detail = nil
+            }
         }
     }
 
@@ -976,16 +1085,6 @@ struct EngineConfiguratorSections<Advanced: View>: View {
                 Label(message, systemImage: calimocho.needsDownload ? "exclamationmark.triangle" : "clock")
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("xodus.engines.calimocho.status")
-            }
-            CalimochoReleaseInstallControls(installer: calimochoInstaller, isBusy: engineRemovalBusy,
-                                            refreshAdmission: refreshReleaseAdmission)
-            if showsCalimochoUpdates {
-                CalimochoUpdateControls(installer: calimochoInstaller, isBusy: engineRemovalBusy,
-                                        beginUpdate: beginCalimochoUpdate, removeOld: removeOldCalimocho)
-                    .task(id: checkCalimochoUpdatesOnOpen) {
-                        guard checkCalimochoUpdatesOnOpen, allowsFileReads else { return }
-                        await calimochoInstaller.checkForUpdates(automatic: true)
-                    }
             }
         }
     }
@@ -1041,11 +1140,17 @@ struct EngineConfiguratorSections<Advanced: View>: View {
         statusSection
         defaultSection
         enginesList
-        UserEngineAddSection(model: users, allowsFileReads: allowsFileReads)
             .onAppear { users.terminating = { [settings] in settings.applicationTerminating } }
         if showsAdvanced {
             Section {
-                DisclosureGroup("Advanced", isExpanded: $advancedExpanded) { advanced() }
+                HStack {
+                    Spacer()
+                    Button("Advanced…") { showingAdvanced = true }
+                        .accessibilityIdentifier("xodus.engines.advanced")
+                }
+            }
+            .sheet(isPresented: $showingAdvanced) {
+                EngineAdvancedSheet(content: advanced) { showingAdvanced = false }
             }
         }
     }

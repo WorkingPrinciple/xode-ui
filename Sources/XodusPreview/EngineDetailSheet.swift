@@ -4,6 +4,7 @@ import SwiftUI
 
 /// The engine a detail sheet describes (COR-279 step 3).
 enum EngineDetail: Identifiable, Equatable {
+    case calimocho
     case engine(EngineChoice)
     case crossOver
     case highball
@@ -11,6 +12,7 @@ enum EngineDetail: Identifiable, Equatable {
 
     var id: String {
         switch self {
+        case .calimocho: "calimocho"
         case .engine(let choice): "engine:" + choice.id
         case .crossOver: "crossover"
         case .highball: "highball"
@@ -20,6 +22,7 @@ enum EngineDetail: Identifiable, Equatable {
 
     var title: String {
         switch self {
+        case .calimocho: "Calimocho"
         case .engine(let choice): choice.name
         case .crossOver: "CrossOver"
         case .highball: "Highball"
@@ -30,6 +33,7 @@ enum EngineDetail: Identifiable, Equatable {
     /// Which games the engine runs, in the words the sheet shows.
     func usedFor(isDefault: Bool) -> String {
         switch self {
+        case .calimocho: "Every game, unless a game needs a specific engine."
         case .engine(let choice):
             choice.playable
                 ? (isDefault ? "Every game, unless a game needs a specific engine." : "Games you choose for it in the Library.")
@@ -41,6 +45,16 @@ enum EngineDetail: Identifiable, Equatable {
     }
 }
 
+/// Calimocho's installer and update actions, for its detail sheet.
+struct CalimochoSheetContext {
+    let installer: CalimochoReleaseInstallController
+    var isBusy: @MainActor @Sendable () -> Bool = { true }
+    var refreshAdmission: @MainActor () async -> Bool = { false }
+    var showsUpdates = false
+    var beginUpdate: @MainActor (LocalCalimochoRelease) -> Void = { _ in }
+    var removeOld: @MainActor () -> Void = {}
+}
+
 /// Wi-Fi-detail-style sheet: location, version, use and licence for one engine. Escape or Done closes it.
 struct EngineDetailSheet: View {
     let detail: EngineDetail
@@ -49,6 +63,7 @@ struct EngineDetailSheet: View {
     @ObservedObject var users: UserEngineModel
     var defaultID: String?
     var allowsFileReads = true
+    var calimocho: CalimochoSheetContext? = nil
     let close: () -> Void
 
     var body: some View {
@@ -89,6 +104,23 @@ struct EngineDetailSheet: View {
 
     @ViewBuilder private var sections: some View {
         switch detail {
+        case .calimocho:
+            if let calimocho {
+                Section("Location") {
+                    CalimochoReleaseInstallControls(installer: calimocho.installer, isBusy: calimocho.isBusy,
+                                                    refreshAdmission: calimocho.refreshAdmission)
+                }
+                Section("Version") {
+                    LabeledContent("Version") {
+                        Text(EngineDisplayName.releaseVersion(CalimochoRelease.engineID)
+                            .map { "\($0.version) · \($0.detail)" } ?? "Unknown").textSelection(.enabled)
+                    }
+                    if calimocho.showsUpdates {
+                        CalimochoUpdateControls(installer: calimocho.installer, isBusy: calimocho.isBusy,
+                                                beginUpdate: calimocho.beginUpdate, removeOld: calimocho.removeOld)
+                    }
+                }
+            }
         case .crossOver:
             CrossOverLocationRow(settings: settings, allowsCheck: allowsFileReads, showsStatus: false)
             versionSection(Self.crossOverVersion(settings.crossOverDependency),
@@ -174,9 +206,9 @@ struct EngineDetailSheet: View {
 
     static func licence(_ detail: EngineDetail) -> [String] {
         switch detail {
+        case .calimocho, .engine: ["Built on Wine and other open-source components. Their licences are in \(FeaturedCredits.menuPath)."]
         case .crossOver: [EnginesCopy.crossOverLicense]
         case .highball: [HighballCopy.explanation, HighballCopy.license]
-        case .engine: ["Built on Wine and other open-source components. Their licences are in \(FeaturedCredits.menuPath)."]
         case .user: ["An engine you added. \(AppBrand.displayName) only reads it and never changes it."]
         }
     }

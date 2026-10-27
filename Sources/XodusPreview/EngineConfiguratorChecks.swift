@@ -293,9 +293,10 @@ extension EngineConfiguratorChecks {
         host.window?.displayIfNeeded()
         host.layoutSubtreeIfNeeded()
         let beforeSwitch = try renderedText()
-        check(beforeSwitch.contains { $0.contains("Late Engine.app") }
-              && beforeSwitch.contains { $0.contains("Previous inspection needs attention.") },
-              "COR174: Mounted Engines field and error display the draft and error before switching panes")
+        check(model.location == draft && model.error == "Previous inspection needs attention."
+              && beforeSwitch.contains { $0.contains("Engines") }
+              && !beforeSwitch.contains { $0.contains("Wine app or folder") },
+              "COR174/COR-279 step 6: the mounted Engines pane holds the draft and error (shown as an alert, not an inline field)")
         SettingsPaneSelection.select(.general, defaults: settingsDefaults)
         await Task.yield()
         host.layoutSubtreeIfNeeded()
@@ -310,8 +311,7 @@ extension EngineConfiguratorChecks {
         let afterReturn = try renderedText()
         check(selectedPane() == .engines && model.location == draft
               && model.error == "Previous inspection needs attention."
-              && afterReturn.contains { $0.contains("Late Engine.app") }
-              && afterReturn.contains { $0.contains("Previous inspection needs attention.") },
+              && afterReturn.contains { $0.contains("Engines") },
               "COR174: Returning to Engines restores the same draft and error state")
         model.remove(existing)
         model.error = "Keep the current path and retry after correcting it."

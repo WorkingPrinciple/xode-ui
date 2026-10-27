@@ -208,7 +208,7 @@ enum BrandUXChecks {
                 == "db1b642e1d1a93cf50a3620a994ca049e34ce2352dc25fc34617a651302528bf"
               && CalimochoReleasePin.release06.teamID == "M62Z4M5EUY"
               && CalimochoRelease.engineID == pinned && CalimochoReleasePin.named(CalimochoRelease.engineID) != nil
-              && release.name == "Calimocho \(EngineDisplayName.releaseVersion(pinned)!.version)"
+              && release.name == "Calimocho"
               && release.detail == "Wine 11.20 · GPTK 4.0 beta 3" && !release.titleSpecific
               && EngineDisplayName.releaseVersion("calimocho-11.20-4.0b3-03")?.version == "0.1120.4.3"
               && EngineDisplayName.releaseVersion("calimocho-11.21-4.0b4-03")?.version == "0.1121.4.3"
@@ -262,6 +262,9 @@ enum BrandUXChecks {
                 let labels = render(form, size: CGSize(width: 600, height: 900), scheme: scheme,
                                     name: "engines-\(scenario)-\(scheme == .dark ? "dark" : "light")")
                 let joined = labels.joined(separator: " ")
+                check(joined.contains("Calimocho") && !joined.contains("Add Engine") && !joined.contains("Calimocho updates")
+                      && !joined.contains("Wine app or folder"),
+                      "COR-279 steps 5/6: one Calimocho row, no top install block, no Add Engine section (\(scenario), \(scheme)): \(labels)")
                 check(labels.filter { $0 == "Check Again" }.count == 1
                       && joined.contains("Engines run Windows games")
                       && joined.contains("runs every game unless a game needs a specific engine")
@@ -276,8 +279,8 @@ enum BrandUXChecks {
                 case "invalid":
                     check(joined.contains("couldn't be verified") && joined.contains("Couldn't Verify")
                           && !joined.contains("Default ·") && !hasDownloadControl
-                          && joined.contains("Remove Calimocho"),
-                          "REQ-114(4): Invalid Calimocho gives the verification reason, marks it Couldn't Verify, and offers safe removal (\(scheme))")
+                          && !joined.contains("Remove Calimocho"),
+                          "REQ-114(4)/COR-279 step 5: Invalid Calimocho gives the verification reason and marks it Couldn't Verify; removal is in its ⓘ sheet (\(scheme))")
                 case "pending":
                     check(joined.contains("will be ready once") && !joined.contains("isn't available for download")
                           && !joined.contains("Reinstall") && !hasDownloadControl,
@@ -310,6 +313,19 @@ enum BrandUXChecks {
                   && !joinedHighball.contains("Not Installed") && !joinedHighball.contains("Not Checked Yet"),
                   "COR-279 steps 3/8 and F3: the Highball ⓘ sheet carries its licence and never claims Not Installed before detection (\(scheme)): \(highball)")
         }
+        for scheme in [ColorScheme.light, .dark] {
+            let suffix = scheme == .dark ? "dark" : "light"
+            let users = UserEngineModel(store: store, suggestions: [])
+            let controls = render(Form { Section { EngineListControls(model: users, allowsFileReads: true,
+                                                                      selection: .constant(nil)) } }.formStyle(.grouped),
+                                  size: CGSize(width: 560, height: 120), scheme: scheme, name: "engine-list-controls-\(suffix)")
+            check(!controls.contains("Add Engine") && !controls.contains("Wine app or folder"),
+                  "COR-279 step 6: +/– replaces the Add Engine field (\(scheme)): \(controls)")
+            let advanced = render(EngineAdvancedSheet(content: { LabeledContent("Registry", value: "/Users/example/engines/registry.json") }) {},
+                                  size: CGSize(width: 620, height: 560), scheme: scheme, name: "engine-advanced-sheet-\(suffix)")
+            check(advanced.contains("Advanced") && advanced.contains("Done") && advanced.contains("Registry"),
+                  "COR-279 step 8: Advanced… opens a sheet with its settings and Done (\(scheme)): \(advanced)")
+        }
         let installedRoot = emptyRoot.appendingPathComponent("installed-controls", isDirectory: true)
         let installedEngine = installedRoot.appendingPathComponent(CalimochoRelease.engineID, isDirectory: true)
         if (try? FileManager.default.createDirectory(at: installedEngine, withIntermediateDirectories: true)) != nil {
@@ -318,6 +334,22 @@ enum BrandUXChecks {
                 installer: CalimochoReleaseInstallController(
                     service: CalimochoReleaseInstallService(root: installedRoot)),
                 isBusy: { false }, refreshAdmission: { false })
+            for scheme in [ColorScheme.light, .dark] {
+                let sheetInstaller = CalimochoReleaseInstallController(
+                    service: CalimochoReleaseInstallService(root: installedRoot))
+                let sheet = render(EngineDetailSheet(detail: .calimocho, settings: settings, highball: nil,
+                                                     users: UserEngineModel(store: store, suggestions: []),
+                                                     defaultID: CalimochoRelease.engineID, allowsFileReads: true,
+                                                     calimocho: .init(installer: sheetInstaller, isBusy: { false },
+                                                                      showsUpdates: true)) {},
+                                   size: CGSize(width: 520, height: EngineDetailSheet.height), scheme: scheme,
+                                   name: "engine-detail-calimocho-\(scheme == .dark ? "dark" : "light")")
+                let joinedSheet = sheet.joined(separator: " ")
+                check(joinedSheet.contains("Show in Finder") && joinedSheet.contains("Remove Calimocho")
+                      && joinedSheet.contains("0.1120.4.6") && joinedSheet.contains("Check for Updates")
+                      && joinedSheet.contains("Done"),
+                      "COR-279 step 5: the Calimocho ⓘ sheet holds location, removal, version and updates (\(scheme)): \(sheet)")
+            }
             let labels = render(installedControls, size: CGSize(width: 520, height: 220), scheme: .light,
                                 name: "calimocho-installed-controls")
             let joined = labels.joined(separator: " ")
