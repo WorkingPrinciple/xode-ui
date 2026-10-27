@@ -40,6 +40,22 @@ enum BrandUXChecks {
     // MARK: Brand
 
     static func brand(check: (Bool, String) -> Void) {
+        // Owner decision W1 (27 Oct): the unchanged XOdeMark in burgundy #7A1E3A on a white tile; no Xbox green.
+        let burgundy = OdeBrand.burgundy.nsColor
+        check(OdeBrand.burgundy == .init(red: 0x7A, green: 0x1E, blue: 0x3A)
+              && contrast(burgundy, against: .white) >= 10
+              && contrast(OdeBrand.rose.nsColor, against: NSColor(srgbRed: 0x3A / 255, green: 0x3A / 255, blue: 0x3A / 255, alpha: 1)) >= 4.5
+              && contrast(.white, against: OdeBrand.wine.nsColor) >= 4.5
+              && contrast(OdeBrand.wine.nsColor, against: NSColor(srgbRed: 0x1E / 255, green: 0x1E / 255, blue: 0x1E / 255, alpha: 1)) >= 3,
+              "W1: Burgundy mark on white is 10:1; dark-appearance text and fills stay legible")
+        let brandSources = ["Sources/XodusPreview/AppBrandPresentation.swift", "Sources/XodusPreview/XboxCompanionViews.swift",
+                            "Sources/XodusPreview/LiveAccountView.swift", "tools/RenderAppIcon.swift"]
+            .map { (try? String(contentsOfFile: $0, encoding: .utf8)) ?? "" }
+        let greens = ["16 / 255, green: 124 / 255", "82 / 255, green: 176 / 255", "12 / 255, green: 40 / 255", "107C10", "XboxBrand"]
+        check(brandSources.allSatisfy { !$0.isEmpty }
+              && !brandSources.contains { source in greens.contains { source.contains($0) } }
+              && brandSources[3].contains("0x7A / 255, green: 0x1E / 255, blue: 0x3A / 255"),
+              "W1: App branding and the app icon carry no Xbox green; the icon fills the mark with #7A1E3A")
         check(AppBrand.displayName == "X Ode" && AppBrand.wordmark == "Ode" && AppBrand.company == "Working Principle"
               && AppBrand.website == "xode.win" && AppBrand.nameWithChannel == "X Ode Beta"
               && AppBrand.supportTitle == "X Ode Beta Support"
@@ -526,9 +542,7 @@ enum BrandUXChecks {
                   "COR186 M7: Rendered login (\(scheme)) keeps only the lockup, Microsoft sign-in, state notices and the Wine line: \(labels)")
         }
         for scheme in [ColorScheme.light, .dark] {
-            let lockup = XOdeLockup(markSize: 48, markStyle: AnyShapeStyle(XboxBrand.lightGreen),
-                                    wordmarkFont: .title2.weight(.medium),
-                                    markBackground: AnyShapeStyle(Color(red: 12 / 255, green: 40 / 255, blue: 25 / 255)))
+            let lockup = XOdeLockup(markSize: 48, wordmarkFont: .title2.weight(.medium))
             let labels = render(lockup, size: CGSize(width: 200, height: 160), scheme: scheme,
                                 name: "account-lockup-\(scheme == .dark ? "dark" : "light")")
             check(labels == ["Ode"],

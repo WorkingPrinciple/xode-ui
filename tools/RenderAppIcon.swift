@@ -32,7 +32,8 @@ enum AppIconRenderer {
                 context.translateBy(x: 0, y: 1024)
                 context.scaleBy(x: 1, y: -1)
                 context.addPath(XOdeMark.path(in: CGRect(x: 220, y: 232, width: 584, height: 560)))
-                context.setFillColor(CGColor(red: 16 / 255, green: 124 / 255, blue: 16 / 255, alpha: 1))
+                // Owner decision W1: the unchanged mark in burgundy #7A1E3A on the white tile (10.1:1).
+                context.setFillColor(CGColor(red: 0x7A / 255, green: 0x1E / 255, blue: 0x3A / 255, alpha: 1))
                 context.fillPath()
                 guard let image = context.makeImage() else { fatalError("Ode icon rendering failed.") }
                 let name = "icon_\(size)x\(size)\(scale == 2 ? "@2x" : "").png"
