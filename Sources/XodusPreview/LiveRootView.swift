@@ -19,8 +19,11 @@ enum BrowseGate {
     static func startupTasks(startupComplete: Bool, selected: Bool, sceneActive: Bool) -> Bool {
         startupComplete && selected && sceneActive
     }
-    /// A retained tab that isn't selected is hidden and not hit-testable, but its content is never disabled.
-    static func disablesContent(selected: Bool) -> Bool { false }
+    /// What LiveRootView passes a browse tab: background work follows tab and focus; interaction doesn't.
+    static func inputs(startupAllowed: Bool, selected: Bool, sceneActive: Bool)
+        -> (allowsStartupTasks: Bool, startupComplete: Bool) {
+        (startupTasks(startupComplete: startupAllowed, selected: selected, sceneActive: sceneActive), startupAllowed)
+    }
     static func installEnabled(startupComplete: Bool, canReview: Bool) -> Bool { startupComplete && canReview }
     static func installDisabledReason(startupComplete: Bool, otherwise: String?) -> String? {
         startupComplete ? otherwise : startupNotice
@@ -724,6 +727,15 @@ struct LiveRootView: View {
         searchFocused = false
     }
 
+    private var libraryInputs: (allowsStartupTasks: Bool, startupComplete: Bool) {
+        BrowseGate.inputs(startupAllowed: startupAllowed, selected: state.destination == .library,
+                          sceneActive: scenePhase == .active)
+    }
+    private var discoverInputs: (allowsStartupTasks: Bool, startupComplete: Bool) {
+        BrowseGate.inputs(startupAllowed: startupAllowed, selected: state.destination == .discover,
+                          sceneActive: scenePhase == .active)
+    }
+
     private func retainedBrowse(_ destination: Destination) -> some View {
         let selected = state.destination == destination
         let active = selected && scenePhase == .active
@@ -744,6 +756,9 @@ struct LiveRootView: View {
                         })
                     } else { catalog }
                 }
+                // REQ-75 F1: hidden at the content level too. An ancestor's accessibilityHidden(false) (the
+                // first-load cover once it lifts) re-exposes a container-level hide in AppKit's AX tree.
+                .accessibilityHidden(!selected)
                 .padding(immersive ? 0 : 30)
                 .frame(minHeight: destination == .library ? libraryContainerSize.flatMap {
                     state.librarySelection.scopeMinimumHeight(viewport: $0)
@@ -751,6 +766,7 @@ struct LiveRootView: View {
                        alignment: .top)
             }
             .scrollPosition(id: scrollID)
+            .accessibilityElement(children: selected ? .contain : .ignore)
             .scrollIndicators(destination == .discover ? .never : .automatic)
             .modifier(LibraryScrollMeasurementObserver(
                 selection: destination == .library ? state.librarySelection : nil,
@@ -780,8 +796,9 @@ struct LiveRootView: View {
         .opacity(selected ? 1 : 0)
         .zIndex(selected ? 1 : 0)
         .allowsHitTesting(selected)
-        // REQ-75: hidden, not disabled; a retained tab's resolved cards stay viewable.
-        .disabled(BrowseGate.disablesContent(selected: selected))
+        // Inert and out of keyboard focus while hidden; its cards are never shown disabled to assistive tech,
+        // because the hidden tab isn't in the accessibility tree at all.
+        .disabled(!selected)
         .accessibilityHidden(!selected)
     }
 
@@ -828,9 +845,8 @@ struct LiveRootView: View {
                 LiveLibraryView(library: state.pcGames, installed: state.installedGames,
                                 operations: state.gameOperations,
                                 query: state.query(for: .library).trimmingCharacters(in: .whitespacesAndNewlines),
-                                allowsStartupTasks: BrowseGate.startupTasks(startupComplete: startupAllowed,
-                                    selected: state.destination == .library, sceneActive: scenePhase == .active),
-                                startupComplete: startupAllowed,
+                                allowsStartupTasks: libraryInputs.allowsStartupTasks,
+                                startupComplete: libraryInputs.startupComplete,
                                 allowsArtworkLoading: libraryArtworkAllowed,
                                 allowsHeroAnimation: heroAnimationAllowed && state.destination == .library && scenePhase == .active,
                                 browse: { state.navigate(.discover) },
@@ -891,9 +907,8 @@ struct LiveRootView: View {
                         operations: state.gameOperations,
                         query: state.query(for: .discover).trimmingCharacters(in: .whitespacesAndNewlines),
                         allowsArtworkLoading: libraryArtworkAllowed,
-                        allowsStartupTasks: BrowseGate.startupTasks(startupComplete: startupAllowed,
-                            selected: state.destination == .discover, sceneActive: scenePhase == .active),
-                        startupComplete: startupAllowed,
+                        allowsStartupTasks: discoverInputs.allowsStartupTasks,
+                        startupComplete: discoverInputs.startupComplete,
                         allowsHeroAnimation: heroAnimationAllowed && state.destination == .discover && scenePhase == .active,
                         clearSearch: { state.query = "" }, selection: state.discoverSelection,
                         searchLibrary: { query in
