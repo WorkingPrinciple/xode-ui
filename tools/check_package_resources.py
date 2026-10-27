@@ -6,7 +6,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from package_resources import (ENGINE_DEFAULTS, PRIVATE_QA_RESOURCES, RUNTIME_RESOURCES,
+from package_resources import (ENGINE_DEFAULTS, PRIVATE_QA_RESOURCES, RUNTIME_RESOURCES, TITLE_PROFILES,
                                copy_resources, inventory, resource_layout, verify_resources)
 
 SOURCE_TREE = "${HOME}/src/copilot-worktrees/example/branch/build/engine.registry.json"
@@ -15,6 +15,10 @@ ENGINE_DEFAULTS_FIXTURE = json.dumps({"version": 1, "defaultEngine": "release", 
     {"engineName": "release", "wineSha256": "a" * 64, "wineserverSha256": "b" * 64},
     {"engineName": "source-tree", "registryPath": SOURCE_TREE, "developerLocal": True},
     {"engineName": "app-support", "registryPath": APP_SUPPORT, "developerLocal": True}]}).encode()
+TITLE_PROFILES_FIXTURE = json.dumps({"version": 1, "profiles": [
+    {"productID": "A", "engine": "release"},
+    {"productID": "B", "engine": "source-tree", "preservedPrefixPath": "${HOME}/prefixes/internal-qa-name"},
+    {"productID": "C", "engine": "app-support"}]}).encode()
 
 
 class PackageResourceChecks(unittest.TestCase):
@@ -24,7 +28,9 @@ class PackageResourceChecks(unittest.TestCase):
         for name in RUNTIME_RESOURCES | PRIVATE_QA_RESOURCES:
             path = layout / name
             path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_bytes(ENGINE_DEFAULTS_FIXTURE if name == ENGINE_DEFAULTS else b"Neutral resource fixture")
+            path.write_bytes(ENGINE_DEFAULTS_FIXTURE if name == ENGINE_DEFAULTS
+                             else TITLE_PROFILES_FIXTURE if name == TITLE_PROFILES
+                             else b"Neutral resource fixture")
         if nested:
             (source / "Contents/Info.plist").write_bytes(b"Neutral bundle metadata")
         return source, layout
@@ -76,6 +82,16 @@ class PackageResourceChecks(unittest.TestCase):
             self.assertEqual(names, ["release", "app-support"])
             self.assertNotIn("copilot-worktrees", staged)
             self.assertNotIn("${HOME}/src/", staged)
+
+    def test_title_profiles_for_stripped_engines_are_not_packaged(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp).resolve()
+            source, _ = self.fixture(root, True)
+            destination = root / "output.bundle"
+            copy_resources(source, destination)
+            staged = (resource_layout(destination) / TITLE_PROFILES).read_text()
+            self.assertEqual([p["productID"] for p in json.loads(staged)["profiles"]], ["A", "C"])
+            self.assertNotIn("internal-qa-name", staged)
 
     def test_verifier_rejects_developer_paths_in_any_staged_resource(self):
         for text in ("${HOME}/src/repo/file", "~/src/repo", "/x/copilot-worktrees/y", "/Users/name/src/repo"):
