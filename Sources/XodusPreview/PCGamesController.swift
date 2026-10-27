@@ -417,7 +417,16 @@ final class PCGamesController: ObservableObject {
                 var prioritized = true
                 defer { if prioritized { session.endLibraryReadPriority() } }
                 let deadline = ContinuousClock.now.advanced(by: .seconds(30))
+                let admissionStart = ContinuousClock.now
+                var heldBy = Set<String>()
+                defer {
+                    let waited = admissionStart.duration(to: .now).components
+                    let ms = waited.seconds * 1000 + waited.attoseconds / 1_000_000_000_000_000
+                    // REQ-121: which account operation the collection read waited behind, and for how long.
+                    logger.notice("stage=collectionAdmission waitedMs=\(ms) heldBy=\(heldBy.sorted().joined(separator: "+"), privacy: .public)")
+                }
                 while session.accountBusy {
+                    heldBy.formUnion(session.accountBusyReasons)
                     try current(token)
                     guard session.hasConfirmedSignIn, session.accountHash == account else {
                         throw PCGamesError.identityMismatch

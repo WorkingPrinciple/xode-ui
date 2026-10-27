@@ -13,6 +13,15 @@ private struct BrowseTabSelectedKey: EnvironmentKey {
 /// REQ-75: what tab selection and window focus may and may not change. Background startup work (loads,
 /// prechecks, hero playback) runs only for the selected tab of an active window; whether resolved content is
 /// usable, and whether "finish starting" is said, depends only on the app's real startup state.
+/// REQ-119/121: background account reads wait until the library's collection read is sent. A saved library
+/// restored at launch is not a reason to let them go first; it isn't the account's answer.
+enum BackgroundAccountReads {
+    static func allowed(unifiedAccountMode: Bool, collectionReadStarted: Bool, hasSnapshot: Bool,
+                        snapshotRestored: Bool, failed: Bool, countryReady: Bool) -> Bool {
+        !unifiedAccountMode || collectionReadStarted || (hasSnapshot && !snapshotRestored) || failed || !countryReady
+    }
+}
+
 enum BrowseGate {
     static let startupNotice = "Wait for \(AppBrand.displayName) to finish starting."
 
@@ -142,8 +151,10 @@ struct LiveRootView: View {
     /// REQ-119: recent activity and access checks wait until the library's collection read is sent.
     private var backgroundAccountReadsAllowed: Bool {
         let library = state.pcGames
-        return !unifiedAccountMode || library.collectionReadStarted || library.snapshot != nil
-            || library.error != nil || !session.accountCountryReady
+        return BackgroundAccountReads.allowed(unifiedAccountMode: unifiedAccountMode,
+            collectionReadStarted: library.collectionReadStarted, hasSnapshot: library.snapshot != nil,
+            snapshotRestored: library.snapshot?.restored == true, failed: library.error != nil,
+            countryReady: session.accountCountryReady)
     }
     /// Covers in the same frame this run's own sign-in confirms, before onChange begins the state.
     private var interactiveFirstLoadPending: Bool {
@@ -412,8 +423,10 @@ struct LiveRootView: View {
                 await state.gameOperations.waitForService()
             }
         }
-        .task(id: profileBootstrapBinding) {
+        .task(id: "\(profileBootstrapBinding ?? ""):\(backgroundAccountReadsAllowed)") {
             guard profileBootstrapBinding != nil else { return }
+            // REQ-121: the profile (avatar) read waits for the library's collection read to be sent.
+            guard backgroundAccountReadsAllowed else { return }
             await companion.refresh(for: state.gameOperations.serviceStatus)
         }
         .task(id: session.accountCatalogScope) {

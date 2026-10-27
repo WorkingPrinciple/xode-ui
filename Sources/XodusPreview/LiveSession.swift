@@ -412,6 +412,15 @@ final class LiveSession: ObservableObject {
     var yieldsToLibraryRead: Bool { libraryReadsWaiting > 0 }
     func beginLibraryReadPriority() { libraryReadsWaiting += 1 }
     func endLibraryReadPriority() { libraryReadsWaiting = max(0, libraryReadsWaiting - 1) }
+    /// Names of what makes `accountBusy` true, for load-latency logs.
+    var accountBusyReasons: [String] {
+        var reasons: [String] = []
+        if accountOperationBusy { reasons.append(accountStatusChecking ? "statusRead" : "accountRead") }
+        if recentLibraryBootstrapRunning { reasons.append("recentLibrary") }
+        if accountRuntimeStarting { reasons.append("runtimePrepare") }
+        if waitingInteractiveAccountReads > 0 { reasons.append("interactiveRead") }
+        return reasons
+    }
     var accountBusy: Bool {
         accountOperationBusy || recentLibraryBootstrapRunning || accountRuntimeStarting
             || waitingInteractiveAccountReads > 0
@@ -535,9 +544,19 @@ final class LiveSession: ObservableObject {
         if isReady { await refreshAccount() }
     }
     func revalidateAccountOnForeground() async {
-        guard isReady, !connectionTransitioning, !accountBusy, !signInPending else { return }
+        guard isReady, !connectionTransitioning, !accountBusy, !signInPending,
+              Self.foregroundRevalidationDue(lastStatusRead: accountStatusReadAt, now: Date()) else { return }
         await refreshAccount()
     }
+    /// REQ-121: when the saved sign-in was read moments ago (at launch), becoming active doesn't read it again,
+    /// so that duplicate status read can't hold the account channel ahead of the library's collection read.
+    static let foregroundRevalidationInterval: TimeInterval = 30
+    static func foregroundRevalidationDue(lastStatusRead: Date?, now: Date) -> Bool {
+        guard let lastStatusRead else { return true }
+        let age = now.timeIntervalSince(lastStatusRead)
+        return age < 0 || age >= foregroundRevalidationInterval
+    }
+    private(set) var accountStatusReadAt: Date?
     var accountNoticeTitle: String {
         if accountStatusChecking { return "Checking saved sign-in" }
         guard isReady, accountStatusCurrent else { return accountLabel }
@@ -1502,6 +1521,7 @@ final class LiveSession: ObservableObject {
         }
         accountStatusCurrent = true
         accountStatusError = nil
+        accountStatusReadAt = Date()
     }
 
     func refreshInstalled() async {
