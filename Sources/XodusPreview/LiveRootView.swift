@@ -375,6 +375,17 @@ struct LiveRootView: View {
             if show { proxy.scrollTo("library-games", anchor: .top) }
         }
 #endif
+        .task(id: startupAllowed) {
+            // REQ-143 UPD-02: a quiet once-a-day check, never at launch and never while the owner is busy.
+            guard startupAllowed else { return }
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(60))
+                await state.appUpdate.checkIfDue()
+                state.appUpdate.refreshSuppression()
+                await state.appUpdate.busyStateChanged()
+                try? await Task.sleep(for: .seconds(3600))
+            }
+        }
         .task {
             if startupAllowed {
                 if UserDefaults.standard.bool(forKey: "Xodus.localNetwork.requestOnce") {
@@ -671,6 +682,12 @@ struct LiveRootView: View {
                             select: selectRecentSearch,
                             dismiss: dismissDiscoverRecentSearches))) {
                 state.openAccount()
+            }
+            ToolbarItem(placement: .primaryAction) {
+                AppUpdateToolbarIndicator(updates: state.appUpdate) {
+                    SettingsPaneSelection.select(.general)
+                    openSettings()
+                }
             }
             ToolbarItem(placement: .primaryAction) {
                 GameDownloadToolbarIndicator(operations: state.gameOperations)

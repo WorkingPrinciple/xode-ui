@@ -3,6 +3,7 @@ import AppKit
 import Foundation
 import SwiftUI
 import XodusCore
+import XodusManagement
 
 enum Destination: String, CaseIterable, Identifiable {
     case library = "Library", discover = "Discover", downloads = "Downloads"
@@ -98,6 +99,20 @@ final class AppState: ObservableObject {
         }
         return operations
     }()
+    private lazy var updateConditions = AppUpdateConditionsMonitor()
+    /// REQ-143. No feed is configured until the owner decides hosting and signing, so this never makes a request.
+    lazy var appUpdate = AppUpdateController(
+        driver: UnconfiguredUpdateDriver(),
+        preferences: AppUpdatePreferences(defaults: settingsDefaults),
+        currentVersion: AppBrand.current.version.flatMap { UpdateVersion($0) },
+        conditions: { [unowned self] in self.updateConditions.conditions },
+        busy: { [unowned self] in
+            if self.installedGames.runningGameID != nil || self.installedGames.launchStarted { return .gameRunning }
+            if self.gameOperations.isBusy || self.installedGames.mutationActive || self.calimochoInstaller.isWorking {
+                return .installActive
+            }
+            return nil
+        })
     lazy var downloadQueue = DownloadQueueController(
         driver: GameOperationsInstallDriver(operations: gameOperations))
 #if !XODUS_SHIPPING

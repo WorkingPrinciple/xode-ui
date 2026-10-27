@@ -701,6 +701,7 @@ actor Checks {
     func run() async throws {
         try await descriptorMetricsChecks()
         try await overflowChecks()
+        await appUpdateChecks()
         try odeAccountChecks()
         try accountTierChecks()
         try registryDevelopmentChecks()

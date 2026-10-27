@@ -263,6 +263,7 @@ struct LiveSettingsView: View {
                 if let notice = artwork.artworkNotice { Text(notice).foregroundStyle(.secondary) }
                 if let error = artwork.artworkError { Text(error).foregroundStyle(.secondary) }
             }
+            AppUpdateSettingsSection(updates: state.appUpdate)
         }
         .formStyle(.grouped)
     }
