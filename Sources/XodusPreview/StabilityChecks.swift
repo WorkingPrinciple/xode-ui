@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import Darwin
 import Foundation
+import XodusManagement
 
 /// REQ-135–139 (owner COR-286/287, L19 d4a04aa3): game actions never lose saves, prefixes or another
 /// process's operation, and gated titles say why. Synthetic folders only; no game or service.
@@ -27,6 +28,56 @@ import Foundation
         do { try await installVerdictChecks(root: root.appendingPathComponent("verdicts"), check: check) }
         catch { check(false, "fc2f17d1 H1 fixture: \(error)") }
         heuristicChecks(check: check)
+        do { try await accessReadBudgetChecks(check: check) }
+        catch { check(false, "REQ-159 fixture: \(error)") }
+    }
+
+    /// REQ-159: the app polled every installed product's licence every minute and got this device throttled
+    /// by login.live.com. Reads are now on demand for one product, cached 10 minutes and backed off on failure.
+    static func accessReadBudgetChecks(check: (Bool, String) -> Void) async throws {
+        let account = String(repeating: "a", count: 64)
+        let installed = (0..<25).map { String(format: "9BUDGET%05d", $0) }
+        let played = installed[3]
+        let start = ISO8601DateFormatter().date(from: "2030-01-01T00:00:00Z")!
+        var reads: [String] = []
+        var failing = false
+        let reader: @MainActor (String) async throws -> OdeAccountRead = { id in
+            reads.append(id)
+            if failing { throw ManagementError.disconnected }
+            let payload: [String: Any] = ["section": "license", "accountHash": account,
+                "checkedAt": "2030-01-01T00:00:00Z",
+                "payload": ["productID": id, "access": "permitted", "reason": NSNull(), "expiresAt": NSNull()]]
+            return try JSONDecoder().decode(OdeAccountRead.self, from: JSONSerialization.data(withJSONObject: payload))
+        }
+        let access = InstalledProductAccess()
+        for _ in 0..<10 { access.track(account: account, installedIDs: installed) }
+        let source = (try? String(contentsOfFile: "Sources/XodusPreview/LiveRootView.swift", encoding: .utf8)) ?? ""
+        check(reads.isEmpty && access.readCount == 0 && !source.isEmpty
+              && !source.contains("productAccess.refresh(") && source.contains("productAccess.track("),
+              "REQ-159: library, foreground and installed-set updates only track the 25 installed games and make no licence reads (\(reads.count))")
+        for minute in 0..<9 {
+            await access.refresh(account: account, installedIDs: installed, now: start.addingTimeInterval(Double(minute) * 60),
+                                 force: true, selectedProductID: played, read: reader)
+        }
+        check(reads == [played] && access.permits(played, account: account, now: start.addingTimeInterval(540)),
+              "REQ-159: playing one game reads only its licence, once per 10 minutes (\(reads.count) reads in 9 Play presses)")
+        await access.refresh(account: account, installedIDs: installed, now: start.addingTimeInterval(601),
+                             force: true, selectedProductID: played, read: reader)
+        check(reads.count == 2, "REQ-159: after 10 minutes the next Play reads that licence again")
+        failing = true
+        let other = installed[7]
+        await access.refresh(account: account, installedIDs: installed, now: start.addingTimeInterval(700),
+                             force: true, selectedProductID: other, read: reader)
+        let afterFailure = reads.count
+        await access.refresh(account: account, installedIDs: installed, now: start.addingTimeInterval(720),
+                             force: true, selectedProductID: other, read: reader)
+        await access.refresh(account: account, installedIDs: installed, now: start.addingTimeInterval(730),
+                             force: true, selectedProductID: installed[9], read: reader)
+        check(afterFailure == 3 && reads.count == 3 && access.pausedUntil != nil
+              && InstalledProductAccess.backoff(afterFailures: 1) == 60
+              && InstalledProductAccess.backoff(afterFailures: 3) == 240
+              && InstalledProductAccess.backoff(afterFailures: 10) == InstalledProductAccess.maximumBackoff,
+              "REQ-159: a failed read backs off for every product (60 s doubling to 15 min) instead of retrying")
     }
 
     /// Review fc2f17d1 H1: producer #7 sends installation verdicts as a lifecycle error_code. Each is a receipt,
@@ -400,6 +451,13 @@ import Foundation
               && ConcurrentAppGuard.runningPeer(bundleID: ordinary, running: [Run(bundleID: ordinary, pid: 10)], selfPID: 10) == nil
               && ConcurrentAppGuard.runningPeer(bundleID: nil, running: [Run(bundleID: ordinary, pid: 10)], selfPID: 99) == nil,
               "REQ-138 F4: the ordinary and Qualification apps, and a second copy of either, refuse to run at the same time")
+        let copies: [(path: String, bundleID: String, build: Int)] = [
+            ("/Applications/Ode.app", ordinary, 681), ("/Applications/Q.app", qual, 690),
+            ("/Applications/Other.app", "com.example.other", 999)]
+        check(ConcurrentAppGuard.newerInstalledBuild(selfBuild: 681, installed: copies)?.build == 690
+              && ConcurrentAppGuard.newerInstalledBuild(selfBuild: 690, installed: copies) == nil
+              && ConcurrentAppGuard.newerBuildMessage(path: "/Applications/Q.app", build: 690).contains("build 690"),
+              "Owner hardening 2: an older X Ode of either variant refuses to start games once a newer build is installed; other apps are ignored")
         let fh6 = NativeLaunchSupport.notSupported(NativeLaunchSupport.inTestingReason)
         check(fh6.unavailableTitle == "In testing on Mac" && !fh6.unavailableTitle.contains("Not available")
               && NativeLaunchSupport.notSupported("x").unavailableTitle == NativeLaunchSupport.notSupportedTitle,
@@ -408,6 +466,8 @@ import Foundation
                 == "Gated was installed. Play isn't offered for it in this build yet."
               && GameReadyAnnouncement(productID: "A", title: "Game", folder: "/x").body == "Game is ready to play.",
               "L19 MED 3: an installed title Play can't start is never announced as ready to play")
+        check(GameOperationsController.finishPlayingMessage("Hades") == "Finish playing Hades first, then try again.",
+              "d6d729c0 LOW: uninstall or repair of the game that's playing explains itself")
         func status(_ code: String, success: Bool) -> NativeInstallationStatus {
             NativeInstallationStatus(version: 1, operation: "install-status", product: "FIXTURE00095",
                 runID: UUID().uuidString, gameDirectory: "/fixture", logDirectory: "/fixture/log",

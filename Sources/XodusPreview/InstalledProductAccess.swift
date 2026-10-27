@@ -23,6 +23,17 @@ final class InstalledProductAccess: ObservableObject {
     @Published private(set) var checking = false
     private(set) var accountHash: String?
     private var attempts: [String: Date] = [:]
+    /// REQ-159: reads are on demand for one product, each answer is reused for 10 minutes, and a retryable
+    /// failure backs off (per product and for all products) instead of re-polling Microsoft.
+    nonisolated static let freshness: TimeInterval = 600
+    nonisolated static let maximumBackoff: TimeInterval = 900
+    private var failures: [String: Int] = [:]
+    private(set) var pausedUntil: Date?
+    /// Every licence read this object started; a fixture bounds it.
+    private(set) var readCount = 0
+    nonisolated static func backoff(afterFailures count: Int) -> TimeInterval {
+        min(maximumBackoff, 60 * pow(2, Double(max(0, count - 1))))
+    }
     private var installed = Set<String>()
     private var operation: Task<Void, Never>?
     /// A product a waiting request needs now (e.g. a deep link); a running sweep checks it next.
@@ -30,6 +41,29 @@ final class InstalledProductAccess: ObservableObject {
     private var expiryNotification: Task<Void, Never>?
     private var generation = UUID()
     private let logger = Logger(subsystem: "io.github.dragoshont.xodus", category: "product-access")
+
+    private func fresh(_ id: String, now: Date) -> Bool {
+        guard let fact = facts[id], now.timeIntervalSince(fact.checkedAt) >= 0,
+              now.timeIntervalSince(fact.checkedAt) < Self.freshness - 60 else { return false }
+        return fact.expiresAt.map { $0.timeIntervalSince(now) > 180 } ?? true
+    }
+
+    /// REQ-159: keeps the installed set current without reading any licence.
+    func track(account: String?, installedIDs: [String]) {
+        guard account == accountHash else { return }
+        installed = Set(installedIDs.filter(PCGamesClient.validProductID))
+        facts = facts.filter { installed.contains($0.key) }
+        errors = errors.filter { installed.contains($0.key) }
+    }
+
+    /// REQ-159: a current answer that this account can't play the product; until then Play stays offered and
+    /// checks access when pressed.
+    func deniedRecently(_ productID: String, account: String?, now: Date = Date()) -> Bool {
+        guard let account, accountHash == account, errors[productID] == nil, let fact = facts[productID],
+              now.timeIntervalSince(fact.checkedAt) >= 0, now.timeIntervalSince(fact.checkedAt) < Self.freshness
+        else { return false }
+        return !permits(productID, account: account, now: now)
+    }
 
     /// REQ-119: not checked yet for this account (no result and no error); the tile shows, Play waits.
     func pending(_ productID: String, account: String?) -> Bool {
@@ -40,7 +74,7 @@ final class InstalledProductAccess: ObservableObject {
     func permits(_ productID: String, account: String?, now: Date = Date()) -> Bool {
         guard let account, accountHash == account, let fact = facts[productID],
               now.timeIntervalSince(fact.checkedAt) >= 0,
-              now.timeIntervalSince(fact.checkedAt) < 300 else { return false }
+              now.timeIntervalSince(fact.checkedAt) < Self.freshness else { return false }
         return fact.value.access == .permitted && fact.value.reason == nil
             && (fact.value.expiresAt == nil || fact.expiresAt.map { $0 > now } == true)
     }
@@ -65,7 +99,7 @@ final class InstalledProductAccess: ObservableObject {
         guard let account, accountHash == account, !checking,
               errors[productID] == nil, let fact = facts[productID],
               !permits(productID, account: account, now: now),
-              now.timeIntervalSince(fact.checkedAt) >= 0, now.timeIntervalSince(fact.checkedAt) < 300,
+              now.timeIntervalSince(fact.checkedAt) >= 0, now.timeIntervalSince(fact.checkedAt) < Self.freshness,
               fact.expiresAt.map({ $0 <= now }) != true else { return false }
         return fact.value.reason == .productNotListed || (fact.value.reason == nil && publicGamePassExcludes)
     }
@@ -82,7 +116,7 @@ final class InstalledProductAccess: ObservableObject {
         if errors[productID] != nil { return Self.unavailableNotice }
         if permits(productID, account: account, now: now) { return nil }
         guard let fact = facts[productID] else { return "Access for this game hasn't been checked." }
-        if now.timeIntervalSince(fact.checkedAt) < 0 || now.timeIntervalSince(fact.checkedAt) >= 300
+        if now.timeIntervalSince(fact.checkedAt) < 0 || now.timeIntervalSince(fact.checkedAt) >= Self.freshness
             || fact.expiresAt.map({ $0 <= now }) == true {
             return "The access check for this game has expired. Check access again."
         }
@@ -106,6 +140,8 @@ final class InstalledProductAccess: ObservableObject {
         facts = [:]
         errors = [:]
         attempts = [:]
+        failures = [:]
+        pausedUntil = nil
         installed = []
         checking = false
     }
@@ -176,14 +212,16 @@ final class InstalledProductAccess: ObservableObject {
             await operation.value
             guard !Task.isCancelled, generation == requestEpoch, accountHash == account else { return }
         }
+        // REQ-159: every read, swept or selected, reuses a 10-minute answer and respects the per-product and
+        // global backoff after a failure; production never sweeps (it only calls `track`).
+        if let pausedUntil, now < pausedUntil { return }
         let ids = installed.sorted { (attempts[$0] == nil ? 0 : 1, $0) < (attempts[$1] == nil ? 0 : 1, $1) }.filter { id in
             if let selectedProductID, id != selectedProductID { return false }
-            if force { return true }
+            if let failed = failures[id], let last = attempts[id],
+               now.timeIntervalSince(last) < Self.backoff(afterFailures: failed) { return false }
+            if force { return errors[id] != nil || facts[id] == nil || !fresh(id, now: now) }
             guard let last = attempts[id] else { return true }
-            return now.timeIntervalSince(last) >= 60
-                && (errors[id] != nil || !permits(id, account: account, now: now)
-                    || facts[id].map { now.timeIntervalSince($0.checkedAt) >= 120
-                        || $0.expiresAt.map { $0.timeIntervalSince(now) <= 180 } == true } == true)
+            return now.timeIntervalSince(last) >= 60 && (errors[id] != nil || !fresh(id, now: now))
         }
         guard !ids.isEmpty else { return }
         let epoch = generation
@@ -207,6 +245,7 @@ final class InstalledProductAccess: ObservableObject {
                     let licenseSpan = LoadSignposts.begin("LicenseRead",
                         "operation=installedProductAccess")
                     let response: OdeAccountRead
+                    readCount += 1
                     do {
                         response = try await read(id)
                         LoadSignposts.end("LicenseRead", licenseSpan, "outcome=success")
@@ -227,6 +266,8 @@ final class InstalledProductAccess: ObservableObject {
                         throw ManagementError.invalidPayload
                     }
                     facts[id] = Fact(value: value, checkedAt: checkedAt)
+                    failures[id] = nil
+                    pausedUntil = nil
                     scheduleExpiry()
                     if errors[id] != nil { errors[id] = nil }
                     logger.notice("Product access \(id, privacy: .public): \(value.access.rawValue, privacy: .public)")
@@ -234,6 +275,9 @@ final class InstalledProductAccess: ObservableObject {
                 catch {
                     guard generation == epoch, accountHash == account else { return }
                     errors[id] = LiveSession.describe(error)
+                    let count = (failures[id] ?? 0) + 1
+                    failures[id] = count
+                    pausedUntil = now.addingTimeInterval(Self.backoff(afterFailures: count))
                     logger.error("Product access \(id, privacy: .public) failed: \(LiveSession.describe(error), privacy: .public)")
                 }
                 await Task.yield()
@@ -259,7 +303,7 @@ final class InstalledProductAccess: ObservableObject {
         expiryNotification?.cancel()
         let now = Date()
         let deadlines = facts.values.flatMap { fact -> [Date] in
-            var dates = [fact.checkedAt.addingTimeInterval(300)]
+            var dates = [fact.checkedAt.addingTimeInterval(Self.freshness)]
             if let date = fact.expiresAt {
                 dates.append(date)
             }

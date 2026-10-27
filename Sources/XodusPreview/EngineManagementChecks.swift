@@ -1058,9 +1058,11 @@ enum EngineManagementChecks {
               "COR180: Arbitrary custom paths cannot borrow the preserved-prefix exception")
         do {
             try NativeLaunchConfiguration.validateOverride(alternate, game: nms, defaults: defaults)
-            check(true, "REQ153 COR-301: any engine can be offered and saved per game, profiled titles included")
+            check(NativeLaunchConfiguration.producerAcceptsGenericLaunch,
+                  "REQ153 COR-301: any engine can be offered and saved per game, profiled titles included, once the producer accepts --generic-unsupported (5fac6f52: not offered on #7)")
         } catch {
-            check(false, "REQ153 COR-301: any engine can be offered and saved per game, profiled titles included")
+            check(!NativeLaunchConfiguration.producerAcceptsGenericLaunch,
+                  "REQ153 COR-301: any engine can be offered and saved per game, profiled titles included, once the producer accepts --generic-unsupported (5fac6f52: not offered on #7)")
         }
         let nmsProfile = NativeTitleLaunchProfile(version: 1, productID: nms.storeId,
             engine: "calimocho-wine11.20-gptk4b3-tls-vulkan-private", shimDirectory: nil, environment: [:])

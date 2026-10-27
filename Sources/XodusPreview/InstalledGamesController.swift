@@ -32,6 +32,14 @@ final class InstalledGamesController: ObservableObject {
     @Published private(set) var packageErrors: [UUID: String] = [:]
     @Published private(set) var checkingInstallations = Set<UUID>()
     static let inFlightCheckWait: Duration = .seconds(120)
+
+    /// 681 deep-link race: Play waits (bounded) for an installation check already running for this game
+    /// rather than refusing as "not verified complete". True when no check is left running.
+    @discardableResult
+    func awaitInFlightCheck(_ game: InstalledGame, timeout: Duration = inFlightCheckWait) async -> Bool {
+        guard checkingInstallations.contains(game.id) else { return true }
+        return await Self.waitUntil(timeout: timeout) { !checkingInstallations.contains(game.id) }
+    }
     @Published private(set) var installationStatuses: [UUID: NativeInstallationStatus] = [:]
     /// fc2f17d1 H1: a launch's installation verdict (Repair or Remove) until the next installation check.
     @Published private(set) var launchVerdicts: [UUID: NativeInstallationStatus.Action] = [:]
@@ -715,6 +723,31 @@ final class InstalledGamesController: ObservableObject {
         return !usesUnifiedAccount || productAccess.permits(productID, account: unifiedSession?.accountHash)
     }
 
+    /// REQ-159: Play stays offered until a current answer denies access; pressing it checks this product
+    /// (and only this product) first.
+    func canOfferPlay(_ productID: String) -> Bool {
+        guard accountAccessAllowed else { return false }
+        return !usesUnifiedAccount || canRequestPlay(productID)
+            || !productAccess.deniedRecently(productID, account: unifiedSession?.accountHash)
+    }
+
+    /// Owner hardening 2: this copy's refusal reason when a newer build is installed, else nil.
+    nonisolated static func newerBuildRefusal() -> String? {
+        guard Bundle.main.bundleIdentifier.map({ ConcurrentAppGuard.peers[$0] != nil }) == true,
+              let own = Int(Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? ""),
+              let newer = ConcurrentAppGuard.newerInstalledBuild(selfBuild: own,
+                  installed: ConcurrentAppGuard.installedCopies()) else { return nil }
+        return ConcurrentAppGuard.newerBuildMessage(path: newer.path, build: newer.build)
+    }
+
+    func playRequested(_ game: InstalledGame) async {
+        if let refusal = Self.newerBuildRefusal() { playErrors[game.id] = refusal; return }
+        if canRequestPlay(game.storeId) { await play(game); return }
+        if let message = await playFromLaunchRequest(game, engine: nil, timeout: .seconds(30)) {
+            playErrors[game.id] = message
+        }
+    }
+
     /// Whether the access check for this product has an answer (permitted, denied or failed) for the
     /// current account. Until then a deep-link Play waits instead of failing.
     func productAccessSettled(_ productID: String) -> Bool {
@@ -748,6 +781,7 @@ final class InstalledGamesController: ObservableObject {
     }
 
     private func launchRequestOutcome(_ game: InstalledGame, engine: String?, timeout: Duration) async -> String? {
+        if let refusal = Self.newerBuildRefusal() { return refusal }
         if !canRequestPlay(game.storeId), let session = unifiedSession {
             // A just-registered game shouldn't wait behind the full background access sweep.
             Task { @MainActor in
@@ -1212,9 +1246,7 @@ final class InstalledGamesController: ObservableObject {
         do {
             let preparation = Task { @MainActor in
                 // A check already in flight (opening the app, or a deep-link Play) is awaited, not refused.
-                if !hasFreshCompleteInstallation(game), checkingInstallations.contains(game.id) {
-                    _ = await Self.waitUntil(timeout: Self.inFlightCheckWait) { !checkingInstallations.contains(game.id) }
-                }
+                if !hasFreshCompleteInstallation(game) { await awaitInFlightCheck(game) }
                 if !hasFreshCompleteInstallation(game) {
                     let status = await inspectNativeInstallation(game)
                     try Task.checkCancellation()

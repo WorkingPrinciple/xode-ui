@@ -555,6 +555,10 @@ struct NativeLaunchConfiguration {
     /// REQ-153: explicit per-game engine other than the tested profile's; launches on its `generic-<engine>` prefix.
     var generic = false
 
+    /// Review 5fac6f52 LOW: the pinned producer (#7) doesn't know `--generic-unsupported`, so another engine
+    /// for a profiled title isn't offered until the producer that accepts it (#8) is pinned.
+    static let producerAcceptsGenericLaunch = false
+
     /// The backend's opt-in for an explicit generic launch; never sent on the profile or default path.
     static func genericArguments(_ generic: Bool) -> [String] { generic ? ["--generic-unsupported"] : [] }
 
@@ -572,6 +576,9 @@ struct NativeLaunchConfiguration {
         if AdmittedProviderScope.isTitleScoped(provider) { return }
         let profile = try NativeTitleLaunchProfile.read(productID: game.storeId, defaults: defaults,
                                                        provider: .calimocho)
+        if let profile, profile.isOtherEngine(selection.inspection), !producerAcceptsGenericLaunch {
+            throw NativeLaunchError.configurationConflict
+        }
         if let profile, !profile.isOtherEngine(selection.inspection) {
             guard profile.enginePinsMatch(selection.inspection),
                   profile.registrySHA256.map({ $0 == selection.inspection.registrySha256 }) ?? true else {

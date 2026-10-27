@@ -217,9 +217,18 @@ enum InstalledGameChecks {
         }
         check(cancellationGate.isWaiting && cancelled.checkingInstallations.contains(cancelledEntry.id),
               "COR171 H1: Mounted visible-entry verification is running before simulated view cancellation")
+        // Review 5fac6f52 LOW: Play waits for a held in-flight check instead of refusing.
+        var waitResult: Bool?
+        let waiter = Task { @MainActor in waitResult = await cancelled.awaitInFlightCheck(cancelledEntry, timeout: .seconds(5)) }
+        try await Task.sleep(for: .milliseconds(400))
+        let waitedWhileHeld = waitResult == nil
         automaticCheck.cancel()
         cancellationGate.release()
         await automaticCheck.value
+        await waiter.value
+        check(waitedWhileHeld && waitResult == true && InstalledGamesController.inFlightCheckWait == .seconds(120)
+              && !cancelled.checkingInstallations.contains(cancelledEntry.id),
+              "681 race: Play waits while another installation check is held and continues once it finishes (bound 120 s)")
         await cancelled.automaticallyCheckInstallation(cancelledEntry)
         let reentryReason = cancelled.installationErrors[cancelledEntry.id] ?? cancelled.packageErrors[cancelledEntry.id]
         check(cancelled.installationStatuses[cancelledEntry.id] == nil

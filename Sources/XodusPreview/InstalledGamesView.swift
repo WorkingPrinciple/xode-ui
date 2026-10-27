@@ -368,7 +368,7 @@ struct InstalledPlayButton: View {
                 case .install: await operations.repair(product, installed: game, resuming: true, intent: .downloadFullGame)
                 case .resume: await operations.resume(product, installed: game)
                 case .repair: await operations.repair(product, installed: game)
-                case .play: await library.play(game)
+                case .play: await library.playRequested(game)
                 case .remove: operations.prepareRemoval(game)
                 }
             }
@@ -450,7 +450,7 @@ struct InstalledPlayButton: View {
                 Task { await operations.repair(PCGame(id: game.storeId, title: game.title, artwork: nil),
                                               installed: game) }
             }
-            else { Task { await library.play(game) } }
+            else { Task { await library.playRequested(game) } }
         } label: {
             if heroStyle {
                 Label(title, systemImage: canStop ? "stop.fill" : needsRepair ? "wrench" : "play.fill")
@@ -467,14 +467,14 @@ struct InstalledPlayButton: View {
                   : library.runningGameID != nil || library.stoppingGameID != nil || library.editing || library.choosing
                   || library.mutationGameID == game.id || library.serviceSignInActive || library.runtimeRepairActive
                   || library.checkingInstallations.contains(game.id)
-                  || library.accountDisconnecting || !library.canRequestPlay(game.storeId))
+                  || library.accountDisconnecting || !library.canOfferPlay(game.storeId))
         .accessibilityLabel(opensAttention ? "\(title) for \(actionGameTitle)"
              : canStop ? "Stop \(actionGameTitle)" : launching ? "Launching \(actionGameTitle)"
-            : !library.canRequestPlay(game.storeId) ? "Play \(actionGameTitle), game access hasn't been confirmed"
+            : !library.canOfferPlay(game.storeId) ? "Play \(actionGameTitle), game access hasn't been confirmed"
             : needsRepair ? "Repair \(actionGameTitle)" : "Play \(actionGameTitle)")
         .help(opensAttention ? "Open \(actionGameTitle) to see installation, compatibility and launch availability"
-              : !canStop && !library.canRequestPlay(game.storeId)
-                ? "This account's access to the game hasn't been confirmed." : "")
+              : !canStop && !library.canOfferPlay(game.storeId)
+                ? "This account's access to the game wasn't confirmed." : "")
         .accessibilityValue(library.stoppingGameID == game.id ? "Stopping" : launching ? "Launching" : "")
         .accessibilityIdentifier(opensAttention ? "xodus.installed.attention"
                                 : canStop ? "xodus.installed.stop" : "xodus.installed.play")
