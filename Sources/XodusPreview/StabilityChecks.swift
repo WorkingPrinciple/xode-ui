@@ -24,6 +24,12 @@ import Foundation
         do { try await discardChecks(root: root.appendingPathComponent("discard"), check: check) }
         catch { check(false, "REQ-137 discard fixture: \(error)") }
         gatingChecks(check: check)
+        do { try inventoryRemovalChecks(root: root.appendingPathComponent("inventory"), check: check) }
+        catch { check(false, "REQ-135 inventory fixture: \(error)") }
+        do { try await discardSentinelChecks(root: root.appendingPathComponent("discard-real"), check: check) }
+        catch { check(false, "REQ-137 real-delete fixture: \(error)") }
+        do { try instanceLockChecks(root: root.appendingPathComponent("instance-lock"), check: check) }
+        catch { check(false, "REQ-138 flock fixture: \(error)") }
         do { try await installVerdictChecks(root: root.appendingPathComponent("verdicts"), check: check) }
         catch { check(false, "fc2f17d1 H1 fixture: \(error)") }
         heuristicChecks(check: check)
@@ -296,6 +302,188 @@ import Foundation
         let retained = try await journal.loadResumable()
         check(resumableWait >= .milliseconds(400) && retained.values.contains { $0.id == partial.id },
               "fc2f17d1 LOW: retainResumable waits for another process's journal lock (\(resumableWait)) and then records the run")
+    }
+
+    // MARK: REQ-135 package-inventory delete
+
+    private static func write(_ text: String, _ url: URL) throws {
+        try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data(text.utf8).write(to: url)
+    }
+
+    private static func inventory(_ game: URL, product: String = "FIXTURE00140", identity: String = "verified",
+                                  files: [(String, UInt64, Bool, String)], directories: [String],
+                                  records: [String] = [".xodus-streaming.msixvc"], success: Bool = true,
+                                  errorCode: String? = nil) throws -> NativeInstallInventory {
+        let entries = files.map { #"{"path":"\#($0.0)","bytes":\#($0.1),"encrypted_at_rest":\#($0.2),"disk_state":"\#($0.3)"}"# }
+        let json = """
+            {"version":1,"operation":"install-inventory","product":"\(product)","game_dir":"\(game.path)",\
+            "success":\(success),\(errorCode.map { #""error_code":"\#($0)","# } ?? "")"content_id":"c","manifest_identity":"\(identity)",\
+            "content_verified":false,"files_total":\(files.count),"files":[\(entries.joined(separator: ","))],\
+            "directories":[\(directories.map { "\"\($0)\"" }.joined(separator: ","))],\
+            "package_records":[\(records.map { "\"\($0)\"" }.joined(separator: ","))]}
+            """
+        return try JSONDecoder().decode(NativeInstallInventory.self, from: Data(json.utf8))
+    }
+
+    /// REQ-135 (producer #8 install-inventory, review 53f2edf1 delete rule): only `layout_matches` package files go,
+    /// per component with O_NOFOLLOW; saves, prefixes, changed, hard-linked and re-pointed entries stay.
+    static func inventoryRemovalChecks(root: URL, check: (Bool, String) -> Void) throws {
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+        let game = root.appendingPathComponent("Game")
+        let config = "<Game><Identity Name=\"Fixture.Inventory\" Version=\"1.0.0.0\"/><StoreId>FIXTURE00140</StoreId></Game>"
+        try write(config, game.appendingPathComponent("MicrosoftGame.config"))
+        try write("exe", game.appendingPathComponent("game.exe"))
+        try write("data", game.appendingPathComponent("Content/data.pck"))
+        try Data(count: 4_096).write(to: game.appendingPathComponent("Content/Paks/big.pak"))
+        try write("changed!!", game.appendingPathComponent("Content/changed.pak"))
+        try write("grown after the inventory", game.appendingPathComponent("Content/toctou.pak"))
+        try write("pkg", game.appendingPathComponent(".xodus-streaming.msixvc"))
+        // Sentinels: saves inside listed and unlisted folders, a prefix and a file beside the root.
+        try write("inside", game.appendingPathComponent("Saved/SaveGames/0.sav"))
+        try write("slot", game.appendingPathComponent("Content/Saves/slot.sav"))
+        try write("REGEDIT4", root.appendingPathComponent("prefix/system.reg"))
+        try write("outside", root.appendingPathComponent("outside/file.bin"))
+        // A package file hard-linked to the outside sentinel, and a listed folder replaced by a symlink.
+        try FileManager.default.linkItem(at: root.appendingPathComponent("outside/file.bin"),
+                                         to: game.appendingPathComponent("Content/hard.pak"))
+        try FileManager.default.createSymbolicLink(at: game.appendingPathComponent("Linked"),
+                                                   withDestinationURL: root.appendingPathComponent("outside"))
+        let sentinels = [game.appendingPathComponent("Saved/SaveGames/0.sav"), game.appendingPathComponent("Content/Saves/slot.sav"),
+                         root.appendingPathComponent("prefix/system.reg"), root.appendingPathComponent("outside/file.bin")]
+        let before = try sentinels.map { try Data(contentsOf: $0) }
+        let listed = try inventory(game, files: [
+            ("MicrosoftGame.config", UInt64(config.utf8.count), false, "layout_matches"),
+            ("game.exe", 3, false, "layout_matches"),
+            ("Content/data.pck", 4, false, "layout_matches"),
+            ("Content/Paks/big.pak", 1_000, true, "layout_matches"),
+            ("Content/changed.pak", 3, false, "layout_differs"),
+            ("Content/toctou.pak", 4, false, "layout_matches"),
+            ("Content/hard.pak", 7, false, "layout_matches"),
+            ("Linked/file.bin", 7, false, "layout_matches"),
+            ("Content/missing.pak", 9, false, "missing")
+        ], directories: ["Content", "Content/Paks", "Linked"])
+        try listed.validate(product: "FIXTURE00140", gameDirectory: game)
+        let outcome = try PackageInventoryRemoval.remove(listed, root: game)
+        let exists = { (path: String) in FileManager.default.fileExists(atPath: game.appendingPathComponent(path).path) }
+        let gone = ["MicrosoftGame.config", "game.exe", "Content/data.pck", "Content/Paks/big.pak", ".xodus-streaming.msixvc", "Content/Paks"]
+        let kept = ["Content/changed.pak", "Content/toctou.pak", "Content/hard.pak", "Saved/SaveGames/0.sav", "Content/Saves/slot.sav"]
+        check(gone.allSatisfy { !exists($0) } && kept.allSatisfy(exists)
+              && Set(outcome.kept) == ["Content/changed.pak", "Content/toctou.pak", "Content/hard.pak", "Linked/file.bin"]
+              && outcome.removedFiles == 5 && outcome.removedDirectories == 1 && !outcome.removedRoot && outcome.unlisted >= 3
+              && (try? sentinels.map { try Data(contentsOf: $0) }) == before,
+              "REQ-135: Delete Game Files removes only layout-matching package files; saves, the prefix, a changed file, a hard link, a symlinked folder and a file that changed after the inventory all survive (\(outcome))")
+        // A clean install leaves nothing behind.
+        let clean = root.appendingPathComponent("Clean")
+        try write(config, clean.appendingPathComponent("MicrosoftGame.config"))
+        try write("data", clean.appendingPathComponent("Content/data.pck"))
+        try write("pkg", clean.appendingPathComponent(".xodus-streaming.msixvc"))
+        let all = try inventory(clean, files: [("MicrosoftGame.config", UInt64(config.utf8.count), false, "layout_matches"),
+                                               ("Content/data.pck", 4, false, "layout_matches")], directories: ["Content"])
+        let cleanOutcome = try PackageInventoryRemoval.remove(all, root: clean)
+        check(cleanOutcome.removedRoot && !FileManager.default.fileExists(atPath: clean.path),
+              "REQ-135: a game folder holding only its package is removed completely")
+        // The inventory itself must be the right, verified, well-formed one.
+        func refusal(_ make: () throws -> NativeInstallInventory) -> Error? {
+            do { try make().validate(product: "FIXTURE00140", gameDirectory: game); return nil } catch { return error }
+        }
+        let refusals: [(String, Error?)] = [
+            ("unverified", refusal { try inventory(game, identity: "unverified", files: [], directories: []) }),
+            ("busy", refusal { try inventory(game, files: [], directories: [], success: false, errorCode: "RESOURCE_BUSY") }),
+            ("other product", refusal { try inventory(game, product: "FIXTURE00141", files: [], directories: []) }),
+            ("other folder", refusal { try inventory(clean, files: [], directories: []) }),
+            ("traversal", refusal { try inventory(game, files: [("../outside/file.bin", 7, false, "layout_matches")], directories: []) }),
+            ("absolute", refusal { try inventory(game, files: [("/etc/hosts", 7, false, "layout_matches")], directories: []) }),
+            ("duplicate", refusal { try inventory(game, files: [("a", 1, false, "missing"), ("a", 1, false, "missing")], directories: []) }),
+            ("record path", refusal { try inventory(game, files: [], directories: [], records: ["Saved/x"]) })
+        ]
+        check(refusals.allSatisfy { $0.1 != nil }
+              && refusals[0].1 as? PackageInventoryRemoval.Refusal == .identityUnproven
+              && refusals[1].1 as? PackageInventoryRemoval.Refusal == .unavailable("RESOURCE_BUSY")
+              && refusals.dropFirst(2).allSatisfy { $0.1 as? GameScriptError == .invalidReceipt },
+              "REQ-135: an unverified, busy, other-product, other-folder or malformed inventory deletes nothing (\(refusals.map { "\($0.0): \($0.1.map { "\($0)" } ?? "accepted")" }))")
+        let partial = PackageInventoryRemoval.Outcome(removedFiles: 4, kept: ["Content/changed.pak"], unlisted: 1)
+        check(GameOperationsController.inventoryUninstallNotice(title: "Halls", folder: "/Games/Halls", outcome: partial)
+                == "Halls was uninstalled. 2 items X Ode didn't install or that changed, such as saves, were kept in /Games/Halls."
+              && GameOperationsController.inventoryUninstallNotice(title: "Halls", folder: "/x",
+                    outcome: .init(removedFiles: 2, removedRoot: true)) == "Halls was uninstalled."
+              && !InstalledGameActionCopy.uninstallExplanation.contains("unmodified"),
+              "REQ-135: the result says what was kept and where; the copy never claims only unmodified files go (53f2edf1)")
+        let source = (try? String(contentsOfFile: "Sources/XodusPreview/GameOperationsController.swift", encoding: .utf8)) ?? ""
+        let routed = source.range(of: "if record.kind == .uninstall, record.nativeAccountHash != nil {\n                    await runInventoryUninstall(record)")
+        let backend = source.range(of: "if record.nativeAccountHash != nil {\n                    try await runNative(record)")
+        check(routed != nil && backend != nil && routed!.lowerBound < backend!.lowerBound,
+              "REQ-135: a native Delete Game Files goes through the package inventory and never reaches the backend's whole-folder uninstall")
+    }
+
+    // MARK: REQ-137 real discard
+
+    /// L19 LOW: the controller's real Discard deletes the stopped download's folder only; a folder that holds a
+    /// save or a link to elsewhere is kept, and sentinels beside it (including a name sharing its prefix) survive.
+    static func discardSentinelChecks(root: URL, check: (Bool, String) -> Void) async throws {
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+        let paths = GameScriptPaths(scripts: root.appendingPathComponent("scripts"),
+            processed: root.appendingPathComponent("processed"), logs: root.appendingPathComponent("logs"),
+            games: root.appendingPathComponent("Games"), journal: root.appendingPathComponent("private/operation.json"))
+        let partial = paths.games.appendingPathComponent("Partial-Xbox")
+        try write("chunk", partial.appendingPathComponent(".xodus-streaming-tmp.msixvc"))
+        try write("chunk", partial.appendingPathComponent("Content/a.pck"))
+        let unsafe = paths.games.appendingPathComponent("Mixed-Xbox")
+        try write("chunk", unsafe.appendingPathComponent(".xodus-streaming-tmp.msixvc"))
+        try write("slot", unsafe.appendingPathComponent("Saved/slot.sav"))
+        let beside = [paths.games.appendingPathComponent("Partial-Xbox2/keep.bin"),
+                      paths.games.appendingPathComponent("Other-Xbox/Saved/slot.sav")]
+        for file in beside { try write("sentinel", file) }
+        let journal = GameOperationJournal(file: paths.journal)
+        let first = GameOperationRecord(id: InstalledGamesController.runID(), kind: .install, productID: "FIXTURE00150",
+                                        title: "Partial", destination: partial.path, installedID: nil)
+        let second = GameOperationRecord(id: InstalledGamesController.runID(), kind: .install, productID: "FIXTURE00151",
+                                         title: "Mixed", destination: unsafe.path, installedID: nil)
+        try await journal.retainResumable(first)
+        try await journal.retainResumable(second)
+        let library = InstalledGamesController(store: InstalledGameStore(file: root.appendingPathComponent("games.json")))
+        await library.load()
+        let controller = GameOperationsController(installed: library, paths: paths)
+        await controller.restore()
+        await controller.discardPartialDownload(productID: "FIXTURE00150")
+        let deleted = !FileManager.default.fileExists(atPath: partial.path)
+        await controller.discardPartialDownload(productID: "FIXTURE00151")
+        let mixedKept = FileManager.default.fileExists(atPath: unsafe.appendingPathComponent("Saved/slot.sav").path)
+            && controller.error?.contains("doesn't create") == true
+        let retained = try await journal.loadResumable()
+        check(deleted && mixedKept && beside.allSatisfy { FileManager.default.fileExists(atPath: $0.path) }
+              && retained["FIXTURE00150"] == nil && retained["FIXTURE00151"] == second,
+              "REQ-137: the real Discard deletes only the stopped download's own folder; a folder with a save is kept with its record, and neighbouring sentinels survive (error \(controller.error ?? "nil"))")
+    }
+
+    // MARK: REQ-138 flock
+
+    /// L19 LOW: two launches at the same moment can both miss each other in the process list; the shared flock
+    /// admits one. Another process (python) holding it refuses this one; once released, this one gets it.
+    static func instanceLockChecks(root: URL, check: (Bool, String) -> Void) throws {
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+        let lock = root.appendingPathComponent("app-instance.lock"), ready = root.appendingPathComponent("ready")
+        let helper = Process()
+        helper.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
+        helper.arguments = ["-c", """
+            import fcntl, sys, time
+            lock = open(sys.argv[1], "a"); fcntl.flock(lock, fcntl.LOCK_EX)
+            open(sys.argv[2], "w").write("ready"); time.sleep(0.8)
+            """, lock.path, ready.path]
+        try helper.run()
+        let deadline = Date().addingTimeInterval(5)
+        while !FileManager.default.fileExists(atPath: ready.path), Date() < deadline { usleep(10_000) }
+        let whileHeld = ConcurrentAppGuard.acquireInstanceLock(lock)
+        helper.waitUntilExit()
+        let afterRelease = ConcurrentAppGuard.acquireInstanceLock(lock)
+        let secondCopy = ConcurrentAppGuard.acquireInstanceLock(lock)
+        if case .held(let fd) = afterRelease { flock(fd, LOCK_UN); close(fd) }
+        let held: Bool = { if case .held = afterRelease { true } else { false } }()
+        let source = (try? String(contentsOfFile: "Sources/XodusPreview/XodusPreviewApp.swift", encoding: .utf8)) ?? ""
+        check(whileHeld == .busy && held && secondCopy == .busy
+              && ConcurrentAppGuard.instanceLockFile.path.hasSuffix("Library/Application Support/Xodus/app-instance.lock")
+              && source.contains("!ConcurrentAppGuard.holdInstanceLock()"),
+              "REQ-138: the shared instance flock refuses a second X Ode while another process or copy holds it, and is free after it exits")
     }
 
     // MARK: REQ-136 journal and registry

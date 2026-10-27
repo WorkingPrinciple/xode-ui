@@ -1430,6 +1430,29 @@ final class GameOperationsController: ObservableObject {
             || saveExtensions.contains((lowercasedName as NSString).pathExtension)
     }
 
+    nonisolated static let partialUnsafeMessage = "This folder holds files a download doesn't create, such as saves, a Wine prefix or a link to another folder, so it wasn't deleted. Remove them or delete the folder in Finder."
+
+    /// REQ-137: a stopped download is deleted only when it holds download artifacts alone: no symlink, no save
+    /// or prefix layout, nothing unreadable. Anything else keeps the folder.
+    nonisolated static func partialDownloadSafety(folder: URL, entryLimit: Int = 200_000) -> UninstallSafety {
+        let walkFailed = WalkFailure()
+        guard let walker = FileManager.default.enumerator(at: folder, includingPropertiesForKeys: [.isSymbolicLinkKey],
+                                                          options: [], errorHandler: { _, _ in
+                                                              walkFailed.failed = true
+                                                              return false
+                                                          }) else { return .unsafe(partialUnsafeMessage) }
+        var count = 0
+        for case let url as URL in walker {
+            count += 1
+            let name = url.lastPathComponent.lowercased()
+            guard count <= entryLimit, (try? url.resourceValues(forKeys: [.isSymbolicLinkKey]).isSymbolicLink) == false,
+                  !saveMarkers.contains(name), !prefixMarkers.contains(name), !looksLikeSave(name) else {
+                return .unsafe(partialUnsafeMessage)
+            }
+        }
+        return walkFailed.failed ? .unsafe(partialUnsafeMessage) : .safe
+    }
+
     private final class WalkFailure: @unchecked Sendable { var failed = false }
 
     /// Review d6d729c0 LOW: a lifecycle action on the game that's playing explains itself instead of doing nothing.
@@ -1523,7 +1546,10 @@ final class GameOperationsController: ObservableObject {
                         if let storageVolume, !storageVolume.identifies(GameStorageVolume.read(at: folder)) {
                             throw GameInstallLocationError.driveChanged
                         }
-                        if case .unsafe(let reason) = Self.uninstallSafety(folder: folder, productID: record.productID) {
+                        // Native games delete from the producer's package inventory, which keeps saves by
+                        // construction; the legacy script path keeps the fail-closed name heuristic.
+                        if record.nativeAccountHash == nil,
+                           case .unsafe(let reason) = Self.uninstallSafety(folder: folder, productID: record.productID) {
                             throw UninstallRefused(message: reason)
                         }
                     }
@@ -1538,6 +1564,12 @@ final class GameOperationsController: ObservableObject {
             do {
                 try await journal.save(record)
                 await cancelPrecheck()
+                if record.kind == .uninstall, record.nativeAccountHash != nil {
+                    await runInventoryUninstall(record)
+                    mutationTask = nil
+                    cancelling = false
+                    return
+                }
                 if record.nativeAccountHash != nil {
                     try await runNative(record)
                     mutationTask = nil
@@ -1584,6 +1616,60 @@ final class GameOperationsController: ObservableObject {
             mutationTask = nil
             cancelling = false
         }
+    }
+
+    /// Check seam: returns the inventory instead of running `xodus-cli install-inventory`.
+    var installInventorySource: ((String, URL) async throws -> NativeInstallInventory)?
+    private let inventoryQuery = NativeInstallInventoryQuery()
+
+    /// REQ-135: Delete Game Files for a native game. Holding this run's journal record and mutation reservation
+    /// (the app's lifecycle exclusion), it reads the producer's package inventory and deletes only files the
+    /// package owns whose layout still matches. Saves, prefixes, modified and unlisted files stay; a game
+    /// service without install-inventory deletes nothing.
+    private func runInventoryUninstall(_ record: GameOperationRecord) async {
+        let folder = URL(fileURLWithPath: record.destination, isDirectory: true)
+        var outcome: PackageInventoryRemoval.Outcome?
+        do {
+            let inventory: NativeInstallInventory
+            if let installInventorySource {
+                inventory = try await installInventorySource(record.productID, folder)
+            } else {
+                guard let configuration = unifiedSession?.nativeLifecycleConfiguration,
+                      record.nativeAccountHash == nativeAccount else { throw GameScriptError.runtimeUnavailable }
+                inventory = try await inventoryQuery.run(configuration: configuration, product: record.productID,
+                                                         gameDirectory: folder)
+            }
+            try inventory.validate(product: record.productID, gameDirectory: folder)
+            let removal = try await storageProbe.read {
+                try PackageInventoryRemoval.remove(inventory, root: folder)
+            }
+            outcome = removal
+            if let id = record.installedID { try await installed.removeUninstalled(id) }
+            notice = Self.inventoryUninstallNotice(title: record.title, folder: record.destination, outcome: removal)
+        } catch {
+            if outcome == nil {
+                self.error = (error as? PackageInventoryRemoval.Refusal)?.errorDescription
+                    ?? (error as? GameScriptError == .runtimeUnavailable
+                        ? PackageInventoryRemoval.Refusal.unavailable(nil).errorDescription : Self.message(error))
+            } else {
+                self.error = "\(record.title)'s files were deleted, but the Library couldn't be updated. \(Self.message(error))"
+            }
+        }
+        if outcome != nil, let id = record.installedID { damagedInstallations[id] = nil }
+        do { try await journal.clear(expectedRunID: record.id) } catch {
+            self.error = GameScriptError.storage.localizedDescription
+            recoveryRequired = true
+            recoveryMutationOwned = true
+            return
+        }
+        operation = nil
+        installed.releaseMutation()
+    }
+
+    static func inventoryUninstallNotice(title: String, folder: String, outcome: PackageInventoryRemoval.Outcome) -> String {
+        if outcome.removedRoot { return "\(title) was uninstalled." }
+        let kept = outcome.kept.count + outcome.unlisted
+        return "\(title) was uninstalled. \(kept == 1 ? "1 item" : "\(kept) items") X Ode didn't install or that changed, such as saves, \(kept == 1 ? "was" : "were") kept in \(folder)."
     }
 
     /// A failed operation needs recovery only if something may have changed on disk.
@@ -1730,6 +1816,9 @@ final class GameOperationsController: ObservableObject {
                     delete: {
                         guard present, FileManager.default.fileExists(atPath: destination.path) else { return false }
                         try GameInstallLocation.validateDestination(destination, productID: productID, managedRecord: record)
+                        if case .unsafe(let reason) = Self.partialDownloadSafety(folder: destination) {
+                            throw UninstallRefused(message: reason)
+                        }
                         try FileManager.default.removeItem(at: destination)
                         return true
                     })
