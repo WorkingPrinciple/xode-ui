@@ -21,6 +21,7 @@ enum DiscoverShelfChecks {
         try shelfChecks(check: check)
         accessBadgeChecks(check: check)
         try gamePassAvailabilityChecks(check: check)
+        try pendingSearchChecks(check: check)
         let home = NSHomeDirectory()
         let surfaced = [NativeMinecraftCardCopy.help, NativeMinecraftCardCopy.label(version: "2.6.12"),
                         NativeMinecraftCardCopy.label(version: nil),
@@ -214,5 +215,33 @@ enum DiscoverShelfChecks {
         check(!noPlan.facts.badgeLabels().contains(GameFacts.availableWithGamePassLabel)
               && noPlan.facts.heroAccessLabels() == ["In PC Game Pass catalog"],
               "REQ-63: catalogue membership alone never claims the account can play it")
+    }
+
+    private static func pendingSearchChecks(check: (Bool, String) -> Void) throws {
+        let payload: [String: Any] = [
+            "productID": "FIXTURE00041", "title": "Valor Mortis", "market": "US", "language": "en-US",
+            "source": "MicrosoftDisplayCatalog:v7", "checkedAt": "2026-10-27T00:00:00Z",
+            "freshness": "current", "editions": [], "pcCatalogCandidate": true,
+            "artwork": [], "artworkStatus": "absent"
+        ]
+        let valor = try JSONDecoder().decode(CatalogProduct.self, from: JSONSerialization.data(withJSONObject: payload))
+        let other = try product("FIXTURE00042", pcCandidate: true)
+        let facts = [valor.id: LibraryCatalogFacts(genres: ["Action"], pcPackageListed: true, isBaseGame: true),
+                     other.id: LibraryCatalogFacts(genres: ["Action"], pcPackageListed: true, isBaseGame: true)]
+        func projection(query: String, products: [CatalogProduct], local: [CatalogProduct]) -> CatalogProjection {
+            CatalogProjection(key: CatalogProjectionKey(accountHash: nil, query: query, owned: [], products: products,
+                gamePass: [], gamePassIDs: [], installed: [], accessIsCurrent: false, metadataRevision: 0,
+                compatibility: [:], genre: nil, showsUnsupported: true, local: local),
+                facts: facts, isVisible: { _ in true })
+        }
+        let pending = projection(query: "mortis", products: [], local: [valor, other])
+        check(pending.visible.map(\.id) == [valor.id] && pending.index.results.localIDs == [valor.id],
+              "REQ-10/59: while the public query is pending, an installed or already-loaded Discover game matches \"mortis\" at once instead of Games (0)")
+        let renamed = try JSONDecoder().decode(CatalogProduct.self, from: JSONSerialization.data(withJSONObject:
+            payload.merging(["title": "Valor Mortis (local copy)"]) { _, new in new }))
+        let settled = projection(query: "mortis", products: [valor], local: [renamed])
+        check(settled.visible.map(\.id) == [valor.id] && settled.visible.first?.title == "Valor Mortis" && projection(query: "", products: [other], local: [valor])
+                  .index.results.localIDs.isEmpty,
+              "REQ-10/59: local matches merge with public results without duplicates and never alter empty-query browse")
     }
 }
