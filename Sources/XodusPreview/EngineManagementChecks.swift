@@ -1097,10 +1097,16 @@ enum EngineManagementChecks {
               && QualificationDiagnostics.arguments(provider: AdmittedProviderScope.crossOver).isEmpty
               && QualificationDiagnostics.arguments(provider: AdmittedProviderScope.highball).isEmpty,
               "REQ32 qualification build adds only the fixed warn+gdkc channel, and only on Calimocho routes")
+        check(try NativeTitleLaunchProfile.bundledProfiles().filter { $0.runtime?.primarySHA256 == QualificationDiagnostics.pinnedPrimarySHA256 }
+                .map(\.productID).sorted() == ["9NR1R1XWLCNB", "9P8DL6W0JBB8", "9PDC8J1BSV8B"]
+              && QualificationDiagnostics.pinnedPrimarySHA256 != QualificationDiagnostics.releasePrimarySHA256,
+              "REQ32 qualification build runs FH6, Hades and EDC on the f1a154b outcome-lines pair")
         #else
         check([nil, AdmittedProviderScope.calimocho, AdmittedProviderScope.crossOver, AdmittedProviderScope.highball]
                 .allSatisfy { QualificationDiagnostics.arguments(provider: $0).isEmpty },
               "REQ32 ordinary builds pass no diagnostic Wine channels")
+        check(QualificationDiagnostics.pinnedPrimarySHA256 == QualificationDiagnostics.releasePrimarySHA256,
+              "REQ32 ordinary builds keep the release runtime pair")
         #endif
         check(
             try await launch.prefixNotice() == nil && !FileManager.default.fileExists(atPath: prefix.path),

@@ -95,6 +95,12 @@ struct NativeLocalRuntime: Codable {
     let primarySHA256: String
     let legacySHA256: String
 
+    init(primaryPath: String, primarySHA256: String, legacySHA256: String) {
+        self.primaryPath = primaryPath
+        self.primarySHA256 = primarySHA256
+        self.legacySHA256 = legacySHA256
+    }
+
     init(_ reference: NativeRuntimeReference) {
         primaryPath = reference.primary.executable.path
         primarySHA256 = reference.primary.sha256
@@ -320,7 +326,7 @@ struct NativeTitleLaunchProfile: Codable {
             active[index].unsetEnvironment = Array(Set((active[index].unsetEnvironment ?? [])
                 + item.launch.unsetEnvironment)).sorted()
         }
-        let profiles = active + (catalogue.providerOverrides ?? [])
+        let profiles = (active + (catalogue.providerOverrides ?? [])).map(QualificationDiagnostics.substitutingRuntime)
         guard catalogue.version == 1, profiles.count <= 512,
               catalogue.profiles.allSatisfy({ $0.provider == nil }),
               (catalogue.providerOverrides ?? []).allSatisfy({ $0.provider != nil }),
@@ -930,6 +936,30 @@ enum NativeAutoDismissRules {
 /// The channel list is fixed; ordinary builds compile no diagnostic arguments and keep `WINEDEBUG=-all`.
 enum QualificationDiagnostics {
     static let channels = "warn+gdkc"
+
+    /// The release runtime pair pinned in the bundled title profiles.
+    static let releasePrimarySHA256 = "21171669a4c2b8b72addd923127587feba9b924fdae2337f679e83bb9ed31913"
+    static let releaseLegacySHA256 = "e81010448dbea50a1957dafbf5bd2543dbb353b11d60da7e5223c05157d9deb5"
+    #if XODUS_QUALIFICATION
+    /// Qualification builds only: L12 f1a154b adds `xodus outcome:` WARN lines over the release pair.
+    static let pinnedPrimarySHA256 = "8d4c2b36940d198bc53113cee20b5f77bdaede8699d109f4f3f2e6fc9f404ad5"
+    static let pinnedLegacySHA256 = "e84f9f34cf2370fa7875bca6ea551e3bd9a1a162d0fed7a0980ec44e6b96f0b5"
+    #else
+    static let pinnedPrimarySHA256 = releasePrimarySHA256
+    static let pinnedLegacySHA256 = releaseLegacySHA256
+    #endif
+
+    static func substitutingRuntime(_ profile: NativeTitleLaunchProfile) -> NativeTitleLaunchProfile {
+        guard pinnedPrimarySHA256 != releasePrimarySHA256, let runtime = profile.runtime,
+              runtime.primarySHA256 == releasePrimarySHA256, runtime.legacySHA256 == releaseLegacySHA256 else {
+            return profile
+        }
+        var result = profile
+        result.runtime = NativeLocalRuntime(
+            primaryPath: "${HOME}/Library/Application Support/Ode to X/Runtime/candidates/\(pinnedPrimarySHA256)/xgameruntime.dll",
+            primarySHA256: pinnedPrimarySHA256, legacySHA256: pinnedLegacySHA256)
+        return result
+    }
 
     static func arguments(provider: String?) -> [String] {
         #if XODUS_QUALIFICATION
