@@ -132,6 +132,30 @@ import XodusManagement
             && !page.permits(pageProduct, account: account, now: start.addingTimeInterval(320))
         check(keptAfterPrioritize && lruKept && InstalledProductAccess.pagedLimit == 20,
               "4ea60eb3 F1/F3: Play over the installed list keeps product-page answers; only the 20 most recent pages stay tracked")
+        // 683 Play test: a deep-link Play at startup waits for the busy account connection before its one read,
+        // and a lost local game service neither pauses Microsoft reads nor counts as a Microsoft failure.
+        let startup = InstalledProductAccess()
+        var busy = true
+        var readWhileBusy = false
+        var startupReads = 0
+        let releaser = Task { @MainActor in try? await Task.sleep(for: .milliseconds(350)); busy = false }
+        await startup.prioritize(played, account: account, installedIDs: installed) { id in
+            try await InstalledProductAccess.awaitAccountIdle { busy }
+            readWhileBusy = busy
+            startupReads += 1
+            return try await reader(id)
+        }
+        _ = await releaser.value
+        let accessSource = (try? String(contentsOfFile: "Sources/XodusPreview/InstalledProductAccess.swift", encoding: .utf8)) ?? ""
+        let prioritizeBody = accessSource.range(of: "func prioritize(_ productID: String, session: LiveSession").map {
+            String(accessSource[$0.lowerBound...].prefix(900)) } ?? ""
+        check(startupReads == 1 && !readWhileBusy && prioritizeBody.contains("awaitAccountIdle"),
+              "683 Play test: a deep-link Play during startup waits for accountBusy/yieldsToLibraryRead, then makes its single licence read")
+        let local = InstalledProductAccess()
+        await local.refresh(account: account, installedIDs: installed, now: start, force: true,
+                            selectedProductID: played) { _ in throw ManagementError.disconnected }
+        check(local.lastFailureWasLocal && local.pausedUntil == nil && local.pausedNotice(now: start) == nil,
+              "683 Play test: losing the local game service is retried, never treated as Microsoft throttling (no pause)")
         let productSource = (try? String(contentsOfFile: "Sources/XodusPreview/LiveProductView.swift", encoding: .utf8)) ?? ""
         let appSource = (try? String(contentsOfFile: "Sources/XodusPreview/XodusPreviewApp.swift", encoding: .utf8)) ?? ""
         check(m2Reads == 1 && m2Permits

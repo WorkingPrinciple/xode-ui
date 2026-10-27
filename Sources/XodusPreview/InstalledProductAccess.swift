@@ -30,6 +30,20 @@ final class InstalledProductAccess: ObservableObject {
     private var failures: [String: Int] = [:]
     /// 72450bd3 L2: consecutive failures across all products set the global pause length.
     private var globalFailures = 0
+    /// 683 Play test: whether the latest failed read lost the local game service rather than reaching Microsoft.
+    private(set) var lastFailureWasLocal = false
+    /// Every licence read, swept or deep-linked, waits (bounded, 10 s) until the account connection is idle.
+    static func awaitAccountIdle(_ busy: () -> Bool) async throws {
+        for _ in 0..<100 where busy() { try await Task.sleep(for: .milliseconds(100)) }
+    }
+
+    nonisolated static func isLocalServiceFailure(_ error: Error) -> Bool {
+        guard let management = error as? ManagementError else { return false }
+        switch management {
+        case .disconnected, .backendUnavailable, .startFailed, .backendStopped: return true
+        default: return false
+        }
+    }
     /// 72450bd3 M2 / 4ea60eb3 F1: the most recent product pages stay tracked (cached) across installed-set
     /// updates; at most `pagedLimit`, least recently viewed first out, and outside the installed bound.
     nonisolated static let pagedLimit = 20
@@ -216,9 +230,7 @@ final class InstalledProductAccess: ObservableObject {
         guard account == nil || session.nativeLifecycleConfiguration != nil else { return }
         await refresh(account: account, installedIDs: installedIDs, now: now, force: force,
                       selectedProductID: selectedProductID) { id in
-            for _ in 0..<100 where session.accountBusy || session.yieldsToLibraryRead {
-                try await Task.sleep(for: .milliseconds(100))
-            }
+            try await Self.awaitAccountIdle { session.accountBusy || session.yieldsToLibraryRead }
             guard session.accountCatalogScope == scope else { throw CancellationError() }
             let result = try await session.readUnifiedAccount(.license, productID: id)
             guard session.accountCatalogScope == scope else { throw CancellationError() }
@@ -232,6 +244,9 @@ final class InstalledProductAccess: ObservableObject {
         guard account != nil, session.nativeLifecycleConfiguration != nil else { return }
         let scope = session.accountCatalogScope
         await prioritize(productID, account: account, installedIDs: installedIDs) { id in
+            // 683 Play test: a deep-link Play reads during startup; wait like a refresh until the account
+            // connection is idle, instead of reading on a connection that's about to be replaced.
+            try await Self.awaitAccountIdle { session.accountBusy || session.yieldsToLibraryRead }
             guard session.accountCatalogScope == scope else { throw CancellationError() }
             let result = try await session.readUnifiedAccount(.license, productID: id)
             guard session.accountCatalogScope == scope else { throw CancellationError() }
@@ -326,6 +341,7 @@ final class InstalledProductAccess: ObservableObject {
                     }
                     facts[id] = Fact(value: value, checkedAt: checkedAt)
                     failures[id] = nil
+                    lastFailureWasLocal = false
                     globalFailures = 0
                     pausedUntil = nil
                     scheduleExpiry()
@@ -335,6 +351,9 @@ final class InstalledProductAccess: ObservableObject {
                 catch {
                     guard generation == epoch, accountHash == account else { return }
                     errors[id] = LiveSession.describe(error)
+                    lastFailureWasLocal = Self.isLocalServiceFailure(error)
+                    // A local game-service hiccup isn't Microsoft limiting us; it never starts the shared pause.
+                    guard !lastFailureWasLocal else { continue }
                     failures[id] = (failures[id] ?? 0) + 1
                     globalFailures += 1
                     // 4ea60eb3 F4: the pause runs from when the read failed, not from when the request began.
