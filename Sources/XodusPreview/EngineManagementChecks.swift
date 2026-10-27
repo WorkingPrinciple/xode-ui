@@ -1058,10 +1058,42 @@ enum EngineManagementChecks {
               "COR180: Arbitrary custom paths cannot borrow the preserved-prefix exception")
         do {
             try NativeLaunchConfiguration.validateOverride(alternate, game: nms, defaults: defaults)
-            check(false, "COR134: A conflicting override cannot be offered or saved for a pinned title")
-        } catch NativeLaunchError.configurationConflict {
-            check(true, "COR134: A conflicting override cannot be offered or saved for a pinned title")
+            check(true, "REQ153 COR-301: any engine can be offered and saved per game, profiled titles included")
+        } catch {
+            check(false, "REQ153 COR-301: any engine can be offered and saved per game, profiled titles included")
         }
+        let nmsProfile = NativeTitleLaunchProfile(version: 1, productID: nms.storeId,
+            engine: "calimocho-wine11.20-gptk4b3-tls-vulkan-private", shimDirectory: nil, environment: [:])
+        check(NativeLaunchConfiguration.usesGenericLaunch(profile: nmsProfile, selected: alternate, explicitChoice: true)
+              && !NativeLaunchConfiguration.usesGenericLaunch(profile: nmsProfile, selected: alternate, explicitChoice: false),
+              "REQ153 only an explicit per-game engine leaves the tested profile; a saved default never does")
+        let fh6Game = InstalledGame(id: UUID(), title: "FH6", identityName: NativeFH6Recipe.packageIdentity,
+            version: "1.0.0.0", storeId: NativeFH6Recipe.productID, folder: root.path, launcher: "", importedAt: Date())
+        let fh6Profile = NativeTitleLaunchProfile(version: 1, productID: NativeFH6Recipe.productID,
+            engine: NativeFH6Recipe.engineName, shimDirectory: nil, environment: [:])
+        let prefixRoot = root.appendingPathComponent("Prefixes")
+        let fh6Generic = CalimochoPrefixContinuity.genericLocation(productID: fh6Game.storeId,
+            installationID: fh6Game.id, engine: "alternate-calimocho", root: prefixRoot)
+        let fh6OtherEngineAllowed = (try? NativeFH6Recipe.validate(game: fh6Game, engine: "alternate-calimocho",
+                                                                    explicitChoice: true)) != nil
+        check(NativeLaunchConfiguration.usesGenericLaunch(profile: fh6Profile, selected: alternate, explicitChoice: true)
+              && fh6OtherEngineAllowed
+              && fh6Generic != NativeFH6Recipe.prefix(root: prefixRoot)
+              && fh6Generic.lastPathComponent == "generic-alternate-calimocho"
+              && fh6Generic != CalimochoPrefixContinuity.genericLocation(productID: fh6Game.storeId,
+                    installationID: fh6Game.id, engine: "other-engine", root: prefixRoot),
+              "REQ153 FH6 on a non-recipe engine takes the generic path on a fresh per-title+engine prefix, never the recipe prefix")
+        let fh6Recipe = AdmittedEngineSelection(registryPath: alternate.registryPath, inspection: EngineInspection(
+            schemaVersion: 1, capability: "engineAdmissionV1", registrySha256: alternate.inspection.registrySha256,
+            engineName: NativeFH6Recipe.engineName, declaredProvider: "calimocho", admittedProvider: "calimocho",
+            admission: "admitted", ready: true, qualified: false, wineSha256: CalimochoReleasePin.release06.wineSha256,
+            wineserverSha256: CalimochoReleasePin.release06.wineserverSha256, error: nil))
+        let borrowed = InstalledGame(id: UUID(), title: "Other", identityName: "Fixture.Other", version: "1.0.0.0",
+            storeId: "9P9VNSQK1W3K", folder: root.path, launcher: "", importedAt: Date())
+        check(!NativeLaunchConfiguration.usesGenericLaunch(profile: fh6Profile, selected: fh6Recipe, explicitChoice: true)
+              && (try? NativeFH6Recipe.validate(game: fh6Game, engine: NativeFH6Recipe.engineName, explicitChoice: true)) != nil
+              && (try? NativeFH6Recipe.validate(game: borrowed, engine: NativeFH6Recipe.engineName, explicitChoice: true)) == nil,
+              "REQ153 FH6 on its recipe engine keeps the recipe path unchanged, and no other title can borrow that engine")
         let nmsInspection = EngineInspection(schemaVersion: 1, capability: "engineAdmissionV1",
             registrySha256: "170ca4ad08a5274b614e74bf740866ef219a97fdc7855270c5d8fa03192ed609",
             engineName: "calimocho-wine11.20-gptk4b3-tls-vulkan-private", declaredProvider: "calimocho",

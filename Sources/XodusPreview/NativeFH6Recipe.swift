@@ -24,8 +24,11 @@ enum NativeFH6Recipe {
   static let overlaySource = "lib/wine/x86_64-windows/d3d12_tsshim.dll"
   static let overlayDestination = "drive_c/windows/system32/d3d12.dll"
 
-  static func validate(game: InstalledGame, engine: String) throws {
+  /// `explicitChoice`: REQ-153 owner rule, a per-game engine choice may run FH6 on another engine through the
+  /// generic path (fresh prefix, no recipe). The FH6 engine itself stays bound to FH6.
+  static func validate(game: InstalledGame, engine: String, explicitChoice: Bool = false) throws {
     guard game.storeId == productID || engine == engineName else { return }
+    if explicitChoice, engine != engineName, game.storeId == productID { return }
     guard game.storeId == productID, game.identityName == packageIdentity, engine == engineName
     else {
       throw NativeLaunchError.titleRecipeUnavailable
