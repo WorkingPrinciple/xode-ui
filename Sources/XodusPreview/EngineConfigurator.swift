@@ -322,11 +322,12 @@ final class UserEngineModel: ObservableObject {
 struct UserEngineList: View {
     @ObservedObject var model: UserEngineModel
     var allowsFileReads = true
+    var info: ((UserEngine) -> Void)? = nil
 
     var body: some View {
         ForEach(model.engines) { engine in
             EngineRow(name: engine.name, detail: engine.version,
-                      location: engine.location, state: .testingOnly) {
+                      location: engine.location, state: .testingOnly, info: info.map { show in { show(engine) } }) {
                 Button("Remove", role: .destructive) { model.remove(engine) }
                     .disabled(!model.storeReadable || model.terminating())
                     .accessibilityLabel("Remove \(engine.name)")
@@ -446,16 +447,27 @@ struct EngineRow<Actions: View>: View {
     let name: String
     var detail: String?
     var location: String?
-    let state: EngineRowState
+    /// nil shows no badge: nothing has been checked yet, so no status is claimed.
+    let state: EngineRowState?
+    /// Opens the engine's detail sheet (COR-279 step 3); nil hides the ⓘ button.
+    var info: (() -> Void)? = nil
     @ViewBuilder let actions: () -> Actions
 
     var body: some View {
         LabeledContent {
             HStack(spacing: 10) {
-                Label(state.title, systemImage: state.symbol)
-                    .labelStyle(.titleAndIcon)
-                    .foregroundStyle(state == .ready ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
+                if let state {
+                    Label(state.title, systemImage: state.symbol)
+                        .labelStyle(.titleAndIcon)
+                        .foregroundStyle(state == .ready ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
+                }
                 actions()
+                if let info {
+                    Button(action: info) { Image(systemName: "info.circle") }
+                        .buttonStyle(.borderless)
+                        .help("Details")
+                        .accessibilityLabel("Details for \(name)")
+                }
             }
         } label: {
             Text(name)
@@ -465,7 +477,7 @@ struct EngineRow<Actions: View>: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(name)
-        .accessibilityValue([state.title, detail].compactMap { $0 }.joined(separator: ", "))
+        .accessibilityValue([state?.title, detail].compactMap { $0 }.joined(separator: ", "))
     }
 }
 
@@ -734,6 +746,8 @@ enum EnginesCopy {
     static let lead = "Engines run Windows games on your Mac. You can add your own Wine engines for testing; in this beta, games play with Calimocho."
     /// Why a non-Calimocho engine can't be the default (REQ-109/COR-201: custom-engine launching isn't in 0.2.0).
     static let testingOnly = "Saved for testing. In this beta, games play with Calimocho."
+    static let listFooter = "Engines run Windows games on your Mac. Calimocho is built in and runs every game unless a game needs a specific engine."
+    static let defaultFooter = "New games use this engine. Change a game's engine from its menu in the Library."
     static let crossOver = "CrossOver is reserved for No Man's Sky once it qualifies; every other game plays with Calimocho."
     static let crossOverLicense = "Use your own licensed copy of CrossOver; \(AppBrand.displayName) doesn't include it."
 }
@@ -834,8 +848,9 @@ struct EngineConfiguratorSections<Advanced: View>: View {
     private var users: UserEngineModel { ownedUsers }
     private var calimochoInstaller: CalimochoReleaseInstallController { ownedCalimochoInstaller }
     @State private var advancedExpanded = false
-    @FocusState private var crossOverLocationFocused: Bool
-    @State private var highball: HighballState = .missing
+    /// nil until detection has run; Highball is never called Not Installed without one.
+    @State private var highball: HighballState?
+    @State private var detail: EngineDetail?
 
     init(choices: [EngineChoice], defaultID: String?, defaultName: String, checking: Bool, error: String?,
          settings: RuntimeProviderSettings, allowsFileReads: Bool, userEngineStore: UserDefaults,
@@ -882,7 +897,7 @@ struct EngineConfiguratorSections<Advanced: View>: View {
     private var checkingAny: Bool { checking || settings.checkingDependency }
 
     @ViewBuilder private var enginesList: some View {
-        Section("Engines") {
+        Section {
             if choices.isEmpty, let placeholder = calimocho.emptyListMessage {
                 Text(placeholder).foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -892,16 +907,35 @@ struct EngineConfiguratorSections<Advanced: View>: View {
                 EngineRow(name: choice.name,
                           detail: EngineRowState.subtitle([choice.version.flatMap { choice.name.contains($0) ? nil : $0 }],
                                                           isDefault: choice.id == defaultID),
-                          state: Self.state(for: choice, checking: checking)) {
+                          state: Self.state(for: choice, checking: checking),
+                          info: { detail = .engine(choice) }) {
                     EmptyView()
                 }
             }
             CrossOverEngineRow(presentation: CrossOverEngineRow.presentation(state: settings.crossOverDependency)) {
-                crossOverLocationFocused = true
+                detail = .crossOver
             }
-            HighballEngineRow(state: highball)
-            UserEngineList(model: users, allowsFileReads: allowsFileReads)
+            HighballEngineRow(state: highball) { detail = .highball }
+            UserEngineList(model: users, allowsFileReads: allowsFileReads) { detail = .user($0) }
+        } header: {
+            Text("Engines")
+        } footer: {
+            Text(EnginesCopy.listFooter)
+                .font(.callout).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityIdentifier("xodus.engines.footer")
         }
+        .task(id: "\(allowsFileReads):\(providerRefresh)") { await refreshHighball() }
+        .sheet(item: $detail) { item in
+            EngineDetailSheet(detail: item, settings: settings, highball: highball, users: users,
+                              defaultID: defaultID, allowsFileReads: allowsFileReads) { detail = nil }
+        }
+    }
+
+    /// Default Engine offers only engines Play can use; with one or none it is a plain value (COR-279 step 7).
+    static func selectableDefaults(_ choices: [EngineChoice]) -> [EngineChoice] {
+        choices.filter { $0.ready && $0.playable }
     }
 
     static func state(for choice: EngineChoice, checking: Bool) -> EngineRowState {
@@ -945,26 +979,34 @@ struct EngineConfiguratorSections<Advanced: View>: View {
     }
 
     @ViewBuilder private var defaultSection: some View {
+        let selectable = Self.selectableDefaults(choices)
         Section {
-            Picker("Default Engine", selection: Binding(
-                get: { defaultID ?? "" },
-                set: { id in
-                    if id != defaultID, choices.contains(where: { $0.id == id && $0.ready && $0.playable }) { setDefault(id) }
-                })) {
-                if defaultID == nil || !choices.contains(where: { $0.id == defaultID }) {
-                    Text(defaultName).tag(defaultID ?? "")
+            if selectable.count > 1 {
+                Picker("Default Engine", selection: Binding(
+                    get: { defaultID ?? "" },
+                    set: { id in
+                        if id != defaultID, selectable.contains(where: { $0.id == id }) { setDefault(id) }
+                    })) {
+                    if defaultID == nil || !selectable.contains(where: { $0.id == defaultID }) {
+                        Text(defaultName).tag(defaultID ?? "")
+                    }
+                    ForEach(selectable) { choice in Text(choice.name).tag(choice.id) }
                 }
-                ForEach(choices) { choice in
-                    Text(choice.playable ? choice.name : "\(choice.name) — testing only").tag(choice.id)
-                        .selectionDisabled(!choice.ready || !choice.playable)
-                }
+                .pickerStyle(.menu)
+                .disabled(!allowsFileReads || settings.applicationTerminating || calimochoInstaller.isWorking)
+                .accessibilityIdentifier("xodus.engines.default")
+            } else {
+                LabeledContent("Default Engine") { Text(selectable.first?.name ?? "None Ready") }
+                    .accessibilityIdentifier("xodus.engines.default")
             }
-            .pickerStyle(.menu)
-            .disabled(!allowsFileReads || settings.applicationTerminating || calimochoInstaller.isWorking)
-            .accessibilityIdentifier("xodus.engines.default")
             if let error {
                 Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
             }
+        } footer: {
+            Text(EnginesCopy.defaultFooter)
+                .font(.callout).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
@@ -984,11 +1026,8 @@ struct EngineConfiguratorSections<Advanced: View>: View {
         statusSection
         defaultSection
         enginesList
-        CrossOverLocationRow(settings: settings, allowsCheck: allowsFileReads, focused: $crossOverLocationFocused)
         UserEngineAddSection(model: users, allowsFileReads: allowsFileReads)
             .onAppear { users.terminating = { [settings] in settings.applicationTerminating } }
-        HighballRow(state: highball)
-            .task(id: "\(allowsFileReads):\(providerRefresh)") { await refreshHighball() }
         if showsAdvanced {
             Section {
                 DisclosureGroup("Advanced", isExpanded: $advancedExpanded) { advanced() }
@@ -998,28 +1037,24 @@ struct EngineConfiguratorSections<Advanced: View>: View {
 }
 
 /// CrossOver in the Engines list (REQ-109, COR-279): always listed, scoped to No Man's Sky, never a default choice.
-/// Its button moves focus to the CrossOver location field, which scrolls that section into view.
+/// Its ⓘ opens the detail sheet, which holds the location controls.
 struct CrossOverEngineRow: View {
     struct Presentation: Equatable {
-        let state: EngineRowState
+        let state: EngineRowState?
         let detail: String
     }
 
     static let scope = "No Man's Sky only"
 
     let presentation: Presentation
-    let showLocation: () -> Void
+    let showDetails: () -> Void
 
     var body: some View {
-        EngineRow(name: "CrossOver", detail: presentation.detail, state: presentation.state) {
+        EngineRow(name: "CrossOver", detail: presentation.detail, state: presentation.state, info: showDetails) {
             if presentation.state == .notInstalled {
                 Link("Get…", destination: CrossOverDependencyState.trialDownloadURL).accessibleLink()
                     .accessibilityLabel("Get CrossOver")
                     .accessibilityIdentifier("xodus.engines.crossover.row.get")
-            } else {
-                Button("Location…", action: showLocation)
-                    .accessibilityLabel("Show CrossOver location")
-                    .accessibilityIdentifier("xodus.engines.crossover.row.location")
             }
         }
         .accessibilityIdentifier("xodus.engines.crossover.row")
@@ -1030,7 +1065,8 @@ struct CrossOverEngineRow: View {
         case .installed(let app): Presentation(state: .ready, detail: "\(app.version) · \(scope)")
         case .absent: Presentation(state: .notInstalled, detail: "\(scope) · from CodeWeavers")
         case .unverified: Presentation(state: .couldntVerify, detail: scope)
-        case .notChecked, .checking: Presentation(state: .verifying, detail: scope)
+        case .checking: Presentation(state: .verifying, detail: scope)
+        case .notChecked: Presentation(state: nil, detail: scope)
         }
     }
 }
@@ -1039,7 +1075,6 @@ struct CrossOverEngineRow: View {
 struct CrossOverLocationRow: View {
     @ObservedObject var settings: RuntimeProviderSettings
     var allowsCheck = true
-    var focused: FocusState<Bool>.Binding
     @State private var location = ""
     @State private var error: String?
     @State private var fence = EngineRequestFence()
@@ -1047,13 +1082,9 @@ struct CrossOverLocationRow: View {
     var body: some View {
         Section {
             LabeledContent("Status") {
-                HStack(spacing: 10) {
-                    Text(installedVersion.map { "\(status) · \($0)" } ?? status).foregroundStyle(.secondary)
-                    if settings.crossOverDependency.offersTrialDownload {
-                        Link("Get CrossOver", destination: CrossOverDependencyState.trialDownloadURL).accessibleLink()
-                            .accessibilityIdentifier("xodus.engines.crossover.get")
-                    }
-                }
+                let row = CrossOverEngineRow.presentation(state: settings.crossOverDependency)
+                Text(row.state?.title ?? "Not Checked Yet").foregroundStyle(.secondary)
+                    .accessibilityIdentifier("xodus.engines.crossover.status")
             }
             LabeledContent("Application") {
                 HStack(spacing: 8) {
@@ -1065,7 +1096,6 @@ struct CrossOverLocationRow: View {
                         .onExitCommand(perform: discardDraft)
                         .accessibilityLabel("CrossOver application")
                         .accessibilityIdentifier("xodus.engines.crossover.location")
-                        .focused(focused)
                     Button("Choose…", action: choose).disabled(!allowsCheck || fence.pending)
                         .accessibilityLabel("Choose CrossOver application")
                     if fence.pending { ProgressView().controlSize(.small).accessibilityLabel("Checking CrossOver") }
@@ -1094,16 +1124,7 @@ struct CrossOverLocationRow: View {
                 }
             }
         } header: {
-            Text("CrossOver")
-        } footer: {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(EnginesCopy.crossOver)
-                Text(EnginesCopy.crossOverLicense)
-            }
-            .font(.callout).foregroundStyle(.secondary)
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .accessibilityIdentifier("xodus.engines.crossover.explanation")
+            Text("Location")
         }
         .onChange(of: settings.crossOverDependency, initial: true) { _, state in
             guard !fence.pending else { return }
@@ -1135,21 +1156,6 @@ struct CrossOverLocationRow: View {
         location = Self.suggestedLocation(saved: EngineDefaults.crossOverApplication(),
                                           state: settings.crossOverDependency, current: "")
         error = nil
-    }
-
-    private var installedVersion: String? {
-        if case .installed(let app) = settings.crossOverDependency { return app.version }
-        return nil
-    }
-
-    private var status: String {
-        switch settings.crossOverDependency {
-        case .notChecked: "Not Checked"
-        case .checking: "Checking"
-        case .absent: "Not Installed"
-        case .unverified: "Couldn't Verify"
-        case .installed: EngineDefaults.crossOverApplication() == nil ? "Detected" : "Configured"
-        }
     }
 
     private func choose() {

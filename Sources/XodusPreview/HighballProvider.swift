@@ -222,10 +222,13 @@ enum HighballSection {
 
 /// Highball in the Engines list (COR-279): always listed, Brotato only, never a default choice.
 struct HighballEngineRow: View {
-    var state: HighballState
+    /// nil: not detected yet (or file reads aren't allowed), so no status and no Get.
+    var state: HighballState?
+    var showDetails: (() -> Void)? = nil
 
-    static func presentation(_ state: HighballState) -> (state: EngineRowState, detail: String) {
+    static func presentation(_ state: HighballState?) -> (state: EngineRowState?, detail: String) {
         let scope = "\(HighballContract.qualifiedTitle) only"
+        guard let state else { return (nil, scope) }
         switch state {
         case .missing: return (.notInstalled, "\(scope) · open source")
         case .detected(let version, _): return (.notQualified, [version, scope].compactMap { $0 }.joined(separator: " · "))
@@ -235,8 +238,8 @@ struct HighballEngineRow: View {
 
     var body: some View {
         let row = Self.presentation(state)
-        EngineRow(name: "Highball", detail: row.detail, state: row.state) {
-            if state.offersGet {
+        EngineRow(name: "Highball", detail: row.detail, state: row.state, info: showDetails) {
+            if state?.offersGet == true {
                 Link("Get…", destination: HighballContract.repository).accessibleLink()
                     .accessibilityLabel("Get Highball")
                     .accessibilityIdentifier("xodus.engines.highball.row.get")

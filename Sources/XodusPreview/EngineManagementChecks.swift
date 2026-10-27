@@ -1104,21 +1104,25 @@ enum EngineManagementChecks {
                             admitted("highball-x64-crossover26.3-r27", "highball")],
                 failed: ["crossover-26.3-mvk142"])
             check(picker.map(\.id) == ["calimocho-11.20-4.0b3-06"]
+                  && EngineConfiguratorSections<EmptyView>.selectableDefaults(
+                        [EngineChoice.named("a", ready: true), EngineChoice.named("b", ready: false),
+                         EngineChoice.named("c", ready: true, playable: false)]).map(\.id) == ["a"]
                   && !picker.contains { $0.id.hasPrefix("crossover") || $0.name.localizedCaseInsensitiveContains("CrossOver") },
                   "REQ109 CrossOver is never offered in the Default Engine picker, even when admitted or failing")
             let app = CrossOverInstallation(location: URL(fileURLWithPath: "/Applications/CrossOver.app"),
                                             version: "26.3", buildVersion: "26.3.0")
-check(CrossOverEngineRow.presentation(state: .installed(app)) == .init(state: .ready, detail: "26.3 · No Man's Sky only")
+            check(CrossOverEngineRow.presentation(state: .installed(app)) == .init(state: .ready, detail: "26.3 · No Man's Sky only")
                   && CrossOverEngineRow.presentation(state: .absent)
                     == .init(state: .notInstalled, detail: "No Man's Sky only · from CodeWeavers")
                   && CrossOverEngineRow.presentation(state: .unverified) == .init(state: .couldntVerify, detail: "No Man's Sky only")
-                  && CrossOverEngineRow.presentation(state: .notChecked).state == .verifying
-                  && CrossOverEngineRow.presentation(state: .checking).state == .verifying,
-                  "COR-279 step 1: CrossOver is always listed (Ready 26.3 / Not Installed / Verifying / Couldn't Verify), No Man's Sky only")
+                  && CrossOverEngineRow.presentation(state: .checking).state == .verifying
+                  && CrossOverEngineRow.presentation(state: .notChecked) == .init(state: nil, detail: "No Man's Sky only"),
+                  "COR-279 F1/F2: CrossOver is always listed; Verifying only while a check runs, no badge before one")
             check(HighballEngineRow.presentation(.missing) == (.notInstalled, "Brotato only · open source")
                   && HighballEngineRow.presentation(.qualified(version: "1.2", productID: "9P9VNSQK1W3K")) == (.ready, "1.2 · Brotato only")
-                  && HighballEngineRow.presentation(.detected(version: "1.2", blocker: nil)) == (.notQualified, "1.2 · Brotato only"),
-                  "COR-279 step 1: Highball is always listed (Ready / Not Installed / Not Qualified), Brotato only")
+                  && HighballEngineRow.presentation(.detected(version: "1.2", blocker: nil)) == (.notQualified, "1.2 · Brotato only")
+                  && HighballEngineRow.presentation(nil) == (nil, "Brotato only"),
+                  "COR-279 F3: Highball is always listed; never Not Installed before a detection")
             check(EngineRowState.allCases.map(\.title)
                     == ["Ready", "Update Available", "Not Installed", "Verifying", "Couldn't Verify", "Not Qualified", "Testing Only"]
                   && EngineRowState.subtitle(["Wine 11.20"], isDefault: true) == "Wine 11.20 · Default"

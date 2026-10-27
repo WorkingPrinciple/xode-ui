@@ -264,7 +264,7 @@ enum BrandUXChecks {
                 let joined = labels.joined(separator: " ")
                 check(labels.filter { $0 == "Check Again" }.count == 1
                       && joined.contains("Engines run Windows games")
-                      && joined.contains("every other game plays with Calimocho")
+                      && joined.contains("runs every game unless a game needs a specific engine")
                       && !joined.contains("Private") && !joined.contains("Use App"),
                       "COR186 M8/U2: \(scenario) Engines (\(scheme)) leads with an explanation, one Check Again, plain names and honest CrossOver copy: \(labels)")
                 let hasDownloadControl = joined.contains("Get Calimocho")
@@ -288,6 +288,25 @@ enum BrandUXChecks {
                           "COR186 U2: Ready engines show no download prompt and name release and game-specific builds (\(scheme))")
                 }
             }
+        }
+        for scheme in [ColorScheme.light, .dark] {
+            let users = UserEngineModel(store: store, suggestions: [])
+            let crossOver = render(EngineDetailSheet(detail: .crossOver, settings: settings, highball: nil, users: users,
+                                                     defaultID: nil, allowsFileReads: false) {},
+                                   size: CGSize(width: 520, height: 500), scheme: scheme,
+                                   name: "engine-detail-crossover-\(scheme == .dark ? "dark" : "light")")
+            let joinedCrossOver = crossOver.joined(separator: " ")
+            check(joinedCrossOver.contains("No Man's Sky only") && joinedCrossOver.contains("Location")
+                  && joinedCrossOver.contains("Done") && !joinedCrossOver.contains("Remove from List"),
+                  "COR-279 steps 3-4: the CrossOver ⓘ sheet holds its location, use and licence, with no removal (\(scheme)): \(crossOver)")
+            let highball = render(EngineDetailSheet(detail: .highball, settings: settings, highball: nil, users: users,
+                                                    defaultID: nil, allowsFileReads: false) {},
+                                  size: CGSize(width: 520, height: 500), scheme: scheme,
+                                  name: "engine-detail-highball-\(scheme == .dark ? "dark" : "light")")
+            let joinedHighball = highball.joined(separator: " ")
+            check(joinedHighball.contains("Brotato only") && joinedHighball.contains("GPL-3.0")
+                  && !joinedHighball.contains("Not Installed"),
+                  "COR-279 steps 3/8 and F3: the Highball ⓘ sheet carries its licence and never claims Not Installed before detection (\(scheme)): \(highball)")
         }
         let installedRoot = emptyRoot.appendingPathComponent("installed-controls", isDirectory: true)
         let installedEngine = installedRoot.appendingPathComponent(CalimochoRelease.engineID, isDirectory: true)
