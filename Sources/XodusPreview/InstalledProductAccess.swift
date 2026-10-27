@@ -66,6 +66,7 @@ final class InstalledProductAccess: ObservableObject {
         pagedIDs.insert(productID)
         await refresh(session: session, installedIDs: Array(installed.union([productID])), force: force,
                       selectedProductID: productID)
+        pagedIDs.insert(productID)
     }
 
     func checkProduct(_ productID: String, account: String?, now: Date = Date(), force: Bool = false,
@@ -74,6 +75,8 @@ final class InstalledProductAccess: ObservableObject {
         pagedIDs.insert(productID)
         await refresh(account: account, installedIDs: Array(installed.union([productID])), now: now, force: force,
                       selectedProductID: productID, read: read)
+        // A first account binding retires the store; keep this page's product tracked afterwards.
+        pagedIDs.insert(productID)
     }
 
     /// 72450bd3 L1: while reads are paused after a failure, say until when instead of waiting silently.
@@ -142,7 +145,7 @@ final class InstalledProductAccess: ObservableObject {
             return "Access for this account hasn't been checked for this game."
         }
         if checking { return "Checking access for this game." }
-        if errors[productID] != nil || facts[productID] == nil, let paused = pausedNotice(now: now) { return paused }
+        if errors[productID] == nil, facts[productID] == nil, let paused = pausedNotice(now: now) { return paused }
         if errors[productID] != nil { return Self.unavailableNotice }
         if permits(productID, account: account, now: now) { return nil }
         guard let fact = facts[productID] else { return "Access for this game hasn't been checked." }

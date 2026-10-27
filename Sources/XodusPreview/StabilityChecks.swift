@@ -112,7 +112,7 @@ import XodusManagement
         check(pageReads == 1 && page.permits(pageProduct, account: account, now: start.addingTimeInterval(240))
               && !productSource.isEmpty && !productSource.contains("InstalledProductAccess()")
               && !productSource.contains("titleAccess.retire()") && productSource.contains("installedLibrary.productAccess"),
-              "72450bd3 M2: product pages share the app's access store; five visits in 5 minutes make one read and keep the answer")
+              "72450bd3 M2: product pages share the app's access store; five visits in 5 minutes make one read and keep the answer (reads \(pageReads), permits \(page.permits(pageProduct, account: account, now: start.addingTimeInterval(240))), errors \(page.errors))")
         check(appSource.contains("Task { await installed.playRequested(game) }") && !appSource.contains("Task { await installed.play(game) }"),
               "72450bd3 M1: Play from the ready notification checks access and the newer-build guard like the Play button")
     }
@@ -417,6 +417,7 @@ import XodusManagement
         try write(config, game.appendingPathComponent("MicrosoftGame.config"))
         try write("exe", game.appendingPathComponent("game.exe"))
         try write("data", game.appendingPathComponent("Content/data.pck"))
+        try FileManager.default.createDirectory(at: game.appendingPathComponent("Content/Paks"), withIntermediateDirectories: true)
         try Data(count: 4_096).write(to: game.appendingPathComponent("Content/Paks/big.pak"))
         try write("changed!!", game.appendingPathComponent("Content/changed.pak"))
         try write("grown after the inventory", game.appendingPathComponent("Content/toctou.pak"))
