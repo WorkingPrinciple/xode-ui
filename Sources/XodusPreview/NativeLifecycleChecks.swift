@@ -224,6 +224,25 @@ enum NativeLifecycleChecks {
     }
 
     static func run(check: (Bool, String) -> Void) async throws {
+        let missingPrefix = "PREFIX_MISSING_RESTORE_REQUIRED: the Wine prefix is missing but its owner record survives. Launch was stopped without recreating it."
+        check(NativePlayerFailure.message(errorCode: "OPERATION_FAILED", error: missingPrefix, diagnostic: "",
+                  windowRecorded: nil, monitorReliable: true, success: false) == NativePrefixCopy.missingRestoreRequired
+              && NativePlayerFailure.message(errorCode: "PREFIX_MISSING_RESTORE_REQUIRED", error: nil, diagnostic: "",
+                  windowRecorded: nil, monitorReliable: true, success: false) == NativePrefixCopy.missingRestoreRequired
+              && NativePrefixCopy.missingRestoreRequired.contains("Restore the prefix folder from your backup")
+              && NativePrefixCopy.missingRestoreRequired.contains("didn't create a new one")
+              && !NativePrefixCopy.missingRestoreRequired.contains("PREFIX_")
+              && NativeGameResult.failureCodes.contains("PREFIX_MISSING_RESTORE_REQUIRED"),
+              "REQ-46: A missing prefix with a surviving owner record tells the player to restore it, says nothing was recreated, and is accepted as a failure code")
+        let missingPrefixResult = try JSONDecoder().decode(NativeGameResult.self, from: Data("""
+            {"version":1,"run_id":"\(UUID().uuidString)","operation":"launch","product":"BQVQTL3PCH05",
+             "game_dir":"/synthetic","success":false,"exit_code":1,"error_code":"OPERATION_FAILED",
+             "error":"\(missingPrefix)","log_dir":"/synthetic/runs/x","result_path":"/synthetic/runs/x/result.json",
+             "progress_path":"/synthetic/runs/x/progress.jsonl","started_at":"2026-10-27T00:00:00Z",
+             "finished_at":"2026-10-27T00:00:01Z","warnings":[],"popups":[]}
+            """.utf8))
+        check(missingPrefixResult.launchFailureMessage(stoppedByUser: false) == NativePrefixCopy.missingRestoreRequired,
+              "REQ-46: Play shows the restore message for a missing prefix instead of the generic launch failure")
         check(NativePlayerFailure.message(errorCode: "TIMEOUT", error: nil, diagnostic: "",
             windowRecorded: nil, monitorReliable: false, success: false)?.contains("Open the launch log") == true,
             "A confirmed launcher timeout has plain-language copy and an actionable log route")

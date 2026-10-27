@@ -65,7 +65,8 @@ struct NativeGameResult: Codable, Equatable, Sendable {
     static let failureCodes: Set<String> = [
         "ACCOUNT_UNAVAILABLE", "ACCOUNT_MISMATCH", "ACCOUNT_CHANGED", "TIMEOUT", "CANCELLED", "OPERATION_FAILED",
         "RESOURCE_BUSY", "DISK_SPACE_FLOOR", "DISK_SPACE_FLOOR_INVALID",
-        "UNINSTALL_PERMISSION_DENIED", "UNINSTALL_NOT_A_GAME", "UNINSTALL_UNSAFE_TREE"
+        "UNINSTALL_PERMISSION_DENIED", "UNINSTALL_NOT_A_GAME", "UNINSTALL_UNSAFE_TREE",
+        "PREFIX_MISSING_RESTORE_REQUIRED"
     ]
 
     /// The backend refused uninstall because the folder no longer proves it is this installed game.
@@ -146,6 +147,10 @@ struct NativeGameResult: Codable, Equatable, Sendable {
         if stoppedByUser, errorCode == "CANCELLED" || errorCode == "OPERATION_FAILED" { return nil }
         if errorCode == "OPERATION_FAILED", error == "Account broker did not shut down cleanly",
            wineExitCode == 0, wineTerminationSignal == nil { return nil }
+        if !success, errorCode == "PREFIX_MISSING_RESTORE_REQUIRED"
+            || (error ?? "").hasPrefix("PREFIX_MISSING_RESTORE_REQUIRED:") {
+            return NativePrefixCopy.missingRestoreRequired
+        }
         return success ? nil : InstalledGameActionCopy.launchUnavailable
     }
 
@@ -188,11 +193,20 @@ enum NativeLifecycleCancellation: Error {
     }
 }
 
+/// REQ-46: a game's Wine prefix is gone but its owner record survives, so its saves may be lost.
+enum NativePrefixCopy {
+    static let missingRestoreRequired = "This game's Wine prefix is missing, so the game wasn't started. Its saves may have been in it. Restore the prefix folder from your backup to the same place, then play again. \(AppBrand.displayName) didn't create a new one, because a new prefix wouldn't bring your saves back. Nothing was changed."
+}
+
 enum NativePlayerFailure {
     static func message(errorCode: String?, error: String?, diagnostic: String,
                         windowRecorded: Bool?, monitorReliable: Bool, success: Bool) -> String? {
         if errorCode == "TIMEOUT" {
             return "The launcher took too long and was stopped before a playable game appeared. Open the launch log to see what happened."
+        }
+        if errorCode == "PREFIX_MISSING_RESTORE_REQUIRED"
+            || (error ?? "").hasPrefix("PREFIX_MISSING_RESTORE_REQUIRED:") {
+            return NativePrefixCopy.missingRestoreRequired
         }
         guard errorCode == nil || errorCode == "OPERATION_FAILED" else { return nil }
         let text = (error ?? "") + "\n" + diagnostic
