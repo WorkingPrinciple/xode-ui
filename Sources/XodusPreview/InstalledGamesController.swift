@@ -1736,6 +1736,29 @@ final class InstalledGamesController: ObservableObject {
         EngineDisplayName.name(name)
     }
 
+    func windowsProfileLaunch(for game: InstalledGame, configuration: BackendConfiguration) async throws -> NativeLaunchConfiguration {
+        guard loaded, !accountDisconnecting, !applicationTerminating,
+              games.contains(where: { $0 == game }) else { throw GameScriptError.busy }
+        let config = try await Task.detached(priority: .userInitiated) {
+            try MicrosoftGameConfig.read(folder: URL(fileURLWithPath: game.folder))
+        }.value
+        guard config.storeId == game.storeId, config.identityName == game.identityName,
+              config.version == game.version else { throw InstalledGameError.invalidConfig }
+        return try await NativeLaunchConfiguration.resolveDefault(game: game, configuration: configuration,
+            provider: defaultEngine(), evidence: MacGameEvidenceStore.shared.games[game.storeId], persistDefault: false)
+    }
+
+    func reserveWindowsProfileChange() throws {
+        guard runningGameID == nil else { throw WindowsProfileFailure.inUse }
+        try reserveMutation(gameID: nil)
+        editing = true
+    }
+
+    func releaseWindowsProfileChange() {
+        editing = false
+        releaseMutation()
+    }
+
     func setEngineOverrideV2(_ selection: AdmittedEngineSelection?, for game: InstalledGame) async {
         guard loaded, !editing, !choosing, !mutationActive, !accountDisconnecting, !applicationTerminating,
               runningGameID != game.id, games.contains(where: { $0.id == game.id }) else { return }

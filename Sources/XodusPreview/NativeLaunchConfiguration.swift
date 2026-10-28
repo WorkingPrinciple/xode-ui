@@ -591,7 +591,8 @@ struct NativeLaunchConfiguration {
                                provider: RuntimeProviderKind?, defaults: UserDefaults = .standard,
                                runtime: NativeRuntimeReference? = NativeRuntimePins.approved,
                                evidence: MacGameEvidence.Game? = nil,
-                               engineDefaults: NativeEngineDefaults? = nil) async throws -> Self {
+                               engineDefaults: NativeEngineDefaults? = nil,
+                               persistDefault: Bool = true) async throws -> Self {
         try NativeFH6Recipe.requireEnabled(productID: game.storeId)
         guard provider == nil || provider == .calimocho else { throw NativeLaunchError.providerPolicy }
         let profile = try NativeTitleLaunchProfile.read(productID: game.storeId, defaults: defaults,
@@ -628,7 +629,7 @@ struct NativeLaunchConfiguration {
             "--registry", selection.registryPath, "--engine", engine, "--expected-registry-sha256", digest
         ] + (engine == NativeFH6Recipe.engineName ? NativeFH6Recipe.arguments : []),
             selection: selection, product: game.storeId)
-        if game.engineOverrideV2 == nil, saved == nil {
+        if persistDefault, game.engineOverrideV2 == nil, saved == nil {
             guard let binding = catalog.bindings.first(where: { $0.engineName == catalog.defaultEngine }) else {
                 throw NativeLaunchError.engineNotSelected
             }

@@ -307,8 +307,14 @@ actor EngineInspectionClient {
         return (url.path, CalimochoReleaseEngines.digest(data))
     }
 
+    func windowsProfile(configuration: BackendConfiguration, arguments: [String], changing: Bool) async throws -> (Data, Int32) {
+        try await run(executable: configuration.executable,
+            arguments: arguments, executableIdentity: configuration.executableIdentity,
+            timeout: changing ? .seconds(310) : .seconds(15))
+    }
+
     private func run(executable: URL, arguments: [String],
-                     executableIdentity: NativeAuthHostBinding?) async throws -> (Data, Int32) {
+                     executableIdentity: NativeAuthHostBinding?, timeout: Duration = .seconds(5)) async throws -> (Data, Int32) {
         guard child == nil else { throw EngineInspectionError.shutdownFailed }
         try Task.checkCancellation()
 #if XODUS_SHIPPING
@@ -343,7 +349,7 @@ actor EngineInspectionClient {
         child = process
         var bytes = Data(), diagnostics = 0
         var closed = [false, false]
-        let deadline = ContinuousClock.now.advanced(by: .seconds(5))
+        let deadline = ContinuousClock.now.advanced(by: timeout)
         do {
             while process.isRunning || closed.contains(false) {
                 try Task.checkCancellation()

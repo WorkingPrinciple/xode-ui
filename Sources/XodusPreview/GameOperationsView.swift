@@ -877,6 +877,7 @@ struct InstalledGameActions: View {
     var usesGlass = false
     var heroStyle = false
     var details: (() -> Void)?
+    @State private var showingWindowsProfile = false
 
     var body: some View {
         Menu {
@@ -888,7 +889,9 @@ struct InstalledGameActions: View {
             }
             Menu("Engine") {
                 Text(library.windowsVersions[game.id] ?? "Windows version: Not reported yet")
-                Text("Reported by the last launch; existing prefixes are unchanged.")
+                Text("Reported by the last launch.")
+                Button("Windows version…") { showingWindowsProfile = true }
+                    .accessibilityIdentifier("xodus.installed.windowsProfile")
                 Divider()
                 Button("Use default (\(library.defaultEngineLabel(for: game)))",
                        systemImage: game.engineOverrideV2 == nil ? "checkmark" : "circle") {
@@ -921,6 +924,9 @@ struct InstalledGameActions: View {
         .buttonBorderShape(heroStyle ? .circle : .automatic)
         .fixedSize()
         .accessibilityLabel("Actions for \(game.title)")
+        .sheet(isPresented: $showingWindowsProfile) {
+            WindowsProfileSettings(library: library, game: game).id(game.id)
+        }
         .task {
             await library.refreshEngineOverrides(force: false)
         }

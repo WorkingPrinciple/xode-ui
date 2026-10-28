@@ -108,6 +108,22 @@ The Engine menu names the current default and retries incomplete inspections
 when its native menu begins tracking; per-title recipe compatibility still
 filters alternatives.
 
+REQ-156: Actions → Engine → **Windows version…** inspects the current launch
+route's existing prefix through `prefix-windows-profile inspect` (contract v1).
+It shows the effective Windows profile/build, engine-supported profiles and
+the package's minimum build when reported. Opening or refreshing never sets
+a profile or saves a new default engine. **Apply Windows profile…** requires
+confirmation and uses only the producer's supported `set` operation, with
+fresh engine/registry admission and the same prefix binding. In-use prefixes,
+incomplete setup and executable-specific overrides block Apply with a reason.
+A requested profile below the package minimum has an explicit warning; it is
+not silently promoted. Failed or unverifiable results never claim success.
+The installed producer must include REQ-165; this UI change does not pin it.
+`--engine-selection-check` covers synthetic inspect/set receipts, closed refusal codes,
+binding mismatches and command shape without running Wine or reading licences.
+Live application/confirmation, effective build and save-preservation acceptance
+remain separate, authorized installed checks.
+
 COR-97/101/102 use shared cover badges: exact compatibility symbols in the
 upper-right, current PC Game Pass catalogue membership in the lower-left.
 Neither creates a separate input target; hover and the existing cover button's

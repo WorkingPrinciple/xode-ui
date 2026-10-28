@@ -16,10 +16,11 @@ enum EngineManagementChecks {
             do { try FileManager.default.removeItem(at: root) }
             catch { check(false, "COR134: Synthetic engine routing files are cleaned") }
         }
+        windowsProfileChecks(check: check)
+        try await windowsProfileTransportChecks(root: root, check: check)
         try await selectionPersistenceChecks(root: root, check: check)
     }
-
-    static func launchSupportChecks(check: (Bool, String) -> Void) {
+    static func windowsReceiptChecks(check: (Bool, String) -> Void) {
         do {
             let applied = try NativeWindowsVersion.decode(Data(
                 #"{"status":"applied","profile":"win11-24h2","reportedBuild":26100,"minimumBuild":26100}"#.utf8))
@@ -42,8 +43,180 @@ enum EngineManagementChecks {
                 } catch {
                     check(true, "REQ-156: invalid or failed Windows receipt is never shown as an applied profile")
                 }
+
             }
         } catch { check(false, "REQ-156: producer Windows version fixtures decode: \(error.localizedDescription)") }
+    }
+
+    static func windowsProfileChecks(check: (Bool, String) -> Void) {
+        let binding = WindowsProfileBinding(
+            product: "9PROFILETEST", folder: "/tmp/Game",
+            prefix: "/tmp/Prefixes/9PROFILETEST/main", engine: "fixture-engine",
+            registry: "/tmp/registry.json", digest: String(repeating: "a", count: 64))
+        let base: [String: Any] = [
+            "schemaVersion": 1, "product": binding.product, "prefix": binding.prefix,
+            "engine": ["name": binding.engine, "registrySha256": binding.digest],
+            "executable": "bin\\Game.exe", "appDefaultsName": "Game.exe",
+            "error": NSNull(), "checkedAt": "2026-10-28T06:00:00Z",
+        ]
+        let inspect = base.merging([
+            "operation": "inspect", "status": "ok",
+            "binding": ["ownership": "owned", "productBound": true], "windowsSetup": "applied", "inUse": false,
+            "supportedProfiles": ["win10", "win11", "win11-24h2"],
+            "global": ["profile": ["name": "win11", "known": true]],
+            "perExecutable": ["profile": NSNull(), "shadowsGlobal": false],
+            "currentBuildNumber": 22631,
+            "effective": ["profile": "win11", "reportedBuild": 22631, "source": "global"],
+            "packageRequiredMinimum": 26100, "meetsPackageMinimum": false,
+        ]) { _, new in new }
+        let applied = base.merging([
+            "operation": "set", "status": "applied", "requestedProfile": "win11",
+            "previous": ["profile": "win10", "reportedBuild": 19045],
+            "resulting": ["profile": "win11", "reportedBuild": 22631],
+            "savesPreserved": true, "packageRequiredMinimum": 26100, "requestedBelowPackageMinimum": true,
+        ]) { _, new in new }
+        func decode(_ object: [String: Any], requested: WindowsProfile? = nil, exit: Int32 = 0) throws
+            -> WindowsProfileReceipt
+        {
+            try WindowsProfileReceipt.decode(
+                JSONSerialization.data(withJSONObject: object),
+                exitCode: exit, binding: binding, requested: requested)
+        }
+        func rejects(_ object: [String: Any], requested: WindowsProfile? = nil, exit: Int32 = 0, label: String) {
+            do {
+                _ = try decode(object, requested: requested, exit: exit); check(false, "REQ-156: rejects \(label)")
+            } catch { check(true, "REQ-156: rejects \(label)") }
+        }
+        do {
+            let result = try decode(inspect)
+            let changed = try decode(applied, requested: .win11)
+            check(
+                result.effective?.label == "Windows 11 (build 22631)" && result.changeBlock == nil
+                    && result.supportedProfiles == [.win10, .win11, .win1124h2]
+                    && changed.requestedBelowPackageMinimum == true,
+                "REQ-156: inspect shows effective observed build, supported profiles and below-minimum set warning")
+            var unchanged = applied
+            unchanged["status"] = "unchanged"
+            unchanged["previous"] = unchanged["resulting"]
+            check(
+                try decode(unchanged, requested: .win11).status == "unchanged",
+                "REQ-156: an unchanged version is a verified no-op")
+            for (field, value, reason) in [
+                ("inUse", true, WindowsProfileFailure.inUse),
+                ("windowsSetup", "incomplete", .incomplete),
+                ("windowsSetup", "failed", .incomplete),
+                ("perExecutable", ["profile": ["name": "win10", "known": true], "shadowsGlobal": true], .shadowed),
+            ] as [(String, Any, WindowsProfileFailure)] {
+                var blocked = inspect
+                blocked[field] = value
+                check(
+                    try decode(blocked).changeBlock == reason,
+                    "REQ-156: \(reason.rawValue) prevents Apply with truthful copy")
+            }
+            for code in WindowsProfileFailure.allCases {
+                var refusal = applied
+                refusal["status"] = code == .applyFailed ? "failed" : "refused"
+                refusal["error"] = ["code": code.rawValue, "message": "fixture refusal"]
+                refusal["previous"] = NSNull()
+                refusal["resulting"] = NSNull()
+                refusal["savesPreserved"] = NSNull()
+                do {
+                    _ = try decode(refusal, requested: .win11, exit: 1)
+                    check(false, "REQ-156: \(code.rawValue) never becomes success")
+                } catch let error as WindowsProfileFailure {
+                    check(
+                        error == code && !error.localizedDescription.isEmpty,
+                        "REQ-156: \(code.rawValue) has explicit refusal/failure copy")
+                }
+            }
+        } catch { check(false, "REQ-156: inspect/set fixtures: \(error.localizedDescription)") }
+        for (field, value) in [
+            ("product", "OTHER"), ("prefix", "/tmp/Other"), ("schemaVersion", 2),
+            ("operation", "set"), ("unexpected", true), ("supportedProfiles", ["win11", "future"]),
+            ("supportedProfiles", ["win11", "win11"]), ("binding", ["ownership": "unowned", "productBound": true]),
+            ("engine", ["name": binding.engine, "registrySha256": "wrong"]),
+            ("effective", ["profile": "win11", "reportedBuild": 22000, "source": "guessed"]),
+            ("global", ["profile": ["name": "win11", "known": false]]),
+            ("perExecutable", ["profile": NSNull(), "shadowsGlobal": false, "extra": true]),
+        ] as [(String, Any)] {
+            var invalid = inspect
+            invalid[field] = value
+            rejects(invalid, label: "inspect \(field) mismatch or unknown data")
+        }
+        for field in inspect.keys {
+            var invalid = inspect
+            invalid.removeValue(forKey: field)
+            rejects(invalid, label: "missing inspect \(field)")
+        }
+        for (field, value) in [
+            ("requestedProfile", "win10"), ("savesPreserved", false), ("status", "ok"),
+            ("requestedBelowPackageMinimum", false), ("resulting", ["profile": "win11", "reportedBuild": 19045]),
+            ("binding", ["ownership": "owned", "productBound": true]),
+            ("error", ["code": "FUTURE_ERROR", "message": "future"]),
+        ] as [(String, Any)] {
+            var invalid = applied
+            invalid[field] = value
+            rejects(invalid, requested: .win11, label: "set \(field) mismatch")
+        }
+        rejects(inspect, exit: 1, label: "inspect success with nonzero exit")
+        rejects(applied, requested: .win11, exit: 1, label: "set success with nonzero exit")
+        do {
+            let data = try JSONSerialization.data(withJSONObject: inspect)
+            let duplicate = Data(#"{"schemaVersion":1,"schemaVersion":1,"#.utf8) + data.dropFirst()
+            do {
+                _ = try WindowsProfileReceipt.decode(duplicate, exitCode: 0, binding: binding)
+                check(false, "REQ-156: duplicate JSON keys are rejected")
+            } catch { check(true, "REQ-156: duplicate JSON keys are rejected") }
+        } catch { check(false, "REQ-156: duplicate-key fixture encodes") }
+        let read = binding.arguments(), write = binding.arguments(profile: .win1124h2)
+        check(
+            read.prefix(2) == ["prefix-windows-profile", "inspect"] && !read.contains("--profile")
+                && write.prefix(2) == ["prefix-windows-profile", "set"]
+                && write.suffix(2) == ["--profile", "win11-24h2"]
+                && read.contains(binding.digest) && read.contains(binding.prefix) && read.contains(binding.folder),
+            "REQ-156: read never sets; explicit write binds product, folder, prefix, engine and registry digest")
+    }
+
+    static func windowsProfileTransportChecks(root: URL, check: (Bool, String) -> Void) async throws {
+        let cli = root.appendingPathComponent("windows-profile-cli")
+        let trace = root.appendingPathComponent("windows-profile-trace")
+        let binding = WindowsProfileBinding(product: "9PROFILETEST", folder: "/tmp/Game with spaces",
+            prefix: "/tmp/Prefixes/9PROFILETEST/main", engine: "fixture-engine",
+            registry: "/tmp/registry.json", digest: String(repeating: "a", count: 64))
+        try Data("""
+        #!/bin/sh
+        /usr/bin/printf '%s\\n' "$@" >> '\(trace.path)'
+        /usr/bin/printf '%s\\n' '{"fixture":true}'
+
+        """.utf8).write(to: cli)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: cli.path)
+        let configuration = BackendConfiguration(executable: cli, stateDirectory: root)
+        let client = EngineInspectionClient()
+        let read = try await client.windowsProfile(configuration: configuration, arguments: binding.arguments(), changing: false)
+        let readTrace = try String(contentsOf: trace, encoding: .utf8).split(separator: "\n").map(String.init)
+        check(read.1 == 0 && readTrace == binding.arguments() && !readTrace.contains("set"),
+              "REQ-156: actual read-only subprocess uses exact source-bound argv, preserves spaces and never sends set")
+        _ = try await client.windowsProfile(configuration: configuration, arguments: binding.arguments(profile: .win11), changing: true)
+        let allTrace = try String(contentsOf: trace, encoding: .utf8).split(separator: "\n").map(String.init)
+        check(allTrace == binding.arguments() + binding.arguments(profile: .win11),
+              "REQ-156: only an explicit write invocation sends the supported set profile path")
+        try Data("#!/bin/sh\nexec /bin/sleep 30\n".utf8).write(to: cli)
+        let pending = Task {
+            try await client.windowsProfile(configuration: configuration, arguments: binding.arguments(profile: .win11), changing: true)
+        }
+        try await Task.sleep(for: .milliseconds(100))
+        pending.cancel()
+        do {
+            _ = try await pending.value
+            check(false, "REQ-156: cancelled set cannot claim success")
+        } catch {
+            check(!(await client.hasOwnedProcess), "REQ-156: cancelled set joins its exact owned process before returning")
+        }
+    }
+
+    static func launchSupportChecks(check: (Bool, String) -> Void) {
+        windowsReceiptChecks(check: check)
+        windowsProfileChecks(check: check)
         let suite = "Xodus.req114.support.\(UUID().uuidString)"
         guard let defaults = UserDefaults(suiteName: suite) else { check(false, "REQ114 M1 isolated defaults"); return }
         defer { defaults.removePersistentDomain(forName: suite) }
@@ -1003,6 +1176,13 @@ enum EngineManagementChecks {
                 engineName: "exact-calimocho", wineSha256: wineHash, wineserverSha256: serverHash)
         ])
         EngineDefaults.setDefaultEngine(nil, defaults)
+        let inspectedLaunch = try await NativeLaunchConfiguration.resolveDefault(game: game,
+            configuration: backend, provider: nil, defaults: defaults, runtime: runtime,
+            engineDefaults: defaultCatalog, persistDefault: false)
+        check(inspectedLaunch.admittedSelection == selection
+              && defaults.data(forKey: NativeEngineDefaults.preferenceKey) == nil
+              && EngineDefaults.defaultEngine(defaults) == nil,
+              "REQ-156: inspecting the current launch route never initializes a default engine or changes prefixes")
         let initialLaunch = try await NativeLaunchConfiguration.resolveDefault(game: game,
             configuration: backend, provider: nil, defaults: defaults, runtime: runtime, engineDefaults: defaultCatalog)
         check(initialLaunch.admittedSelection == selection && EngineDefaults.defaultEngine(defaults) == .calimocho,
