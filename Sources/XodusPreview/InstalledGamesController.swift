@@ -43,6 +43,7 @@ final class InstalledGamesController: ObservableObject {
     @Published private(set) var installationStatuses: [UUID: NativeInstallationStatus] = [:]
     /// fc2f17d1 H1: a launch's installation verdict (Repair or Remove) until the next installation check.
     @Published private(set) var launchVerdicts: [UUID: NativeInstallationStatus.Action] = [:]
+    @Published private(set) var windowsVersions: [UUID: String] = [:]
     @Published private(set) var installationErrors: [UUID: String] = [:]
     @Published private(set) var playLogs: [UUID: URL] = [:]
     @Published private(set) var playNotices: [UUID: String] = [:]
@@ -600,6 +601,7 @@ final class InstalledGamesController: ObservableObject {
             runIDs[game.id] = nil
             nativeInspectionTasks[game.id]?.cancel()
             launchVerdicts[game.id] = nil
+            windowsVersions[game.id] = nil
             installationStatuses[game.id] = nil
             installationErrors[game.id] = nil
             nativeInspectionDates[game.id] = nil
@@ -908,6 +910,7 @@ final class InstalledGamesController: ObservableObject {
         discoveredVerificationErrors = [:]
         installationStatuses = [:]
         launchVerdicts = [:]
+        windowsVersions = [:]
         installationErrors = [:]
         nativeInspectionDates = [:]
         loaded = false
@@ -1377,6 +1380,17 @@ final class InstalledGamesController: ObservableObject {
                     playLogs[game.id] = URL(fileURLWithPath: result.logDirectory)
                     playErrors[game.id] = result.launchFailureMessage(stoppedByUser: stoppedByUser)
                     launchVerdicts[game.id] = result.installVerdict
+                    do {
+                        let version = try await Task.detached {
+                            try NativeWindowsVersion.read(result: result)
+                        }.value
+                        windowsVersions[game.id] = version.map {
+                            "Last launch (\(Self.readableEngineName(launch.engine))): \($0.label)"
+                        }
+                    } catch {
+                        windowsVersions[game.id] = "Last launch: Windows version receipt unavailable"
+                        Self.launchLog.error("Windows version receipt rejected for \(game.storeId, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                    }
                     if !result.success {
                         Self.launchLog.error("Launch terminal result: \(game.storeId, privacy: .public); code=\(result.errorCode ?? "unknown", privacy: .public); error=\(result.error ?? "none", privacy: .public)")
                     }

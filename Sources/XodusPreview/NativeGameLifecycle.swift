@@ -8,7 +8,56 @@ enum NativeLifecyclePins {
     static let cliSHA256 = "33820b8f4acd0395b1e0aa1811880f21b29c4ba7ce583be98378a5f455e5c973"
 }
 
+struct NativeWindowsVersion: Equatable, Sendable {
+    let build: UInt32
+    let profile: String?
+
+    var label: String {
+        switch profile {
+        case "win7": "Windows 7 (build \(build))"
+        case "win8": "Windows 8 (build \(build))"
+        case "win81": "Windows 8.1 (build \(build))"
+        case "win11-24h2": "Windows 11 24H2 (build \(build))"
+        case "win11": "Windows 11 (build \(build))"
+        case "win10": "Windows 10 (build \(build))"
+        default: "Windows build \(build)"
+        }
+    }
+
+    static func decode(_ data: Data) throws -> Self {
+        let value = try JSONValue.decodeUnique(data, maximumBytes: 16_384)
+        guard value["status"]?.string == "applied",
+              let build = value["reportedBuild"]?.uint64, build > 0, build <= UInt32.max else {
+            throw GameScriptError.invalidReceipt
+        }
+        let profile = value["profile"]?.string
+        let expected: [String: UInt32] = ["win7": 7601, "win8": 9200, "win81": 9600,
+                                        "win10": 19045, "win11": 22000, "win11-24h2": 26100]
+        if let profile, let expectedBuild = expected[profile], expectedBuild != build {
+            throw GameScriptError.invalidReceipt
+        }
+        return Self(build: UInt32(build), profile: profile)
+    }
+
+    static func read(result: NativeGameResult) throws -> Self? {
+        let receipt = URL(fileURLWithPath: result.logDirectory).appendingPathComponent("windows-profile.json")
+        try GameScriptFiles.checkPath(receipt, allowMissing: true)
+        if FileManager.default.fileExists(atPath: receipt.path) {
+            return try decode(InstalledGameFiles.readRegular(receipt, maximumBytes: 16_384, privateFile: true))
+        }
+        guard let build = result.launchCommand?.existingWindowsBuild else { return nil }
+        guard build > 0 else { throw GameScriptError.invalidReceipt }
+        return Self(build: build, profile: nil)
+    }
+}
+
 struct NativeGameResult: Codable, Equatable, Sendable {
+    struct LaunchCommand: Codable, Equatable, Sendable {
+        let existingWindowsBuild: UInt32?
+        private enum CodingKeys: String, CodingKey {
+            case existingWindowsBuild = "windows_build_reported_existing"
+        }
+    }
     struct Warning: Codable, Equatable, Sendable {
         let code: String
         let message: String
@@ -36,11 +85,13 @@ struct NativeGameResult: Codable, Equatable, Sendable {
     var wineTerminationSignal: Int32? = nil
     var downloadResume: DownloadResume? = nil
     var titleRecipe: NativeTitleRecipeReceipt? = nil
+    var launchCommand: LaunchCommand? = nil
 
     private enum CodingKeys: String, CodingKey {
         case version, operation, product, success, error, warnings
         case downloadResume = "download_resume"
         case titleRecipe = "title_recipe"
+        case launchCommand = "launch_command"
         case popupMonitorError = "popup_monitor_error"
         case wineExitCode = "wine_exit_code", wineTerminationSignal = "wine_termination_signal"
         case runID = "run_id", exitCode = "exit_code", errorCode = "error_code"

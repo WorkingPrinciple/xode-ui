@@ -887,6 +887,9 @@ struct InstalledGameActions: View {
                     .accessibilityIdentifier("xodus.installed.showLog")
             }
             Menu("Engine") {
+                Text(library.windowsVersions[game.id] ?? "Windows version: Not reported yet")
+                Text("Reported by the last launch; existing prefixes are unchanged.")
+                Divider()
                 Button("Use default (\(library.defaultEngineLabel(for: game)))",
                        systemImage: game.engineOverrideV2 == nil ? "checkmark" : "circle") {
                     Task { await library.setEngineOverrideV2(nil, for: game) }

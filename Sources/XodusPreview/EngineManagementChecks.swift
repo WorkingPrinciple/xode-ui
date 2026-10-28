@@ -20,6 +20,30 @@ enum EngineManagementChecks {
     }
 
     static func launchSupportChecks(check: (Bool, String) -> Void) {
+        do {
+            let applied = try NativeWindowsVersion.decode(Data(
+                #"{"status":"applied","profile":"win11-24h2","reportedBuild":26100,"minimumBuild":26100}"#.utf8))
+            let existing = try JSONDecoder().decode(NativeGameResult.LaunchCommand.self, from: Data(
+                #"{"windows_build_reported_existing":19045}"#.utf8))
+            check(applied.label == "Windows 11 24H2 (build 26100)"
+                  && existing.existingWindowsBuild == 19045
+                  && NativeWindowsVersion(build: 19045, profile: nil).label == "Windows build 19045",
+                  "REQ-156: producer profile receipt and existing-prefix reported build display only observed facts")
+            for invalid in [
+                #"{"status":"failed","profile":"win11-24h2","reportedBuild":26100}"#,
+                #"{"status":"applied","reportedBuild":0}"#,
+                #"{"status":"applied","reportedBuild":4294967296}"#,
+                #"{"status":"applied","profile":"win11-24h2","reportedBuild":19045}"#,
+                #"{"status":"applied","reportedBuild":26100,"reportedBuild":19045}"#
+            ] {
+                do {
+                    _ = try NativeWindowsVersion.decode(Data(invalid.utf8))
+                    check(false, "REQ-156: invalid or failed Windows receipt is never shown as an applied profile")
+                } catch {
+                    check(true, "REQ-156: invalid or failed Windows receipt is never shown as an applied profile")
+                }
+            }
+        } catch { check(false, "REQ-156: producer Windows version fixtures decode: \(error.localizedDescription)") }
         let suite = "Xodus.req114.support.\(UUID().uuidString)"
         guard let defaults = UserDefaults(suiteName: suite) else { check(false, "REQ114 M1 isolated defaults"); return }
         defer { defaults.removePersistentDomain(forName: suite) }
