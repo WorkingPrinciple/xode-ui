@@ -136,7 +136,7 @@ with tempfile.TemporaryDirectory(prefix="xodus-pair-portable-") as temporary:
         return hashlib.sha256(inventory_path.read_bytes()).hexdigest()
 
     validate_producer_inventory(inventory_path, write_inventory(producer_inventory))
-    assert CLI_BYTES == 30_995_552 and WINDOWS_HELPER_BYTES == 22_016
+    assert CLI_BYTES == 31_020_992 and WINDOWS_HELPER_BYTES == 22_016
     producer_pins = swift_producer_pins()
     assert PRODUCER in producer_pins and PRODUCER_TREE in producer_pins
     count += 1

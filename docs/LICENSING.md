@@ -119,6 +119,25 @@ its matching supplemental evidence is
 It retains the existing unresolved corresponding-source delivery and applicable
 licence/notice review obligation.
 
+The successor issue #37 Passport-context hypothesis candidate is producer
+`0c6044eb08148f397434a0cf0b564bffb8b3a3cb`,
+tree `0df22ab4aeed0cf6fca1d25689caee0e640ccc1e`.
+Its source archive `xodus-cli-0c6044eb-source.tar` is SHA-256
+`7e9cd35ed9a5cee3926da9bffb7d10869f9872c22a14534bc5f252af4c95c69e`
+(10,219,520 bytes), with the same private-directory exclusions.
+The signed CLI is SHA-256
+`fc9a4147c9ac0edf19e9c45885f9f2a56f72751055a06c7044bc5963693a69fe`
+(31,020,992 bytes), and the build manifest is
+`6ccfbffb63cc71cf34dfd1118a8f26b41f43032cd1c51db7d93fb72d944e5188`.
+The helper, dependency lock, workspace manifests and root notice files are
+unchanged. The regenerated notice inventory is
+`2656d023ffbe3ef1aab9e31a3a6d031245f8f306be0579b8886729f43d3c5167`,
+bound to supplemental evidence
+`7f819dd6556e36d007fd90ac0b5f02528c8edc93c81c170fe372e6a03158b233`.
+The existing unresolved source-delivery and applicable licence/notice review
+obligation remains. This local candidate grants no distribution, legal,
+successful sign-in or gameplay clearance.
+
 For r7, the bound metadata identifies 479 packages, 462 with compiler artifacts,
 and 472 package-level licence declarations. The seven undeclared manifests are
 `eappx` and the six Xodus workspace crates; their repository licence texts are

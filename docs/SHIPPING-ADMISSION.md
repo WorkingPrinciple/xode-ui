@@ -28,6 +28,19 @@ native window closes and rejects a duplicate activation during the next flow.
 Independent source review `c1cec1bc-fc9c-408a-9c38-87abbd8665bf` passed this
 correction. It does not repair or explain the Xbox HTTP rejection.
 
+The successor local hypothesis candidate is producer
+`0c6044eb08148f397434a0cf0b564bffb8b3a3cb`
+(tree `0df22ab4aeed0cf6fca1d25689caee0e640ccc1e`).
+It uses the repository's native-client `TOKEN_BROKER` Passport request context,
+which has historical successful Xbox user-authentication evidence. The exact
+two-response selector validates the refreshed Passport token but does not save
+it, and forwards only the unprefixed compact Xbox ticket. Xbox proof, XSTS,
+account identity, throttling and public failure contracts are unchanged.
+Independent source review `c1cec1bc-fc9c-408a-9c38-87abbd8665bf` passed frozen
+patch `10c9a9348d8c4b88303408c71c2d27056698f679dce47fc96d2539d604cdb987`.
+This is a bounded hypothesis test, not an established root cause or a live
+sign-in result. A changed failure code alone does not accept REQ-49 or REQ-166.
+
 ## Exact dependency notices and complete component coverage
 
 Prepare producer notices locally before the final integrated build:
