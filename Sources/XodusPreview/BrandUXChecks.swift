@@ -624,6 +624,13 @@ enum BrandUXChecks {
               && ReadinessChecklistView.engineStatus(.missing).0 == .attention
               && ReadinessChecklistView.engineStatus(.invalid("x")).0 == .attention,
               "COR186 M7: Readiness maps Calimocho state to ready, checking or needs attention")
+        let crossOverApp = CrossOverInstallation(location: URL(fileURLWithPath: "/Applications/CrossOver.app"),
+                                                 version: "26.3", buildVersion: "26.3.0")
+        check(ReadinessChecklistView.crossOverStatus(.installed(crossOverApp)) == (.done, "CrossOver 26.3 was detected")
+              && ReadinessChecklistView.crossOverStatus(.absent) == (.optional, "CrossOver was not detected")
+              && ReadinessChecklistView.crossOverStatus(.unverified).0 == .attention
+              && ReadinessChecklistView.crossOverStatus(.checking).0 == .waiting,
+              "Readiness reports CrossOver as detected or not detected; absence is optional, not a warning")
         let missing = FileManager.default.temporaryDirectory
             .appendingPathComponent("XodusReadiness-\(UUID().uuidString)/Games/Not created yet").path
         let space = GamesFolderSpace.measure(folder: missing)
@@ -646,8 +653,10 @@ enum BrandUXChecks {
                                 name: "readiness-\(scheme == .dark ? "dark" : "light")")
             let joined = labels.joined(separator: " ")
             check(joined.contains("You're signed in") && joined.contains("Microsoft account")
-                  && joined.contains("Calimocho") && joined.contains("games folder") && joined.contains("Continue"),
-                  "COR186 M7: Readiness checklist (\(scheme)) lists account, engine and games folder: \(labels)")
+                  && joined.contains("Calimocho") && joined.contains("games folder") && joined.contains("Continue")
+                  && joined.contains("Available engines") && joined.contains("CrossOver")
+                  && joined.contains("configure engines later in Settings"),
+                  "COR186 M7: Readiness checklist (\(scheme)) lists account, engines group and games folder: \(labels)")
         }
     }
 

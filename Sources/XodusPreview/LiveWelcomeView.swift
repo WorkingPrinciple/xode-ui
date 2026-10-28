@@ -148,13 +148,14 @@ struct GamesFolderSpace: Equatable, Sendable {
 /// It reads existing status and offers the pinned engine's in-app install when needed.
 struct ReadinessChecklistView: View {
     enum Status: Equatable {
-        case done, waiting, attention
+        case done, waiting, attention, optional
 
         var symbol: String {
             switch self {
             case .done: "checkmark.circle.fill"
             case .waiting: "clock"
             case .attention: "exclamationmark.triangle.fill"
+            case .optional: "minus.circle"
             }
         }
 
@@ -163,6 +164,7 @@ struct ReadinessChecklistView: View {
             case .done: "Ready"
             case .waiting: "Checking"
             case .attention: "Needs attention"
+            case .optional: "Optional"
             }
         }
     }
@@ -177,6 +179,7 @@ struct ReadinessChecklistView: View {
     @State private var space: GamesFolderSpace?
     @State private var probe = GameStorageProbe()
     @State private var releaseStatus: CalimochoAvailability?
+    @State private var crossOver: CrossOverDependencyState = .notChecked
     @State private var recheck = 0
 
     init(session: LiveSession, installed: InstalledGamesController, allowsStatusReads: Bool = true,
@@ -205,9 +208,20 @@ struct ReadinessChecklistView: View {
         }
     }
 
+    /// CrossOver is optional, so its absence is neutral rather than a warning.
+    static func crossOverStatus(_ state: CrossOverDependencyState) -> (Status, String) {
+        switch state {
+        case .notChecked, .checking: (.waiting, "Checking for CrossOver…")
+        case .absent: (.optional, "CrossOver was not detected")
+        case .unverified: (.attention, "CrossOver was found but couldn't be verified")
+        case .installed(let app): (.done, "CrossOver \(app.version) was detected")
+        }
+    }
+
     var body: some View {
         let (engineState, engineTitle) = Self.engineStatus(engine)
         let activeProgress = calimochoInstaller.progress
+        let (crossOverState, crossOverTitle) = Self.crossOverStatus(crossOver)
         VStack(alignment: .leading, spacing: 20) {
             VStack(alignment: .leading, spacing: 6) {
                 Text("You're signed in").font(.title2.bold()).accessibilityAddTraits(.isHeader)
@@ -218,6 +232,10 @@ struct ReadinessChecklistView: View {
                 row(session.hasConfirmedSignIn ? .done : .waiting, title: "Microsoft account",
                     detail: session.accountJourneyTitle)
                     .accessibilityIdentifier("xodus.readiness.account")
+                Text("Available engines")
+                    .font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                    .accessibilityAddTraits(.isHeader)
+                    .accessibilityIdentifier("xodus.readiness.enginesHeader")
                 row(activeProgress == nil ? engineState : .waiting,
                     title: activeProgress?.label ?? engineTitle,
                     detail: engine.needsDownload ? engine.message : nil) {
@@ -237,6 +255,17 @@ struct ReadinessChecklistView: View {
                     }
                 }
                 .accessibilityIdentifier("xodus.readiness.engine")
+                row(crossOverState, title: crossOverTitle,
+                    detail: crossOver == .absent ? "Optional. Only needed for games set to use CrossOver." : nil)
+                    .accessibilityIdentifier("xodus.readiness.crossover")
+                HStack(spacing: 8) {
+                    Text("You can configure engines later in Settings.")
+                        .font(.callout).foregroundStyle(.secondary)
+                    Button("Open Engines Settings") { openSettingsPane(.engines) }
+                        .buttonStyle(.link)
+                        .accessibleLink()
+                }
+                .accessibilityIdentifier("xodus.readiness.enginesHint")
                 row(space == nil ? .waiting : space?.isLow == true || space?.availableBytes == nil ? .attention : .done,
                     title: space.map { "Games folder: \($0.summary)" } ?? "Checking the games folder…",
                     detail: space.map { space in
@@ -268,6 +297,13 @@ struct ReadinessChecklistView: View {
                 admission: CalimochoAvailability.admission(in: installed), root: calimochoInstaller.enginesRoot)
             guard !Task.isCancelled else { return }
             releaseStatus = status
+        }
+        .task(id: "\(allowsStatusReads):crossover:\(recheck)") {
+            guard allowsStatusReads else { return }
+            crossOver = .checking
+            let detected = await Task.detached(priority: .utility) { CrossOverDetector.detect() }.value
+            guard !Task.isCancelled else { return }
+            crossOver = detected
         }
         .task(id: allowsStatusReads) {
             guard allowsStatusReads else { return }
