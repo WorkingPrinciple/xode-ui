@@ -18,6 +18,16 @@ gameplay. No publishing or notarization is authorized by this local work.
 Keep the installed app rollback and account state; admit the candidate only
 after its exact signed CLI, source archive, notices and app pins agree.
 
+The real build 736 retry on 28 October reached
+`xbox.userAuthentication.httpClientError`; successful sign-in remains open.
+A separate app retry correction allows a new explicit attempt after an
+asynchronous terminal flow, even when the first-load request flag is still set.
+It still requires the existing current-status, signed-out, not-busy and
+not-pending gates. The mock check exercises the actual app entry point after a
+native window closes and rejects a duplicate activation during the next flow.
+Independent source review `c1cec1bc-fc9c-408a-9c38-87abbd8665bf` passed this
+correction. It does not repair or explain the Xbox HTTP rejection.
+
 ## Exact dependency notices and complete component coverage
 
 Prepare producer notices locally before the final integrated build:

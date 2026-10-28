@@ -158,7 +158,7 @@ final class AppState: ObservableObject {
     }
 
     func beginUnifiedSignIn(session: LiveSession) async {
-        guard !unifiedSignInRequested else { return }
+        guard !unifiedSignInRequested || session.canSignIn else { return }
         unifiedSignInRequested = true
         await session.beginSignIn()
         if !session.signInPending, !session.hasConfirmedSignIn {

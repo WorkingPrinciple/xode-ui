@@ -1027,7 +1027,13 @@ enum NativeChecks {
             let cancelledFlow = gated.authentication?.flow?.flowID
             check(gated.canSignIn && !gated.accountBusy,
                   "Confirmed cancellation enables an explicit next sign-in without deleting credentials")
-            await gated.beginSignIn()
+            let retrySuite = "XodusSignInRetry-\(UUID().uuidString)"
+            guard let retryDefaults = UserDefaults(suiteName: retrySuite) else {
+                throw ManagementError.invalidPayload
+            }
+            defer { retryDefaults.removePersistentDomain(forName: retrySuite) }
+            let retryState = AppState(settingsDefaults: retryDefaults)
+            await retryState.beginUnifiedSignIn(session: gated)
             check(try gated.signInPending && !gated.canSignIn
                   && gated.authentication?.flow?.flowID != cancelledFlow
                   && trace(gateConfiguration).filter { $0 == "auth.begin" }.count == 2,
@@ -1040,10 +1046,13 @@ enum NativeChecks {
                   && gated.authentication?.entitlementAuthorized == false
                   && trace(gateConfiguration).filter { $0 == "auth.cancel" }.count == 1,
                   "Observed helper-close cancellation clears pending via polling without an app cancel or saved badge")
-            await gated.beginSignIn()
+            await retryState.beginUnifiedSignIn(session: gated)
             check(try gated.signInPending && gated.authentication?.flow?.flowID != closedFlow
                   && trace(gateConfiguration).filter { $0 == "auth.begin" }.count == 3,
-                  "An automatically closed attempt permits exactly one fresh user retry")
+                  "REQ-49/166: An automatically closed attempt permits exactly one fresh user retry through the app entry point")
+            await retryState.beginUnifiedSignIn(session: gated)
+            check(try trace(gateConfiguration).filter { $0 == "auth.begin" }.count == 3,
+                  "REQ-49/166: The app entry point still rejects duplicate activation while sign-in is pending")
             await gated.cancelSignIn()
             await gated.disconnect()
             try cleanLifecycle(gateConfiguration)
