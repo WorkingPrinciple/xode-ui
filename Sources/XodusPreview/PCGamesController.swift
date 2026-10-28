@@ -137,8 +137,13 @@ final class PCGamesController: ObservableObject {
         if let pause = Self.throttlePause(after: error) { throttledUntil = now.addingTimeInterval(pause) }
     }
 
-    func scheduleDetailRetry(account: String) {
-        if let throttledUntil, Date() < throttledUntil { return }
+    /// bc33adf2 M-a: whether an automatic detail retry may be scheduled at `now` (none during a throttle).
+    func detailRetryAllowed(now: Date = Date()) -> Bool {
+        throttledUntil.map { now >= $0 } ?? true
+    }
+
+    func scheduleDetailRetry(account: String, now: Date = Date()) {
+        guard detailRetryAllowed(now: now) else { return }
         cancelDetailRetry()
         let attempt = Self.detailRetryDelays.count - detailRetriesLeft
         guard attempt >= 0, attempt < Self.detailRetryDelays.count else { return }

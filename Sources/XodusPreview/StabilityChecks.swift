@@ -310,8 +310,22 @@ import XodusManagement
               "bc33adf2 m1: a throttled game's page says Microsoft is limiting requests and for how long")
         // bc33adf2 M-a: library detail retries stop while Microsoft throttles or rejects the saved sign-in.
         let library = PCGamesController()
-        library.recordThrottle(after: ManagementError.authenticatedReadThrottled(retryAfterSeconds: 90))
-        library.scheduleDetailRetry(account: account)
+        let throttleAt = Date()
+        library.recordThrottle(after: ManagementError.authenticatedReadThrottled(retryAfterSeconds: 90), now: throttleAt)
+        var scheduledDuring = 0
+        for second in stride(from: 0.0, to: 90.0, by: 5.0) {
+            library.scheduleDetailRetry(account: account, now: throttleAt.addingTimeInterval(second))
+            if library.detailRetryPending { scheduledDuring += 1 }
+        }
+        let silent = PCGamesController()
+        silent.recordThrottle(after: ManagementError.authenticatedReadThrottled(retryAfterSeconds: nil), now: throttleAt)
+        let blockedAtNine = !silent.detailRetryAllowed(now: throttleAt.addingTimeInterval(599))
+        let openAfterTen = silent.detailRetryAllowed(now: throttleAt.addingTimeInterval(600))
+        for _ in 0..<3 { library.scheduleDetailRetry(account: account, now: throttleAt.addingTimeInterval(91)) }
+        let oneAfter = library.detailRetryPending && library.detailRetriesLeft == PCGamesController.detailRetryDelays.count
+        check(scheduledDuring == 0 && oneAfter && library.detailRetryAllowed(now: throttleAt.addingTimeInterval(90))
+              && blockedAtNine && openAfterTen,
+              "bc33adf2 M-a: zero library detail retries during the throttle window (Microsoft's 90 s, or 10 min without a delay); after it ends at most one is pending")
         check(!PCGamesController.automaticRetryAllowed(after: ManagementError.authenticatedReadThrottled(retryAfterSeconds: nil))
               && !PCGamesController.automaticRetryAllowed(after: ManagementError.recentLibraryThrottled(retryAfterSeconds: 30))
               && !PCGamesController.automaticRetryAllowed(after: ManagementError.authenticatedReadFailed(.authExchangeFailed))
