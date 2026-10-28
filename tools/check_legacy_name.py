@@ -37,7 +37,8 @@ PREFIXES = ("design/archive/",)
 # Whole lines allowed anywhere: credit to the upstream project and links to the inherited public fork.
 ATTRIBUTION = re.compile(r"xodus-gaming|WorkingPrinciple/xodus-macos(?![-\w])")
 # Tokens allowed anywhere: the pinned producer source archive name, until producer #7 is replaced.
-LINES = re.compile(r"xodus-cli-beta-[0-9a-f]{7,40}-source\.tar")
+# Also the upstream Wine environment name XODUS_XBL_ONLINE (inherited; never renamed).
+LINES = re.compile(r"xodus-cli-(?:beta-)?[0-9a-f]{7,40}-source\.tar|\bXODUS_XBL_ONLINE\b")
 
 
 def files(root):
@@ -49,7 +50,9 @@ def files(root):
 # Launch recipes pass the runtime's pre-rename debug channels beside the new ones for one release
 # (COR-337), so either runtime version traces. REMOVE AFTER NEXT RELEASE.
 RECIPES = "Sources/OdeManagement/Resources/LaunchRecipes/"
-RECIPE_TOKENS = re.compile(r"\+xodus_(?:user|package)\b")
+# They also keep the runtime-pin-pending environment names while the pinned runtime pair predates f8092bb.
+RECIPE_TOKENS = re.compile(r"\+xodus_(?:user|package)\b"
+                           r"|\bXODUS_PRIVATE_(?:RUNTIME_COM_STA|CALLER_OWNS_COM|LOCAL_SAVES)\b")
 
 
 def violations(root):

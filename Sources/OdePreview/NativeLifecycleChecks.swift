@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+import OdeLegacyCompatibility
 import Darwin
 import Foundation
 import CryptoKit
@@ -753,7 +754,7 @@ enum NativeLifecycleChecks {
             title.engine = rule.baseEngine
             title.runtime = NativeLocalRuntime(reference)
             title.executable = "Title/Exact.exe"
-            title.environment = ["ODE_PRIVATE_RUNTIME_COM_STA": "1"]
+            title.environment = [LegacyCompatibility.RuntimePinPending.runtimeComSTA: "1"]
             title.requiredFiles = [.init(path: primary.path, sha256: reference.primary.sha256)]
             title.prefixRegistryImports = [.init(path: primary.path, sha256: reference.primary.sha256)]
             title.prefixOverlays = [.init(path: legacy.path, sha256: reference.legacy.sha256,
@@ -779,7 +780,7 @@ enum NativeLifecycleChecks {
                   && explicit.profile?.runtime?.legacySHA256 == reference.legacy.sha256
                   && explicit.profile?.shimDirectory == title.shimDirectory
                   && explicit.profile?.arguments == ["--exe", "Title/Exact.exe"]
-                  && explicit.profile?.environment["ODE_PRIVATE_RUNTIME_COM_STA"] == "1"
+                  && explicit.profile?.environment[LegacyCompatibility.RuntimePinPending.runtimeComSTA] == "1"
                   && explicit.profile?.requiredFiles?.first?.sha256 == reference.primary.sha256
                   && explicit.profile?.requiredFiles?.last?.sha256 == rule.library.sha256
                   && explicit.profile?.prefixRegistryImports?.first?.path == primary.path
@@ -1139,7 +1140,7 @@ enum NativeLifecycleChecks {
             check(profile?.engine == expected[row.store_id]?.0
                   && profile?.arguments == ["--exe", expected[row.store_id]?.1 ?? ""]
                   && profile?.environment.isEmpty == true && profile?.dllOverrides == nil
-                  && profile?.unsetEnvironment?.contains("ODE_PRIVATE_RUNTIME_COM_STA") == true
+                  && profile?.unsetEnvironment?.contains(LegacyCompatibility.RuntimePinPending.runtimeComSTA) == true
                   && row.game_arguments.isEmpty,
                   "Candidate \(row.store_id) binds exact S1 engine/exe/empty args without STA or DLL overrides")
         }
@@ -1300,7 +1301,7 @@ enum NativeLifecycleChecks {
             provider: .standaloneWine, defaults: defaults, evidence: hogwartsEvidence)
         check(resolvedHogwarts.engine == "apple-gptk-4.0b3"
               && resolvedHogwarts.profile?.executable == "Phoenix/Binaries/WinGDK/HogwartsLegacy.exe"
-              && resolvedHogwarts.profile?.launchEnvironment == ["ODE_PRIVATE_RUNTIME_COM_STA": "1"]
+              && resolvedHogwarts.profile?.launchEnvironment == [LegacyCompatibility.RuntimePinPending.runtimeComSTA: "1"]
               && resolvedHogwarts.prefix.path.hasSuffix("/Ode to X/CLI/prefixes/s3-hogwarts-apple4-v1")
               && hogwartsEvidence.verifiedWorkingEvidence != nil,
               "Qualified Hogwarts uses exact published Apple4/STA1/direct exe/existing save prefix with Play eligibility and Working badge")
@@ -1338,7 +1339,7 @@ enum NativeLifecycleChecks {
         let sample = (raw["profiles"] as? [[String: Any]])?.first ?? [:]
         for change: [String: Any] in [
             ["status": "unknown-future-status"], ["ready_for_launch": false],
-            ["title_environment": ["ODE_PRIVATE_RUNTIME_COM_STA": "1"]],
+            ["title_environment": [LegacyCompatibility.RuntimePinPending.runtimeComSTA: "1"]],
             ["title_environment": ["WINEDLLOVERRIDES": "unapproved=n"]],
             ["game_arguments": ["--unapproved"]], ["profile": "unknown-engine"]
         ] {
@@ -1349,8 +1350,8 @@ enum NativeLifecycleChecks {
         }
         let first = rows.first { $0.admitted }!
         let fakeWine = root.appendingPathComponent("synthetic-install-status").path
-        for environment in [[:], ["ODE_PRIVATE_RUNTIME_COM_STA": "1"],
-                            ["ODE_PRIVATE_CALLER_OWNS_COM": "1"],
+        for environment in [[:], [LegacyCompatibility.RuntimePinPending.runtimeComSTA: "1"],
+                            [LegacyCompatibility.RuntimePinPending.callerOwnsCOM: "1"],
                             ["CX_APPLEGPTK_LIBD3DSHARED_PATH": "/unapproved/library"]] {
             let registry = try JSONDecoder().decode(NativeEngineRegistry.self,
                 from: JSONSerialization.data(withJSONObject: ["engines": [
@@ -1376,7 +1377,7 @@ enum NativeLifecycleChecks {
               && mixtape.dllOverrideEvidence?.runID == "005115dd-7928-4fbc-9ffa-28379040292d"
               && mixtape.engine == "apple-gptk-4.0b3" && mixtape.arguments == ["--exe", "Mixtape.exe"]
               && mixtape.environment.isEmpty
-              && mixtape.unsetEnvironment?.contains("ODE_PRIVATE_RUNTIME_COM_STA") == true,
+              && mixtape.unsetEnvironment?.contains(LegacyCompatibility.RuntimePinPending.runtimeComSTA) == true,
               "Mixtape-only native VC suffix is evidence-bound; pending STA stays inactive and no WORKING promotion occurs")
         let registry = root.appendingPathComponent("mixtape-original-registry.json")
         let base = "d3d10,d3d11,d3d12,d3d12core,dxgi=b;windows.web=n;XCurl=n;xgameruntime=n,b"
@@ -1411,7 +1412,7 @@ enum NativeLifecycleChecks {
             var invalid = mixtape
             if mode == "missing-evidence" { invalid.dllOverrideEvidence = nil }
             if mode == "unapproved-dll" { invalid.dllOverrides = "another=n" }
-            if mode == "pending-sta" { invalid.environment["ODE_PRIVATE_RUNTIME_COM_STA"] = "1" }
+            if mode == "pending-sta" { invalid.environment[LegacyCompatibility.RuntimePinPending.runtimeComSTA] = "1" }
             if mode == "other-title" {
                 var object = try JSONSerialization.jsonObject(with: JSONEncoder().encode(mixtape)) as? [String: Any] ?? [:]
                 object["productID"] = "FIXTURE00001"
@@ -1471,7 +1472,7 @@ enum NativeLifecycleChecks {
         let unsafeRegistry = try JSONSerialization.data(withJSONObject: ["engines": [[
             "name": row.profile, "kind": "free", "wine": "/usr/bin/true",
             "smoke_test": ["status": "pass"],
-            "environment": ["ODE_PRIVATE_RUNTIME_COM_STA": "1"]
+            "environment": [LegacyCompatibility.RuntimePinPending.runtimeComSTA: "1"]
         ]]])
         try unsafeRegistry.write(to: registryURL)
         do {
@@ -1489,9 +1490,9 @@ enum NativeLifecycleChecks {
         let hollowCandidate = try JSONDecoder().decode(NativeTitleLaunchProfile.self,
             from: Data(contentsOf: LaunchRecipeResources.hollowKnightSaveCandidateURL()))
         check(hollowCandidate.productID == "9MW9469V91LM"
-              && hollowCandidate.environment["ODE_PRIVATE_LOCAL_SAVES"] == "1"
-              && hollowCandidate.crossOverEnvironment == ["ODE_PRIVATE_LOCAL_SAVES": "1"]
-              && hollowCandidate.launchEnvironment["CX_ENV"] == "ODE_PRIVATE_LOCAL_SAVES='1'"
+              && hollowCandidate.environment[LegacyCompatibility.RuntimePinPending.localSaves] == "1"
+              && hollowCandidate.crossOverEnvironment == [LegacyCompatibility.RuntimePinPending.localSaves: "1"]
+              && hollowCandidate.launchEnvironment["CX_ENV"] == "\(LegacyCompatibility.RuntimePinPending.localSaves)='1'"
               && !profiles.contains(where: { $0.productID == hollowCandidate.productID }),
               "HK local-save mirror is an inactive data candidate, never applied before real saved-relaunch evidence")
         let runtimeCatalogue = try NativeTitleLaunchProfile.RuntimeCatalogue.bundled()
@@ -1499,15 +1500,15 @@ enum NativeLifecycleChecks {
               "Only observed Abiotic and now-qualified Hogwarts STA settings are active; other diagnostic candidates remain inactive")
         for item in runtimeCatalogue.items where !item.observed {
             check(!profiles.contains(where: {
-                $0.productID == item.storeId && $0.environment["ODE_PRIVATE_RUNTIME_COM_STA"] == "1"
+                $0.productID == item.storeId && $0.environment[LegacyCompatibility.RuntimePinPending.runtimeComSTA] == "1"
             }), "Pending \(item.storeId) never auto-applies STA from diagnostic inventory")
         }
         let abiotic = profiles.first { $0.productID == "9P4NV23Q6QC2" }
         check(abiotic?.engine == "apple-gptk-4.0b3"
               && abiotic?.arguments == ["--exe", "AbioticFactor/Binaries/WinGDK/AbioticFactor-WinGDK-Shipping.exe",
                                        "--timeout-seconds", "600", "--no-auto-dismiss"]
-              && abiotic?.environment["ODE_PRIVATE_RUNTIME_COM_STA"] == "1"
-              && abiotic?.unsetEnvironment == ["CX_APPLEGPTK_LIBD3DSHARED_PATH", "ODE_PRIVATE_CALLER_OWNS_COM"],
+              && abiotic?.environment[LegacyCompatibility.RuntimePinPending.runtimeComSTA] == "1"
+              && abiotic?.unsetEnvironment == ["CX_APPLEGPTK_LIBD3DSHARED_PATH", LegacyCompatibility.RuntimePinPending.callerOwnsCOM],
               "Abiotic tile binds S2's observed direct-Shipping STA1, stripping caller-owns and inherited sibling library without gameplay claims")
         guard let nms = profiles.first(where: { $0.productID == "BQVQTL3PCH05" && $0.provider == .crossover }),
               let freeNMS = profiles.first(where: { $0.productID == "BQVQTL3PCH05" && $0.provider == nil }) else {
@@ -1524,7 +1525,7 @@ enum NativeLifecycleChecks {
         check(freeNMS.engine == "calimocho-wine11.20-gptk4b3-tls-vulkan-private"
               && freeNMS.runtime?.primaryPath == "${HOME}/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll"
               && freeNMS.runtime?.legacySHA256 == "cfe7e5f837fabc51b8066809ca69c2ee0a7852512afbb1979190ec495b0b8b96"
-              && freeNMS.environment == ["ODE_PRIVATE_LOCAL_SAVES": "1", "ODE_XBL_ONLINE": "1"]
+              && freeNMS.environment == [LegacyCompatibility.RuntimePinPending.localSaves: "1", LegacyCompatibility.Inherited.xblOnline: "1"]
               && freeNMS.arguments == ["--exe", "Binaries/NMS.exe", "--no-auto-dismiss"],
               "Free NMS binds the observed port11b runtime, executable, local saves and online environment without old GPTK3 overrides")
         let suite = "io.github.ode.recipe-check.\(UUID().uuidString)"
@@ -1550,7 +1551,7 @@ enum NativeLifecycleChecks {
                   && launch.profile?.arguments == ["--exe", "Brotato.exe", "--no-auto-dismiss"]
                   && launch.profile?.environment.isEmpty == true
                   && Set(launch.profile?.unsetEnvironment ?? []) == Set([
-                    "ODE_PRIVATE_RUNTIME_COM_STA", "ODE_PRIVATE_CALLER_OWNS_COM", "CX_APPLEGPTK_LIBD3DSHARED_PATH"])
+                    LegacyCompatibility.RuntimePinPending.runtimeComSTA, LegacyCompatibility.RuntimePinPending.callerOwnsCOM, "CX_APPLEGPTK_LIBD3DSHARED_PATH"])
                   && launch.profile?.runtime?.primarySHA256 == "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8"
                   && launch.profile?.runtime?.legacySHA256 == "cfe7e5f837fabc51b8066809ca69c2ee0a7852512afbb1979190ec495b0b8b96"
                   && launch.profile?.wineSha256 == CalimochoReleasePin.release06.wineSha256
@@ -1561,16 +1562,16 @@ enum NativeLifecycleChecks {
                   "Brotato selects admitted Calimocho -06 with exact Wine/server pins, not a conflicting default provider")
         }
         let observedAbiotic = try NativeTitleLaunchProfile.read(productID: "9P4NV23Q6QC2", defaults: defaults)
-        check(observedAbiotic?.launchEnvironment["ODE_PRIVATE_RUNTIME_COM_STA"] == "1"
-              && observedAbiotic?.launchEnvironment["ODE_PRIVATE_CALLER_OWNS_COM"] == nil
+        check(observedAbiotic?.launchEnvironment[LegacyCompatibility.RuntimePinPending.runtimeComSTA] == "1"
+              && observedAbiotic?.launchEnvironment[LegacyCompatibility.RuntimePinPending.callerOwnsCOM] == nil
               && observedAbiotic?.unsetEnvironment?.contains("CX_APPLEGPTK_LIBD3DSHARED_PATH") == true
-              && defaultNMS?.environment["ODE_PRIVATE_RUNTIME_COM_STA"] == nil,
+              && defaultNMS?.environment[LegacyCompatibility.RuntimePinPending.runtimeComSTA] == nil,
               "Actual tile profile selection consumes observed Abiotic settings and preserves working NMS")
         let pendingID = "9PJPCB188SVG"
         check(try NativeTitleLaunchProfile.read(productID: pendingID, defaults: defaults) == nil,
               "An unqualified pending diagnostic candidate is not a normal tile launch profile")
         let pendingProfile = NativeTitleLaunchProfile(version: 1, productID: pendingID,
-            engine: "apple-gptk-4.0b3", shimDirectory: nil, environment: ["ODE_PRIVATE_RUNTIME_COM_STA": "1"])
+            engine: "apple-gptk-4.0b3", shimDirectory: nil, environment: [LegacyCompatibility.RuntimePinPending.runtimeComSTA: "1"])
         try JSONEncoder().encode(pendingProfile).write(to: root.appendingPathComponent(pendingID + ".json"))
         do {
             _ = try NativeTitleLaunchProfile.read(productID: pendingID, defaults: defaults)

@@ -137,7 +137,7 @@ with tempfile.TemporaryDirectory(prefix="ode-pair-portable-") as temporary:
         return hashlib.sha256(inventory_path.read_bytes()).hexdigest()
 
     validate_producer_inventory(inventory_path, write_inventory(producer_inventory))
-    assert CLI_BYTES == 30_935_088 and WINDOWS_HELPER_BYTES == 22_016
+    assert CLI_BYTES == 30_896_480 and WINDOWS_HELPER_BYTES == 22_016
     producer_pins = swift_producer_pins()
     assert PRODUCER in producer_pins and PRODUCER_TREE in producer_pins
     count += 1
@@ -520,44 +520,37 @@ import importlib
 import subprocess
 import shipping_pair
 from legacy_compatibility import LEGACY_SCHEMA_ID_PREFIX
+renamed_contract = b'{"$id": "urn:ode:management:1.0"}'
+shipping_pair.require_renamed_producer(renamed_contract)
+count += 1
+assert shipping_pair.PRODUCER not in shipping_pair.PRE_RENAME_PRODUCERS
 try:
-    shipping_pair.require_renamed_producer()
-    raise AssertionError("Pre-rename producer pin accepted for packaging")
+    shipping_pair.require_renamed_producer(b'{"$id": "' + LEGACY_SCHEMA_ID_PREFIX.encode() + b'management:1.0"}')
+    raise AssertionError("Pre-rename producer contract accepted")
 except ValueError:
     count += 1
-renamed = shipping_pair.PRODUCER_RENAMED
-shipping_pair.PRODUCER_RENAMED = True
+pinned, renamed = shipping_pair.PRODUCER, shipping_pair.PRODUCER_RENAMED
 try:
-    try:
-        shipping_pair.require_renamed_producer(b'{"$id": "' + LEGACY_SCHEMA_ID_PREFIX.encode() + b'management:1.0"}')
-        raise AssertionError("Pre-rename producer contract accepted")
-    except ValueError:
-        count += 1
-    try:
-        shipping_pair.require_renamed_producer()
-        raise AssertionError("Flag set without moving the pins off a pre-rename producer accepted")
-    except ValueError:
-        count += 1
-    pinned = shipping_pair.PRODUCER
-    shipping_pair.PRODUCER = "0" * 40
-    try:
-        shipping_pair.require_renamed_producer(b'{"$id": "urn:ode:management:1.0"}')
-        count += 1
-    finally:
-        shipping_pair.PRODUCER = pinned
+    for producer, flag in ((pinned, False), (next(iter(shipping_pair.PRE_RENAME_PRODUCERS)), True)):
+        shipping_pair.PRODUCER, shipping_pair.PRODUCER_RENAMED = producer, flag
+        try:
+            shipping_pair.require_renamed_producer(renamed_contract)
+            raise AssertionError("Packaging accepted without a reviewed renamed producer pin")
+        except ValueError:
+            count += 1
+    for module, call in (("release_candidate", lambda m: m.main()), ("package_beta", lambda m: m.main()),
+                         ("refresh_local_candidate", lambda m: m.refresh(Path("/nonexistent"), Path("/nonexistent"), "x")),
+                         ("build_local_candidate", lambda m: m.build(Path("/nonexistent"), Path("/nonexistent"), "x"))):
+        try:
+            call(importlib.import_module(module))
+            raise AssertionError(module + " packaged with a pre-rename producer")
+        except ValueError as error:
+            assert "REQ-150" in str(error), error
+            count += 1
 finally:
-    shipping_pair.PRODUCER_RENAMED = renamed
-for module, call in (("release_candidate", lambda m: m.main()), ("package_beta", lambda m: m.main()),
-                     ("refresh_local_candidate", lambda m: m.refresh(Path("/nonexistent"), Path("/nonexistent"), "x")),
-                     ("build_local_candidate", lambda m: m.build(Path("/nonexistent"), Path("/nonexistent"), "x"))):
-    try:
-        call(importlib.import_module(module))
-        raise AssertionError(module + " packaged with a pre-rename producer")
-    except ValueError as error:
-        assert "REQ-150" in str(error), error
-        count += 1
-refused = subprocess.run(["sh", str(Path(__file__).resolve().parent / "build_app.sh")] + ["x"] * 9,
-                         capture_output=True, text=True)
-assert refused.returncode != 0 and "REQ-150" in refused.stderr, refused.stderr
+    shipping_pair.PRODUCER, shipping_pair.PRODUCER_RENAMED = pinned, renamed
+build_app = (Path(__file__).resolve().parent / "build_app.sh").read_text()
+gate = build_app.find("shipping_pair.require_renamed_producer()")
+assert 0 <= gate < build_app.find("engine=$1"), "build_app.sh must check the renamed producer before using any input"
 count += 1
 print(f"{count} portable packaging admission checks, 0 failures. Neutral bytes only.")

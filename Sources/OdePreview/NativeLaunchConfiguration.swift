@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+import OdeLegacyCompatibility
 import CryptoKit
 import Foundation
 import OdeCore
@@ -183,7 +184,7 @@ struct NativeTitleLaunchProfile: Codable {
         static func bundled() throws -> Self {
             let bytes = try Data(contentsOf: LaunchRecipeResources.runtimeProfilesURL())
             guard SHA256.hash(data: bytes).map({ String(format: "%02x", $0) }).joined()
-                    == "c1f052478b50c487216518b930c3cbcca2e87e5e15e22f3dd882a10adf0868d4" else {
+                    == "9d185c452144754d5d40e3a83b9f3c66f9256add40bf9f68c828836771102141" else {
                 throw NativeLaunchError.invalidProfile
             }
             let catalogue = try JSONDecoder().decode(Self.self, from: bytes)
@@ -318,7 +319,7 @@ struct NativeTitleLaunchProfile: Codable {
         for item in runtimeCatalogue.items {
             if !item.observed {
                 guard !active.contains(where: {
-                    $0.productID == item.storeId && $0.environment["ODE_PRIVATE_RUNTIME_COM_STA"] == "1"
+                    $0.productID == item.storeId && $0.environment[LegacyCompatibility.RuntimePinPending.runtimeComSTA] == "1"
                 }) else { throw NativeLaunchError.invalidProfile }
                 continue
             }
@@ -327,8 +328,8 @@ struct NativeTitleLaunchProfile: Codable {
                   active[index].executable == item.launch.executable,
                   active[index].runtime?.primarySHA256 == runtimeCatalogue.primaryRuntimeSha256,
                   active[index].runtime?.legacySHA256 == runtimeCatalogue.legacyRuntimeSha256,
-                  item.launch.environment["ODE_PRIVATE_CALLER_OWNS_COM"] == nil,
-                  item.launch.unsetEnvironment.contains("ODE_PRIVATE_CALLER_OWNS_COM") else {
+                  item.launch.environment[LegacyCompatibility.RuntimePinPending.callerOwnsCOM] == nil,
+                  item.launch.unsetEnvironment.contains(LegacyCompatibility.RuntimePinPending.callerOwnsCOM) else {
                 throw NativeLaunchError.invalidProfile
             }
             active[index].environment.merge(item.launch.environment, uniquingKeysWith: { _, observed in observed })
@@ -360,7 +361,7 @@ struct NativeTitleLaunchProfile: Codable {
         guard FileManager.default.fileExists(atPath: url.path) else { return nil }
         let profile = try JSONDecoder().decode(Self.self, from: InstalledGameFiles.readRegular(url, maximumBytes: 65_536))
         try profile.validate(productID: productID)
-        if profile.environment["ODE_PRIVATE_RUNTIME_COM_STA"] == "1",
+        if profile.environment[LegacyCompatibility.RuntimePinPending.runtimeComSTA] == "1",
            try RuntimeCatalogue.bundled().items.contains(where: { $0.storeId == productID && !$0.observed }) {
             throw NativeLaunchError.invalidProfile
         }
@@ -400,7 +401,7 @@ struct NativeTitleLaunchProfile: Codable {
                   preservedPrefixPath == "${HOME}/Library/Application Support/Ode to X/CLI/prefixes/req71-nms-calimocho-port11b-v1",
                   registrySHA256 == "170ca4ad08a5274b614e74bf740866ef219a97fdc7855270c5d8fa03192ed609",
                   executable == "Binaries/NMS.exe", noAutoDismiss == true,
-                  environment == ["ODE_PRIVATE_LOCAL_SAVES": "1", "ODE_XBL_ONLINE": "1"],
+                  environment == [LegacyCompatibility.RuntimePinPending.localSaves: "1", LegacyCompatibility.Inherited.xblOnline: "1"],
                   runtime?.primarySHA256 == "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8",
                   runtime?.legacySHA256 == "cfe7e5f837fabc51b8066809ca69c2ee0a7852512afbb1979190ec495b0b8b96",
                   prefixRegistryImports == nil, prefixOverlays == nil, dllOverrides == nil else {
@@ -448,7 +449,7 @@ struct NativeTitleLaunchProfile: Codable {
         if let dllOverrides {
             guard productID == "9NH0MSG29X6L", engine == "apple-gptk-4.0b3",
                   executable == "Mixtape.exe", dllOverrides == "msvcp140_2,vcruntime140_1=n,b",
-                  environment["ODE_PRIVATE_RUNTIME_COM_STA"] == nil,
+                  environment[LegacyCompatibility.RuntimePinPending.runtimeComSTA] == nil,
                   environment["WINEDLLOVERRIDES"] == nil,
                   dllOverrideEvidence?.runID == "005115dd-7928-4fbc-9ffa-28379040292d",
                   dllOverrideEvidence?.receiptSHA256 == "f0041fb14f5dc9bec12fa1368697aab72b26ae36822e0d80d59ccb1d361686bb",
@@ -750,10 +751,10 @@ struct NativeLaunchConfiguration {
                 throw NativeLaunchError.invalidProfile
             }
         }
-        if let profile, profile.environment["ODE_PRIVATE_RUNTIME_COM_STA"] == "1" {
+        if let profile, profile.environment[LegacyCompatibility.RuntimePinPending.runtimeComSTA] == "1" {
             guard profile.engine == entry.name,
                   (profile.unsetEnvironment ?? []).allSatisfy({ entry.environment?[$0] == nil }),
-                  entry.environment?["ODE_PRIVATE_RUNTIME_COM_STA"].map({ $0 == "1" }) ?? true else {
+                  entry.environment?[LegacyCompatibility.RuntimePinPending.runtimeComSTA].map({ $0 == "1" }) ?? true else {
                 throw NativeLaunchError.invalidProfile
             }
         }

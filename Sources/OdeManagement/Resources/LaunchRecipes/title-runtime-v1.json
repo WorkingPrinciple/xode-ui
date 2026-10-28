@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "cliSha256": "f77208c9fce39993b12d2bb649ea4a0de3a592dfcbe0d2101dea712d6d13713f",
+  "cliSha256": "4034e2cab0bf3bdad9bd2ce840783fbc92bad160fa24c1fcdb50213b39d325b1",
   "evidenceCliSha256": "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604",
   "primaryRuntimeSha256": "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8",
   "legacyRuntimeSha256": "cfe7e5f837fabc51b8066809ca69c2ee0a7852512afbb1979190ec495b0b8b96",
@@ -13,10 +13,10 @@
         "engine": "apple-gptk-4.0b3",
         "executable": "AbioticFactor/Binaries/WinGDK/AbioticFactor-WinGDK-Shipping.exe",
         "environment": {
-          "ODE_PRIVATE_RUNTIME_COM_STA": "1"
+          "XODUS_PRIVATE_RUNTIME_COM_STA": "1"
         },
         "unsetEnvironment": [
-          "ODE_PRIVATE_CALLER_OWNS_COM",
+          "XODUS_PRIVATE_CALLER_OWNS_COM",
           "CX_APPLEGPTK_LIBD3DSHARED_PATH"
         ]
       },
@@ -37,10 +37,10 @@
         "engine": "apple-gptk-4.0b3",
         "executable": "Phoenix/Binaries/WinGDK/HogwartsLegacy.exe",
         "environment": {
-          "ODE_PRIVATE_RUNTIME_COM_STA": "1"
+          "XODUS_PRIVATE_RUNTIME_COM_STA": "1"
         },
         "unsetEnvironment": [
-          "ODE_PRIVATE_CALLER_OWNS_COM",
+          "XODUS_PRIVATE_CALLER_OWNS_COM",
           "CX_APPLEGPTK_LIBD3DSHARED_PATH"
         ]
       },
@@ -61,10 +61,10 @@
         "engine": "apple-gptk-4.0b3",
         "executable": "Mixtape.exe",
         "environment": {
-          "ODE_PRIVATE_RUNTIME_COM_STA": "1"
+          "XODUS_PRIVATE_RUNTIME_COM_STA": "1"
         },
         "unsetEnvironment": [
-          "ODE_PRIVATE_CALLER_OWNS_COM",
+          "XODUS_PRIVATE_CALLER_OWNS_COM",
           "CX_APPLEGPTK_LIBD3DSHARED_PATH"
         ]
       },
@@ -81,10 +81,10 @@
         "engine": "apple-gptk-4.0b3",
         "executable": "Subnautica2.exe",
         "environment": {
-          "ODE_PRIVATE_RUNTIME_COM_STA": "1"
+          "XODUS_PRIVATE_RUNTIME_COM_STA": "1"
         },
         "unsetEnvironment": [
-          "ODE_PRIVATE_CALLER_OWNS_COM",
+          "XODUS_PRIVATE_CALLER_OWNS_COM",
           "CX_APPLEGPTK_LIBD3DSHARED_PATH"
         ]
       },
@@ -101,10 +101,10 @@
         "engine": "apple-gptk-4.0b3",
         "executable": "BeastOfReincarnation/Binaries/WinGDK/BeastOfReincarnation-WinGDK-Shipping.exe",
         "environment": {
-          "ODE_PRIVATE_RUNTIME_COM_STA": "1"
+          "XODUS_PRIVATE_RUNTIME_COM_STA": "1"
         },
         "unsetEnvironment": [
-          "ODE_PRIVATE_CALLER_OWNS_COM",
+          "XODUS_PRIVATE_CALLER_OWNS_COM",
           "CX_APPLEGPTK_LIBD3DSHARED_PATH"
         ]
       },
@@ -121,10 +121,10 @@
         "engine": "creation-dx11-d3dmetal",
         "executable": "BMC.exe",
         "environment": {
-          "ODE_PRIVATE_RUNTIME_COM_STA": "1"
+          "XODUS_PRIVATE_RUNTIME_COM_STA": "1"
         },
         "unsetEnvironment": [
-          "ODE_PRIVATE_CALLER_OWNS_COM",
+          "XODUS_PRIVATE_CALLER_OWNS_COM",
           "CX_APPLEGPTK_LIBD3DSHARED_PATH"
         ]
       },
@@ -141,10 +141,10 @@
         "engine": "apple-gptk-4.0b3",
         "executable": "PaganIdol.exe",
         "environment": {
-          "ODE_PRIVATE_RUNTIME_COM_STA": "1"
+          "XODUS_PRIVATE_RUNTIME_COM_STA": "1"
         },
         "unsetEnvironment": [
-          "ODE_PRIVATE_CALLER_OWNS_COM",
+          "XODUS_PRIVATE_CALLER_OWNS_COM",
           "CX_APPLEGPTK_LIBD3DSHARED_PATH"
         ]
       },
@@ -161,10 +161,10 @@
         "engine": "apple-gptk-4.0b3",
         "executable": "DiggingGame/Binaries/WinGDK/DiggingGame-WinGDK-Shipping.exe",
         "environment": {
-          "ODE_PRIVATE_RUNTIME_COM_STA": "1"
+          "XODUS_PRIVATE_RUNTIME_COM_STA": "1"
         },
         "unsetEnvironment": [
-          "ODE_PRIVATE_CALLER_OWNS_COM",
+          "XODUS_PRIVATE_CALLER_OWNS_COM",
           "CX_APPLEGPTK_LIBD3DSHARED_PATH"
         ]
       },
@@ -181,10 +181,10 @@
         "engine": "wine-devel-dxmt",
         "executable": "WellDweller.exe",
         "environment": {
-          "ODE_PRIVATE_RUNTIME_COM_STA": "1"
+          "XODUS_PRIVATE_RUNTIME_COM_STA": "1"
         },
         "unsetEnvironment": [
-          "ODE_PRIVATE_CALLER_OWNS_COM",
+          "XODUS_PRIVATE_CALLER_OWNS_COM",
           "CX_APPLEGPTK_LIBD3DSHARED_PATH"
         ]
       },
@@ -201,10 +201,10 @@
         "engine": "queue-winecx-nativejson",
         "executable": "Binaries/Win64/Dishonored.exe",
         "environment": {
-          "ODE_PRIVATE_RUNTIME_COM_STA": "1"
+          "XODUS_PRIVATE_RUNTIME_COM_STA": "1"
         },
         "unsetEnvironment": [
-          "ODE_PRIVATE_CALLER_OWNS_COM",
+          "XODUS_PRIVATE_CALLER_OWNS_COM",
           "CX_APPLEGPTK_LIBD3DSHARED_PATH"
         ]
       },

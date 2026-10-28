@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+import OdeLegacyCompatibility
 import Foundation
 import OdeManagement
 
@@ -80,7 +81,7 @@ enum NativeFH6Recipe {
       "CALIMOCHO_FIX_THREADPOOL_IO": "1", "CALIMOCHO_FIX_ICON_REPLY": "1",
       "D3DM_VENDOR_ID": "0x10de", "D3DM_DEVICE_ID": "0x2786",
       "D3DM_DEVICE_DESCRIPTION": "NVIDIA GeForce RTX 4070", "D3DM_MTL4": "0",
-      "ODE_PRIVATE_LOCAL_SAVES": "1",
+      LegacyCompatibility.RuntimePinPending.localSaves: "1",
       "HB_D3D12_REAL": "Z:" + root.path.replacingOccurrences(of: "/", with: "\\")
         + "\\lib\\wine\\x86_64-windows\\d3d12.dll",
     ]

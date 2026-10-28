@@ -73,8 +73,8 @@ The app does not read data from the old roots. If an old State or CLI root is st
 3. Backend contract schema copies (now carrying canonical IDs; listed so a future resync cannot silently reintroduce old names elsewhere).
 4. Immutable archives under `design/archive/`.
 5. Whole lines crediting the upstream project (`xodus-gaming/xodus`) or linking the inherited public fork `WorkingPrinciple/xodus-macos`.
-6. Tokens anywhere: the pinned producer archive name `xodus-cli-beta-<sha>-source.tar` until producer #7 is replaced.
-7. In launch recipes only: the runtime's pre-rename debug channels `+xodus_user` and `+xodus_package`, passed beside `+ode_user`/`+ode_package` for one release so either runtime version traces (COR-337).
+6. Tokens anywhere: pinned producer archive names `xodus-cli-<…>-source.tar`, and the inherited upstream Wine name `XODUS_XBL_ONLINE`.
+7. In launch recipes only: the runtime-pin-pending environment names above, and the runtime's pre-rename debug channels `+xodus_user` and `+xodus_package`, passed beside `+ode_user`/`+ode_package` for one release so either runtime version traces (COR-337).
 
 Code inherited from upstream forks is not in this repository. Historical evidence documents keep their entries; paths and names in them use the new names, and the originals remain in Git history.
 
@@ -87,7 +87,12 @@ Code inherited from upstream forks is not in this repository. Historical evidenc
 
 ## Pairing
 
-The renamed app emits `ODE_*` runtime variables (`ODE_PRIVATE_RUNTIME_COM_STA`, `ODE_PRIVATE_CALLER_OWNS_COM`, `ODE_PRIVATE_LOCAL_SAVES`, `ODE_XBL_ONLINE`, `ODE_WINE_DEBUG`, `ODE_LICENSE_SOCKET`, `ODE_DESCRIPTOR_METRICS`), so it must ship with a backend and runtime that read them. Recipes and launch configuration that hard-code data paths use the new roots, so the data move must run before its first launch.
+The app pairs with the renamed producer `285696f9` (REQ-161), which reads `ODE_*` first and the old names for one release. Recipes and launch configuration that hard-code data paths use the new roots, so the data move must run before the first launch.
+
+Two kinds of environment name keep the old spelling, and both live only in the Swift compatibility file and the launch recipes:
+
+- `XODUS_XBL_ONLINE` is read by upstream Wine's builtin xgameruntime and is never renamed.
+- `XODUS_PRIVATE_RUNTIME_COM_STA`, `XODUS_PRIVATE_CALLER_OWNS_COM` and `XODUS_PRIVATE_LOCAL_SAVES` are runtime-pin-pending: the app's pinned runtime pair predates `f8092bb` and reads only these names. They move to `ODE_*` when a runtime at or after `f8092bb` is pinned (no dual writes).
 
 ## Follow-ups
 

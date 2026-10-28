@@ -60,8 +60,8 @@
       "noAutoDismiss": true,
       "environment": {},
       "unsetEnvironment": [
-        "ODE_PRIVATE_RUNTIME_COM_STA",
-        "ODE_PRIVATE_CALLER_OWNS_COM",
+        "XODUS_PRIVATE_RUNTIME_COM_STA",
+        "XODUS_PRIVATE_CALLER_OWNS_COM",
         "CX_APPLEGPTK_LIBD3DSHARED_PATH"
       ],
       "runtime": {
@@ -82,12 +82,12 @@
       "noAutoDismiss": true,
       "gameRecipe": "hades-mscoree-v1",
       "environment": {
-        "ODE_PRIVATE_LOCAL_SAVES": "1",
-        "ODE_XBL_ONLINE": "1"
+        "XODUS_PRIVATE_LOCAL_SAVES": "1",
+        "XODUS_XBL_ONLINE": "1"
       },
       "unsetEnvironment": [
-        "ODE_PRIVATE_RUNTIME_COM_STA",
-        "ODE_PRIVATE_CALLER_OWNS_COM",
+        "XODUS_PRIVATE_RUNTIME_COM_STA",
+        "XODUS_PRIVATE_CALLER_OWNS_COM",
         "CX_APPLEGPTK_LIBD3DSHARED_PATH"
       ],
       "runtime": {
@@ -107,12 +107,12 @@
       "executable": "EasyDeliveryCo.exe",
       "noAutoDismiss": true,
       "environment": {
-        "ODE_PRIVATE_LOCAL_SAVES": "1",
-        "ODE_XBL_ONLINE": "1"
+        "XODUS_PRIVATE_LOCAL_SAVES": "1",
+        "XODUS_XBL_ONLINE": "1"
       },
       "unsetEnvironment": [
-        "ODE_PRIVATE_RUNTIME_COM_STA",
-        "ODE_PRIVATE_CALLER_OWNS_COM",
+        "XODUS_PRIVATE_RUNTIME_COM_STA",
+        "XODUS_PRIVATE_CALLER_OWNS_COM",
         "CX_APPLEGPTK_LIBD3DSHARED_PATH"
       ],
       "runtime": {
@@ -132,12 +132,12 @@
       "executable": "WellDweller.exe",
       "noAutoDismiss": true,
       "environment": {
-        "ODE_PRIVATE_LOCAL_SAVES": "1",
-        "ODE_XBL_ONLINE": "1"
+        "XODUS_PRIVATE_LOCAL_SAVES": "1",
+        "XODUS_XBL_ONLINE": "1"
       },
       "unsetEnvironment": [
-        "ODE_PRIVATE_RUNTIME_COM_STA",
-        "ODE_PRIVATE_CALLER_OWNS_COM",
+        "XODUS_PRIVATE_RUNTIME_COM_STA",
+        "XODUS_PRIVATE_CALLER_OWNS_COM",
         "CX_APPLEGPTK_LIBD3DSHARED_PATH"
       ],
       "runtime": {
@@ -158,10 +158,10 @@
       "timeoutSeconds": 600,
       "noAutoDismiss": true,
       "environment": {
-        "ODE_PRIVATE_RUNTIME_COM_STA": "1"
+        "XODUS_PRIVATE_RUNTIME_COM_STA": "1"
       },
       "unsetEnvironment": [
-        "ODE_PRIVATE_CALLER_OWNS_COM",
+        "XODUS_PRIVATE_CALLER_OWNS_COM",
         "CX_APPLEGPTK_LIBD3DSHARED_PATH"
       ],
       "runtime": {
@@ -185,8 +185,8 @@
       "noAutoDismiss": true,
       "environment": {},
       "unsetEnvironment": [
-        "ODE_PRIVATE_RUNTIME_COM_STA",
-        "ODE_PRIVATE_CALLER_OWNS_COM",
+        "XODUS_PRIVATE_RUNTIME_COM_STA",
+        "XODUS_PRIVATE_CALLER_OWNS_COM",
         "CX_APPLEGPTK_LIBD3DSHARED_PATH"
       ],
       "runtime": {
@@ -204,8 +204,8 @@
       "executable": "Mixtape.exe",
       "environment": {},
       "unsetEnvironment": [
-        "ODE_PRIVATE_RUNTIME_COM_STA",
-        "ODE_PRIVATE_CALLER_OWNS_COM",
+        "XODUS_PRIVATE_RUNTIME_COM_STA",
+        "XODUS_PRIVATE_CALLER_OWNS_COM",
         "CX_APPLEGPTK_LIBD3DSHARED_PATH"
       ],
       "dllOverrides": "msvcp140_2,vcruntime140_1=n,b",
@@ -246,8 +246,8 @@
       "preservedPrefixPath": "${HOME}/Library/Application Support/Ode to X/CLI/prefixes/req71-nms-calimocho-port11b-v1",
       "registrySHA256": "170ca4ad08a5274b614e74bf740866ef219a97fdc7855270c5d8fa03192ed609",
       "environment": {
-        "ODE_PRIVATE_LOCAL_SAVES": "1",
-        "ODE_XBL_ONLINE": "1"
+        "XODUS_PRIVATE_LOCAL_SAVES": "1",
+        "XODUS_XBL_ONLINE": "1"
       },
       "runtime": {
         "primaryPath": "${HOME}/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll",
@@ -267,8 +267,8 @@
       "noAutoDismiss": true,
       "environment": {},
       "unsetEnvironment": [
-        "ODE_PRIVATE_RUNTIME_COM_STA",
-        "ODE_PRIVATE_CALLER_OWNS_COM",
+        "XODUS_PRIVATE_RUNTIME_COM_STA",
+        "XODUS_PRIVATE_CALLER_OWNS_COM",
         "CX_APPLEGPTK_LIBD3DSHARED_PATH"
       ]
     }
@@ -288,8 +288,8 @@
         "MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS": "2",
         "CX_GRAPHICS_BACKEND": "wined3d",
         "CX_ACTIVE_GRAPHICS_BACKEND": "wined3d",
-        "ODE_PRIVATE_LOCAL_SAVES": "1",
-        "ODE_XBL_ONLINE": "1"
+        "XODUS_PRIVATE_LOCAL_SAVES": "1",
+        "XODUS_XBL_ONLINE": "1"
       },
       "crossOverEnvironment": {
         "CX_LIBVULKAN": "${HOME}/Library/Application Support/Ode to X/State/Runtime-NMS-BQVQTL3PCH05-76/runtime/nms/libMoltenVK.dylib",
@@ -297,7 +297,7 @@
         "MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS": "2",
         "CX_GRAPHICS_BACKEND": "wined3d",
         "CX_ACTIVE_GRAPHICS_BACKEND": "wined3d",
-        "ODE_PRIVATE_LOCAL_SAVES": "1"
+        "XODUS_PRIVATE_LOCAL_SAVES": "1"
       },
       "runtime": {
         "primaryPath": "${HOME}/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll",

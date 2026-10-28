@@ -33,6 +33,21 @@ public enum LegacyCompatibility {
     /// Name prefixes a package record may carry: the canonical one and the on-disk one.
     public static let packageRecordPrefixes = [".ode-streaming", ".xodus-streaming"]
 
+    /// Names inherited from upstream that owned code keeps writing and reading indefinitely.
+    public enum Inherited {
+        /// Read by upstream Wine's builtin xgameruntime (xodus-gaming/wine dlls/xgameruntime/private.h).
+        public static let xblOnline = "XODUS_XBL_ONLINE"
+    }
+
+    /// Runtime environment names held at their pre-rename spelling while the app's pinned runtime pair predates
+    /// f8092bb, which reads only these (manifest `runtimePinPending`). Move to ODE_* when a runtime at or after
+    /// f8092bb is pinned; no dual writes.
+    public enum RuntimePinPending {
+        public static let runtimeComSTA = "XODUS_PRIVATE_RUNTIME_COM_STA"
+        public static let callerOwnsCOM = "XODUS_PRIVATE_CALLER_OWNS_COM"
+        public static let localSaves = "XODUS_PRIVATE_LOCAL_SAVES"
+    }
+
     // MARK: Wire. REMOVE AFTER NEXT RELEASE.
 
     public static let legacySchemaIDs = [("urn:xodus:management:1.0", "urn:ode:management:1.0")]

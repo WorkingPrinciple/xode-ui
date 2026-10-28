@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+import OdeLegacyCompatibility
 import CryptoKit
 import Foundation
 import OdeManagement
@@ -27,7 +28,7 @@ struct NativeCandidateLaunchCatalogue: Decodable {
                 version: 1, productID: store_id, engine: profile,
                 shimDirectory: nil, environment: [:],
                 unsetEnvironment: [
-                    "ODE_PRIVATE_RUNTIME_COM_STA", "ODE_PRIVATE_CALLER_OWNS_COM",
+                    LegacyCompatibility.RuntimePinPending.runtimeComSTA, LegacyCompatibility.RuntimePinPending.callerOwnsCOM,
                     "CX_APPLEGPTK_LIBD3DSHARED_PATH",
                 ],
                 executable: manifest_executable)
@@ -46,7 +47,7 @@ struct NativeCandidateLaunchCatalogue: Decodable {
         func validateEngine(_ entry: NativeEngineRegistry.Entry, fallback: String?) throws {
             guard admitted, fallback == nil, entry.name == profile,
                 [
-                    "ODE_PRIVATE_RUNTIME_COM_STA", "ODE_PRIVATE_CALLER_OWNS_COM",
+                    LegacyCompatibility.RuntimePinPending.runtimeComSTA, LegacyCompatibility.RuntimePinPending.callerOwnsCOM,
                     "CX_APPLEGPTK_LIBD3DSHARED_PATH",
                 ].allSatisfy({ entry.environment?[$0] == nil })
             else {
@@ -130,7 +131,7 @@ struct NativeWorkingLaunchRecipe {
              initialRun: "891d061f-4820-4cd3-9b61-efefa5700be9",
              retentionRun: "86e8da68-f4b0-48f8-bf7a-46e577ff3488",
              quitRun: "f2471368-2523-4578-8eb8-75c8d4db7040",
-             timeout: 600, environment: ["ODE_PRIVATE_RUNTIME_COM_STA": "1"])
+             timeout: 600, environment: [LegacyCompatibility.RuntimePinPending.runtimeComSTA: "1"])
     ]
 
     var prefix: URL {
@@ -154,8 +155,8 @@ struct NativeWorkingLaunchRecipe {
         _ profile: NativeTitleLaunchProfile, entry: NativeEngineRegistry.Entry,
         fallback: String?
     ) throws {
-        let unset = ["ODE_PRIVATE_CALLER_OWNS_COM", "CX_APPLEGPTK_LIBD3DSHARED_PATH"]
-            + (environment.isEmpty ? ["ODE_PRIVATE_RUNTIME_COM_STA"] : [])
+        let unset = [LegacyCompatibility.RuntimePinPending.callerOwnsCOM, "CX_APPLEGPTK_LIBD3DSHARED_PATH"]
+            + (environment.isEmpty ? [LegacyCompatibility.RuntimePinPending.runtimeComSTA] : [])
         guard profile.productID == productID, profile.engine == Self.engine, entry.name == Self.engine,
             profile.executable == executable, profile.environment == environment,
             profile.dllOverrides == nil,

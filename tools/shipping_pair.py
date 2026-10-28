@@ -11,17 +11,17 @@ import stat
 import sys
 from legacy_compatibility import CRATE_CLI, CRATE_CORE, CRATE_MANAGEMENT, LEGACY_SCHEMA_ID_PREFIX, PRODUCER_CLI
 
-PRODUCER = "399957962f35eee6189b8fbcef9697f47e951581"
-PRODUCER_TREE = "6d9088562be95b466c4a6df5b102c3f24a72048c"
-CLI_SHA256 = "f77208c9fce39993b12d2bb649ea4a0de3a592dfcbe0d2101dea712d6d13713f"
-CLI_BYTES = 30_935_088
+PRODUCER = "285696f902f282722e009bc300b594f6bcbc141f"
+PRODUCER_TREE = "8b3acd17da61652c9152b9b7a9f0725a37c0001a"
+CLI_SHA256 = "4034e2cab0bf3bdad9bd2ce840783fbc92bad160fa24c1fcdb50213b39d325b1"
+CLI_BYTES = 30_896_480
 WINDOWS_HELPER_SHA256 = "c205a45fcfa703296593034498a35c177ad7e9c80fdd1a4ddeec2fdb721bface"
 WINDOWS_HELPER_BYTES = 22_016
-PRODUCER_MANIFEST_SHA256 = "79bcfad5747ffbffed13542f7fadb805a509225197912ce16273ea38c9a8a84d"
-CARGO_LOCK_SHA256 = "b03657f83cbf14dbf1f4b2cc70fa51ffe75e14934b816b4e21ae103f29a36868"
-SOURCE_ARCHIVE_NAME = "xodus-cli-beta-39995796-source.tar"
-SOURCE_ARCHIVE_SHA256 = "23374465684a78bba2fb1c3e5264cfa21ee17d932612d0f4cec12a3c44e17663"
-SOURCE_ARCHIVE_BYTES = 10_188_800
+PRODUCER_MANIFEST_SHA256 = "f96cd5c7d9f96815e6fd3d1e0042e1ba5dc71fa30f65d0c49fcb93aa2828b217"
+CARGO_LOCK_SHA256 = "e0123c68f37c7c0a272829fea83670d70c473a165643a70b6a474e8b97dddb93"
+SOURCE_ARCHIVE_NAME = "xodus-cli-285696f9-source.tar"
+SOURCE_ARCHIVE_SHA256 = "d068b2afb1ff625d68050cccadafca0aef7ef1c84900e1d74ee920b58e8ac4be"
+SOURCE_ARCHIVE_BYTES = 10_526_720
 FEATURES = {CRATE_CORE: [], CRATE_CLI: [], CRATE_MANAGEMENT: ["live"],
             "apple-native-keyring-store": ["keychain", "security-framework"]}
 PROFILE = {"opt_level": "3", "debuginfo": 0, "debug_assertions": False,
@@ -38,10 +38,11 @@ def require(condition, message):
 
 # REQ-150: this app uses Ode identities, so it pairs only with a reviewed producer built after the rename.
 # Set True only when the pins above name such a producer; until then every packaging path refuses.
-PRODUCER_RENAMED = False
+PRODUCER_RENAMED = True
 RENAMED_SCHEMA_ID = b'"urn:ode:management:1.0"'
 # Producers known to predate the rename. Setting the flag without moving the pins off these still refuses.
-PRE_RENAME_PRODUCERS = frozenset({"bcc11c98621cf9f90679e383f02ec4516df57ad5"})
+PRE_RENAME_PRODUCERS = frozenset({"bcc11c98621cf9f90679e383f02ec4516df57ad5",
+                                  "399957962f35eee6189b8fbcef9697f47e951581"})
 
 
 def require_renamed_producer(contract=None):
