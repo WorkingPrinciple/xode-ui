@@ -1335,6 +1335,14 @@ enum GameOperationChecks {
         guard let policyGame = installed.games.first(where: { $0.id == imported.id }) else {
             throw GameScriptError.invalidReceipt
         }
+        // 908606e9 M2: after an unverified Windows profile set, Play is refused until an inspect succeeds.
+        installed.markWindowsProfileUnverified(policyGame)
+        await installed.play(policyGame)
+        let blockedByProfile = installed.runningGameID == nil
+            && installed.playErrors[imported.id] == InstalledGamesController.windowsProfileUnverifiedCopy
+        installed.clearWindowsProfileUnverified(policyGame)
+        check(blockedByProfile && installed.windowsProfileUnverified.isEmpty,
+              "908606e9 M2: a game whose Windows profile set didn't verify can't Play until an inspect succeeds")
         await installed.play(policyGame)
         check(installed.runningGameID == nil
               && installed.playErrors[imported.id] == NativeLaunchError.providerPolicy.localizedDescription

@@ -310,8 +310,10 @@ actor EngineInspectionClient {
     func windowsProfile(configuration: BackendConfiguration, arguments: [String], changing: Bool) async throws -> (Data, Int32) {
         try await run(executable: configuration.executable,
             arguments: arguments, executableIdentity: configuration.executableIdentity,
-            timeout: changing ? .seconds(310) : .seconds(15))
+            // 908606e9 M2: well past the producer's 300 s APPLY_TIMEOUT plus its kill, wineserver -k and verification.
+            timeout: changing ? Self.windowsProfileSetTimeout : .seconds(15))
     }
+    static let windowsProfileSetTimeout: Duration = .seconds(420)
 
     private func run(executable: URL, arguments: [String],
                      executableIdentity: NativeAuthHostBinding?, timeout: Duration = .seconds(5)) async throws -> (Data, Int32) {

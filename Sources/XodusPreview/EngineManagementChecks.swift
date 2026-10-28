@@ -126,9 +126,36 @@ enum EngineManagementChecks {
                     try decode(blocked).changeBlock == reason,
                     "REQ-156: \(reason.rawValue) prevents Apply with truthful copy")
             }
-            for code in WindowsProfileFailure.allCases {
+            // 908606e9 M1: "failed" with any code (the producer emits APPLY_FAILED, PREFIX_UNREADABLE and RECEIPT_INVALID)
+            // says the profile may have changed partly and to inspect again before playing.
+            for code in [WindowsProfileFailure.applyFailed, .unreadable, .receipt] {
+                var failed = applied
+                failed["status"] = "failed"
+                failed["error"] = ["code": code.rawValue, "message": "fixture failure"]
+                failed["resulting"] = NSNull()
+                failed["savesPreserved"] = NSNull()
+                do {
+                    _ = try decode(failed, requested: .win11, exit: 1)
+                    check(false, "908606e9 M1: failed \(code.rawValue) never becomes success")
+                } catch let error as WindowsProfilePartialChange {
+                    let copy = error.localizedDescription
+                    check(error.code == code && copy.contains("may have changed partly") && copy.contains("Inspect it again before playing"),
+                          "908606e9 M1: failed with \(code.rawValue) says the profile may have changed partly and to inspect again before playing")
+                } catch { check(false, "908606e9 M1: failed \(code.rawValue) maps to the partial-change outcome (\(error))") }
+            }
+            let timedOut = WindowsProfilePartialChange(code: nil).localizedDescription
+            check(timedOut.contains("didn't finish in time") && timedOut.contains("may have changed partly")
+                  && EngineInspectionClient.windowsProfileSetTimeout >= .seconds(360),
+                  "908606e9 M2: the app's own timeout (420 s, past the producer's 300 s) uses the partial-change copy")
+            var sameAsOwn = inspect
+            sameAsOwn["perExecutable"] = ["profile": ["name": "win11", "known": true], "shadowsGlobal": true]
+            let shadowReceipt = try decode(sameAsOwn)
+            check(shadowReceipt.changeBlock(for: .win11) == nil && shadowReceipt.changeBlock(for: .win10) == .shadowed
+                  && !WindowsProfileFailure.shadowed.localizedDescription.contains("would override"),
+                  "908606e9 nit: when the executable's own AppDefaults value equals the target, Apply is allowed (as the producer does); otherwise SHADOWED, without 'would override'")
+            for code in WindowsProfileFailure.allCases where code != .applyFailed {
                 var refusal = applied
-                refusal["status"] = code == .applyFailed ? "failed" : "refused"
+                refusal["status"] = "refused"
                 refusal["error"] = ["code": code.rawValue, "message": "fixture refusal"]
                 refusal["previous"] = NSNull()
                 refusal["resulting"] = NSNull()
@@ -191,6 +218,13 @@ enum EngineManagementChecks {
     }
 
     static func windowsProfileTransportChecks(root: URL, check: (Bool, String) -> Void) async throws {
+        let refreshedOK = await WindowsProfileSettingsModel.refreshAfterSet(applied: "The prefix now reports Windows 11 (build 22631).") { 1 }
+        let refreshFailed: (receipt: Int?, message: String) = await WindowsProfileSettingsModel.refreshAfterSet(
+            applied: "The prefix now reports Windows 11 (build 22631).") { throw WindowsProfileFailure.unreadable }
+        check(refreshedOK.receipt == 1 && refreshedOK.message == "The prefix now reports Windows 11 (build 22631)."
+              && refreshFailed.receipt == nil && refreshFailed.message.hasPrefix("The prefix now reports Windows 11 (build 22631).")
+              && refreshFailed.message.contains("couldn't be refreshed") && !refreshFailed.message.contains("may have changed partly"),
+              "908606e9 m3: a verified set keeps its applied message when the follow-up inspect fails, and adds that the refresh failed")
         let cli = root.appendingPathComponent("windows-profile-cli")
         let trace = root.appendingPathComponent("windows-profile-trace")
         let binding = WindowsProfileBinding(product: "9PROFILETEST", folder: "/tmp/Game with spaces",

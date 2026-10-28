@@ -13,8 +13,21 @@ enum MicrosoftReadGateChecks {
             try await matrix(scenario: scenario, check: check)
         }
         try await reconcileNegatives(check: check)
+        lateLibraryAnswer(check: check)
         try await playJoinsAutomaticOperation(check: check)
         try await provisionalCountryVersusPlay(check: check)
+    }
+
+    /// 908606e9 n2: a library read for the previous account that answers late (throttled) leaves the gate alone.
+    private static func lateLibraryAnswer(check: (Bool, String) -> Void) {
+        let library = PCGamesController()
+        let previous = String(repeating: "c", count: 64)
+        library.recordThrottle(after: ManagementError.authenticatedReadThrottled(retryAfterSeconds: 90), account: previous)
+        let ignored = library.readGate.account == nil && library.readGate.throttledUntil == nil
+        library.recordThrottle(after: ManagementError.authenticatedReadThrottled(retryAfterSeconds: 90))
+        let currentRecorded = library.readGate.throttledUntil != nil
+        check(ignored && currentRecorded,
+              "908606e9 n2: a late library answer for another account leaves the gate untouched; the current account's answer feeds it")
     }
 
     /// 2bf5e681 m2: what must NOT clear the licence store's sign-in rejection; then the one thing that does.
@@ -23,7 +36,7 @@ enum MicrosoftReadGateChecks {
         let product = "9NREJECT0001"
         func rejectedStore(_ gate: MicrosoftReadGate) async -> InstalledProductAccess {
             let store = InstalledProductAccess()
-            await store.bindSignInCount { gate.signIns(for: a) }
+            store.bindSignInCount { gate.signIns(for: $0) }
             await store.refresh(account: a, installedIDs: [product], force: true, selectedProductID: product) { _ in
                 gate.record(ManagementError.authenticatedReadFailed(.authExchangeFailed), account: a)
                 throw ManagementError.authenticatedReadFailed(.authExchangeFailed)

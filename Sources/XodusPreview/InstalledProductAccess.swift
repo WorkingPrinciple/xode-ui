@@ -91,9 +91,9 @@ final class InstalledProductAccess: ObservableObject {
     /// The gate's completed sign-ins for this account when the store recorded its rejection (2bf5e681 m2).
     private var rejectedAtSignIns = 0
     /// Reads the gate's completed sign-in count for the current account; set when bound to a session.
-    private var signInsSeen: (() -> Int)?
+    private var signInsSeen: ((String) -> Int)?
     /// Binds the sign-in count source without a session (sessionless stores and checks).
-    func bindSignInCount(_ source: @escaping () -> Int) { signInsSeen = source }
+    func bindSignInCount(_ source: @escaping (String) -> Int) { signInsSeen = source }
     private var expiryNotification: Task<Void, Never>?
     private var generation = UUID()
     private let logger = Logger(subsystem: "io.github.dragoshont.xodus", category: "product-access")
@@ -327,7 +327,7 @@ final class InstalledProductAccess: ObservableObject {
 
     func refresh(session: LiveSession, installedIDs: [String], now: Date = Date(), force: Bool = false,
                  selectedProductID: String? = nil) async {
-        signInsSeen = { [weak session] in session.flatMap { s in s.accountHash.map { s.readGate.signIns(for: $0) } } ?? 0 }
+        signInsSeen = { [weak session] account in session?.readGate.signIns(for: account) ?? 0 }
         reconcileSignIn(gate: session.readGate, account: session.accountHash)
         let scope = session.accountCatalogScope
         if catalogScope != scope {
@@ -350,7 +350,7 @@ final class InstalledProductAccess: ObservableObject {
     }
 
     func prioritize(_ productID: String, session: LiveSession, installedIDs: [String]) async {
-        signInsSeen = { [weak session] in session.flatMap { s in s.accountHash.map { s.readGate.signIns(for: $0) } } ?? 0 }
+        signInsSeen = { [weak session] account in session?.readGate.signIns(for: account) ?? 0 }
         reconcileSignIn(gate: session.readGate, account: session.accountHash)
         guard session.accountCountryReady, catalogScope == nil || catalogScope == session.accountCatalogScope else { return }
         let account = session.hasConfirmedSignIn ? session.accountHash : nil
@@ -483,7 +483,8 @@ final class InstalledProductAccess: ObservableObject {
                     guard !Self.isLocalServiceFailure(error) else { localFailures.insert(id); continue }
                     if case ManagementError.authenticatedReadFailed(.authExchangeFailed) = error {
                         signInRejected = true
-                        rejectedAtSignIns = signInsSeen?() ?? 0
+                        // 908606e9 nit: the count for the rejecting read's account.
+                        rejectedAtSignIns = signInsSeen?(account) ?? 0
                     }
                     pauseOwner = account
                     if case ManagementError.authenticatedReadThrottled = error { pauseFromThrottle = true } else { pauseFromThrottle = false }

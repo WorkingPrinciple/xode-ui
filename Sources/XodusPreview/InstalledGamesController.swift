@@ -943,6 +943,10 @@ final class InstalledGamesController: ObservableObject {
             Self.launchLog.error("Play unavailable: \(game.storeId, privacy: .public): \(message, privacy: .public)")
             return
         }
+        guard !windowsProfileUnverified.contains(game.id) else {
+            playErrors[game.id] = Self.windowsProfileUnverifiedCopy
+            return
+        }
         let issues = LibrarySupportVisibility.issues(productID: game.storeId, installed: true,
             packageFormat: game.packageType?.label, compatibility: nil, catalogue: compatibilityCatalogue)
         guard issues.isEmpty else {
@@ -1748,6 +1752,12 @@ final class InstalledGamesController: ObservableObject {
         return try await NativeLaunchConfiguration.resolveDefault(game: game, configuration: configuration,
             provider: defaultEngine(), evidence: MacGameEvidenceStore.shared.games[game.storeId], persistDefault: false)
     }
+
+    /// 908606e9 M2: games whose Windows profile set didn't verify; Play waits until an inspect succeeds.
+    @Published private(set) var windowsProfileUnverified = Set<UUID>()
+    static let windowsProfileUnverifiedCopy = "This game's Windows profile may have changed partly. Open Engine → Windows version… and let it read the profile before playing."
+    func markWindowsProfileUnverified(_ game: InstalledGame) { windowsProfileUnverified.insert(game.id) }
+    func clearWindowsProfileUnverified(_ game: InstalledGame) { windowsProfileUnverified.remove(game.id) }
 
     func reserveWindowsProfileChange() throws {
         guard runningGameID == nil else { throw WindowsProfileFailure.inUse }

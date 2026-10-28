@@ -45,9 +45,25 @@ enum WindowsProfileFailure: String, Error, LocalizedError, CaseIterable, Codable
         case .unreadable: "This prefix couldn't be read or locked. Check its availability and permissions before retrying."
         case .engineChanged: "The engine or registry changed. Refresh Engines and inspect the Windows profile again."
         case .applyFailed: "The engine couldn't apply and verify the Windows profile. It may have changed partially. Inspect it again before playing."
-        case .shadowed: "This executable has its own Windows version setting, which would override this change. Nothing was changed."
+        case .shadowed: "This executable has its own Windows version setting, which overrides the prefix's profile. Choose the profile it already uses, or nothing can be changed here."
         case .incomplete: "This prefix's setup never completed or failed. Changing its Windows profile won't repair it. Use a fresh prefix."
         case .receipt: "The Windows profile result couldn't be verified. Inspect it again before playing; no successful change is claimed."
+        }
+    }
+}
+
+/// 908606e9 M1/M2: a set that reached the prefix but didn't verify (status "failed" with any code, or the app's own
+/// timeout). The prefix may have changed partly; Play stays blocked for that game until an inspect succeeds.
+struct WindowsProfilePartialChange: Error, LocalizedError, Equatable {
+    let code: WindowsProfileFailure?
+    static let copy = "The Windows profile may have changed partly. Inspect it again before playing; no successful change is claimed."
+    var errorDescription: String? {
+        switch code {
+        case .unreadable?: "The prefix couldn't be read after the change. " + Self.copy
+        case .receipt?: "The engine's result couldn't be verified. " + Self.copy
+        case .applyFailed?: "The engine couldn't apply and verify the Windows profile. " + Self.copy
+        case nil: "The change didn't finish in time. " + Self.copy
+        default: Self.copy
         }
     }
 }
@@ -72,7 +88,8 @@ struct WindowsProfileReceipt: Decodable, Sendable {
     struct Engine: Decodable, Sendable { let name: String; let registrySha256: String }
     struct Failure: Decodable, Sendable { let code: WindowsProfileFailure; let message: String }
     struct Bound: Decodable, Sendable { let ownership: String; let productBound: Bool }
-    struct ExecutableProfile: Decodable, Sendable { let shadowsGlobal: Bool }
+    struct Named: Decodable, Sendable { let name: String }
+    struct ExecutableProfile: Decodable, Sendable { let profile: Named?; let shadowsGlobal: Bool }
     struct Observed: Decodable, Sendable {
         let profile: WindowsProfile?
         let reportedBuild: UInt32
@@ -102,9 +119,14 @@ struct WindowsProfileReceipt: Decodable, Sendable {
     let meetsPackageMinimum: Bool?
     let requestedBelowPackageMinimum: Bool?
 
-    var changeBlock: WindowsProfileFailure? {
+    var changeBlock: WindowsProfileFailure? { changeBlock(for: nil) }
+    /// 908606e9 nit: the producer allows a set whose target equals the executable's own AppDefaults value.
+    func changeBlock(for target: WindowsProfile?) -> WindowsProfileFailure? {
         if inUse == true { return .inUse }
-        if perExecutable?.shadowsGlobal == true { return .shadowed }
+        if perExecutable?.shadowsGlobal == true {
+            let own = perExecutable?.profile?.name
+            if let target, let own, own.caseInsensitiveCompare(target.rawValue) == .orderedSame {} else { return .shadowed }
+        }
         if windowsSetup != "none", windowsSetup != "applied" { return .incomplete }
         return nil
     }
@@ -122,8 +144,10 @@ struct WindowsProfileReceipt: Decodable, Sendable {
         if let failure = result.error {
             guard exitCode != 0, !failure.message.isEmpty,
                   result.status == "refused" || (requested != nil && result.status == "failed") else {
-                throw WindowsProfileFailure.receipt
+                throw requested != nil ? WindowsProfilePartialChange(code: .receipt) : WindowsProfileFailure.receipt
             }
+            // 908606e9 M1: "failed" means the run step started, whatever the code.
+            if result.status == "failed" { throw WindowsProfilePartialChange(code: failure.code) }
             throw failure.code
         }
         guard exitCode == 0, result.executable?.isEmpty == false, result.appDefaultsName?.isEmpty == false else {
@@ -226,6 +250,7 @@ final class WindowsProfileSettingsModel: ObservableObject {
             let output = try await client.windowsProfile(configuration: configuration, arguments: target.arguments(), changing: false)
             receipt = try WindowsProfileReceipt.decode(output.0, exitCode: output.1, binding: target)
             binding = target
+            library.clearWindowsProfileUnverified(game)
         } catch { message = Self.failureMessage(error) }
     }
 
@@ -238,7 +263,7 @@ final class WindowsProfileSettingsModel: ObservableObject {
         appliedBelowMinimum = false
         defer { busy = false; changing = false }
         do {
-            if let block = receipt?.changeBlock { throw block }
+            if let block = receipt?.changeBlock(for: profile) { throw block }
             guard library.runningGameID == nil else { throw WindowsProfileFailure.inUse }
             try library.reserveWindowsProfileChange()
             defer { library.releaseWindowsProfileChange() }
@@ -246,25 +271,56 @@ final class WindowsProfileSettingsModel: ObservableObject {
             guard binding == WindowsProfileBinding(product: game.storeId, folder: game.folder, prefix: current.prefix.path,
                 engine: current.engine, registry: current.registry.path,
                 digest: current.admittedSelection?.inspection.registrySha256 ?? "") else { throw WindowsProfileFailure.engineChanged }
-            let output = try await client.windowsProfile(configuration: configuration,
-                arguments: binding.arguments(profile: profile), changing: true)
-            let result = try WindowsProfileReceipt.decode(output.0, exitCode: output.1, binding: binding, requested: profile)
+            // From here the prefix may change: any unverified outcome blocks Play until an inspect succeeds.
+            library.markWindowsProfileUnverified(game)
+            let result: WindowsProfileReceipt
+            do {
+                let output = try await client.windowsProfile(configuration: configuration,
+                    arguments: binding.arguments(profile: profile), changing: true)
+                result = try WindowsProfileReceipt.decode(output.0, exitCode: output.1, binding: binding, requested: profile)
+            } catch let error as WindowsProfileFailure where error != .receipt {
+                // A refusal: the producer changed nothing.
+                library.clearWindowsProfileUnverified(game)
+                throw error
+            } catch let error as WindowsProfilePartialChange { throw error }
+            catch {
+                if case EngineInspectionError.timedOut = error { throw WindowsProfilePartialChange(code: nil) }
+                throw WindowsProfilePartialChange(code: .receipt)
+            }
+            guard let resulting = result.resulting else { throw WindowsProfilePartialChange(code: .receipt) }
             appliedBelowMinimum = result.requestedBelowPackageMinimum == true
-            guard let resulting = result.resulting else { throw WindowsProfileFailure.receipt }
-            message = result.status == "unchanged" ? "The prefix already reports \(resulting.label)."
+            let applied = result.status == "unchanged" ? "The prefix already reports \(resulting.label)."
                 : "The prefix now reports \(resulting.label)."
-            let inspection = try await client.windowsProfile(configuration: configuration, arguments: binding.arguments(), changing: false)
-            receipt = try WindowsProfileReceipt.decode(inspection.0, exitCode: inspection.1, binding: binding)
+            message = applied
+            library.clearWindowsProfileUnverified(game)
+            let refreshed = await Self.refreshAfterSet(applied: applied) {
+                let inspection = try await self.client.windowsProfile(configuration: configuration,
+                    arguments: binding.arguments(), changing: false)
+                return try WindowsProfileReceipt.decode(inspection.0, exitCode: inspection.1, binding: binding)
+            }
+            receipt = refreshed.receipt
+            message = refreshed.message
+            if refreshed.receipt == nil { self.binding = nil }
         } catch {
             receipt = nil
             self.binding = nil
+            if !(error is WindowsProfilePartialChange) { appliedBelowMinimum = false }
             message = Self.failureMessage(error)
         }
+    }
+
+    /// 908606e9 m3: a verified set stands even if the follow-up inspect fails; the message keeps what was applied
+    /// and adds that the refresh failed. `appliedBelowMinimum` is the set's and isn't touched here.
+    static func refreshAfterSet<Receipt>(applied: String, inspect: () async throws -> Receipt)
+        async -> (receipt: Receipt?, message: String) {
+        do { return (try await inspect(), applied) }
+        catch { return (nil, applied + " The Windows profile couldn't be refreshed afterwards; use Refresh to read it again.") }
     }
 
     private static func failureMessage(_ error: Error) -> String {
         Logger(subsystem: "io.github.dragoshont.xodus", category: "WindowsProfile")
             .error("Windows profile operation: \(error.localizedDescription, privacy: .public)")
+        if let error = error as? WindowsProfilePartialChange { return error.localizedDescription }
         if let error = error as? WindowsProfileFailure { return error.localizedDescription }
         if let error = error as? NativeLaunchError { return error.localizedDescription }
         if let error = error as? GameScriptError, case .busy = error {
@@ -301,7 +357,7 @@ struct WindowsProfileSettings: View {
                         ForEach(receipt.supportedProfiles ?? []) { profile in Text(profile.label).tag(Optional(profile)) }
                     }
                 }.formStyle(.grouped)
-                if let block = receipt.changeBlock {
+                if let block = receipt.changeBlock(for: selected) {
                     Text(block.localizedDescription).foregroundStyle(.secondary)
                 } else if library.runningGameID != nil {
                     Text("Quit the running game before applying a Windows profile.").foregroundStyle(.secondary)
@@ -317,7 +373,7 @@ struct WindowsProfileSettings: View {
                           systemImage: "exclamationmark.triangle")
                 }
                 Button("Apply Windows profile…") { confirming = true }
-                    .disabled(model.busy || selected == nil || receipt.changeBlock != nil
+                    .disabled(model.busy || selected == nil || receipt.changeBlock(for: selected) != nil
                               || library.runningGameID != nil || library.mutationActive)
             }
             if model.busy { ProgressView(model.changing ? "Applying Windows profile" : "Reading Windows profile") }
