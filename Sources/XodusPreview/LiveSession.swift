@@ -36,7 +36,14 @@ final class LiveSession: ObservableObject {
     @Published private(set) var recentLibraryCurrent = false
     @Published private(set) var recentLibraryLoading = false
     @Published private(set) var recentLibraryError: String?
-    @Published private(set) var lastSignInFailure: SignInFailureSnapshot?
+    @Published private(set) var lastSignInFailure: SignInFailureSnapshot? {
+        didSet {
+            guard let observation = lastSignInFailure?.observation,
+                  observation != oldValue?.observation else { return }
+            Logger(subsystem: "io.github.dragoshont.xodus", category: "native-sign-in")
+                .error("\(observation, privacy: .public)")
+        }
+    }
     @Published private(set) var activityError: String?
     @Published private(set) var lookupBusy = false
     @Published private(set) var installedSnapshot: InstalledSnapshot?
