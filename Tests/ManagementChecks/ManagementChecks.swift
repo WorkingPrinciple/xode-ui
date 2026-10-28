@@ -2,7 +2,7 @@
 import Foundation
 import CryptoKit
 import Darwin
-@testable import XodusManagement
+@testable import OdeManagement
 
 @main
 enum ManagementChecks {
@@ -329,23 +329,23 @@ actor Checks {
             check(bounded.status == .invalid, "Metrics enforce the independent 64KiB lifetime budget")
             for value in [nil, "", "0", "true", "01", "1 ", "1"] as [String?] {
                 var environment = ["HOME": "/neutral", "SECRET": "never-forward", "RUST_LOG": "trace"]
-                environment["XODUS_DESCRIPTOR_METRICS"] = value
+                environment["ODE_DESCRIPTOR_METRICS"] = value
                 let selected = ManagementClient.operationalEnvironment(environment)
                 check(selected["HOME"] == "/neutral" && selected["SECRET"] == nil && selected["RUST_LOG"] == "error"
-                      && selected["XODUS_DESCRIPTOR_METRICS"] == (value == "1" ? "1" : nil),
+                      && selected["ODE_DESCRIPTOR_METRICS"] == (value == "1" ? "1" : nil),
                       "Owned launcher permits only exact metrics opt-in and preserves environment restrictions")
             }
-            let savedOptIn = ProcessInfo.processInfo.environment["XODUS_DESCRIPTOR_METRICS"]
-            setenv("XODUS_DESCRIPTOR_METRICS", "true", 1)
+            let savedOptIn = ProcessInfo.processInfo.environment["ODE_DESCRIPTOR_METRICS"]
+            setenv("ODE_DESCRIPTOR_METRICS", "true", 1)
             let disabled = try ManagementClient()
             do { _ = try await disabled.connect(mockConfiguration("metricsearly")) }
             catch {
-                if let savedOptIn { setenv("XODUS_DESCRIPTOR_METRICS", savedOptIn, 1) }
-                else { unsetenv("XODUS_DESCRIPTOR_METRICS") }
+                if let savedOptIn { setenv("ODE_DESCRIPTOR_METRICS", savedOptIn, 1) }
+                else { unsetenv("ODE_DESCRIPTOR_METRICS") }
                 throw error
             }
-            if let savedOptIn { setenv("XODUS_DESCRIPTOR_METRICS", savedOptIn, 1) }
-            else { unsetenv("XODUS_DESCRIPTOR_METRICS") }
+            if let savedOptIn { setenv("ODE_DESCRIPTOR_METRICS", savedOptIn, 1) }
+            else { unsetenv("ODE_DESCRIPTOR_METRICS") }
             do {
                 _ = try await disabled.descriptorMetricsCheckpoint()
                 check(false, "Nonexact opt-in keeps actual owned transport measurement disabled")
@@ -357,17 +357,17 @@ actor Checks {
             check(await disabled.close(), "Disabled measurement preserves ordinary owned transport")
             for scenario in ["metricsearly", "metricslate", "metricsmissing", "metricsstale", "metricsdrainfail",
                              "metricsbusy", "metricsbusytimeout", "metricsbusycap", "metricsbarrier"] {
-                let previous = ProcessInfo.processInfo.environment["XODUS_DESCRIPTOR_METRICS"]
-                setenv("XODUS_DESCRIPTOR_METRICS", "1", 1)
+                let previous = ProcessInfo.processInfo.environment["ODE_DESCRIPTOR_METRICS"]
+                setenv("ODE_DESCRIPTOR_METRICS", "1", 1)
                 let client = try ManagementClient()
                 do { _ = try await client.connect(mockConfiguration(scenario)) }
                 catch {
-                    if let previous { setenv("XODUS_DESCRIPTOR_METRICS", previous, 1) }
-                    else { unsetenv("XODUS_DESCRIPTOR_METRICS") }
+                    if let previous { setenv("ODE_DESCRIPTOR_METRICS", previous, 1) }
+                    else { unsetenv("ODE_DESCRIPTOR_METRICS") }
                     throw error
                 }
-                if let previous { setenv("XODUS_DESCRIPTOR_METRICS", previous, 1) }
-                else { unsetenv("XODUS_DESCRIPTOR_METRICS") }
+                if let previous { setenv("ODE_DESCRIPTOR_METRICS", previous, 1) }
+                else { unsetenv("ODE_DESCRIPTOR_METRICS") }
                 if scenario == "metricsbarrier" {
                     let prior = Task { try await client.request(.jobs) }
                     while await client.pendingRequestCount == 0 { await Task.yield() }
@@ -528,7 +528,7 @@ actor Checks {
         let bundled = try Data(contentsOf: bundledURL)
         check(bundled == canonical, "App contract bytes exactly match the frozen canonical producer schema")
         let validator = try ContractValidator()
-        let producer = try ContractValidator(schemaURL: canonicalURL, schemaIdentifier: "urn:xodus:management:1.0")
+        let producer = try ContractValidator(schemaURL: canonicalURL, schemaIdentifier: "urn:ode:management:1.0")
         let positive = try fixture("positive").array ?? []
         for frame in positive {
             try validator.validate(frame)
@@ -721,7 +721,7 @@ actor Checks {
 
         func hostBindingChecks() async throws {
             let root = FileManager.default.temporaryDirectory.resolvingSymlinksInPath()
-                .appendingPathComponent("XodusHostBindingChecks-\(UUID().uuidString)")
+                .appendingPathComponent("OdeHostBindingChecks-\(UUID().uuidString)")
             try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false,
                                                     attributes: [.posixPermissions: 0o700])
             defer {
@@ -774,12 +774,12 @@ actor Checks {
             try FileManager.default.createDirectory(at: resources, withIntermediateDirectories: true)
             try PropertyListSerialization.data(fromPropertyList: [
                 "CFBundleIdentifier": "invalid.example.synthetic", "CFBundlePackageType": "APPL",
-                "CFBundleExecutable": "XodusAuthHost"
+                "CFBundleExecutable": "OdeAuthHost"
             ], format: .xml, options: 0).write(to: app.appendingPathComponent("Contents/Info.plist"))
-            let helper = macOS.appendingPathComponent("XodusAuthHost")
+            let helper = macOS.appendingPathComponent("OdeAuthHost")
             try FileManager.default.copyItem(at: executable, to: helper)
             guard let bundle = Bundle(url: app) else { throw ManagementError.backendUnavailable }
-            let metadata = resources.appendingPathComponent("XodusAuthHost.json")
+            let metadata = resources.appendingPathComponent("OdeAuthHost.json")
             try FileManager.default.removeItem(at: helper)
             do {
                 _ = try NativeAuthHostBinding.bundled(in: bundle)
@@ -1410,7 +1410,7 @@ actor Checks {
         let client = try ManagementClient()
         do {
             let hello = try await client.connect(configuration)
-            check(hello.schema == "urn:xodus:management:1.0", "Actual Xodus hello/schema negotiation")
+            check(hello.schema == "urn:ode:management:1.0", "Actual Ode hello/schema negotiation")
             check(!hello.supports(.launch) && !hello.supports(.plan),
                   "Uncertified runtime/packages remain capability-gated")
             if hello.supports(.authStatus) {
@@ -1547,7 +1547,7 @@ actor Checks {
         for (offset, value) in [(0x3bc, 4), (0x3be, 3), (0x3c0, 2), (0x3c2, 1)] {
             marker[offset] = UInt8(value)
         }
-        let markerURL = selected.appendingPathComponent(".xodus-streaming.msixvc")
+        let markerURL = selected.appendingPathComponent(".ode-streaming.msixvc")
         try marker.write(to: markerURL, options: .withoutOverwriting)
         let registryURL = configuration.stateDirectory.appendingPathComponent("management.json")
         let registryBefore = try Data(contentsOf: registryURL)
@@ -1644,7 +1644,7 @@ actor Checks {
     func mockConfiguration(_ scenario: String) -> BackendConfiguration {
         BackendConfiguration(executable: URL(fileURLWithPath: CommandLine.arguments[0]),
             stateDirectory: FileManager.default.temporaryDirectory
-                .appendingPathComponent("XodusManagementChecks-\(UUID().uuidString)")
+                .appendingPathComponent("OdeManagementChecks-\(UUID().uuidString)")
                 .appendingPathComponent(scenario))
     }
 }
@@ -1731,7 +1731,7 @@ enum MockBackend {
                 let request = try JSONDecoder().decode(JSONValue.self, from: Data(line.utf8))
                 let command = request["command"]?.string ?? ""
                 if command == "hello" {
-                    if scenario.hasPrefix("metrics"), ProcessInfo.processInfo.environment["XODUS_DESCRIPTOR_METRICS"] == "1" {
+                    if scenario.hasPrefix("metrics"), ProcessInfo.processInfo.environment["ODE_DESCRIPTOR_METRICS"] == "1" {
                         try FileHandle.standardError.write(contentsOf:
                             Data("Ode descriptor metrics v1 enabled seq=1 budget=65536\n".utf8))
                     }

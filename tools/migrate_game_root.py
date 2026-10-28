@@ -51,7 +51,7 @@ def replacements(data, kind, old, new):
     require(kind == "launcher", "Unreviewed migration file kind")
     lines = data.decode().splitlines(keepends=True)
     for index, line in enumerate(lines):
-        prefix = "export XODUS_GAME_FOLDER="
+        prefix = "export ODE_GAME_FOLDER="
         if line.startswith(prefix):
             value = line[len(prefix):].rstrip("\r\n")
             require(value.startswith(old + "/") and not any(c in value for c in "'\"$`\\;"),

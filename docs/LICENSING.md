@@ -4,9 +4,9 @@ SPDX-License-Identifier: GPL-3.0-only
 
 The user explicitly selected **GNU General Public License version 3** for this public app. [LICENSE](../LICENSE) contains the verbatim GNU GPL v3 text, dated 29 June 2007. Original app source, tests, documentation, fixture data, original artwork and mockup/export tooling in this repository are provided under **GPL-3.0-only**, not GPL-3.0-or-later.
 
-The choice is user-directed and matches the reported GPL v3 license at the Xodus fork root. A license template's illustrative "or later" wording does not itself change this app's explicit grant. Source files identify GPL-3.0-only; this document states the grant for original repository material, including generated SVG/PNG artifacts.
+The choice is user-directed and matches the reported GPL v3 license at the Ode fork root. A license template's illustrative "or later" wording does not itself change this app's explicit grant. Source files identify GPL-3.0-only; this document states the grant for original repository material, including generated SVG/PNG artifacts.
 
-The source repository does not bundle proprietary game packages, Microsoft/Apple artwork, paid design assets or fonts. Mockup/system typography uses fonts installed by the operating system. Built app candidates do include the separately built Xodus CLI and Windows monitor; their exact source, dependency licences, notices and corresponding-source obligations must be reviewed independently of this repository's licence. A local signed candidate is not a cleared distribution.
+The source repository does not bundle proprietary game packages, Microsoft/Apple artwork, paid design assets or fonts. Mockup/system typography uses fonts installed by the operating system. Built app candidates do include the separately built Ode CLI and Windows monitor; their exact source, dependency licences, notices and corresponding-source obligations must be reviewed independently of this repository's licence. A local signed candidate is not a cleared distribution.
 
 Future runtime components, libraries and assets retain their own licenses. The app license is not a grant to redistribute Wine variants, Microsoft game packages, platform SDK material, trademarks or third-party content. Before packaging, maintain a component/version/license/notice/source-offer manifest and review obligations for the exact paired runtime. GPL app distribution must include the required notices and corresponding source by an appropriate GPL-compliant route.
 
@@ -101,7 +101,7 @@ publication decision.
 
 For r7, the bound metadata identifies 479 packages, 462 with compiler artifacts,
 and 472 package-level licence declarations. The seven undeclared manifests are
-`eappx` and the six Xodus workspace crates; their repository licence texts are
+`eappx` and the six Ode workspace crates; their repository licence texts are
 included separately rather than inventing a package SPDX grant. `eappx` has an
 MIT root notice, and the workspace has the GNU GPL v3 root text.
 `option-ext@0.2.0` and `webpki-roots@0.25.4` declare MPL-2.0, requiring an
@@ -138,7 +138,7 @@ The distribution gate also requires the external approved digest: an inventory
 cannot remove package records or obligations and approve its own replacement
 hash, even if a new app signature seals that reduced inventory.
 
-The main Xodus executable is not raw-hash-bound in this in-bundle manifest:
+The main Ode executable is not raw-hash-bound in this in-bundle manifest:
 macOS signing rewrites its Mach-O signature after resource assembly. Post-sign
 preflight verifies the app's code signature, cdhash, signing identifier, team
 and expected certificate instead. Other signed components remain hash-bound.

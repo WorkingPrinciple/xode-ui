@@ -1,7 +1,7 @@
 # Installer artwork
 
 `dmg-background.png` (660×400, 72 dpi) and `dmg-background@2x.png` (1320×800, 144 dpi) are the X Ode
-disk-image background. They're original artwork: the X mark comes from `Sources/XodusCore/XOdeMark.swift`, and
+disk-image background. They're original artwork: the X mark comes from `Sources/OdeCore/XOdeMark.swift`, and
 the gradient, arrow and caption are drawn in code by `RenderDMGBackground.swift`. No third-party images or fonts
 are embedded; text uses the macOS system font at render time. Licensed GPL-3.0-only like the rest of the
 repository; the X Ode name and mark are covered by [TRADEMARKS](../../TRADEMARKS.md).
@@ -9,7 +9,7 @@ repository; the X Ode name and mark are covered by [TRADEMARKS](../../TRADEMARKS
 Regenerate:
 
 ```sh
-swiftc -parse-as-library Sources/XodusCore/XOdeMark.swift design/installer/RenderDMGBackground.swift -o /tmp/RenderDMGBackground
+swiftc -parse-as-library Sources/OdeCore/XOdeMark.swift design/installer/RenderDMGBackground.swift -o /tmp/RenderDMGBackground
 /tmp/RenderDMGBackground design/installer
 ```
 

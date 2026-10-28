@@ -1,0 +1,159 @@
+{
+  "schema_version": 1,
+  "scope": "Explicit candidate-only bindings for completed small-title installs; no engine default or frozen profile changes.",
+  "installation_evidence": "/Users/dragoshont/src/copilot-worktrees/ode-macos-app/dragoshont-verbose-dollop/Sources/OdeManagement/Resources/CompatibilityData/small-game-staging-v1.json",
+  "registry": "engines/registry.json",
+  "runtime_candidate": "7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b",
+  "known_profile_gaps": {
+    "creation-dx11-d3dmetal": {
+      "gap": "Apple4 omits WineGStreamer WMA backend",
+      "decision": "DEFER; not blocking a WORKING gate, no observed media failure attributed to these candidates",
+      "evidence": "engines/wma-decoder.json",
+      "plan_only": "engines/free-media-plan.md"
+    },
+    "apple-gptk-4.0b3": {
+      "gap": "Apple4 omits WineGStreamer WMA backend",
+      "decision": "DEFER; no observed Halls audio/video symptom established",
+      "evidence": "engines/wma-decoder.json",
+      "plan_only": "engines/free-media-plan.md"
+    }
+  },
+  "prefix_policy": "Fresh dedicated per-title CLI-initialized prefixes only at execution admission; never copy prepared_prefix smoke templates.",
+  "launch_authorization": "None granted by this file; S3 focus/lane admission required.",
+  "profiles": [
+    {
+      "title": "Vampire Survivors",
+      "store_id": "9PD5BM2Z8C4L",
+      "game_dir": "/Users/dragoshont/Games/Xode/VampireSurvivors-Xbox",
+      "manifest_executable": "VampireSurvivors.exe",
+      "manifest_sha256": "f0521ca96f2792a2da4dcc575d479866b5605c064f2249c7d2f3666ff25b2ec4",
+      "install_status_run_id": "5235639f-d052-4ca0-816f-1d734446efe5",
+      "profile": "creation-dx11-d3dmetal",
+      "api": "DX11.1 public candidate",
+      "public_api_source": "https://www.pcgamingwiki.com/wiki/Vampire_Survivors?action=raw",
+      "public_api_evidence": "General-edition Unity player-log reference reports Direct3D11.1. Not exact installed Xbox active-renderer evidence.",
+      "static_capability": "Readable UnityPlayer.dll imports D3D11, D3D12, DXGI and OpenGL32; capabilities do not select active renderer. Main executable opaque.",
+      "game_arguments": [],
+      "title_environment": {},
+      "prepared_prefix": null,
+      "active_renderer_observed": false,
+      "status": "candidate, not game-qualified"
+    },
+    {
+      "title": "Halls of Torment",
+      "store_id": "9NMNMS626R59",
+      "game_dir": "/Users/dragoshont/Games/Xode/HallsOfTorment-Xbox",
+      "manifest_executable": "Halls of Torment.exe",
+      "manifest_sha256": "76ebd7eac803daa375812e2e9d14e2b0b7e0322345b86dd1a10044e45be6b504",
+      "install_status_run_id": "0d0ed6ec-4852-44ab-9c20-b25c7b73b107",
+      "profile": "apple-gptk-4.0b3",
+      "api": "Default Vulkan candidate; D3D12 and GL alternatives require exact title evidence",
+      "public_api_source": "https://docs.godotengine.org/en/4.3/tutorials/editor/command_line_tutorial.html",
+      "public_api_evidence": "Godot4.3 primary source supports RD Vulkan/D3D12 and compatibility GL when compiled; exact GDK executable build options unobserved.",
+      "static_capability": "Readable unencrypted PCK header Godot4.3.0, GDK feature, no explicit renderer/driver override in 164 project settings; executable opaque.",
+      "metadata_evidence": "engines/halls-renderer-metadata.json",
+      "game_arguments": [],
+      "title_environment": {},
+      "prepared_prefix": null,
+      "active_renderer_observed": false,
+      "ready_for_launch": false,
+      "blocker": "Blocked/unqualified: coordinator owns title-check admission; one WineCX GL3.3 host probe timed out and no further GL probes authorized.",
+      "candidate_argument_sets": [
+        {
+          "order": 1,
+          "profile": "apple-gptk-4.0b3",
+          "game_arguments": [],
+          "target": "Default renderer; Vulkan via installed MoltenVK candidate",
+          "qualification": "Coordinator-selected first title check, not observed Vulkan device/presentation success for this exact recipe."
+        },
+        {
+          "order": 2,
+          "profile": "apple-gptk-4.0b3",
+          "game_arguments": ["--rendering-driver", "d3d12"],
+          "target": "D3D12 via D3DMetal if exact GDK build includes driver",
+          "qualification": "Host has existing D3D12 gate; title driver/pipeline support unobserved."
+        },
+        {
+          "order": 3,
+          "profile": "apple-gptk-4.0b3",
+          "game_arguments": ["--rendering-driver", "opengl3"],
+          "target": "GL compatibility if exact GDK build includes driver",
+          "qualification": "Blocked GL route; WineCX host probe timeout is not an Apple4 GL pass or title failure."
+        }
+      ],
+      "status": "blocked, unqualified candidate"
+    },
+    {
+      "title": "Inscryption",
+      "store_id": "9P8NSTDMZ11P",
+      "game_dir": "/Users/dragoshont/Games/Xode/Inscryption-Xbox",
+      "manifest_executable": "Inscryption.exe",
+      "manifest_sha256": "487021aeef1da423f8d2bdc446f9fbfca3cbe3d7742b8c759282f61e2018254d",
+      "install_status_run_id": "d2b5b8d7-72c1-49b7-a10c-ced0182058a6",
+      "profile": "creation-dx11-d3dmetal",
+      "api": "DX11 public candidate",
+      "public_api_source": "https://www.pcgamingwiki.com/wiki/Inscryption?action=raw",
+      "public_api_evidence": "API table Direct3D11; general edition, not exact Xbox package runtime evidence.",
+      "static_capability": "Readable x64 UnityPlayer.dll imports OpenGL32; does not establish active renderer. Main executable opaque.",
+      "game_arguments": [],
+      "title_environment": {},
+      "prepared_prefix": null,
+      "active_renderer_observed": false,
+      "status": "candidate, not game-qualified"
+    },
+    {
+      "title": "DREDGE",
+      "store_id": "9MSVVM5NS9L6",
+      "game_dir": "/Users/dragoshont/Games/Xode/Dredge-Xbox",
+      "manifest_executable": "DREDGE.exe",
+      "manifest_sha256": "4a579c6d5be39f0456d076982c8453b2c232c093a2f2a6ce87474b25d4e8b5d8",
+      "install_status_run_id": "c97f0297-5662-455e-b8e6-493b1e811bd8",
+      "profile": "creation-dx11-d3dmetal",
+      "api": "DX11 public candidate",
+      "public_api_source": "https://store.steampowered.com/api/appdetails?appids=1562430",
+      "public_api_evidence": "Publisher-entered Windows requirements: DirectX Version11; not exact Xbox package runtime evidence.",
+      "static_capability": "Readable x64 UnityPlayer.dll imports OpenGL32; does not establish active renderer. Main executable opaque.",
+      "game_arguments": [],
+      "title_environment": {},
+      "prepared_prefix": null,
+      "active_renderer_observed": false,
+      "status": "candidate, not game-qualified"
+    },
+    {
+      "title": "Monster Sanctuary",
+      "store_id": "9PBWWQGXVMKC",
+      "game_dir": "/Users/dragoshont/Games/Xode/MonsterSanctuary-Xbox",
+      "manifest_executable": "Monster Sanctuary.exe",
+      "manifest_sha256": "a27f8573233ad60b84343d3d121ef69f2bec7af3bace27f602a1bcae14d79c98",
+      "install_status_run_id": "254cea03-56cb-44ad-ad43-01335b5ef1d6",
+      "profile": "creation-dx11-d3dmetal",
+      "api": "DX10 public candidate through existing D3D10/11 profile",
+      "public_api_source": "https://store.steampowered.com/api/appdetails?appids=814370",
+      "public_api_evidence": "Publisher-entered Windows requirements: DirectX Version10; not exact Xbox package runtime evidence.",
+      "static_capability": "Readable x64 UnityPlayer.dll imports OpenGL32; does not establish active renderer. Main executable opaque.",
+      "game_arguments": [],
+      "title_environment": {},
+      "prepared_prefix": null,
+      "active_renderer_observed": false,
+      "status": "candidate, not game-qualified"
+    },
+    {
+      "title": "TUNIC",
+      "store_id": "9NLRT31Z4RWM",
+      "game_dir": "/Users/dragoshont/Games/Xode/Tunic-Xbox",
+      "manifest_executable": "Secret Legend.exe",
+      "manifest_sha256": "8c641f76dc2406a82dc5ade18f8f1be0af1cf1f9a14e06ee490d78d003137a53",
+      "install_status_run_id": "2003560c-c242-4e1d-85fe-8224343b9818",
+      "profile": "creation-dx11-d3dmetal",
+      "api": "DX11 public candidate",
+      "public_api_source": "https://www.pcgamingwiki.com/wiki/Tunic?action=raw",
+      "public_api_evidence": "S4 verified public Direct3D11; optional -force-d3d12 is not selected. Not exact Xbox package runtime evidence.",
+      "static_capability": "Readable UnityPlayer.dll imports OpenGL32; does not establish active renderer. Main executable opaque.",
+      "game_arguments": [],
+      "title_environment": {},
+      "prepared_prefix": null,
+      "active_renderer_observed": false,
+      "status": "candidate, not game-qualified"
+    }
+  ]
+}

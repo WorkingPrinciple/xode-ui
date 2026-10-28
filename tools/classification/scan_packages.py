@@ -16,7 +16,7 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[2]
-DATA_DIR = ROOT / "Sources/XodusManagement/Resources/CompatibilityData"
+DATA_DIR = ROOT / "Sources/OdeManagement/Resources/CompatibilityData"
 CATALOGUE = DATA_DIR / "game-compatibility-v1.json"
 PUBLISHER_EVIDENCE = DATA_DIR / "publisher-anti-cheat-v1.json"
 SIGNATURES = Path(__file__).with_name("anti-cheat-signatures-v1.json")

@@ -19,7 +19,7 @@ def fixture(root, finished=True, wine_path="engine/bin/wine"):
     run = root / "run-fixture"
     run.mkdir()
     (run / "launch-command.json").write_text(json.dumps({"child": {
-        "argv": ["/x/xodus-cli", "run", "/games/Fixture", str(wine), "--exe", "Fixture.exe"],
+        "argv": ["/x/ode-cli", "run", "/games/Fixture", str(wine), "--exe", "Fixture.exe"],
         "environment": {"WINEPREFIX": "/private/prefix/fixture"}}}))
     if finished:
         (run / "events.jsonl").write_text(json.dumps({"event": "finished", "exit_code": 0}) + "\n")

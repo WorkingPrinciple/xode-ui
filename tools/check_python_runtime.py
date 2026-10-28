@@ -41,10 +41,10 @@ def archive(entries, group_writable=False):
 
 class RuntimeChecks(unittest.TestCase):
     def setUp(self):
-        self.temporary = tempfile.TemporaryDirectory(prefix="xodus-runtime-neutral-")
+        self.temporary = tempfile.TemporaryDirectory(prefix="ode-runtime-neutral-")
         self.root = Path(self.temporary.name).resolve()
         self.addCleanup(self.cleanup)
-        self.destination = self.root / "XodusPython"
+        self.destination = self.root / "OdePython"
         self.entries = [
             ("python/bin/python3.14", struct.pack("<II", 0xFEEDFACF, 0x0100000C) + b"Never executed.", "file"),
             ("python/bin/python3", "python3.14", "link"),

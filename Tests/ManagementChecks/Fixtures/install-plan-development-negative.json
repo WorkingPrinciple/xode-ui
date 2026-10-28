@@ -2178,7 +2178,7 @@
         "checkedAt": "2026-10-03T12:00:00Z",
         "directory": "/fixture/selected",
         "marker": {
-          "relativePath": ".xodus-streaming.msixvc",
+          "relativePath": ".ode-streaming.msixvc",
           "bytes": 4096,
           "observedMetadataSHA256": "c59942de632cbc6d4cc04d84113e6de50cd7d7fae32080ecfe935052d2cb645f",
           "format": "msft-xvd",
@@ -2221,7 +2221,7 @@
         "checkedAt": "2026-10-03T12:00:00Z",
         "directory": "/fixture/selected",
         "marker": {
-          "relativePath": ".xodus-streaming.msixvc",
+          "relativePath": ".ode-streaming.msixvc",
           "bytes": 4096,
           "observedMetadataSHA256": "c59942de632cbc6d4cc04d84113e6de50cd7d7fae32080ecfe935052d2cb645f",
           "format": "msft-xvd",
@@ -2264,7 +2264,7 @@
         "checkedAt": "2026-10-03T12:00:00Z",
         "directory": "/fixture/selected",
         "marker": {
-          "relativePath": ".xodus-streaming.msixvc",
+          "relativePath": ".ode-streaming.msixvc",
           "bytes": 4096,
           "observedMetadataSHA256": "c59942de632cbc6d4cc04d84113e6de50cd7d7fae32080ecfe935052d2cb645f",
           "format": "msft-xvd",
@@ -2307,7 +2307,7 @@
         "checkedAt": "2026-10-03T12:00:00Z",
         "directory": "/fixture/selected",
         "marker": {
-          "relativePath": ".xodus-streaming.msixvc",
+          "relativePath": ".ode-streaming.msixvc",
           "bytes": 4096,
           "observedMetadataSHA256": "c59942de632cbc6d4cc04d84113e6de50cd7d7fae32080ecfe935052d2cb645f",
           "format": "msft-xvd",

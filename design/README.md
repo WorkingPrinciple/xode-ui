@@ -33,10 +33,10 @@ Both commands run from the repository root and only write named design output di
 The original 2048 x 1152 harbor/planet/alpine illustrations are authored with CoreGraphics/ImageIO and reproduce without third-party dependencies:
 
 ```sh
-swift tools/RenderOriginalArt.swift Sources/XodusPreview/Resources/Artwork
+swift tools/RenderOriginalArt.swift Sources/OdePreview/Resources/Artwork
 ```
 
-Secondary desert/forest/ocean vectors are authored by `python3 tools/generate_artwork.py` in `design/artwork`; `swift tools/render_mockups.swift` rasterizes secondary scenes without overwriting primary illustrations. `sh tools/export_mock_assets.sh` creates compact JPEG derivatives; regenerate SVGs/PNG previews afterward. [Resource provenance](../Sources/XodusPreview/Resources/Artwork/PROVENANCE.json) distinguishes the pipelines. These are original stylized placeholders, not real game screenshots; production needs title-specific rights/caching approval.
+Secondary desert/forest/ocean vectors are authored by `python3 tools/generate_artwork.py` in `design/artwork`; `swift tools/render_mockups.swift` rasterizes secondary scenes without overwriting primary illustrations. `sh tools/export_mock_assets.sh` creates compact JPEG derivatives; regenerate SVGs/PNG previews afterward. [Resource provenance](../Sources/OdePreview/Resources/Artwork/PROVENANCE.json) distinguishes the pipelines. These are original stylized placeholders, not real game screenshots; production needs title-specific rights/caching approval.
 
 ## Revision and Figma status
 

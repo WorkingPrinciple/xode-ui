@@ -10,7 +10,7 @@ from package_resources import (ENGINE_DEFAULTS, PRIVATE_QA_RESOURCES, RUNTIME_RE
                                copy_resources, inventory, resource_layout, verify_resources)
 
 SOURCE_TREE = "${HOME}/src/copilot-worktrees/example/branch/build/engine.registry.json"
-APP_SUPPORT = "${HOME}/Library/Application Support/XodusCLI/renderers/engine.registry.json"
+APP_SUPPORT = "${HOME}/Library/Application Support/Ode to X/CLI/renderers/engine.registry.json"
 ENGINE_DEFAULTS_FIXTURE = json.dumps({"version": 1, "defaultEngine": "release", "bindings": [
     {"engineName": "release", "wineSha256": "a" * 64, "wineserverSha256": "b" * 64},
     {"engineName": "source-tree", "registryPath": SOURCE_TREE, "developerLocal": True},

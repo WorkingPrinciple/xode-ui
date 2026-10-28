@@ -39,7 +39,7 @@ def pine(x, y, size, color):
 
 def start(name, top, bottom):
     return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}">'
-            f'<title>Original Xodus fixture illustration: {name}</title>'
+            f'<title>Original Ode fixture illustration: {name}</title>'
             '<desc>Authored procedural vector scene, GPL-3.0-only. Not a real game cover.</desc>'
             '<defs>'
             f'<linearGradient id="sky" x2="0" y2="1"><stop stop-color="{top}"/>'

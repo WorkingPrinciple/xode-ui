@@ -39,8 +39,8 @@ from scan_packages import inventory, load_json, package_identity
 
 
 ROOT = Path(__file__).resolve().parents[2]
-DATA = ROOT / "Sources/XodusManagement/Resources/CompatibilityData"
-QA_DATA = ROOT / "Sources/XodusManagement/QA/CompatibilityData"
+DATA = ROOT / "Sources/OdeManagement/Resources/CompatibilityData"
+QA_DATA = ROOT / "Sources/OdeManagement/QA/CompatibilityData"
 QUEUE = QA_DATA / "next-30-queue.json"
 OUTPUT = QA_DATA / "queue-inspection-v1.json"
 SIGNATURES = Path(__file__).with_name("anti-cheat-signatures-v1.json")
@@ -351,7 +351,7 @@ def inspect_package(item: dict[str, Any], signatures: list[dict[str, Any]]) -> d
 
 
 def fetch_json(url: str) -> Any:
-    request = urllib.request.Request(url, headers={"User-Agent": "XodusClassification/1.0"})
+    request = urllib.request.Request(url, headers={"User-Agent": "OdeClassification/1.0"})
     with urllib.request.urlopen(request, timeout=45) as response:
         return json.load(response)
 
@@ -648,7 +648,7 @@ def update_queue(report: dict[str, Any]) -> None:
                 "source": catalogue["antiCheatReference"],
                 "method": "Exact normalized title in the pinned AWACY dataset explicitly lists "
                           + alternative["antiCheat"]
-                          + ". Its Linux status is not a macOS/Xodus runtime acceptance result.",
+                          + ". Its Linux status is not a macOS/Ode runtime acceptance result.",
                 "mode": "named-technology",
             }
     for path, data in ((QUEUE, queue), (catalogue_path, catalogue)):

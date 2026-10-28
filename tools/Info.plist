@@ -4,13 +4,13 @@
 <dict>
     <key>CFBundleName</key><string>X Ode</string>
     <key>CFBundleDisplayName</key><string>X Ode</string>
-    <key>CFBundleIdentifier</key><string>io.github.dragoshont.xodus.development</string>
-    <key>CFBundleExecutable</key><string>Xodus</string>
+    <key>CFBundleIdentifier</key><string>com.workingprinciple.xode.development</string>
+    <key>CFBundleExecutable</key><string>Ode</string>
     <key>CFBundlePackageType</key><string>APPL</string>
     <key>CFBundleShortVersionString</key><string>0.2.0</string>
     <key>CFBundleVersion</key><string>2</string>
     <key>XodeReleaseChannel</key><string>Beta</string>
-    <key>CFBundleIconFile</key><string>Xodus</string>
+    <key>CFBundleIconFile</key><string>Ode</string>
     <key>LSMinimumSystemVersion</key><string>14.0</string>
     <key>NSHighResolutionCapable</key><true/>
     <key>NSPrincipalClass</key><string>NSApplication</string>

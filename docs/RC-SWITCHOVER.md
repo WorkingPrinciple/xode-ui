@@ -33,7 +33,7 @@ every failure. Variables do not persist between separate tool executions.
 ```sh
 set -eu
 umask 077
-ROOT=/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-super-spork
+ROOT=/Users/dragoshont/src/copilot-worktrees/ode-macos-app/dragoshont-super-spork
 RELEASE="$ROOT/.build/local-candidates/Ode-release-fd3zvkex"
 RC="$RELEASE/Ode-refresh-5bl7geeo/Ode to X Local Candidate.app"
 LIVE="$HOME/Applications/Ode to X Local Candidate.app"
@@ -58,7 +58,7 @@ xcrun stapler validate "$COPY_ROOT/Ode to X Local Candidate.app" \
   > "$COPY_ROOT/stapler.log" 2>&1
 spctl --assess --type execute --verbose=4 "$COPY_ROOT/Ode to X Local Candidate.app" \
   > "$COPY_ROOT/gatekeeper.log" 2>&1
-shasum -a 256 "$COPY_ROOT/Ode to X Local Candidate.app/Contents/Resources/XodusEngine/xodus-cli"
+shasum -a 256 "$COPY_ROOT/Ode to X Local Candidate.app/Contents/Resources/OdeEngine/ode-cli"
 ```
 
 Executed copy-only evidence:
@@ -155,7 +155,7 @@ After normal service readiness, run:
 python3 - <<'PY' > "$EVIDENCE/cli-in-use.json"
 import hashlib, json, os, pathlib, subprocess
 app = pathlib.Path(os.environ["LIVE"])
-expected = app/"Contents/Resources/XodusEngine/xodus-cli"
+expected = app/"Contents/Resources/OdeEngine/ode-cli"
 digest = hashlib.sha256(expected.read_bytes()).hexdigest()
 assert digest == "adf8aed7203c33da9b884d3f0b6d2b9f67b10b760931ee89a35df5255d3aa604"
 listing = subprocess.check_output(["/bin/ps", "-ww", "-axo", "pid=,comm="], text=True)
@@ -200,7 +200,7 @@ import hashlib, json, os, pathlib
 app = pathlib.Path(os.environ["BACKUP"])
 receipt = json.loads((app/"Contents/Resources/local-candidate-receipt.json").read_text())
 assert receipt["appSource"]["commit"] == "c1190ccbd61e4b2f3b241db5eefb4d1aafed3600"
-assert hashlib.sha256((app/"Contents/Resources/XodusEngine/xodus-cli").read_bytes()).hexdigest() == \
+assert hashlib.sha256((app/"Contents/Resources/OdeEngine/ode-cli").read_bytes()).hexdigest() == \
     "ffc4aa3040394dd5ae679f665e522f5ead12c92da20376942e9508dc0d4f060d"
 PY
 codesign --verify --deep --strict "$BACKUP" > "$EVIDENCE/rollback-signature.log" 2>&1

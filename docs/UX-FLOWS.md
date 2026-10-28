@@ -108,7 +108,7 @@ a neutral background, not installed game cards or developer setup diagnostics.
 Welcome, Account and the packaged app icon share one native vector X: standalone
 on Welcome, a dark-green tile on Account, and a white tile in Finder and the Dock.
 The wordmark is **Ode**; the accessible app name and security identifiers remain
-X Ode and the existing Xodus identifiers. The icon renderer compiles the same
+X Ode and the existing Ode identifiers. The icon renderer compiles the same
 geometry as the native views, rather than maintaining a separate logo drawing.
 Startup connects only through the existing management admission path and checks saved account status. A confirmed
 saved sign-in starts account verification; the app stays gated until the app,
@@ -197,7 +197,7 @@ management auth generations are fenced before removal so stale completions canno
 restore the profile.
 
 The game-service stage requires the admitted
-`private-xodus-service-signout.sh RUN_ID` helper and its private, process-matched
+`private-ode-service-signout.sh RUN_ID` helper and its private, process-matched
 receipt. Success requires `serviceRunning:false`, `signedIn:false` and
 `credentialsRemoved:true`, without an account binding. No status boolean alone
 proves removal. An older runtime without that helper stops before broker or
@@ -242,7 +242,7 @@ by real Xbox data, including truthful empty/unavailable states.
 Licenses and Acknowledgments are separate native windows available from the app
 menu and Settings without login. The app's GPL-3.0-only grant is not a grant for
 games, CrossOver, Microsoft or other components. Acknowledgments credits upstream
-Xodus and the packaged CPython 3.14.8; existing bundled notices are unchanged.
+Ode and the packaged CPython 3.14.8; existing bundled notices are unchanged.
 App-owned display copy uses X Ode elsewhere. Internal paths/identifiers and
 genuine Microsoft consent/registered-client text remain unchanged. No organization
 or new source URL is invented. These are presentation changes only, not new

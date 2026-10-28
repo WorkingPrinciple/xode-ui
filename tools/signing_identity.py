@@ -13,10 +13,10 @@ from pathlib import Path
 from shipping_pair import (FEATURES, PROFILE, PRODUCER, PRODUCER_TREE, hex_value,
                            owned_bytes, positive, require, unique_object, verify_input)
 
-IDENTIFIERS = {"app": "io.github.dragoshont.xodus",
-               "cli": "io.github.dragoshont.xodus.cli",
-               "helper": "io.github.dragoshont.xodus.auth-host",
-               "broker": "io.github.dragoshont.xodus.credential-broker"}
+IDENTIFIERS = {"app": "com.workingprinciple.xode",
+               "cli": "com.workingprinciple.xode.cli",
+               "helper": "com.workingprinciple.xode.auth-host",
+               "broker": "com.workingprinciple.xode.credential-broker"}
 TEAM_ID = "M62Z4M5EUY"
 COMPARISON_RESULT = (
     "Different signed artifacts share the fixed certificate-bound designated requirement. "
@@ -107,7 +107,7 @@ MACH_O_MAGICS = {
 
 
 def _certificate_fingerprints(path, run):
-    with tempfile.TemporaryDirectory(prefix="xodus-certs-") as directory:
+    with tempfile.TemporaryDirectory(prefix="ode-certs-") as directory:
         prefix = Path(directory).resolve(strict=True) / "certificate"
         run(["/usr/bin/codesign", "--display",
              "--extract-certificates=" + str(prefix), str(path)])
@@ -163,9 +163,9 @@ def verify_developer_id_bundle(app, identity, team_id=TEAM_ID, run=command):
             "Expected a regular app bundle")
     run(["/usr/bin/codesign", "--verify", "--deep", "--strict", str(app)])
     required = {
-        "Contents/MacOS/Xodus",
-        "Contents/MacOS/XodusAuthHost",
-        "Contents/Resources/XodusEngine/xodus-cli",
+        "Contents/MacOS/Ode",
+        "Contents/MacOS/OdeAuthHost",
+        "Contents/Resources/OdeEngine/ode-cli",
     }
     mach_o = []
     for path in app.rglob("*"):
@@ -211,9 +211,9 @@ def validate_reuse_cli(source, digest, size, receipt, receipt_hash, receipt_size
     inventory = record.get("finalPackageFiles")
     require(type(inventory) is dict
             and record.get("signedBundledCLI") == signed
-            and inventory.get("Contents/Resources/XodusEngine/xodus-cli") == signed
+            and inventory.get("Contents/Resources/OdeEngine/ode-cli") == signed
             and type(record["signedBundledCLI"].get("bytes")) is int
-            and type(inventory["Contents/Resources/XodusEngine/xodus-cli"].get("bytes")) is int,
+            and type(inventory["Contents/Resources/OdeEngine/ode-cli"].get("bytes")) is int,
             "Prior final package does not approve this exact signed CLI")
     owned_bytes(source, digest, size)
 

@@ -12,7 +12,7 @@ published [0.1120.4.4 release](https://github.com/WorkingPrinciple/calimocho/rel
 are guidance for the pinned engine. A source checkout or a Wine-looking
 filename never means installed.
 
-Registered engines are read locally from `Xodus.lifecycle.registry`. All
+Registered engines are read locally from `Ode.lifecycle.registry`. All
 records remain visible, including missing executables, failed/pending smoke
 tests and unsupported kinds. Versions/source URLs are explicitly declarations.
 Smoke tested means a local record reports pass and the executable is present;
@@ -20,10 +20,10 @@ only the launch service verifies the complete registered artifacts. No provider
 row grants whole-provider game qualification. Refresh retires stale observations
 on errors and offers retry. Choosing a registry performs no installation.
 
-For account-bound native launches, `Xodus.lifecycle.engine.crossover` and
-`Xodus.lifecycle.engine.standaloneWine` select exact records of the matching
+For account-bound native launches, `Ode.lifecycle.engine.crossover` and
+`Ode.lifecycle.engine.standaloneWine` select exact records of the matching
 kind. A CrossOver preference cannot silently point at generic free Wine.
-The existing optional `Xodus.defaultEngine` and per-game `engineOverride` remain
+The existing optional `Ode.defaultEngine` and per-game `engineOverride` remain
 in use. Pinned title recipes retain their exact engine/graphics binding; their
 existing precedence is not replaced by these preferences. Unpinned per-game
 choices override the default; a missing explicit record refuses launch.
@@ -59,8 +59,8 @@ bounds stdout/stderr, deadline, cancellation and owned-child cleanup. These
 source checks do not constitute new-CLI delivery or Calimocho game acceptance.
 
 For optional source integration coverage, set
-`XODUS_ENGINE_INSPECTION_TEST_BACKEND` to an explicitly approved, pinned source
-CLI executable when running `XodusPreview --live-check`. The consumer probes
+`ODE_ENGINE_INSPECTION_TEST_BACKEND` to an explicitly approved, pinned source
+CLI executable when running `OdePreview --live-check`. The consumer probes
 that executable and inspects only owned neutral generic-Wine and unadmitted
 Calimocho fixtures; it never launches their artifacts. The normal suite uses
 synthetic CLI scripts, including an unsupported old-CLI fixture. Neither mode
@@ -117,7 +117,7 @@ evidence, installed delivery and product acceptance are separate gates.
 - If this app pins a newer release than the installed engine, Update Calimocho uses the same pinned installer alongside the old folder while holding the game-operation reservation. Backend admission must succeed before changing any selections, and only a default or Brotato/Halls override pointing at the old Calimocho release is changed. CrossOver, custom choices and other titles, including FH6 and NMS, are untouched. Admission refusal or cancellation removes the newly installed folder and preserves the old engine and selections. Only after success is a confirmed Move Old Engine to Trash action offered; that offer survives relaunch. An interrupted update with the new folder already installed offers Finish Update when Engines opens, reusing the folder but requiring admission before activation. Refusal in that recovery path preserves the existing folder for retry. Future-dated check timestamps are stale and cannot suppress the daily check. An unpinned newer release instead shows its version, release notes and next-app-update guidance, never an install action. Independently signed engine updates are not implemented.
 - **Developer-local exception (development builds only):** No Man's Sky's private `calimocho-wine11.20-gptk4b3-tls-vulkan-private` binding points at a source-tree registry, so packaging strips it (REQ-52). Packaged builds report that engine as unavailable and offer No Man's Sky through its admitted CrossOver route. Development builds still resolve it only when the exact pinned registry exists and hash-verifies on this Mac, without substitution.
   Packaging also drops the No Man's Sky title profile bound to that engine, so its preserved-prefix name and run wording never ship.
-- **CrossOver registry location:** the `crossover-26.3-mvk142` binding reads `XodusCLI/renderers/moltenvk-1.4.2-private-api-x86_64-cor224/` under Application Support. The backend renderer install creates that directory, and the binding pins the registry digest at that path, so the app keeps the name rather than rewriting it at staging. A neutral name needs a backend renderer-install change plus a migration of the installed directory.
+- **CrossOver registry location:** the `crossover-26.3-mvk142` binding reads `Ode to X/CLI/renderers/moltenvk-1.4.2-private-api-x86_64-cor224/` under Application Support. The backend renderer install creates that directory, and the binding pins the registry digest at that path, so the app keeps the name rather than rewriting it at staging. A neutral name needs a backend renderer-install change plus a migration of the installed directory.
 - **FH6 title contract (REQ-125, source candidate):** FH6 requires `calimocho-06-fh6-v1`, Store ID `9NR1R1XWLCNB`, package identity `Microsoft.ForteBaseGame`, executable `forzahorizon6.exe` and the `calimocho-11.20-4.0b3-06-fh6` alias. Plain -06 is refused for FH6; the alias is refused for every other title. The alias is rendered locally only from the fully verified -06 release, with the exact 19-key Forza environment and a single pinned tsshim overlay. Its actual registry digest remains bound at inspection and launch. It cannot become the global default.
 
 FH6 additionally requires the producer's `titleRecipeV1` capability and fresh
@@ -143,7 +143,7 @@ still needs a70's fresh-prefix sign-in/free-roam and forced-update live checks;
 source/mock checks do not establish that product gate or a signed producer rebind.
 Normal builds keep the FH6 launch gate closed until that live receipt is admitted.
 A separately labelled qualification candidate may be compiled with
-`-Xswiftc -DXODUS_FH6_QUALIFICATION`; this opens only the app feature gate, never
+`-Xswiftc -DODE_FH6_QUALIFICATION`; this opens only the app feature gate, never
 the engine/title admission or preparation checks. It is not release qualification.
 
 ## Persisted launch selection (M3)
@@ -168,7 +168,7 @@ conflicting title recipes and sibling fallbacks. The resolved tuple travels into
 the launch service's fresh, identity-bound `engine-inspect` check immediately
 before launch; it is not replaced by a second global preference read.
 Artifact admission remains distinct from gameplay qualification.
-The legacy bash argument-two/`XODUS_ENGINE` handoff cannot establish identity and
+The legacy bash argument-two/`ODE_ENGINE` handoff cannot establish identity and
 does not execute under current policy. Historical script/session regressions use
 an explicit diagnostic entry point compiled out of shipping builds; normal Play
 never calls that entry point.
@@ -196,7 +196,7 @@ closing runtime activity. The warning names the game and explains that unsaved
 progress may be lost. Cancel is the default; only **Quit and Close Game** proceeds.
 
 The owner-directed NMS free recipe binds only product `BQVQTL3PCH05` at the
-confirmed `~/Games/Xodus/NoMansSky-Xbox` folder: exact PERF registry digest
+confirmed `~/Games/Xode/NoMansSky-Xbox` folder: exact PERF registry digest
 `170ca4ad08a5274b614e74bf740866ef219a97fdc7855270c5d8fa03192ed609`,
 engine `calimocho-wine11.20-gptk4b3-tls-vulkan-private`, runtime candidate
 `7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b`,
@@ -215,15 +215,15 @@ The following M3 description documents the old imported-game contract, not
 current execution admission.
 
 Launch selection is separate from the configuration-only planning contract below.
-`Xodus.defaultEngine` persists the optional default. The private installed-game
+`Ode.defaultEngine` persists the optional default. The private installed-game
 list persists each game's optional `engineOverride`; override, default, then
 first available runner was the selection order. A missing selected runner was an
 explicit refusal, never a substitution.
 
-Availability does not read `Xodus.developerBackendPath`: that preference names a
+Availability does not read `Ode.developerBackendPath`: that preference names a
 management build, not a runtime. CrossOver availability uses the signed-bundle
 check below. Each Experimental provider has its own user registration at
-`Xodus.runner.PROVIDER.executable`. Detection independently checks every
+`Ode.runner.PROVIDER.executable`. Detection independently checks every
 registered absolute path for a regular executable file, irrespective of the
 default or override. These registrations declare provider identity; observed
 file availability does not verify GPTK provenance/version, a license, compatible
@@ -232,7 +232,7 @@ Blank, relative, missing, linked or non-executable runner files are unavailable.
 
 The live Library's installed cards, hero and game menus expose overrides and
 detected format labels. Selecting a provider hands its identifier to the saved
-game launcher as argument two and `XODUS_ENGINE`. **This is a selector-handoff
+game launcher as argument two and `ODE_ENGINE`. **This is a selector-handoff
 contract, not proof that a private launcher actually invokes that runner.**
 Registration paths are availability inputs, not an applied runtime command.
 The private launcher must implement provider selection while preserving its
@@ -322,7 +322,7 @@ The configuration-only backend contract remains unchanged.
 Management C95, its 25 operations/capabilities and null runtime fingerprint
 remain unchanged; install/play stay gated.
 
-App-consumable source entry is `xodus runtime-plan`, separate from management.
+App-consumable source entry is `ode runtime-plan`, separate from management.
 Write exactly one Configuration JSON object to stdin and close the write end
 to supply EOF. Exit zero returns exactly one ConfigurationPlan JSON object
 plus LF on stdout; invalid input or IO failure returns nonzero, with a static
@@ -335,9 +335,9 @@ of a new binary is separately gated; this entry is not present in frozen
 authentication engine source943 or any held production artifact.
 
 Canonical schema: `contracts/runtime-providers-v1.schema.json`, namespace
-`urn:xodus:runtime-provider-configuration:1`. Neutral configuration/plan and
+`urn:ode:runtime-provider-configuration:1`. Neutral configuration/plan and
 negative fixtures: `fixtures/runtime-providers-v1.json`. Rust implementation:
-`xodus_management::runtime_provider`. Input JSON is 1..16384 UTF-8 bytes;
+`ode_management::runtime_provider`. Input JSON is 1..16384 UTF-8 bytes;
 duplicate, unknown, incompatible, missing nullable and invalid metadata fields
 are explicit `INVALID_REQUEST` failures, never an installed/launchable fallback.
 
@@ -414,7 +414,7 @@ numeric version eligibility. Errors are explicit; verification has no engine
 mutation or launch-admission side effects.
 
 The Settings integration is **default-closed**. Only an explicitly labelled
-`-DXODUS_SIGNED_ENGINE_INDEX_QUALIFICATION` build uses the signed-index client
+`-DODE_SIGNED_ENGINE_INDEX_QUALIFICATION` build uses the signed-index client
 in the existing Engines pane-open/manual check; ordinary builds keep their
 existing pinned-update behavior. The client embeds only the reviewed production
 public anchor from `fc996c3b` (trust blob SHA-256
@@ -439,8 +439,8 @@ streaming extraction contract remains a separate gated implementation.
 Run the standalone checks against the frozen upstream public test vectors:
 
 ```sh
-swiftc Sources/XodusPreview/CalimochoIndexJSON.swift \
-  Sources/XodusPreview/CalimochoIndexVerifier.swift \
+swiftc Sources/OdePreview/CalimochoIndexJSON.swift \
+  Sources/OdePreview/CalimochoIndexVerifier.swift \
   Tests/EngineIndexChecks/main.swift -o /tmp/calimocho-index-checks
 /tmp/calimocho-index-checks /path/to/frozen/tests/engine-index
 ```

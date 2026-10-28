@@ -19,7 +19,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--source-repository", required=True)
     args = parser.parse_args()
-    destination = ROOT / "Sources" / "XodusAuthHost"
+    destination = ROOT / "Sources" / "OdeAuthHost"
     for source, resource in FILES:
         content = subprocess.run(
             ["git", "-C", args.source_repository, "show", f"{PIN}:{source}"],

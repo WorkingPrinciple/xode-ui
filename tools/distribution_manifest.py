@@ -14,10 +14,10 @@ from signing_identity import IDENTIFIERS, TEAM_ID, verify_developer_id_bundle
 from shipping_pair import owned_bytes, require, unique_object
 
 COMPONENT_PATHS = {
-    "app": "Contents/MacOS/Xodus",
-    "authHost": "Contents/MacOS/XodusAuthHost",
-    "cli": "Contents/Resources/XodusEngine/xodus-cli",
-    "windowsHelper": "Contents/Resources/XodusEngine/xodus-window-monitor.exe",
+    "app": "Contents/MacOS/Ode",
+    "authHost": "Contents/MacOS/OdeAuthHost",
+    "cli": "Contents/Resources/OdeEngine/ode-cli",
+    "windowsHelper": "Contents/Resources/OdeEngine/ode-window-monitor.exe",
 }
 APP_SIGNATURE_BINDING = {
     "identifier": IDENTIFIERS["app"],
@@ -28,7 +28,7 @@ APP_SIGNATURE_BINDING = {
 def optional_payloads(app):
     resources = app / "Contents/Resources"
     result = {}
-    python_root, python_manifest = resources / "XodusPython", resources / "XodusPython.json"
+    python_root, python_manifest = resources / "OdePython", resources / "OdePython.json"
     if python_root.exists() or python_manifest.exists():
         from python_runtime import approved_pin, verify_runtime
         _, data = owned_bytes(python_manifest, bounded=4 * 1024 * 1024)
@@ -36,13 +36,13 @@ def optional_payloads(app):
         verify_runtime(python_root, metadata)
         result["pythonRuntime"] = {
             "source": approved_pin(), "files": {
-                "Contents/Resources/XodusPython/" + name: {
+                "Contents/Resources/OdePython/" + name: {
                     "sha256": identity["sha256"], "bytes": identity["bytes"]}
                 for name, identity in metadata["files"].items()},
-            "metadata": {"path": "Contents/Resources/XodusPython.json",
+            "metadata": {"path": "Contents/Resources/OdePython.json",
                          **owned_bytes(python_manifest)[0]},
         }
-    broker = resources / "XodusCredentialBroker.json"
+    broker = resources / "OdeCredentialBroker.json"
     if broker.exists():
         _, data = owned_bytes(broker, bounded=4096)
         pin = json.loads(data, object_pairs_hook=unique_object)
@@ -51,7 +51,7 @@ def optional_payloads(app):
         result["credentialBroker"] = {
             "delivery": "separately-installed; executable is not in the app bundle",
             "payloadReference": pin, "files": {},
-            "metadata": {"path": "Contents/Resources/XodusCredentialBroker.json",
+            "metadata": {"path": "Contents/Resources/OdeCredentialBroker.json",
                          **owned_bytes(broker)[0]},
         }
     capsule = resources / "LaunchAssociation"
@@ -77,13 +77,13 @@ def verify_resource_json(resources):
 
 def verify_payload_coverage(app, optional):
     """Unmapped payloads cannot inherit another component's rights clearance."""
-    management = app / "Contents/Resources/XodusAppFoundation_XodusManagement.bundle"
+    management = app / "Contents/Resources/OdeApp_OdeManagement.bundle"
     verify_resources(management)
     allowed = set(COMPONENT_PATHS.values()) | {
         "Contents/Info.plist", "Contents/Resources/LICENSE.txt", "Contents/Resources/NOTICE.txt",
-        "Contents/Resources/TRADEMARKS.md", "Contents/Resources/Xodus.icns",
-        "Contents/Resources/XodusAuthHost.json", "Contents/Resources/local-candidate-receipt.json",
-        "Contents/Resources/XodusEngine/build-manifest.json",
+        "Contents/Resources/TRADEMARKS.md", "Contents/Resources/Ode.icns",
+        "Contents/Resources/OdeAuthHost.json", "Contents/Resources/local-candidate-receipt.json",
+        "Contents/Resources/OdeEngine/build-manifest.json",
         "Contents/Resources/distribution-components.json",
         "Contents/_CodeSignature/CodeResources",
     }
@@ -107,7 +107,7 @@ def verify_payload_coverage(app, optional):
         if not path.is_file():
             continue
         relative = path.relative_to(app).as_posix()
-        if relative.startswith("Contents/Resources/Xodus.iconset/") and path.suffix == ".png":
+        if relative.startswith("Contents/Resources/Ode.iconset/") and path.suffix == ".png":
             _, data = owned_bytes(path, bounded=16 * 1024 * 1024)
             require(data.startswith(b"\x89PNG\r\n\x1a\n"), "Invalid packaged icon")
             continue
@@ -145,7 +145,7 @@ def write_manifest(app, source, producer, archive, producer_notices=None,
         else:
             component.update(owned_bytes(app / relative)[0])
         records[name] = component
-    management = resources / "XodusAppFoundation_XodusManagement.bundle"
+    management = resources / "OdeApp_OdeManagement.bundle"
     verify_resources(management)
     layout = resource_layout(management)
     notice, _ = owned_bytes(layout / "CompatibilityData/AWACY-LICENSE.txt")
@@ -270,7 +270,7 @@ def distribution_blockers(app, approved_producer_notices_sha256=None,
     notice_path = Path(notice["path"])
     require(not notice_path.is_absolute() and ".." not in notice_path.parts, "Invalid notice path")
     owned_bytes(app / notice_path, notice["sha256"], notice["bytes"])
-    management = resources / "XodusAppFoundation_XodusManagement.bundle"
+    management = resources / "OdeApp_OdeManagement.bundle"
     verify_resources(management)
     return blockers
 

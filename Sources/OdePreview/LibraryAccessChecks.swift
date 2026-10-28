@@ -1,0 +1,851 @@
+// SPDX-License-Identifier: GPL-3.0-only
+import Foundation
+import OdeManagement
+
+@MainActor
+enum LibraryAccessChecks {
+    static func run(check: (Bool, String) -> Void) throws {
+        check(GameDetailFacetCopy.gamePassActionStatus(startupAllowed: true, libraryNotice: nil,
+                  operationNotice: "Wait for the Game Pass access check to finish.")
+                  == "Wait for the Game Pass access check to finish."
+              && GameDetailFacetCopy.gamePassActionStatus(startupAllowed: true,
+                  libraryNotice: "Approve Keychain access in Account settings.",
+                  operationNotice: "Wait for the current game operation.") == "Approve Keychain access in Account settings."
+              && GameDetailFacetCopy.gamePassActionStatus(startupAllowed: false, libraryNotice: nil,
+                  operationNotice: nil) == "Wait for X Ode to finish starting."
+              && GameDetailFacetCopy.gamePassActionStatus(startupAllowed: true, libraryNotice: nil,
+                  operationNotice: nil) == nil,
+              "COR88: Actual Game Pass action caption covers operation-only, account, startup and ready gates")
+        try DiscoverShelfChecks.run(check: check)
+        let utc = TimeZone(secondsFromGMT: 0)!
+        func seasonalDate(_ year: Int, _ month: Int, _ day: Int, hour: Int = 0,
+                          timeZone: TimeZone = TimeZone(secondsFromGMT: 0)!) -> Date {
+            var calendar = Calendar(identifier: .gregorian)
+            calendar.timeZone = timeZone
+            return calendar.date(from: DateComponents(year: year, month: month, day: day, hour: hour))!
+        }
+        for (year, lastMonth, lastDay, hiddenDay) in [
+            (2024, 11, 3, 4), (2025, 11, 2, 3), (2026, 11, 1, 2),
+            (2027, 10, 31, 1), (2028, 11, 5, 6), (2029, 11, 4, 5), (2033, 11, 6, 7)
+        ] {
+            check(!HalloweenShelf.isActive(on: seasonalDate(year, 9, 30, hour: 23), timeZone: utc)
+                  && HalloweenShelf.isActive(on: seasonalDate(year, 10, 1), timeZone: utc)
+                  && HalloweenShelf.isActive(on: seasonalDate(year, 10, 31, hour: 23), timeZone: utc)
+                  && HalloweenShelf.isActive(on: seasonalDate(year, lastMonth, lastDay, hour: 23), timeZone: utc)
+                  && !HalloweenShelf.isActive(on: seasonalDate(year, 11, hiddenDay), timeZone: utc)
+                  && !HalloweenShelf.isActive(on: seasonalDate(year + 1, 1, 1), timeZone: utc),
+                  "REQ89: Annual local Halloween window includes Oct1 through Sunday, never following Monday or year rollover (\(year))")
+        }
+        let losAngeles = TimeZone(identifier: "America/Los_Angeles")!
+        let tokyo = TimeZone(identifier: "Asia/Tokyo")!
+        let localBoundary = seasonalDate(2026, 10, 1, timeZone: tokyo)
+        check(HalloweenShelf.isActive(on: localBoundary, timeZone: tokyo)
+              && !HalloweenShelf.isActive(on: localBoundary, timeZone: losAngeles),
+              "REQ89: The same instant follows the Mac's local season rather than a UTC date")
+        let dstMonday = seasonalDate(2026, 11, 2, timeZone: losAngeles)
+        check(HalloweenShelf.isActive(on: dstMonday.addingTimeInterval(-1), timeZone: losAngeles)
+              && !HalloweenShelf.isActive(on: dstMonday, timeZone: losAngeles),
+              "REQ89: Local Sunday stays inclusive across daylight-saving transition, ending exactly at Monday")
+        check(InstalledGameActionCopy.title(incomplete: false, installationIssue: false, launchIssue: false) == "View details",
+              "An app-wide launch gate is not labelled as a broken game")
+        check(OfflineGameCompatibility.snapshot?.products.isEmpty == false
+              && OfflineGameCompatibility.snapshot?.products.values.allSatisfy({ !$0.antiCheat.isEmpty }) == true,
+              "A sourced offline catalogue is bundled with explicit anti-cheat classification fields")
+        let admitted = OfflineGameCompatibility.snapshot?.products.filter { $0.value.supported01 }
+        let rawCatalogue = try JSONSerialization.jsonObject(with: Data(contentsOf:
+            CompatibilityResources.catalogueURL())) as? [String: Any]
+        let rawProducts = rawCatalogue?["products"] as? [String: [String: Any]] ?? [:]
+        let declared = Set(rawProducts.filter { ($0.value["supported01"] as? Bool) == true }.map(\.key))
+        check(!declared.isEmpty && Set(admitted?.keys.map { $0 } ?? []) == declared
+              && declared.allSatisfy { OfflineGameCompatibility.validClearance(
+                  productID: $0, product: rawProducts[$0] ?? [:]) }
+              && admitted?.values.allSatisfy({ $0.packageFormat == "MSIXVC" && $0.antiCheat == "none" }) == true,
+              "OX-9/UI-3: Real bundled admission exactly matches S4's evolving supported01 facts")
+        check(GameSupportPolicy.issues(packageFormat: "MSIXVC", antiCheat: "none").isEmpty,
+              "0.1 admits MSIXVC with explicit no-anti-cheat classification")
+        for format in ["MSIX", "Appx", "EAppx", "UWP"] {
+            check(GameSupportPolicy.issues(packageFormat: format, antiCheat: "none")
+                .contains(where: { $0.kind == .packageType }),
+                  "0.1 rejects non-MSIXVC package format: \(format)")
+        }
+        for technology in ["Easy Anti-Cheat", "BattlEye", "Vanguard"] {
+            let issues = GameSupportPolicy.issues(packageFormat: "MSIXVC", antiCheat: technology)
+            check(issues.contains(where: { $0.kind == .antiCheat }),
+                  "0.1 rejects named anti-cheat: \(technology)")
+        }
+        for technology in [Optional("unknown"), "Unspecified", "", nil] {
+            check(GameSupportPolicy.issues(packageFormat: "MSIXVC", antiCheat: technology).isEmpty,
+                  "User-directed policy allows trying MSIXVC without inventing an anti-cheat blocker: \(technology ?? "missing")")
+        }
+        check(GameSupportPolicy.issues(packageFormat: nil, antiCheat: nil).isEmpty
+              && ["Win32", "Unspecified", "", "Unknown"].allSatisfy {
+                  GameSupportPolicy.issues(packageFormat: $0, antiCheat: "unknown").isEmpty
+              }
+              && !GameSupportPolicy.issues(packageFormat: "MSIXVC / EAppx", antiCheat: "none").isEmpty
+              && GameSupportPolicy.issues(packageFormat: "msixvc", antiCheat: " none ").isEmpty,
+              "#44: Unknown formats are not unsupported; known EAppx remains a specific blocker without granting install or verified status")
+        check(LibrarySupportVisibility.isVisible(productID: "FIXTURE00001", installed: false,
+                  packageFormat: nil, compatibility: nil, showsUnsupportedGames: false)
+              && LibrarySupportVisibility.issues(productID: "FIXTURE00001", installed: false,
+                  packageFormat: nil, compatibility: nil, catalogue: nil).isEmpty,
+              "#44: A title absent from the shipped database remains visible by default without a generic unknown blocker")
+        for format in [nil, "Unknown", "Win32"] as [String?] {
+            let unclassified = OfflineGameCompatibility.Entry(title: "Unclassified", packageFormat: format,
+                pcPackageIdentified: true, antiCheat: "none", technologyReferences: [], referencePlatforms: [])
+            check(!unclassified.supported01,
+                  "#44: Supported-by-default visibility does not create sourced MSIXVC clearance for \(format ?? "missing")")
+        }
+        for technology in [Optional("none"), "Easy Anti-Cheat", "unknown", nil] {
+            var input = rawCatalogue ?? [:]
+            var product = rawProducts["9P4NV23Q6QC2"] ?? [:]
+            product["antiCheat"] = technology
+            input["products"] = ["9P4NV23Q6QC2": product]
+            let database = try OfflineGameCompatibility.decode(JSONSerialization.data(withJSONObject: input))
+            let entry = database.products["9P4NV23Q6QC2"]
+            check(entry?.antiCheat == (technology ?? "unknown")
+                  && entry?.supported01 == (technology == "none"),
+                  "Catalogue loader accepts none, named and unknown anti-cheat; missing defaults to unknown: \(technology ?? "missing")")
+        }
+        for field in ["antiCheatEvidence", "packageFormatEvidence", "supported01"] {
+            var input = rawCatalogue ?? [:]
+            var product = rawProducts["9P4NV23Q6QC2"] ?? [:]
+            product.removeValue(forKey: field)
+            input["products"] = ["9P4NV23Q6QC2": product]
+            do {
+                _ = try OfflineGameCompatibility.decode(JSONSerialization.data(withJSONObject: input))
+                check(false, "Bare none cannot admit a title missing \(field)")
+            } catch { check(true, "Bare none cannot admit a title missing \(field)") }
+        }
+        var forged = rawProducts["9P4NV23Q6QC2"] ?? [:]
+        forged["antiCheatEvidence"] = ["type": "package-scan", "packageScan": ["complete": true]]
+        check(!OfflineGameCompatibility.validClearance(productID: "9P4NV23Q6QC2", product: forged),
+              "A claimed complete scan without StoreID, digest, signature inventory and public checks is not clearance")
+        let corrections = rawProducts.filter {
+            ($0.value["antiCheatEvidence"] as? [String: Any])?["mode"] as? String == "user-directed-correction"
+        }
+        check(!corrections.isEmpty && corrections.allSatisfy {
+            OfflineGameCompatibility.validClearance(productID: $0.key, product: $0.value)
+        }, "S4's documented user-directed anti-cheat corrections remain eligibility, not invented complete scans")
+        for (id, product) in corrections {
+            for missing in ["mode", "method", "publicChecks"] {
+                var invalid = product
+                var evidence = product["antiCheatEvidence"] as? [String: Any] ?? [:]
+                evidence.removeValue(forKey: missing)
+                invalid["antiCheatEvidence"] = evidence
+                check(!OfflineGameCompatibility.validClearance(productID: id, product: invalid),
+                      "Public-source none without \(missing) cannot admit \(id)")
+            }
+            var uppercase = product
+            uppercase["antiCheat"] = "NONE"
+            check(OfflineGameCompatibility.validClearance(productID: id, product: uppercase),
+                  "The supported 0.1 rule accepts explicit none case insensitively for \(id)")
+            var mislabeledScan = product
+            var evidence = product["antiCheatEvidence"] as? [String: Any] ?? [:]
+            evidence["packageScan"] = ["complete": false]
+            mislabeledScan["antiCheatEvidence"] = evidence
+            check(!OfflineGameCompatibility.validClearance(productID: id, product: mislabeledScan),
+                  "A public-source correction cannot disguise an incomplete package scan for \(id)")
+        }
+        let evidence = Data("""
+            {"schemaVersion":1,"updatedAt":"2026-10-21T00:00:00Z","games":[
+            {"productId":"FIXTURE00001","title":"Synthetic proof","verdict":"GAMEPLAY_PASS",
+             "scope":"Movement observed; save persistence unverified.","engine":"synthetic",
+             "runId":null,"screenshots":[{"path":"/synthetic/proof.png","caption":"Synthetic path only"}],
+             "owner":"test","blocker":null}]}
+            """.utf8)
+        let decodedEvidence = try MacGameEvidence.decode(evidence)
+        check(decodedEvidence.games.first?.scope.contains("save persistence unverified") == true
+              && decodedEvidence.games.first?.screenshots.count == 1,
+              "Mac evidence keeps observation scope and screenshot references without inventing save proof")
+        let partialEvidence = Data("""
+            {"schemaVersion":1,"updatedAt":"2026-10-21T00:00:00Z","games":[
+            {"productId":"FIXTURE00001","title":"Missing screenshots","verdict":"NOT_TESTED",
+             "scope":"No app test.","owner":"test"},
+            {"productId":"FIXTURE00002","title":"Brotato candidate","verdict":"WORKING_CANDIDATE",
+             "scope":"CLI result only.","owner":"test"},
+            {"productId":"FIXTURE00003","title":"Screenshot retained","verdict":"GAMEPLAY_PASS",
+             "scope":"Gameplay observed.","owner":"test",
+             "screenshots":[{"path":"/synthetic/third.png","caption":"Synthetic"}]}]}
+            """.utf8)
+        let decodedPartial = try MacGameEvidence.decode(partialEvidence)
+        let missingScreenshots = decodedPartial.games.filter {
+            $0.productId == "FIXTURE00001" || $0.productId == "FIXTURE00002"
+        }
+        let candidate = decodedPartial.games.first { $0.productId == "FIXTURE00002" }
+        check(decodedPartial.games.count == 3 && missingScreenshots.count == 2
+              && missingScreenshots.allSatisfy { $0.screenshots.isEmpty }
+              && candidate?.verdict == .workingCandidate
+              && candidate?.statusLabel == "Candidate · CLI only"
+              && candidate?.verifiedWorkingEvidence == nil
+              && decodedPartial.games.first { $0.productId == "FIXTURE00003" }?.screenshots.count == 1,
+              "Missing optional screenshots retain both ledger rows, preserve the candidate verdict and keep existing proof")
+        let malformedScreenshots = String(decoding: partialEvidence, as: UTF8.self)
+            .replacingOccurrences(of: #""screenshots":[{"path":"/synthetic/third.png","caption":"Synthetic"}]"#,
+                                  with: #""screenshots":[42]"#)
+        var rejectedMalformedScreenshots = false
+        do {
+            _ = try MacGameEvidence.decode(Data(malformedScreenshots.utf8))
+        } catch {
+            rejectedMalformedScreenshots = true
+        }
+        check(rejectedMalformedScreenshots,
+              "Malformed screenshot evidence still fails decoding instead of being discarded")
+        let missingIdentity = String(decoding: partialEvidence, as: UTF8.self)
+            .replacingOccurrences(of: #""title":"Missing screenshots","#, with: "")
+        var rejectedMissingIdentity = false
+        do {
+            _ = try MacGameEvidence.decode(Data(missingIdentity.utf8))
+        } catch {
+            rejectedMissingIdentity = true
+        }
+        check(rejectedMissingIdentity, "Required evidence identity fields remain strict")
+        let fileError = MacGameEvidenceDiagnostic.unreadable(path: "/private/tried-games.json")
+        let schemaError = MacGameEvidenceDiagnostic.invalid(path: "/private/tried-games.json")
+        check(fileError != schemaError && fileError.contains("file access")
+              && schemaError.contains("JSON structure") && !schemaError.contains("OSStatus"),
+              "Evidence read and schema errors have distinct diagnostics without exposing raw errors")
+        let notTested = String(decoding: evidence, as: UTF8.self)
+            .replacingOccurrences(of: #""engine":"synthetic""#, with: #""engine":null"#)
+            .replacingOccurrences(of: "GAMEPLAY_PASS", with: "NOT_TESTED")
+        check(try MacGameEvidence.decode(Data(notTested.utf8)).games.first?.engine == nil,
+              "A not-tested title without a selected engine does not invalidate other real Mac evidence")
+        let working = String(decoding: evidence, as: UTF8.self).replacingOccurrences(of: "GAMEPLAY_PASS", with: "WORKING")
+        check(try MacGameEvidence.decode(Data(working.utf8)).games.first?.verdict == .working,
+              "An externally qualified WORKING record preserves its scoped evidence without granting Windows package admission")
+        check(try MacGameEvidence.decode(Data(working.utf8)).games.first?.verifiedWorkingEvidence?.path == "/synthetic/proof.png"
+              && decodedEvidence.games.first?.verifiedWorkingEvidence == nil,
+              "Only an exact WORKING ledger entry with recorded evidence qualifies per-title engine provenance")
+        for verdict in ["GAMEPLAY_PASS", "MENU_PASS", "BLOCKED", "FAIL", "NOT_TESTED", "ANTI_CHEAT_EXCLUDED", "WORKING_CANDIDATE"] {
+            let candidate = working.replacingOccurrences(of: "WORKING", with: verdict)
+            check(try MacGameEvidence.decode(Data(candidate.utf8)).games.first?.verifiedWorkingEvidence == nil,
+                  "\(verdict) never becomes Verified working from screenshots, engine selection or installation")
+        }
+        let workingCandidate = try MacGameEvidence.decode(Data(
+            working.replacingOccurrences(of: "WORKING", with: "WORKING_CANDIDATE").utf8)).games[0]
+        check(workingCandidate.verdict == .workingCandidate
+              && workingCandidate.statusLabel == "Candidate · CLI only"
+              && workingCandidate.verificationScopeLabel == "CLI only · App testing not observed"
+              && workingCandidate.provenEngine == nil
+              && workingCandidate.verifiedWorkingEvidence == nil,
+              "#43: Brotato-style WORKING_CANDIDATE is recognized without promotion, automatic engine selection or app proof")
+        let noProof = working.replacingOccurrences(
+            of: #""screenshots":[{"path":"/synthetic/proof.png","caption":"Synthetic path only"}]"#,
+            with: #""screenshots":[]"#)
+        let neverLaunched = working.replacingOccurrences(of: #""blocker":null"#,
+                                                         with: #""blocker":null,"launchAttempted":false"#)
+        check(try MacGameEvidence.decode(Data(noProof.utf8)).games.first?.verifiedWorkingEvidence == nil
+              && MacGameEvidence.decode(Data(neverLaunched.utf8)).games.first?.verifiedWorkingEvidence == nil,
+              "Missing evidence and explicit no-launch records cannot qualify engine provenance")
+        check(MacGameEvidence.Verdict.gameplay.label == "Playable, not fully verified"
+              && MacGameEvidence.Verdict.working.label == "Works on Mac"
+              && MacGameEvidence.Verdict.blocked.label == "Not tested on Mac yet"
+              && MacGameEvidence.Verdict.menu.label == "Starts, not yet playable"
+              && MacGameEvidence.Verdict.failed.label == "Doesn't start yet"
+              && decodedEvidence.games.first?.engineLabel == "Free Wine"
+              && decodedEvidence.games.first?.provenEngine == "synthetic",
+              "Internal verdict/provider data remains distinct; only successful gameplay supplies automatic engine selection")
+        let preLaunch = String(decoding: evidence, as: UTF8.self)
+            .replacingOccurrences(of: #""blocker":null"#, with: #""blocker":null,"launchAttempted":false"#)
+        check(try MacGameEvidence.decode(Data(preLaunch.utf8)).games.first?.statusLabel == "Not tested on Mac yet",
+              "Installer-only failures never imply that a game was launched")
+        check(NativeGameForeground.matchesGameWindow("Hollow Knight", title: "Hollow Knight: Voidheart Edition")
+              && NativeGameForeground.matchesGameWindow("Hades II", title: "Hades II")
+              && !NativeGameForeground.matchesGameWindow("Hollow Knight: Silksong", title: "Hollow Knight: Voidheart Edition")
+              && !NativeGameForeground.matchesGameWindow("Wine System Tray", title: "Hades II")
+              && !NativeGameForeground.matchesGameWindow("Other game", title: ""),
+              "Foreground handoff targets the launched game's window, never unrelated Wine windows")
+        check(NativeGameForeground.matchesOwner("Hollow Knight.exe", executables: ["Hollow Knight.exe"])
+              && NativeGameForeground.matchesOwner("wine64-preloader", executables: ["Hades2.exe"])
+              && !NativeGameForeground.matchesOwner("Microsoft Edge", executables: ["Hollow Knight.exe"]),
+              "Foreground matching accepts the game's executable or Wine owner, never browser windows with game titles")
+        check(GameLaunchArguments.parse(["--play-game", "FIXTURE00001"]) == .play("FIXTURE00001")
+              && GameLaunchArguments.parse(["--play-game", "/tmp/game.exe"]) == nil
+              && GameLaunchArguments.parse(["--play-game", "FIXTURE00001", "--fixture"]) == nil
+              && GameLaunchArguments.parse(["--open-native-minecraft"]) == .nativeMinecraft,
+              "App launch actions accept only exact product IDs/native Minecraft, never an executable or fixture override")
+        check(GameLaunchArguments.parse(["--play-game", "BQVQTL3PCH05", "--engine", "crossover-26.3-mvk142"])
+                == .play("BQVQTL3PCH05", engine: "crossover-26.3-mvk142")
+              && GameLaunchArguments.parse(["--play-game", "BQVQTL3PCH05", "--engine", "/Applications/CrossOver.app"]) == nil
+              && GameLaunchArguments.parse(["--play-game", "BQVQTL3PCH05", "--engine"]) == nil
+              && GameLaunchArguments.parse(["--play-game", "BQVQTL3PCH05", "--wine", "crossover-26.3-mvk142"]) == nil
+              && DevelopmentArguments.accepts(["--play-game", "BQVQTL3PCH05", "--engine", "crossover-26.3-mvk142"]),
+              "L7/L8: A deep-link Play may name one catalogue engine ID, never a path or another flag")
+        check(NativeMinecraft.minecraftJavaPID(in: """
+            123 501 /usr/bin/java
+            124 501 /Users/example/Library/Application Support/minecraft/runtime/java-runtime/bin/java
+            125 502 /Users/other/Library/Application Support/minecraft/runtime/java-runtime/bin/java
+            """, uid: 501) == 124,
+              "Native Minecraft detects only this user's bundled Minecraft Java executable, without reading credential-bearing arguments")
+        try minecraftInstallationChecks(check: check)
+        try saveLocationChecks(check: check)
+        let partial = working.replacingOccurrences(of: #""verdict":"WORKING""#,
+                                                   with: #""verdict":"TITLE_SCREEN_ONLY""#)
+        let unknown = working.replacingOccurrences(of: #""verdict":"WORKING""#,
+                                                   with: #""verdict":"FUTURE_RESULT_V2""#)
+        let unknownGame = try MacGameEvidence.decode(Data(unknown.utf8)).games[0]
+        let partialGame = try MacGameEvidence.decode(Data(partial.utf8)).games[0]
+        let inconclusive = try MacGameEvidence.decode(Data(
+            working.replacingOccurrences(of: "WORKING", with: "INCONCLUSIVE").utf8)).games[0]
+        check(unknownGame.verdict == .unknown && unknownGame.verifiedWorkingEvidence == nil
+              && unknownGame.provenEngine == nil && unknownGame.statusLabel == "Result not recognized"
+              && partialGame.verdict == .titleScreen && partialGame.verifiedWorkingEvidence == nil
+              && partialGame.provenEngine == nil && partialGame.statusLabel == "Title screen only"
+              && inconclusive.verdict == .inconclusive && inconclusive.verifiedWorkingEvidence == nil
+              && inconclusive.provenEngine == nil && inconclusive.statusLabel == "Inconclusive",
+              "Future, title-screen-only and inconclusive verdicts stay distinct and never promote engine or working evidence")
+        let mixedWorking = try MacGameEvidence.decode(Data(working.utf8))
+        var mixed = try JSONSerialization.jsonObject(with: Data(working.utf8)) as? [String: Any] ?? [:]
+        let baseGame = (mixed["games"] as? [[String: Any]])?.first ?? [:]
+        var rows: [[String: Any]] = []
+        for id in ["9MW9469V91LM", "BQVQTL3PCH05", "9PJ8266BHFWN"] {
+            var row = baseGame
+            row["productId"] = id
+            rows.append(row)
+        }
+        var future = baseGame
+        future["productId"] = "FUTURE000001"
+        future["verdict"] = "FUTURE_RESULT_V2"
+        rows.append(future)
+        var unresolved = baseGame
+        unresolved["productId"] = "FIXTURE00007"
+        unresolved["verdict"] = "INCONCLUSIVE"
+        rows.append(unresolved)
+        mixed["games"] = rows
+        let mixedGames = try MacGameEvidence.decode(JSONSerialization.data(withJSONObject: mixed)).games
+        check(mixedWorking.games[0].verifiedWorkingEvidence != nil && mixedGames.count == 5
+              && mixedGames.filter { $0.verifiedWorkingEvidence != nil }.map(\.productId)
+                  == ["9MW9469V91LM", "BQVQTL3PCH05", "9PJ8266BHFWN"]
+              && mixedGames[3].verdict == .unknown && mixedGames[3].provenEngine == nil
+              && mixedGames[4].verdict == .inconclusive && mixedGames[4].provenEngine == nil
+              && mixedGames[4].verifiedWorkingEvidence == nil
+              && mixedGames[4].statusLabel == "Inconclusive",
+              "Unknown and inconclusive verdicts preserve neighboring engine provenance without gaining promotion")
+        let bundledEvidence = try MacGameEvidence.bundled.get()
+        let newWorkingIDs = Set(["9PCR3Z2MSM4T", "9P4NV23Q6QC2", "9NH0MSG29X6L"])
+        check(Set(bundledEvidence.games.map(\.productId)) == newWorkingIDs
+              && bundledEvidence.games.allSatisfy {
+                  $0.hasVerifiedWorkingQualification
+                      && $0.verificationScopeLabel == "CLI only · App testing not observed"
+                      && $0.verifiedWorkingEvidence?.referenceID != nil
+                      && $0.saveObservation?.retentionVerified == true
+                      && $0.saveObservation?.normalMenuQuitObserved == true
+              },
+              "Hades II, Abiotic Factor and Mixtape retain non-image proof references for runtime qualification")
+        let expectedProofs = [
+            "9PCR3Z2MSM4T": ("crossover-26.3", "s3-hades-checkpoint-reload-02"),
+            "9P4NV23Q6QC2": ("apple-gptk-4.0b3", "s3-abiotic-qualification-reload-01"),
+            "9NH0MSG29X6L": ("apple-gptk-4.0b3", "s3-mixtape-extended-reload-01")
+        ]
+        check(bundledEvidence.games.allSatisfy {
+            $0.engine == expectedProofs[$0.productId]?.0
+                && $0.runId == $0.retentionRunId
+        }, "New WORKING rows retain their exact CLI runtime, reload proof and run identity")
+        check(mixedWorking.games[0].verificationScopeLabel == nil,
+              "Legacy evidence without an app-testing field is not retroactively labelled CLI-only")
+        var staleRows: [[String: Any]] = []
+        for id in ["9PJ8266BHFWN", "BQVQTL3PCH05", "9MW9469V91LM", "9NMNMS626R59", "9MT5NJ5W7B8Z"] {
+            var row = baseGame
+            row["productId"] = id
+            staleRows.append(row)
+        }
+        var staleMixtape = baseGame
+        staleMixtape["productId"] = "9NH0MSG29X6L"
+        staleMixtape["verdict"] = "GAMEPLAY_PASS"
+        staleRows.append(staleMixtape)
+        mixed["games"] = staleRows
+        mixed["updatedAt"] = "2026-10-22T05:33:53Z"
+        let staleLedger = try MacGameEvidence.decode(JSONSerialization.data(withJSONObject: mixed))
+        let mergedEvidence = try bundledEvidence.merging(staleLedger)
+        check(mergedEvidence.count == 8
+              && mergedEvidence.values.allSatisfy { $0.verifiedWorkingEvidence != nil }
+              && mergedEvidence["9NH0MSG29X6L"]?.verificationScopeLabel != nil,
+              "The five existing WORKING tiles plus the three newer CLI rows produce eight with proof references, superseding stale Mixtape")
+        mixed["updatedAt"] = "2026-10-23T00:00:00Z"
+        let newerLedger = try MacGameEvidence.decode(JSONSerialization.data(withJSONObject: mixed))
+        check(try bundledEvidence.merging(newerLedger)["9NH0MSG29X6L"]?.verdict == .gameplay,
+              "A newer local verdict can revoke bundled WORKING; source evidence never permanently forces a badge")
+        var recordedRow = baseGame
+        recordedRow["saveObservation"] = ["saveDirectory": "/synthetic/recorded-save-folder",
+                                         "loadedWorld": "Ignored by location display"]
+        mixed["games"] = [recordedRow]
+        let savedEvidence = try MacGameEvidence.decode(JSONSerialization.data(withJSONObject: mixed)).games[0]
+        check(savedEvidence.saveObservation?.saveDirectory == "/synthetic/recorded-save-folder"
+              && mixedGames[0].saveObservation == nil,
+              "Save location consumes only the title's optional observed directory, never world/retention claims")
+        var retentionRow = baseGame
+        retentionRow["verdict"] = "GAMEPLAY_PASS"
+        retentionRow["retentionRunId"] = "00000000-0000-0000-0000-000000000001"
+        retentionRow["saveObservation"] = ["retentionVerified": true, "normalMenuQuitObserved": false]
+        mixed["games"] = [retentionRow]
+        let retainedPartial = try MacGameEvidence.decode(JSONSerialization.data(withJSONObject: mixed)).games[0]
+        check(retainedPartial.statusLabel == "Save verified · quit pending"
+              && retainedPartial.verifiedWorkingEvidence == nil && retainedPartial.verdict == .gameplay,
+              "Explicit fresh-run retention with quit pending remains a truthful partial, never Verified working")
+        for verdict in ["WORKING", "GAMEPLAY_PASS", "FUTURE_RESULT_V2"] {
+            var row = retentionRow
+            row["verdict"] = verdict
+            mixed["games"] = [row]
+            let value = try MacGameEvidence.decode(JSONSerialization.data(withJSONObject: mixed)).games[0]
+            check(value.verifiedWorkingEvidence == nil
+                  && (verdict == "FUTURE_RESULT_V2" ? value.statusLabel == "Result not recognized"
+                      : value.statusLabel == "Save verified · quit pending"),
+                  "\(verdict) cannot bypass an explicitly pending normal quit or promote unknown retention metadata")
+        }
+        let retentionObservations: [[String: Any]] = [
+            ["checkpointRetained": "Prose is not a verified retention flag", "normalMenuQuitObserved": false],
+            ["retentionVerified": false, "normalMenuQuitObserved": false],
+            ["retentionVerified": true],
+            ["retentionVerified": true, "normalMenuQuitObserved": true]
+        ]
+        for observation in retentionObservations {
+            var row = retentionRow
+            row["saveObservation"] = observation
+            mixed["games"] = [row]
+            let value = try MacGameEvidence.decode(JSONSerialization.data(withJSONObject: mixed)).games[0]
+            check(value.statusLabel == "Playable, not fully verified" && value.verifiedWorkingEvidence == nil,
+                  "Missing, negative or completed-quit retention metadata does not invent a save-verified partial or WORKING promotion")
+        }
+        retentionRow["retentionRunId"] = "not-a-run"
+        mixed["games"] = [retentionRow]
+        check(try MacGameEvidence.decode(JSONSerialization.data(withJSONObject: mixed)).games[0].statusLabel
+                == "Playable, not fully verified",
+              "A save-verified partial requires a valid fresh-process retention run identity")
+        for invalid in [
+            String(decoding: evidence, as: UTF8.self).replacingOccurrences(of: "/synthetic/proof.png", with: "https://invalid/proof.png")
+        ] {
+            do {
+                _ = try MacGameEvidence.decode(Data(invalid.utf8))
+                check(false, "Nonlocal screenshot references are rejected")
+            } catch { check(true, "Nonlocal screenshot references are rejected") }
+        }
+        check(GameSupportPolicy.packageFormat(observed: "Win32", classified: "MSIXVC") == "MSIXVC"
+              && GameSupportPolicy.packageFormat(observed: "Unknown", classified: "MSIXVC") == "MSIXVC"
+              && GameSupportPolicy.packageFormat(observed: "EAppx", classified: "MSIXVC") == "EAppx"
+              && GameSupportPolicy.packageFormat(observed: "Win32", classified: nil) == "Win32",
+              "An extracted PE application model never erases its classified source container; a real unsupported container still vetoes")
+        check(OfflineGameCompatibility.publisherEvidence(for: "9NP1P1WFS0LB")?.technologies == ["Easy Anti-Cheat"]
+              && OfflineGameCompatibility.publisherEvidence(for: "9NP1P1WFS0LB")?.scope.contains("Campaign") == true
+              && OfflineGameCompatibility.publisherEvidence(for: "9PB301R051CQ")?.scope.contains("Windows") == true
+              && OfflineGameCompatibility.publisherEvidence(for: "BQVQTL3PCH05") == nil,
+              "Publisher evidence is Store-ID/title bound, preserves mode/platform scope, and leaves NMS unknown")
+        check(InstalledGameActionCopy.title(incomplete: true, installationIssue: false, launchIssue: false) == "Install required"
+              && InstalledGameActionCopy.title(incomplete: false, installationIssue: true, launchIssue: false) == "Check installation"
+              && InstalledGameActionCopy.title(incomplete: false, installationIssue: false, launchIssue: true) == "Review launch issue",
+              "Installed actions name the specific recovery rather than a generic warning")
+        let feedID = "00000000-0000-4000-8000-000000000001"
+        let recentIDs = try GamePassCollectionSource.productIDs(Data("""
+            [{"siglId":"\(feedID)"},{"id":"FIXTURE00002"},{"id":"FIXTURE00001"}]
+            """.utf8), feedID: feedID)
+        check(recentIDs == ["FIXTURE00002", "FIXTURE00001"],
+              "Recently added retains official feed order rather than alphabetizing or using release date")
+        let html = """
+            <script src="/en-US/xbox-game-pass/games/js/xgpcatPopulate-MWF2.js"></script>
+            <span class="colgroup collections-pc hidden">
+            <a data-col="pcgaVTpopular"><span>Most popular</span></a>
+            <a data-col="pdoPC"><span>Day one fixture</span></a>
+            <span class="colgroup collections-cloud hidden">
+            """
+        let script = """
+            var globalAdd = {
+              "00000000-0000-4000-8000-000000000002": { colname: "benefitspc", plat: "pc",
+                title: "Benefits fixture", spot: 2, startstring: "benefits" }
+            }
+            var newListIds = Object.keys(globalAdd);
+            guidAmpt = {"pdoPC":"\(feedID)", "pcgaVTpopular":"00000000-0000-4000-8000-000000000003"};
+            """
+        let categories = try GamePassCollectionSource.definitions(html: html, script: script)
+        check(categories.first?.key == "pdoPC" && categories.count == 3
+              && categories.first?.feedID == feedID
+              && categories.contains(where: { $0.title == "Benefits fixture" && $0.isBenefits }),
+              "Official PC markup and script data dynamically supply lists and additions, with Day one first")
+        check(try GamePassCollectionSource.scriptURL(in: html).host == "www.xbox.com",
+              "Category configuration scripts resolve only on the official Xbox origin")
+        do {
+            _ = try GamePassCollectionSource.scriptURL(in: html.replacingOccurrences(
+                of: "/en-US/", with: "https://untrusted.invalid/en-US/"))
+            check(false, "Off-origin collection configuration must not be fetched")
+        } catch { check(true, "Off-origin collection configuration is rejected") }
+        for payload in [
+            #"[{"siglId":"wrong"},{"id":"FIXTURE00001"}]"#,
+            #"[{"siglId":"\#(feedID)"},{"id":"FIXTURE00001"},{"id":"FIXTURE00001"}]"#,
+            #"[{"siglId":"\#(feedID)"},{"id":"invalid"}]"#
+        ] {
+            do {
+                _ = try GamePassCollectionSource.productIDs(Data(payload.utf8), feedID: feedID)
+                check(false, "Invalid recently-added metadata must be rejected")
+            } catch { check(true, "Wrong, duplicated, malformed or empty recent feed fails explicitly") }
+        }
+        check(!LibrarySupportVisibility.issues(productID: "C2KDNLT2H7DM", installed: true,
+                  packageFormat: "Win32", compatibility: nil).isEmpty
+              && !LibrarySupportVisibility.isVisible(productID: "C2KDNLT2H7DM", installed: true,
+                  packageFormat: "Win32", compatibility: nil, showsUnsupportedGames: false),
+              "The supported filter excludes installed anti-cheat games too")
+        check(LibrarySupportVisibility.issues(productID: "FIXTURE00001", installed: true,
+                  packageFormat: "EAppx", compatibility: nil).contains(where: { $0.kind == .packageType }),
+              "Actual installed package evidence contributes a blocker, not a fabricated success")
+        let held = PCGame(id: "FIXTURE00001", title: "Held PC game", artwork: nil)
+        let local = InstalledGame(id: UUID(), title: "Local unknown access", identityName: "Fixture.Local",
+            version: "1.0.0.0", storeId: "FIXTURE00002", folder: "/synthetic/local",
+            launcher: "/synthetic/local/launcher", importedAt: .distantPast,
+            lastPlayedAt: Date())
+        let publicPC = try LibraryGame.details(id: "FIXTURE00003", title: "Public PC candidate",
+            market: "US", language: "en-US", source: "MicrosoftGamePassSigls:v3", pcCandidate: true)
+        let console = try LibraryGame.details(id: "FIXTURE00004", title: "Console candidate",
+            market: "US", language: "en-US", source: "MicrosoftGamePassSigls:v3", pcCandidate: false)
+        let halloweenDate = seasonalDate(2026, 10, 24)
+        let editorialPC = try LibraryGame.details(id: "9N9097G0XZMB", title: "Editorial PC fixture",
+            market: "GB", language: "en-US", source: "MicrosoftDisplayCatalog:v7", pcCandidate: true)
+        check(HalloweenShelf.products([editorialPC], facts: [:],
+                on: halloweenDate, timeZone: utc).map(\.id) == [editorialPC.id],
+              "REQ89: Verified editorial PC selection does not depend on the first Discover page or English category words")
+        let seasonalFacts = [
+            publicPC.id: LibraryCatalogFacts(genres: ["Survival Horror"]),
+            console.id: LibraryCatalogFacts(genres: ["Horror"])
+        ]
+        check(HalloweenShelf.products([publicPC, publicPC, console], facts: seasonalFacts,
+                on: halloweenDate, timeZone: utc).map(\.id) == [publicPC.id],
+              "REQ89: Seasonal shelf deduplicates exact loaded PC products using existing public category metadata")
+        check(HalloweenShelf.products([], facts: seasonalFacts, on: halloweenDate, timeZone: utc).isEmpty
+              && HalloweenShelf.products([publicPC], facts: [:], on: halloweenDate, timeZone: utc).isEmpty
+              && HalloweenShelf.products([publicPC], facts: seasonalFacts,
+                  on: seasonalDate(2026, 11, 2), timeZone: utc).isEmpty
+              && HalloweenShelf.products([publicPC], facts: [
+                  publicPC.id: LibraryCatalogFacts(genres: ["Action & adventure"])
+              ], on: halloweenDate, timeZone: utc).isEmpty,
+              "REQ89: Empty, missing, non-themed metadata and out-of-season selections omit the shelf without inventing genres")
+        for category in ["Horror", "Psychological horror", "Halloween", "Spooky"] {
+            check(HalloweenShelf.products([publicPC], facts: [
+                publicPC.id: LibraryCatalogFacts(genres: [category])
+            ], on: halloweenDate, timeZone: utc).map(\.id) == [publicPC.id],
+                  "REQ89: Explicit catalogue category \(category) is a theme, not an entitlement or compatibility claim")
+        }
+        let collection = LibraryGame.collection(installed: [local], owned: [held, held],
+            products: [publicPC], gamePass: [publicPC, console], active: true)
+        check(collection.map(\.id) == [held.id],
+              "SDD-LIB-01/03: only held PC access enters Your Games; installation/public/global status is not a grant")
+        check(collection.first?.pc?.acquisitionKind == .unknown,
+              "SDD-LIB-01: held does not imply paid acquisition")
+        let granted = LibraryGame.collection(installed: [], owned: [PCGame(id: "FIXTURE00005", title: "Pass grant",
+            artwork: nil, acquisitionKind: .subscription)], products: [], gamePass: [], active: false)
+        check(granted.first?.facts.ownership == .inLibraryUnknownAcquisition
+              && granted.first?.facts.badgeLabels() == ["In your library"]
+              && granted.first?.owned == false && granted.first?.eligibility == .gamePass
+              && LibraryGame.visible(granted, query: "", filter: .owned, sort: .title).isEmpty
+              && PCGameAcquisitionKind.merged(.subscription, .purchased) == .purchased
+              && PCGameAcquisitionKind.merged(nil, .subscription) == .subscription,
+              "M10: current subscription-held titles qualify without entering Owned or inventing a plan")
+        let page = try JSONDecoder().decode(PCGamesCollectionPage.self, from: Data("""
+            {"items":[{"productId":"FIXTURE00005","productKind":"Game","status":"Active","acquisitionType":"Recurring"},
+            {"productId":"FIXTURE00006","productKind":"Game","status":"Active","acquisitionType":"Single"},
+            {"productId":"FIXTURE00007","productKind":"Game","status":"Active"}]}
+            """.utf8))
+        check(page.items.map(\.acquisitionKind) == [.subscription, .purchased, .unknown],
+              "Collections acquisitionType maps Recurring to a subscription grant and Single to a purchase")
+        check(LibraryGame.visible(collection, query: "", filter: .all, sort: .title).count == 1,
+              "SDD-LIB-05: Your Games count uses the qualified join")
+        check(LibraryGame.visible(collection, query: "Local", filter: .all, sort: .recentlyPlayed).isEmpty,
+              "SDD-LIB-04/05: personal search and recent sort do not promote local unknown access")
+        check(LibraryGame.visible(collection, query: "", filter: .installed, sort: .title).isEmpty,
+              "SDD-LIB-05: Installed personal filter does not certify access")
+        check(LibraryGame.collection(installed: [local], owned: [], products: [publicPC],
+            gamePass: [publicPC], active: false).isEmpty,
+              "SDD-LIB-03: inactive and removed collection access do not survive via installation")
+        check(LibraryGame.collection(installed: [], owned: [], products: [publicPC],
+            gamePass: [publicPC], active: true).isEmpty,
+              "SDD-LIB-02/06: a public partial feed and global probe cannot prove exact account Game Pass access")
+        check(local.folder == "/synthetic/local" && local.launcher == "/synthetic/local/launcher",
+              "SDD-LIB-04: classification never changes installation paths")
+        let locals = LibraryGame.localRecords(installed: [local], qualified: collection, query: "", sort: .title)
+        check(locals.count == 1 && locals[0].installed == local && !locals[0].owned && !locals[0].gamePass,
+              "SDD-LIB-04: live local-record seam preserves exact registry data without access badges")
+        let displayed = LibraryGame.displayCollection(installed: [local], account: collection)
+        check(displayed.count == collection.count + locals.count
+              && LibraryGame.visible(displayed, query: "", filter: .installed, sort: .title).first?.eligibility == .installedUnknown
+              && locals[0].installed?.folder == local.folder,
+              "Installed cards remain usable without inventing account ownership or subscription access")
+        check(collection.first?.eligibility == .library && locals[0].eligibility == .installedUnknown,
+              "M10: unknown held acquisition stays library-eligible without invented ownership")
+        check(LibraryGame.continuing(collection, launchableIDs: [local.id]).isEmpty,
+              "SDD-LIB-05: local unknown access cannot become hero or Continue Playing")
+        let installedHeld = InstalledGame(id: local.id, title: local.title, identityName: local.identityName,
+            version: local.version, storeId: held.id, folder: local.folder, launcher: local.launcher,
+            importedAt: local.importedAt, lastPlayedAt: local.lastPlayedAt)
+        let overlap = try LibraryGame.details(id: held.id, title: "Public held candidate",
+            market: "US", language: "en-US", source: "MicrosoftGamePassSigls:v3", pcCandidate: true)
+        let both = LibraryGame.collection(installed: [installedHeld], owned: [held],
+            products: [], gamePass: [overlap], active: true)
+        check(both.count == 1 && !both[0].owned && both[0].gamePass
+              && both[0].facts.badgeLabels() == ["In your library", "Game Pass"],
+              "SDD-LIB-02: held access and explicitly public Game Pass membership remain independent overlapping facts")
+        check(both[0].eligibility == .library,
+              "M10: current held access remains independent of public Game Pass membership")
+        check(LibraryGame.visible(both, query: "", filter: .owned, sort: .title).isEmpty
+              && LibraryGame.visible(both, query: "", filter: .gamePass, sort: .title).count == 1,
+              "SDD-LIB-05: unknown acquisition does not enter Owned despite public Game Pass membership")
+        let catalogue = LibraryGame.gamePassCatalog(installed: [installedHeld], owned: [held],
+            products: [overlap, overlap, publicPC, console])
+        check(catalogue.count == 2 && catalogue.first?.owned == false
+              && catalogue[0].facts.badgeLabels() == ["In your library", "Game Pass"]
+              && catalogue.last?.owned == false,
+              "Game Pass catalogue includes unowned PC members and independently marks overlapping held access")
+        check(catalogue.last?.eligibility == nil,
+              "M10: public Game Pass catalogue membership is not account eligibility")
+        let purchase = LibraryGame.collection(installed: [], owned: [
+            PCGame(id: "FIXTURE00008", title: "Purchased game", artwork: nil, acquisitionKind: .purchased)
+        ], products: [], gamePass: [], active: false)
+        check(LibraryGame.heroCandidates(qualified: purchase + granted, catalogue: catalogue,
+              continuingIDs: []).map(\.id) == granted.map(\.id),
+              "First-run hero prioritizes current subscription-held games over purchases")
+        check(LibraryGame.heroCandidates(qualified: purchase, catalogue: catalogue,
+              continuingIDs: []).map(\.id) == purchase.map(\.id),
+              "Without subscription-held titles the hero features purchased PC games")
+        let browsingHeroes = LibraryGame.heroCandidates(qualified: [], catalogue: catalogue, continuingIDs: [])
+        check(browsingHeroes.allSatisfy { $0.installed != nil || $0.owned || $0.availableWithGamePass }
+              && !browsingHeroes.contains { $0.id == publicPC.id },
+              "REQ-162: public catalogue membership without account access never becomes a Library hero")
+        check(LibraryGame.visible(catalogue, query: "Public PC", filter: .gamePass, sort: .title).count == 1,
+              "Game Pass filter searches the catalogue instead of only the owned-library overlap")
+        check(LibraryGame.continuing(both, launchableIDs: [local.id]).map(\.id) == [local.id]
+              && LibraryGame.localRecords(installed: [installedHeld], qualified: both, query: "", sort: .title).isEmpty,
+              "SDD-LIB-04/05: exact held installation is featured and is not duplicated in unverified local records")
+        check(LibraryGame.displayCollection(installed: [installedHeld], account: both).count == 1,
+              "Unified Library does not count the same installed/account-held game twice")
+        let consoleOverlap = try LibraryGame.details(id: held.id, title: "Console product",
+            market: "US", language: "en-US", source: "MicrosoftGamePassSigls:v3", pcCandidate: false)
+        check(LibraryGame.collection(installed: [], owned: [held], products: [],
+            gamePass: [consoleOverlap], active: true).first?.gamePass == false,
+              "SDD-LIB-03: console catalogue flag cannot become PC Game Pass membership")
+        let stale = LibraryGame.collection(installed: [installedHeld], owned: [held],
+            products: [], gamePass: [overlap], active: true, accessIsCurrent: false)
+        check(stale.map(\.id) == [held.id] && stale.first?.accessIsCurrent == false
+              && LibraryGame.localRecords(installed: [installedHeld],
+                qualified: stale, query: "", sort: .title).isEmpty,
+              "Same-account saved games stay visible while refreshing without current install or Play admission")
+        check(GameDetailFacetCopy.access(acquisition: .subscription, current: true) == "Subscription (plan unknown)"
+              && GameDetailFacetCopy.access(acquisition: .purchased, current: false)?.contains("refresh required") == true
+              && GameDetailFacetCopy.access(acquisition: nil, current: true) == nil,
+              "M10: detail facets never relabel subscription, stale or absent access as current Owned")
+        let heroPurchase = GameFacts(pc: PCGame(id: held.id, title: held.title, artwork: nil,
+            acquisitionKind: .purchased), gamePass: false, installed: installedHeld, accessIsCurrent: true)
+        let heroSubscription = GameFacts(pc: PCGame(id: held.id, title: held.title, artwork: nil,
+            acquisitionKind: .subscription), gamePass: true, installed: installedHeld, accessIsCurrent: true)
+        check(heroPurchase.heroAccessLabels() == ["Owned"]
+              && heroSubscription.heroAccessLabels() == ["Subscription (plan unknown)", "In PC Game Pass catalog"],
+              "REQ-77: Actual purchase/subscription collection facts provide separate provenance, not installation or an inferred plan")
+        var heroBoth = heroPurchase
+        heroBoth.subscriptionAcquisition = true
+        heroBoth.memberships = [.init(plan: .pcGamePass)]
+        check(heroBoth.heroAccessLabels() == ["Owned", "Subscription (plan unknown)", "In PC Game Pass catalog"],
+              "REQ-77: Independently evidenced purchase, subscription acquisition and public catalog membership may coexist")
+        let heroCatalogOnly = GameFacts(pc: nil, gamePass: true, installed: installedHeld, accessIsCurrent: true)
+        let heroUnknown = GameFacts(pc: nil, gamePass: false, installed: installedHeld, accessIsCurrent: false)
+        let heroStale = GameFacts(pc: PCGame(id: held.id, title: held.title, artwork: nil,
+            acquisitionKind: .subscription), gamePass: true, installed: installedHeld, accessIsCurrent: false)
+        check(heroCatalogOnly.heroAccessLabels() == ["In PC Game Pass catalog"]
+              && heroUnknown.heroAccessLabels().isEmpty
+              && heroStale.heroAccessLabels() == ["In PC Game Pass catalog"],
+              "REQ-162: no cached entitlement means no ownership line, never an ownership warning")
+        let heroAbsent = GameFacts(pc: nil, gamePass: false, installed: nil, accessIsCurrent: true)
+        check(heroAbsent.heroAccessLabels().isEmpty
+              && ([heroPurchase, heroSubscription, heroBoth, heroCatalogOnly, heroUnknown, heroStale, heroAbsent]
+                .allSatisfy { facts in !facts.heroAccessLabels().contains { $0.contains("Not owned")
+                    || $0.contains("Not in") || $0.contains("Ultimate") } }),
+              "REQ-162: Library absence and catalogue gaps never become ownership claims or warnings")
+        let cachedAt = Date(timeIntervalSince1970: 1_700_000_000)
+        var savedPurchase = purchase[0]
+        savedPurchase.accessIsCurrent = false
+        let cachedFacts = savedPurchase.heroFacts(cachedAccessAt: cachedAt, freeToPlay: false)
+        check(cachedFacts.heroAccessLabels() == ["Owned"] && cachedFacts.cachedAccessAt == cachedAt
+              && !cachedFacts.accessIsCurrent && cachedFacts.badgeLabels().isEmpty,
+              "REQ-162: a failed refresh retains cached ownership and its date for the hero, never current authorization")
+        let noCache = savedPurchase.heroFacts(cachedAccessAt: nil, freeToPlay: false)
+        check(noCache.heroAccessLabels().isEmpty && noCache.cachedAccessAt == nil,
+              "REQ-162: failed refresh with no same-account cache has no ownership line")
+        let freeFacts = savedPurchase.heroFacts(cachedAccessAt: cachedAt, freeToPlay: true)
+        check(freeFacts.heroAccessLabels().isEmpty,
+              "REQ-162: an officially listed free-to-play title has no ownership line, even with a collection grant")
+        let blockedGame = LibraryGame(id: "BT5P2X999VH2", title: "Fortnite", installed: installedHeld,
+            pc: nil, product: nil, owned: true, gamePass: false)
+        check(!blockedGame.heroEligible
+              && LibraryCompatibilityRegistry.issues(productID: blockedGame.id).contains { $0.kind == .antiCheat }
+              && LibraryGame.heroCandidates(qualified: [blockedGame], catalogue: [], continuingIDs: []).isEmpty,
+              "REQ-162: Fortnite's sourced anti-cheat excludes it even when installed, owned or free-to-play")
+        let freeCache = LibraryCatalogArtwork()
+        freeCache.recordFreeToPlay([held.id], market: "US", language: "en-US")
+        check(freeCache.freeToPlayIDs == [held.id],
+              "REQ-162: the already-loaded official free-to-play shelf supplies shared facts without another request")
+        freeCache.retireScope()
+        check(freeCache.freeToPlayIDs.isEmpty,
+              "REQ-162: free-to-play facts are cleared when the public catalogue scope retires")
+        check([heroPurchase, heroSubscription, heroBoth, heroCatalogOnly, heroUnknown, heroStale]
+            .allSatisfy { !$0.heroAccessLabels().contains("Installed on this Mac") },
+              "REQ-77: All playable hero evidence combinations omit the redundant prominent installed subtitle")
+        let refusal = GameScriptError.failed(11).localizedDescription
+        check(refusal.contains("download") && refusal.contains("doesn't establish")
+              && refusal.contains("Check download access")
+              && !refusal.contains("don't own") && !refusal.contains("isn't supported"),
+              "SDD-LIB-07: ambiguous acquisition failure is not ownership loss or a demand to sign in")
+        check(GameScriptError.failed(12).localizedDescription != refusal,
+              "SDD-LIB-07: package incompatibility retains a separate failure")
+        check(GameFacts(pc: nil, gamePass: true, accessIsCurrent: true).badgeLabels() == ["Game Pass"],
+              "SDD-LIB-02/07: live detail facet never presents public membership as account access")
+        check(DiscoverBrowse.canReviewInstall(owned: false, accessIsCurrent: false,
+                  gamePass: true, subscriptionActive: true, pcCandidate: true)
+              && collection.allSatisfy { $0.id != publicPC.id },
+              "SDD-LIB-02: shared live action policy opens protected Game Pass review without admitting public-only personal access")
+        check(GameFacts(ownership: .purchased(nil), memberships: [.init(plan: .pcGamePass)],
+                        accessIsCurrent: false).accessIsCurrent == false,
+              "SDD-LIB-06: live detail facet labels retained access stale independently of catalog membership")
+        let boughtAndIncluded = GameFacts(ownership: .purchased(nil), memberships: [.init(plan: .pcGamePass)],
+                                          accessIsCurrent: true)
+        check(boughtAndIncluded.badgeLabels() == ["Owned", "Game Pass"]
+              && boughtAndIncluded.badgeLabels(detail: true) == ["Owned", "Included with PC Game Pass"],
+              "REQ-63: purchased plus catalogue membership always renders both independent badges")
+        var saved = boughtAndIncluded
+        saved.accessIsCurrent = false
+        check(saved.badgeLabels() == ["Game Pass"]
+              && saved.badgeLabels(detail: true) == ["Included with PC Game Pass"]
+              && GameFacts(pc: held, gamePass: false, accessIsCurrent: false).badgeLabels().isEmpty,
+              "REQ-63: stale ownership is suppressed on every surface without hiding public membership")
+        let unsupportedPackage = LibraryCompatibilityIssue(kind: .packageType, title: "MSIX",
+            detail: "MSIX package not supported", source: nil)
+        check(!unsupportedPackage.browseTitle.contains("MSIX")
+              && !unsupportedPackage.browseDetail.contains("MSIX"),
+              "REQ-62: blocked browse actions explain package admission without detail-only format labels")
+        check(GameFacts(pc: granted[0].pc, gamePass: true, accessIsCurrent: true).badgeLabels()
+                == ["In your library", "Game Pass"]
+              && GameFacts(pc: nil, gamePass: false, installed: local, accessIsCurrent: true).badgeLabels().isEmpty,
+              "REQ-63: subscription grants never become Owned and installation never infers either badge")
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("LibraryPreservation-\(UUID())")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let content = Data("synthetic preserved game and save".utf8)
+        let gameFile = root.appendingPathComponent("game")
+        let saveFile = root.appendingPathComponent("save")
+        try content.write(to: gameFile)
+        try content.write(to: saveFile)
+        let preserved = InstalledGame(id: UUID(), title: local.title, identityName: local.identityName,
+            version: local.version, storeId: local.storeId, folder: root.path, launcher: gameFile.path,
+            importedAt: local.importedAt)
+        let withdrawn = LibraryGame.collection(installed: [preserved], owned: [], products: [],
+            gamePass: [], active: false)
+        let records = LibraryGame.localRecords(installed: [preserved], qualified: withdrawn, query: "", sort: .title)
+        let gameBytes = try Data(contentsOf: gameFile), saveBytes = try Data(contentsOf: saveFile)
+        check(records.first?.installed == preserved && gameBytes == content && saveBytes == content,
+              "SDD-LIB-04: withdrawing access preserves real synthetic game/save bytes and reachable registry record")
+    }
+
+    private static func saveLocationChecks(check: (Bool, String) -> Void) throws {
+        let citations = try GameSaveCitations.load()
+        check(citations.items.count == 12
+              && citations.items.first(where: { $0.productID == "9NLRT31Z4RWM" })?.path
+                  == "%LOCALAPPDATA%\\Packages\\Finji.TUNIC_tys0ffscxatjj\\SystemAppData\\wgs"
+              && citations.items.allSatisfy { $0.scope.contains("not") || $0.scope.contains("Never") },
+              "S4 v4/v5 save citations preserve exact Windows paths and unobserved platform scope")
+        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+            .appendingPathComponent(".build/SaveLocationChecks-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer {
+            do { try FileManager.default.removeItem(at: root) }
+            catch { check(false, "Owned save-location fixture cleanup failed: \(error.localizedDescription)") }
+        }
+        check(try GameSaveLocation.observation(productID: "C3KLDKZBHNCZ", recordedPath: nil, home: root) == nil
+              && GameSaveLocation.observation(productID: "9NLRT31Z4RWM", recordedPath: nil, home: root) == nil,
+              "Missing host folders and cited Windows variables never invent an observed or openable location")
+        let fallout = root.appendingPathComponent("Documents/My Games/Fallout4 MS/Saves")
+        try FileManager.default.createDirectory(at: fallout, withIntermediateDirectories: true)
+        let save = fallout.appendingPathComponent("synthetic-save")
+        let bytes = Data("unchanged synthetic save".utf8)
+        try bytes.write(to: save)
+        let found = try GameSaveLocation.observation(productID: "C3KLDKZBHNCZ", recordedPath: nil, home: root)
+        check(found?.folder.path == fallout.path
+              && found?.label == "Folder found · contents unchecked"
+              && found?.basis.contains("GDK save location hasn't been confirmed") == true,
+              "An existing Fallout Documents folder does not become a verified GDK save location")
+        let recorded = try GameSaveLocation.observation(productID: "9MW9469V91LM",
+                                                        recordedPath: fallout.path, home: root)
+        let after = try Data(contentsOf: save)
+        check(recorded?.label == "Folder found · contents unchecked"
+              && recorded?.folder.path == fallout.path
+              && recorded?.basis.contains("local Mac test evidence") == false
+              && after == bytes,
+              "Recorded per-title folders stay player-facing and read-only without exposing test provenance")
+        let link = root.appendingPathComponent("linked-folder")
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: fallout)
+        for invalid in [link.path, save.path, root.path, root.path + "/../outside",
+                        "%LOCALAPPDATA%\\Packages\\example", root.appendingPathComponent("missing").path] {
+            do {
+                _ = try GameSaveLocation.directory(invalid, home: root)
+                check(false, "Invalid, symlink, non-directory or unresolved save folder rejected")
+            } catch { check(true, "Invalid, symlink, non-directory or unresolved save folder rejected") }
+        }
+        let minecraft = root.appendingPathComponent("Library/Application Support/minecraft/saves")
+        try FileManager.default.createDirectory(at: minecraft, withIntermediateDirectories: true)
+        check(try GameSaveLocation.observation(productID: "9PJ8266BHFWN", recordedPath: nil, home: root)?.folder.path == minecraft.path
+              && GameSaveLocation.observation(productID: "UNKNOWN00001", recordedPath: nil, home: root) == nil,
+              "Native Minecraft discovers only its exact existing folder, never a cross-title or guessed prefix")
+    }
+
+    private static func minecraftInstallationChecks(check: (Bool, String) -> Void) throws {
+        let root = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+            .appendingPathComponent(".build/NativeMinecraftChecks-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer {
+            do { try FileManager.default.removeItem(at: root) }
+            catch { check(false, "Owned Minecraft test fixture cleanup failed: \(error.localizedDescription)") }
+        }
+        let app = root.appendingPathComponent("Minecraft.app")
+        check(NativeMinecraftInstallation.inspect(nil).state == .missing
+              && NativeMinecraftInstallation.inspect(app).action == "Install launcher",
+              "Absent official launcher offers Install launcher, never game Play or an installed claim")
+        let contents = app.appendingPathComponent("Contents")
+        let executable = contents.appendingPathComponent("MacOS/launcher")
+        try FileManager.default.createDirectory(at: executable.deletingLastPathComponent(), withIntermediateDirectories: true)
+        let plist = contents.appendingPathComponent("Info.plist")
+        var info: [String: String] = ["CFBundleIdentifier": NativeMinecraft.bundleIdentifier,
+                                    "CFBundleExecutable": "launcher", "CFBundleShortVersionString": "2.6.12"]
+        func writeInfo() throws {
+            try PropertyListSerialization.data(fromPropertyList: info, format: .xml, options: 0).write(to: plist)
+        }
+        try writeInfo()
+        let broken = NativeMinecraftInstallation.inspect(app)
+        check(broken.state == .repair && broken.action == "Repair launcher"
+              && broken.path == app.path && broken.version == "2.6.12" && broken.problem != nil,
+              "An incomplete launcher preserves its actual path/version and offers explicit repair, not Open")
+        try Data("#!/bin/sh\nexit 0\n".utf8).write(to: executable)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: executable.path)
+        let ready = NativeMinecraftInstallation.inspect(app)
+        check(ready.state == .ready && ready.action == "Open" && ready.path == app.path
+              && ready.version == "2.6.12" && ready.problem == nil,
+              "A complete official launcher reports exact path/version and Open without claiming the Java game is running")
+        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: executable.path)
+        check(NativeMinecraftInstallation.inspect(app).state == .repair,
+              "A non-executable launcher cannot expose Open")
+        try FileManager.default.removeItem(at: executable)
+        try FileManager.default.createDirectory(at: executable, withIntermediateDirectories: false)
+        check(NativeMinecraftInstallation.inspect(app).state == .repair,
+              "A directory with the launcher's executable name cannot expose Open")
+        try FileManager.default.removeItem(at: executable)
+        try Data("#!/bin/sh\nexit 0\n".utf8).write(to: executable)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: executable.path)
+        info["CFBundleIdentifier"] = "example.impostor"
+        try writeInfo()
+        check(NativeMinecraftInstallation.inspect(app).state == .repair,
+              "A different app at Minecraft.app cannot pass official launcher detection")
+        info["CFBundleIdentifier"] = NativeMinecraft.bundleIdentifier
+        info["CFBundleExecutable"] = "../launcher"
+        try writeInfo()
+        check(NativeMinecraftInstallation.inspect(app).state == .repair,
+              "Launcher executable metadata cannot traverse outside Contents/MacOS")
+        info["CFBundleExecutable"] = "launcher"
+        info.removeValue(forKey: "CFBundleShortVersionString")
+        try writeInfo()
+        check(NativeMinecraftInstallation.inspect(app).state == .repair,
+              "An unreadable launcher version is reported as repair-needed rather than silently invented")
+        try Data("not a property list".utf8).write(to: plist)
+        check(NativeMinecraftInstallation.inspect(app).problem != nil,
+              "Corrupt launcher metadata surfaces a recovery explanation")
+        check(NativeMinecraft.downloadURL.absoluteString == "https://www.minecraft.net/download",
+              "Install and repair lead to official manual launcher setup, never delete worlds or silently install")
+    }
+}

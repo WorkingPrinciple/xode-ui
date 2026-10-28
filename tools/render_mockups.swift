@@ -24,7 +24,7 @@ final class Renderer: NSObject, WKNavigationDelegate {
             guard !files.isEmpty else { throw NSError(domain: "Render", code: 1) }
             try FileManager.default.createDirectory(at: root.appendingPathComponent("design/previews"),
                                                     withIntermediateDirectories: true)
-            try FileManager.default.createDirectory(at: root.appendingPathComponent("Sources/XodusPreview/Resources/Artwork"),
+            try FileManager.default.createDirectory(at: root.appendingPathComponent("Sources/OdePreview/Resources/Artwork"),
                                                     withIntermediateDirectories: true)
             view.navigationDelegate = self
             next()
@@ -58,7 +58,7 @@ final class Renderer: NSObject, WKNavigationDelegate {
                 }
                 do {
                     let name = self.files[self.index].deletingPathExtension().lastPathComponent
-                    let folder = isArtwork ? "Sources/XodusPreview/Resources/Artwork" : "design/previews"
+                    let folder = isArtwork ? "Sources/OdePreview/Resources/Artwork" : "design/previews"
                     try png.write(to: self.root.appendingPathComponent("\(folder)/\(name).png"))
                     print("\(folder)/\(name).png")
                     self.timeout?.invalidate()

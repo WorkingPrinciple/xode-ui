@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import CryptoKit
 import Foundation
-import XodusManagement
+import OdeManagement
 
 extension Checks {
     func registryDevelopmentChecks() throws {
@@ -26,7 +26,7 @@ extension Checks {
             throw ManagementError.invalidPayload
         }
         let development = try ContractValidator(schemaURL: schema,
-                                                schemaIdentifier: "urn:xodus:management:1.0")
+                                                schemaIdentifier: "urn:ode:management:1.0")
         let production = try ContractValidator()
         check(positive.count == 102 && negative.count == 99,
               "Separate development corpus contains exactly 102 positive and 99 negative frames")

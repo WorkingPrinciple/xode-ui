@@ -115,7 +115,7 @@ s = p.lstat()
 assert p.is_absolute() and p.resolve(strict=True) == p and stat.S_ISDIR(s.st_mode)
 assert s.st_uid == os.getuid() and s.st_mode & 0o022 == 0
 PY
-stage=$(mktemp -d "$output_root/Xodus-controlled-pair.XXXXXX")
+stage=$(mktemp -d "$output_root/Ode-controlled-pair.XXXXXX")
 python3 tools/shipping_pair.py verify --engine "$engine" --engine-hash "$engine_hash" \
     --engine-bytes "$engine_bytes" --proof-hash "$proof_hash" --proof-bytes "$proof_bytes" \
     --output "$stage/unsigned-approval.json"
@@ -126,38 +126,38 @@ cd "$stage/source"
 python3 tools/sync_runtime_provider_contract.py --check
 # REQ-52: build-machine paths never reach shipped binaries.
 shipping_build() {
-    XODUS_SHIPPING=1 swift build "$@" -Xswiftc -file-prefix-map -Xswiftc "$PWD=/xode" \
+    ODE_SHIPPING=1 swift build "$@" -Xswiftc -file-prefix-map -Xswiftc "$PWD=/xode" \
         -Xswiftc -debug-prefix-map -Xswiftc "$PWD=/xode" -Xcc "-ffile-prefix-map=$PWD=/xode"
 }
-shipping_build --jobs 1 -c release --product XodusAuthHost
+shipping_build --jobs 1 -c release --product OdeAuthHost
 bin=$(shipping_build -c release --show-bin-path)
-app="$stage/Xodus.app"
-mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources/XodusEngine"
-cp "$bin/XodusAuthHost" "$app/Contents/MacOS/XodusAuthHost"
+app="$stage/Ode.app"
+mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources/OdeEngine"
+cp "$bin/OdeAuthHost" "$app/Contents/MacOS/OdeAuthHost"
 if [ -n "$signed_cli" ]; then
     python3 tools/signing_identity.py reuse-cli --source "$signed_cli" \
-        --destination "$app/Contents/Resources/XodusEngine/xodus-cli" \
+        --destination "$app/Contents/Resources/OdeEngine/ode-cli" \
         --hash "$signed_cli_hash" --bytes "$signed_cli_bytes" \
         --prior-receipt "$prior_receipt" --receipt-hash "$prior_receipt_hash" --receipt-bytes "$prior_receipt_bytes" \
         --engine "$engine" --engine-hash "$engine_hash" --engine-bytes "$engine_bytes" \
         --proof-hash "$proof_hash" --proof-bytes "$proof_bytes" "$@"
 else
-    cp "$engine" "$app/Contents/Resources/XodusEngine/xodus-cli"
-python3 - "$app/Contents/Resources/XodusEngine/xodus-cli" "$engine_hash" "$engine_bytes" <<'PY'
+    cp "$engine" "$app/Contents/Resources/OdeEngine/ode-cli"
+python3 - "$app/Contents/Resources/OdeEngine/ode-cli" "$engine_hash" "$engine_bytes" <<'PY'
 import sys
 from tools.shipping_pair import owned_bytes
 owned_bytes(sys.argv[1], sys.argv[2], int(sys.argv[3]))
 PY
 fi
-chmod 755 "$app/Contents/MacOS/XodusAuthHost" "$app/Contents/Resources/XodusEngine/xodus-cli"
-/usr/bin/strip -S "$app/Contents/MacOS/XodusAuthHost"
-python3 tools/signing_identity.py sign --kind helper --path "$app/Contents/MacOS/XodusAuthHost" "$@"
+chmod 755 "$app/Contents/MacOS/OdeAuthHost" "$app/Contents/Resources/OdeEngine/ode-cli"
+/usr/bin/strip -S "$app/Contents/MacOS/OdeAuthHost"
+python3 tools/signing_identity.py sign --kind helper --path "$app/Contents/MacOS/OdeAuthHost" "$@"
 if [ -z "$signed_cli" ]; then
-    python3 tools/signing_identity.py sign --kind cli --path "$app/Contents/Resources/XodusEngine/xodus-cli" "$@"
+    python3 tools/signing_identity.py sign --kind cli --path "$app/Contents/Resources/OdeEngine/ode-cli" "$@"
 fi
 python3 tools/shipping_pair.py generate --source "$source" --tree "$tree" \
-    --engine "$app/Contents/Resources/XodusEngine/xodus-cli" --helper "$app/Contents/MacOS/XodusAuthHost" \
-    --approval "$stage/unsigned-approval.json" --output Sources/XodusPreview/ShippingPairPins.swift \
+    --engine "$app/Contents/Resources/OdeEngine/ode-cli" --helper "$app/Contents/MacOS/OdeAuthHost" \
+    --approval "$stage/unsigned-approval.json" --output Sources/OdePreview/ShippingPairPins.swift \
     --receipt "$stage/paired-inputs.json"
 if [ -n "$credential_broker" ]; then
     test -n "$signer"
@@ -169,51 +169,51 @@ source, digest, size, stage = sys.argv[1], sys.argv[2], int(sys.argv[3]), pathli
 identity, _ = owned_bytes(source, digest, size)
 directory = stage / "CredentialBroker"
 directory.mkdir(mode=0o700)
-destination = directory / "XodusCredentialBroker"
+destination = directory / "OdeCredentialBroker"
 shutil.copyfile(source, destination)
 destination.chmod(0o500)
 owned_bytes(destination, digest, size)
 owned_bytes(source, digest, size)
 manifest = {"version": 1, **identity}
-(stage / "Xodus.app/Contents/Resources/XodusCredentialBroker.json").write_text(
+(stage / "Ode.app/Contents/Resources/OdeCredentialBroker.json").write_text(
     json.dumps(manifest, sort_keys=True) + "\n", encoding="utf-8")
 paired = stage / "paired-inputs.json"
 record = json.loads(paired.read_bytes())
 record["frozenCredentialBroker"] = manifest
 record["credentialBrokerInstallation"] = (
-    "Separate owner gate: install once at ~/Library/Application Support/Xodus/CredentialBroker/"
-    "XodusCredentialBroker; preserve exact bytes on launcher updates. Never silently replace.")
+    "Separate owner gate: install once at ~/Library/Application Support/Ode to X/State/CredentialBroker/"
+    "OdeCredentialBroker; preserve exact bytes on launcher updates. Never silently replace.")
 paired.write_text(json.dumps(record, sort_keys=True) + "\n", encoding="utf-8")
 PY
     python3 tools/signing_identity.py verify --kind broker \
-        --path "$stage/CredentialBroker/XodusCredentialBroker" --identity "$signer"
+        --path "$stage/CredentialBroker/OdeCredentialBroker" --identity "$signer"
 fi
-shipping_build --jobs 1 -c release --product XodusPreview
-cp "$bin/XodusPreview" "$app/Contents/MacOS/Xodus"
-/usr/bin/strip -S "$app/Contents/MacOS/Xodus"
+shipping_build --jobs 1 -c release --product OdePreview
+cp "$bin/OdePreview" "$app/Contents/MacOS/Ode"
+/usr/bin/strip -S "$app/Contents/MacOS/Ode"
 cp tools/Info.plist "$app/Contents/Info.plist"
 cp LICENSE "$app/Contents/Resources/LICENSE.txt"
 cp NOTICE "$app/Contents/Resources/NOTICE.txt"
 cp TRADEMARKS.md "$app/Contents/Resources/TRADEMARKS.md"
-python3 tools/package_resources.py "$bin/XodusAppFoundation_XodusManagement.bundle" \
-    "$app/Contents/Resources/XodusAppFoundation_XodusManagement.bundle"
-python3 - "$stage/paired-inputs.json" "$app/Contents/Resources/XodusAuthHost.json" <<'PY'
+python3 tools/package_resources.py "$bin/OdeApp_OdeManagement.bundle" \
+    "$app/Contents/Resources/OdeApp_OdeManagement.bundle"
+python3 - "$stage/paired-inputs.json" "$app/Contents/Resources/OdeAuthHost.json" <<'PY'
 import json, pathlib, sys
 record = json.loads(pathlib.Path(sys.argv[1]).read_bytes())
 pathlib.Path(sys.argv[2]).write_text(json.dumps({
     "version": 1, "sha256": record["signedHelper"]["sha256"],
     "sourceCommit": record["approvedAppSourceCommit"]}, sort_keys=True) + "\n", encoding="utf-8")
 PY
-swiftc Sources/XodusCore/XOdeMark.swift tools/RenderAppIcon.swift -o "$stage/RenderAppIcon"
-"$stage/RenderAppIcon" "$app/Contents/Resources/Xodus.iconset"
-iconutil -c icns "$app/Contents/Resources/Xodus.iconset" -o "$app/Contents/Resources/Xodus.icns"
+swiftc Sources/OdeCore/XOdeMark.swift tools/RenderAppIcon.swift -o "$stage/RenderAppIcon"
+"$stage/RenderAppIcon" "$app/Contents/Resources/Ode.iconset"
+iconutil -c icns "$app/Contents/Resources/Ode.iconset" -o "$app/Contents/Resources/Ode.icns"
 if [ -n "$launch_association_capsule" ]; then
     python3 tools/launch_association_capsule.py "$launch_association_capsule" \
         "$app/Contents/Resources/LaunchAssociation" "$stage/paired-inputs.json"
 fi
 if [ -n "$python_runtime_archive" ]; then
     python3 tools/python_runtime.py "$python_runtime_archive" \
-        "$app/Contents/Resources/XodusPython" "$stage/paired-inputs.json" "$@"
+        "$app/Contents/Resources/OdePython" "$stage/paired-inputs.json" "$@"
 fi
 if [ -n "$engine_notice" ]; then
     python3 - "$engine_notice" "$app/Contents/Resources/EngineNotices/NOTICE.txt" <<'PY'
@@ -248,7 +248,7 @@ python3 tools/shipping_pair.py verify --engine "$engine" --engine-hash "$engine_
     --output "$stage/unsigned-approval-after.json"
 cmp "$stage/unsigned-approval.json" "$stage/unsigned-approval-after.json"
 if [ -n "$signed_cli" ]; then
-    python3 - "$signed_cli" "$app/Contents/Resources/XodusEngine/xodus-cli" "$signed_cli_hash" "$signed_cli_bytes" \
+    python3 - "$signed_cli" "$app/Contents/Resources/OdeEngine/ode-cli" "$signed_cli_hash" "$signed_cli_bytes" \
         "$prior_receipt" "$prior_receipt_hash" "$prior_receipt_bytes" <<'PY'
 import sys
 sys.path.insert(0, "tools")
@@ -260,7 +260,7 @@ package_receipt(sys.argv[5], sys.argv[6], int(sys.argv[7]))
 PY
     if [ "$local_ad_hoc" != true ]; then
         python3 tools/signing_identity.py verify --kind cli \
-            --path "$app/Contents/Resources/XodusEngine/xodus-cli" --identity "$signer"
+            --path "$app/Contents/Resources/OdeEngine/ode-cli" --identity "$signer"
     fi
 fi
 printf '%s\n' "$app" "$stage/package-receipt.json"

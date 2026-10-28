@@ -25,13 +25,13 @@ NMS_DEVELOPER_LOCAL_REGISTRY = (
 )
 DEVELOPER_PATH = re.compile(
     r"/Users/[^/\\\s\"']+|/home/[^/\\\s\"']+|"
-    r"\$\{HOME\}/(?:src/|\.copilot/|Library/Application Support/XodusCLI/proofs/)|"
+    r"\$\{HOME\}/(?:src/|\.copilot/|Library/Application Support/Ode to X/CLI/proofs/)|"
     r"\$HOME/(?:src/|\.copilot/)|~/(?:src/|\.copilot/)|"
     r"\.copilot/session-state/"
 )
 DEVELOPER_PATH_BYTES = re.compile(
     rb"/Users/[^/\\\s\"']+|/home/[^/\\\s\"']+|"
-    rb"\$\{HOME\}/(?:src/|\.copilot/|Library/Application Support/XodusCLI/proofs/)|"
+    rb"\$\{HOME\}/(?:src/|\.copilot/|Library/Application Support/Ode to X/CLI/proofs/)|"
     rb"\$HOME/(?:src/|\.copilot/)|~/(?:src/|\.copilot/)|"
     rb"\.copilot/session-state/"
 )
@@ -43,13 +43,13 @@ def developer_path_findings(relative, data):
     if NMS_DEVELOPER_LOCAL_REGISTRY in text:
         relative = Path(relative).as_posix()
         require(relative.endswith(
-            "XodusAppFoundation_XodusManagement.bundle/Contents/Resources/"
+            "OdeApp_OdeManagement.bundle/Contents/Resources/"
             "LaunchRecipes/engine-defaults-v1.json")
             or relative.endswith(
-                "XodusAppFoundation_XodusManagement.bundle/Contents/Resources/"
+                "OdeApp_OdeManagement.bundle/Contents/Resources/"
                 "engine-defaults-v1.json")
             or relative.endswith(
-                "XodusAppFoundation_XodusManagement.bundle/LaunchRecipes/engine-defaults-v1.json"),
+                "OdeApp_OdeManagement.bundle/LaunchRecipes/engine-defaults-v1.json"),
             "NMS developer-local path appears outside engine-defaults-v1.json")
         value = json.loads(data, object_pairs_hook=unique_object)
         bindings = value.get("bindings", [])

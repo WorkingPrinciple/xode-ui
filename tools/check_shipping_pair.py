@@ -41,28 +41,28 @@ def require_current_producer_pins(source_root):
 
 
 def require_app_shipping_pins(source_root):
-    producer_pins = (source_root / "Sources/XodusPreview/ShippingProducerPins.swift").read_text(
+    producer_pins = (source_root / "Sources/OdePreview/ShippingProducerPins.swift").read_text(
         encoding="utf-8")
     require(f'static let commit = "{PRODUCER}"' in producer_pins
             and f'static let tree = "{PRODUCER_TREE}"' in producer_pins,
             "App producer commit/tree differs from the approved shipping pair")
 
-    lifecycle = (source_root / "Sources/XodusPreview/NativeGameLifecycle.swift").read_text(encoding="utf-8")
+    lifecycle = (source_root / "Sources/OdePreview/NativeGameLifecycle.swift").read_text(encoding="utf-8")
     require(f'static let cliSHA256 = "{CLI_SHA256}"' in lifecycle,
             "Lifecycle CLI digest differs from the approved shipping pair")
 
-    runtime_path = source_root / "Sources/XodusManagement/Resources/LaunchRecipes/title-runtime-v1.json"
+    runtime_path = source_root / "Sources/OdeManagement/Resources/LaunchRecipes/title-runtime-v1.json"
     runtime_bytes = runtime_path.read_bytes()
     runtime = json.loads(runtime_bytes)
     require(runtime.get("cliSha256") == CLI_SHA256,
             "Runtime catalogue CLI digest differs from the approved shipping pair")
     runtime_hash = hashlib.sha256(runtime_bytes).hexdigest()
-    launch_configuration = (source_root / "Sources/XodusPreview/NativeLaunchConfiguration.swift").read_text(
+    launch_configuration = (source_root / "Sources/OdePreview/NativeLaunchConfiguration.swift").read_text(
         encoding="utf-8")
     require(f'== "{runtime_hash}" else' in launch_configuration,
             "Runtime catalogue file digest is not pinned in the app")
 
-    acknowledgments = (source_root / "Sources/XodusPreview/Acknowledgments.swift").read_text(encoding="utf-8")
+    acknowledgments = (source_root / "Sources/OdePreview/Acknowledgments.swift").read_text(encoding="utf-8")
     require(f'pinnedProducerInventorySHA256 = "{PRODUCER_NOTICES_SHA256}"' in acknowledgments,
             "App producer-notice inventory digest differs from the packaging pin")
 
@@ -72,10 +72,10 @@ project = Path(__file__).resolve().parent.parent
 require_current_producer_pins(project)
 require_app_shipping_pins(project)
 count += 1
-with tempfile.TemporaryDirectory(prefix="xodus-pair-portable-") as temporary:
+with tempfile.TemporaryDirectory(prefix="ode-pair-portable-") as temporary:
     root = Path(temporary).resolve()
     stale_source = root / "stale-source"
-    stale_pin = stale_source / "Sources/XodusPreview/ShippingProducerPins.swift"
+    stale_pin = stale_source / "Sources/OdePreview/ShippingProducerPins.swift"
     stale_pin.parent.mkdir(parents=True)
     for producer in SUPERSEDED_PRODUCERS:
         stale_pin.write_text("static let commit = \"" + producer + "\"", encoding="utf-8")
@@ -91,15 +91,15 @@ with tempfile.TemporaryDirectory(prefix="xodus-pair-portable-") as temporary:
         except ValueError:
             count += 1
     for relative in (
-            "Sources/XodusPreview/ShippingProducerPins.swift",
-            "Sources/XodusPreview/NativeGameLifecycle.swift",
-            "Sources/XodusPreview/Acknowledgments.swift",
-            "Sources/XodusPreview/NativeLaunchConfiguration.swift",
-            "Sources/XodusManagement/Resources/LaunchRecipes/title-runtime-v1.json"):
+            "Sources/OdePreview/ShippingProducerPins.swift",
+            "Sources/OdePreview/NativeGameLifecycle.swift",
+            "Sources/OdePreview/Acknowledgments.swift",
+            "Sources/OdePreview/NativeLaunchConfiguration.swift",
+            "Sources/OdeManagement/Resources/LaunchRecipes/title-runtime-v1.json"):
         destination = stale_source / relative
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(project / relative, destination)
-    stale_app_pin = stale_source / "Sources/XodusPreview/ShippingProducerPins.swift"
+    stale_app_pin = stale_source / "Sources/OdePreview/ShippingProducerPins.swift"
     stale_app_pin.write_text(
         "enum ShippingProducerPins { static let commit = \"" + SUPERSEDED_PRODUCERS[1] + "\" }",
         encoding="utf-8")
@@ -108,8 +108,8 @@ with tempfile.TemporaryDirectory(prefix="xodus-pair-portable-") as temporary:
         raise AssertionError("Mismatched app producer source pin accepted")
     except ValueError:
         count += 1
-    shutil.copy2(project / "Sources/XodusPreview/ShippingProducerPins.swift", stale_app_pin)
-    stale_runtime = stale_source / "Sources/XodusManagement/Resources/LaunchRecipes/title-runtime-v1.json"
+    shutil.copy2(project / "Sources/OdePreview/ShippingProducerPins.swift", stale_app_pin)
+    stale_runtime = stale_source / "Sources/OdeManagement/Resources/LaunchRecipes/title-runtime-v1.json"
     runtime_data = json.loads(stale_runtime.read_text(encoding="utf-8"))
     runtime_data["cliSha256"] = "0" * 64
     stale_runtime.write_text(json.dumps(runtime_data), encoding="utf-8")
@@ -207,7 +207,7 @@ with tempfile.TemporaryDirectory(prefix="xodus-pair-portable-") as temporary:
         bad.append(item)
     for key in ("nativeResolvedFeatures", "postBuildNativeResolvedFeatures"):
         item = copy.deepcopy(base)
-        item[key]["xodus"].append("plaintext")
+        item[key]["ode"].append("plaintext")
         bad.append(item)
     item = copy.deepcopy(base)
     item["buildProfile"]["opt_level"] = "0"
@@ -251,12 +251,12 @@ with tempfile.TemporaryDirectory(prefix="xodus-pair-portable-") as temporary:
     count += 1
     stage = root / "neutral-stage"
     source = stage / "source"
-    app = stage / "Xodus.app"
+    app = stage / "Ode.app"
     resources = app / "Contents/Resources"
     macos = app / "Contents/MacOS"
-    pair = resources / "XodusEngine/xodus-cli"
-    helper = macos / "XodusAuthHost"
-    for directory in (source / "Sources/XodusPreview", source / "tools", pair.parent, macos):
+    pair = resources / "OdeEngine/ode-cli"
+    helper = macos / "OdeAuthHost"
+    for directory in (source / "Sources/OdePreview", source / "tools", pair.parent, macos):
         directory.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(project / "tools/Info.plist", source / "tools/Info.plist")
     shutil.copyfile(project / "LICENSE", source / "LICENSE")
@@ -267,23 +267,23 @@ with tempfile.TemporaryDirectory(prefix="xodus-pair-portable-") as temporary:
     shutil.copyfile(source / "NOTICE", resources / "NOTICE.txt")
     shutil.copyfile(source / "TRADEMARKS.md", resources / "TRADEMARKS.md")
     neutral = struct.pack("<II", 0xFEEDFACF, 0x0100000C) + b"Never executed neutral package bytes."
-    for target in (pair, helper, macos / "Xodus"):
+    for target in (pair, helper, macos / "Ode"):
         target.write_bytes(neutral)
         target.chmod(0o755)
     signed = {"sha256": hashlib.sha256(neutral).hexdigest(), "bytes": len(neutral)}
     generated = swift_pins("a" * 40, "b" * 40, signed, signed).encode()
-    pin_source = source / "Sources/XodusPreview/ShippingPairPins.swift"
+    pin_source = source / "Sources/OdePreview/ShippingPairPins.swift"
     pin_source.write_bytes(b"Archived nil approval; not generated yet.")
     (source / "Package.swift").write_bytes(b"Neutral archived source marker")
-    schema_source = source / "Sources/XodusManagement/Resources"
+    schema_source = source / "Sources/OdeManagement/Resources"
     schema_source.mkdir(parents=True)
     for name in ("management-v1.schema.json", "runtime-providers-v1.schema.json"):
-        shutil.copyfile(project / "Sources/XodusManagement/Resources" / name, schema_source / name)
+        shutil.copyfile(project / "Sources/OdeManagement/Resources" / name, schema_source / name)
     with tarfile.open(stage / "source.tar", "w") as archive:
         archive.add(source / "Package.swift", arcname="Package.swift")
-        archive.add(pin_source, arcname="Sources/XodusPreview/ShippingPairPins.swift")
+        archive.add(pin_source, arcname="Sources/OdePreview/ShippingPairPins.swift")
         for name in ("management-v1.schema.json", "runtime-providers-v1.schema.json"):
-            archive.add(schema_source / name, arcname="Sources/XodusManagement/Resources/" + name)
+            archive.add(schema_source / name, arcname="Sources/OdeManagement/Resources/" + name)
     approval = stage / "neutral-approval.json"
     approval.write_text(json.dumps(record), encoding="utf-8")
     original_arguments, original_platform = sys.argv, sys.platform
@@ -301,10 +301,10 @@ with tempfile.TemporaryDirectory(prefix="xodus-pair-portable-") as temporary:
     assert paired["signedBundledCLI"] == signed and paired["signedHelper"] == signed
     assert paired["generatedPinsSHA256"] == hashlib.sha256(generated).hexdigest()
     count += 1
-    receipt = resources / "XodusAuthHost.json"
+    receipt = resources / "OdeAuthHost.json"
     receipt.write_bytes((json.dumps({"version": 1, "sha256": signed["sha256"], "sourceCommit": "a" * 40},
                                    sort_keys=True) + "\n").encode())
-    management = resources / "XodusAppFoundation_XodusManagement.bundle"
+    management = resources / "OdeApp_OdeManagement.bundle"
     management.mkdir()
     for name in RUNTIME_RESOURCES:
         (management / name).parent.mkdir(parents=True, exist_ok=True)
@@ -322,13 +322,13 @@ with tempfile.TemporaryDirectory(prefix="xodus-pair-portable-") as temporary:
 
     package_check()
     final = json.loads((stage / "package-receipt.json").read_bytes())
-    assert final["finalPackageFiles"][str(Path("Contents") / "MacOS" / "Xodus")] == signed
-    assert "Sources/XodusPreview/ShippingPairPins.swift" in final["archivedSourceFilesIncludingGeneratedPins"]
+    assert final["finalPackageFiles"][str(Path("Contents") / "MacOS" / "Ode")] == signed
+    assert "Sources/OdePreview/ShippingPairPins.swift" in final["archivedSourceFilesIncludingGeneratedPins"]
     count += 1
     (stage / "package-receipt.json").unlink()
     for target, bad_data in [
         (source / "Package.swift", b"Changed compiler source after archive"),
-        (macos / "Xodus", b"Wrong architecture"),
+        (macos / "Ode", b"Wrong architecture"),
         (receipt, b'{"version":1}'),
         (app / "Contents/Info.plist", b"Changed deployment baseline"),
         (management / "management-v1.schema.json", b"Wrong packaged management schema"),
@@ -470,8 +470,8 @@ with tempfile.TemporaryDirectory(prefix="xodus-pair-portable-") as temporary:
         raise AssertionError("Enabled capsule accepted without a packaged interpreter")
     except ValueError:
         count += 1
-    python_root = resources / "XodusPython"
-    python_manifest = resources / "XodusPython.json"
+    python_root = resources / "OdePython"
+    python_manifest = resources / "OdePython.json"
     python_manifest.write_text("{}")
     try:
         package_check()

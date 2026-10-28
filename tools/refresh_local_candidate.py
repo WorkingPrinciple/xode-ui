@@ -52,7 +52,7 @@ def validate_payload_pair(cli, helper, producer, tree):
     return cli_record, helper_record
 
 
-QUALIFICATION_BUNDLE_IDENTIFIER = "io.github.dragoshont.xodus.qualification"
+QUALIFICATION_BUNDLE_IDENTIFIER = "com.workingprinciple.xode.qualification"
 
 
 def refresh(installed, output_root, identity, selected_cli=None, producer_source=None, producer_commit=None,
@@ -89,12 +89,12 @@ def refresh(installed, output_root, identity, selected_cli=None, producer_source
                 "Selected producer Cargo.lock differs from the approved pin")
         contract = subprocess.check_output(
             ["git", "show", producer + ":docs/contracts/management-v1.schema.json"], cwd=producer_source)
-        require(contract == (project / "Sources/XodusManagement/Resources/management-v1.schema.json").read_bytes(),
+        require(contract == (project / "Sources/OdeManagement/Resources/management-v1.schema.json").read_bytes(),
                 "Selected CLI producer and app management contracts differ")
     if producer_notices is not None:
         validate_producer_inventory(Path(producer_notices) / "inventory.json", producer_notices_sha256)
-    old_cli = selected_cli.resolve(strict=True) if selected_cli else installed / "Contents/Resources/XodusEngine/xodus-cli"
-    old_helper = selected_helper.resolve(strict=True) if selected_helper else old_cli.parent / "xodus-window-monitor.exe"
+    old_cli = selected_cli.resolve(strict=True) if selected_cli else installed / "Contents/Resources/OdeEngine/ode-cli"
+    old_helper = selected_helper.resolve(strict=True) if selected_helper else old_cli.parent / "ode-window-monitor.exe"
     cli_record, windows_helper_record = validate_payload_pair(old_cli, old_helper, producer, producer_tree)
     producer_manifest = owned_bytes(old_cli.parent / "build-manifest.json", PRODUCER_MANIFEST_SHA256)[0] \
         if selected_cli is not None else None
@@ -103,7 +103,7 @@ def refresh(installed, output_root, identity, selected_cli=None, producer_source
                  '=certificate leaf = H"' + identity.upper() + '"', str(path)])
     verify_cli(old_cli)
     if selected_cli is not None:
-        lifecycle_source = (project / "Sources/XodusPreview/NativeGameLifecycle.swift").read_text()
+        lifecycle_source = (project / "Sources/OdePreview/NativeGameLifecycle.swift").read_text()
         require('static let cliSHA256 = "' + cli_record["sha256"] + '"' in lifecycle_source,
                 "Selected lifecycle CLI differs from the source's explicit frozen digest")
     stage = Path(tempfile.mkdtemp(prefix="Ode-refresh-", dir=output_root))
@@ -118,40 +118,40 @@ def refresh(installed, output_root, identity, selected_cli=None, producer_source
     with tarfile.open(archive) as archived:
         archived.extractall(source, filter="data")
     environment = os.environ.copy()
-    environment["XODUS_SHIPPING"] = "1"
-    run(["swift", "build", "--jobs", "1", "-c", "release", "--product", "XodusAuthHost"] + path_remap(source),
+    environment["ODE_SHIPPING"] = "1"
+    run(["swift", "build", "--jobs", "1", "-c", "release", "--product", "OdeAuthHost"] + path_remap(source),
         source, log, environment)
     binary_dir = Path(run(["swift", "build", "-c", "release", "--show-bin-path"] + path_remap(source),
                          source, log, environment).decode().strip())
     app = stage / "X Ode.app"
     macos, resources = app / "Contents/MacOS", app / "Contents/Resources"
     macos.mkdir(parents=True)
-    (resources / "XodusEngine").mkdir(parents=True)
-    cli = resources / "XodusEngine/xodus-cli"
+    (resources / "OdeEngine").mkdir(parents=True)
+    cli = resources / "OdeEngine/ode-cli"
     shutil.copyfile(old_cli, cli)
     cli.chmod(0o755)
     owned_bytes(cli, cli_record["sha256"], cli_record["bytes"])
-    destination = cli.parent / "xodus-window-monitor.exe"
+    destination = cli.parent / "ode-window-monitor.exe"
     shutil.copyfile(old_helper, destination)
     destination.chmod(0o644)
     owned_bytes(destination, windows_helper_record["sha256"], windows_helper_record["bytes"])
-    helper = macos / "XodusAuthHost"
-    shutil.copyfile(binary_dir / "XodusAuthHost", helper)
+    helper = macos / "OdeAuthHost"
+    shutil.copyfile(binary_dir / "OdeAuthHost", helper)
     helper.chmod(0o755)
     strip_debug(helper)
     sign(helper, "helper", identity, developer_id=True)
     helper_record, _ = owned_bytes(helper)
-    (source / "Sources/XodusPreview/ShippingPairPins.swift").write_text(swift_pins(
+    (source / "Sources/OdePreview/ShippingPairPins.swift").write_text(swift_pins(
         source_identity_before["commit"], source_identity_before["tree"], cli_record, helper_record,
         producer, producer_tree))
     require(producer == PRODUCER and producer_tree == PRODUCER_TREE,
             "Selected producer differs from the approved shipping tuple")
-    (source / "Sources/XodusPreview/ShippingProducerPins.swift").write_text(swift_producer_pins())
-    run(["swift", "build", "--jobs", "1", "-c", "release", "--product", "XodusPreview"] + path_remap(source),
+    (source / "Sources/OdePreview/ShippingProducerPins.swift").write_text(swift_producer_pins())
+    run(["swift", "build", "--jobs", "1", "-c", "release", "--product", "OdePreview"] + path_remap(source),
         source, log, environment)
-    shutil.copyfile(binary_dir / "XodusPreview", macos / "Xodus")
-    (macos / "Xodus").chmod(0o755)
-    strip_debug(macos / "Xodus")
+    shutil.copyfile(binary_dir / "OdePreview", macos / "Ode")
+    (macos / "Ode").chmod(0o755)
+    strip_debug(macos / "Ode")
     bundle_info = plistlib.loads((source / "tools/Info.plist").read_bytes())
     require(re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+",
                          bundle_info.get("CFBundleShortVersionString", "")) is not None,
@@ -159,7 +159,7 @@ def refresh(installed, output_root, identity, selected_cli=None, producer_source
     bundle_info["CFBundleName"] = bundle_info["CFBundleDisplayName"] = "X Ode"
     bundle_info["CFBundleVersion"] = str(source_build_number(project))
     bundle_info["XodeReleaseChannel"] = "Beta"
-    if environment.get("XODUS_QUALIFICATION") == "1":
+    if environment.get("ODE_QUALIFICATION") == "1":
         # Installed side by side; never replaces the ordinary candidate.
         bundle_info["CFBundleName"] = bundle_info["CFBundleDisplayName"] = "X Ode Qualification"
         bundle_info["XodeReleaseChannel"] = "Qualification"
@@ -173,20 +173,20 @@ def refresh(installed, output_root, identity, selected_cli=None, producer_source
     engine_notice_record = copy_engine_notice(engine_notice, resources) if engine_notice else None
     # Render the icon from this source (as build_local_candidate does) so a changed mark ships;
     # copying the installed app's icon kept the previous artwork.
-    run(["swiftc", "Sources/XodusCore/XOdeMark.swift", "tools/RenderAppIcon.swift",
+    run(["swiftc", "Sources/OdeCore/XOdeMark.swift", "tools/RenderAppIcon.swift",
          "-o", str(stage / "RenderAppIcon")], source, log)
-    iconset = stage / "Xodus.iconset"
+    iconset = stage / "Ode.iconset"
     run([str(stage / "RenderAppIcon"), str(iconset)], source, log)
-    run(["iconutil", "-c", "icns", str(iconset), "-o", str(resources / "Xodus.icns")], source, log)
+    run(["iconutil", "-c", "icns", str(iconset), "-o", str(resources / "Ode.icns")], source, log)
     shutil.rmtree(iconset)
-    copy_resources(binary_dir / "XodusAppFoundation_XodusManagement.bundle",
-                   resources / "XodusAppFoundation_XodusManagement.bundle")
-    (resources / "XodusAuthHost.json").write_text(json.dumps({
+    copy_resources(binary_dir / "OdeApp_OdeManagement.bundle",
+                   resources / "OdeApp_OdeManagement.bundle")
+    (resources / "OdeAuthHost.json").write_text(json.dumps({
         "version": 1, "sha256": helper_record["sha256"],
         "sourceCommit": source_identity_before["commit"]}, sort_keys=True) + "\n")
     receipt = {
         "kind": "local-ui-refresh", "productionQualified": False,
-        "qualificationVariant": environment.get("XODUS_QUALIFICATION") == "1", "notarized": False,
+        "qualificationVariant": environment.get("ODE_QUALIFICATION") == "1", "notarized": False,
         "appSource": source_identity_before, "certificateSHA1": identity.upper(),
         "preservedCLI": cli_record,
         "producerBuildPerformed": False, "priorReceiptAvailable": False,

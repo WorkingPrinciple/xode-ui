@@ -1,7 +1,7 @@
 # REQ-134 on-screen verification matrix
 
 Target: installed build **624**, `~/Applications/Ode to X Local Candidate.app`, X Ode 0.2.0 Beta, bundle
-`io.github.dragoshont.xodus.development`, executable SHA-256
+`com.workingprinciple.xode.development`, executable SHA-256
 `b1143b9a8847c89cb6e3905e95a5619494b8d9effff77c9c309113ecda877dd2`, source `73647681` (tree `2ec283d9`).
 The observer records these from the bundle at every snapshot; set `XODE_EXPECTED_SHA256` to refuse a different
 binary.
@@ -14,7 +14,7 @@ for the owner to be idle (default 20 s, COR-272).
 Evidence types: **AX** = accessibility-tree JSON (`*-ax-window*.json`) with identifiers, labels, frames, focus
 and actions; **CAP** = window capture PNG (`screencapture -l`, owned windows only); **SCAN** = the observer's
 content scan of every AX label for prices, commerce verbs, `MSIXVC`, sizes, paths, hashes and QA text;
-**CON** = per-line WCAG contrast measured on the capture; **LOG** = `io.github.dragoshont.xodus` signposts and
+**CON** = per-line WCAG contrast measured on the capture; **LOG** = `com.workingprinciple.xode` signposts and
 logs (`load-latency`, `pc-library`, `catalog-detail`, `library-position`, `product-access`); **OWN** = owner
 observation on [REQ-134-OWNER-SHEET.md](REQ-134-OWNER-SHEET.md).
 
@@ -24,9 +24,9 @@ Steps are those in `tools/qa/req134_run.sh` (`steps.tsv` records each one's exit
 |---|---|---|---|---|
 | REQ-4 | Main window at 1619×897, 1500×897, back to 1619×897, then 1280×800 and 1100×700 | First useful row visible at every size; no clipped sheet edge; returning to 1619 shows no stale gap from 1500; long titles truncate rather than overlap | AX frames, CAP | 06-size-* |
 | REQ-5 | Library and Discover grids | No HP Smart, iCloud, PaintShop or other app titles in game surfaces; the AX card count matches the visible count | AX, SCAN | 02, 08 |
-| REQ-8 | Library scrolled to the middle → Discover → Library | Same Library scroll offset (AX frame of the first visible card) and the same filter/sort values after the round trip; no focus jump | AX frames + `xodus.library.filter`/`sort` values, LOG `library-position` | 07, 10, 11, 21 |
+| REQ-8 | Library scrolled to the middle → Discover → Library | Same Library scroll offset (AX frame of the first visible card) and the same filter/sort values after the round trip; no focus jump | AX frames + `ode.library.filter`/`sort` values, LOG `library-position` | 07, 10, 11, 21 |
 | REQ-9 | Discover ↔ Library switches and a search set while the results load | No result rows from the previous scope after switching; a stopped search shows "Search stopped" with Retry, distinct from empty | AX, LOG `catalog-detail` | 10–12 |
-| REQ-10 | Discover search set to "mortis" | Search field `xodus.catalog.search` is an AXTextField with an accessibility name; Valor Mortis is in the results; no price or commerce | AX, SCAN | 12; Command-F on the owner sheet |
+| REQ-10 | Discover search set to "mortis" | Search field `ode.catalog.search` is an AXTextField with an accessibility name; Valor Mortis is in the results; no price or commerce | AX, SCAN | 12; Command-F on the owner sheet |
 | REQ-11 | Game detail for Valor Mortis at 1100×700, then closed | Artwork, title, facts and actions present at a small size; after closing, focus returns to the card it came from | AX (focused element before and after), CAP | 13, 14; Escape on the owner sheet |
 | REQ-12 | Library refresh with the network off | Retained prior content plus an actionable error, not an empty library | AX, CAP | owner sheet O-12 |
 | REQ-13 | Physical-trackpad scrolling with Instruments | Measured hitches and update cost | Instruments trace | owner sheet O-13 |
@@ -44,18 +44,18 @@ Steps are those in `tools/qa/req134_run.sh` (`steps.tsv` records each one's exit
 | REQ-60 | Cards, rows, search | No price, size, package or source on cards | SCAN | 02, 08, 12 |
 | REQ-61 | Every surface | No price, Buy/Get/Pre-order or purchase link anywhere | SCAN | all |
 | REQ-62 | Detail versus cards | "Xbox PC game" (package) only inside the detail Details group | SCAN (path of each `MSIXVC`/package hit must be under the detail window) | 13 vs 02/08/12 |
-| REQ-63 | Library and detail of a purchased plus Game Pass title | Owned and Game Pass shown separately on card and detail | AX (`xodus.game.accessBadge`) | 02, 13 |
-| REQ-64 | Library scrolled through | Counts in headings equal the visible card count; Continue Playing cells hold art, title, last played and badges only | AX counts vs `xodus.account.libraryCounts`, SCAN | 02–05 |
+| REQ-63 | Library and detail of a purchased plus Game Pass title | Owned and Game Pass shown separately on card and detail | AX (`ode.game.accessBadge`) | 02, 13 |
+| REQ-64 | Library scrolled through | Counts in headings equal the visible card count; Continue Playing cells hold art, title, last played and badges only | AX counts vs `ode.account.libraryCounts`, SCAN | 02–05 |
 | REQ-65 | Discover shelves | No "Recently added" or "Leaving soon" without a source; no placeholders | AX | 08 |
 | REQ-66 | Library shelves | Recently played and Recently added appear only with real dates | AX | 02 |
-| REQ-75 | Launch, cold Library, refresh | Layout-shaped placeholders without fake progress; real errors and retry distinct | CAP, AX (`xodus.firstLoad*`, `xodus.pcGames.loading`), LOG `load-latency` | 01, 40 |
-| REQ-76 | Continue Playing shelf in light appearance | No opaque white track under the shelf; See All (`xodus.library.continuePlaying.showAll`) present with a count | CAP, AX | 03 |
+| REQ-75 | Launch, cold Library, refresh | Layout-shaped placeholders without fake progress; real errors and retry distinct | CAP, AX (`ode.firstLoad*`, `ode.pcGames.loading`), LOG `load-latency` | 01, 40 |
+| REQ-76 | Continue Playing shelf in light appearance | No opaque white track under the shelf; See All (`ode.library.continuePlaying.showAll`) present with a count | CAP, AX | 03 |
 | REQ-77 | Detail of an installed playable game | Hero subtitle does not repeat "Installed on this Mac" | AX, CAP | 13 (set `XODE_DETAIL_TITLE` to an installed title) |
 | REQ-85 | Library shelves | No persistent buttons under cards; card press opens detail | AX (cards are single "View …" buttons) | 02, 13 |
 | REQ-91 | Discover | No routine coverage or loading prose; no visible scroll indicators; recent searches only near search | AX, CAP | 08, 09 |
 | REQ-93 | Account popup while a Library load runs | Popup's Done/Close enabled during loading; closes by AX press | AX (`enabled`), CAP | 16, 17; Escape on owner sheet O-93 |
 | REQ-118 | Settings ▸ General ▸ Permissions; launch | No permission prompt at launch; each permission listed with when it is asked; Ask Now or the denial note present when applicable | AX, CAP; prompts observed by the owner | 01, 19, 20; owner sheet O-118 |
-| REQ-119 | First Library load after sign-in | "Setting up your library" with real steps and a live count, then the library; no half-drawn window | CAP, AX (`xodus.firstLoad.step.*`), LOG | 01 (cold start only); owner sheet O-119 |
+| REQ-119 | First Library load after sign-in | "Setting up your library" with real steps and a live count, then the library; no half-drawn window | CAP, AX (`ode.firstLoad.step.*`), LOG | 01 (cold start only); owner sheet O-119 |
 
 ## Running
 

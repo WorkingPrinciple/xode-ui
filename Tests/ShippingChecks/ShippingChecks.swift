@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import CryptoKit
 import Foundation
-import XodusManagement
+import OdeManagement
 import XCTest
-@testable import XodusPreview
+@testable import OdePreview
 
 final class ShippingChecks: XCTestCase {
     @MainActor func testShippingAdmission() async {
@@ -13,11 +13,11 @@ final class ShippingChecks: XCTestCase {
             if condition { print("PASS: \(name)") }
             else { failures += 1; XCTFail(name) }
         }
-        let remembered = UserDefaults.standard.object(forKey: "Xodus.developerBackendPath")
-        UserDefaults.standard.set("/invalid/remembered-development-engine", forKey: "Xodus.developerBackendPath")
+        let remembered = UserDefaults.standard.object(forKey: "Ode.developerBackendPath")
+        UserDefaults.standard.set("/invalid/remembered-development-engine", forKey: "Ode.developerBackendPath")
         defer {
-            if let remembered { UserDefaults.standard.set(remembered, forKey: "Xodus.developerBackendPath") }
-            else { UserDefaults.standard.removeObject(forKey: "Xodus.developerBackendPath") }
+            if let remembered { UserDefaults.standard.set(remembered, forKey: "Ode.developerBackendPath") }
+            else { UserDefaults.standard.removeObject(forKey: "Ode.developerBackendPath") }
         }
         let state = AppState()
         let session = LiveSession()
@@ -77,7 +77,7 @@ final class ShippingChecks: XCTestCase {
               "Shipping live account, products, activity and registry start without invented evidence")
         check(ShippingPairPins.approved == nil, "Unpaired repository production build has no generated approval")
         check(session.backendPath == Bundle.main.bundleURL
-              .appendingPathComponent("Contents/Resources/XodusEngine/xodus-cli").path,
+              .appendingPathComponent("Contents/Resources/OdeEngine/ode-cli").path,
               "Shipping engine path ignores environment and remembered development selection")
         check(injected.backendPath == session.backendPath,
               "Development configuration injection cannot replace the shipping engine")
@@ -93,11 +93,11 @@ final class ShippingChecks: XCTestCase {
               && state.runtimeSettings.errorMessage == ManagementError.pairedEngineUnavailable.localizedDescription,
               "Shipping pure planning also fails closed without the compiled pair")
         let root = FileManager.default.temporaryDirectory.resolvingSymlinksInPath()
-            .appendingPathComponent("XodusShippingChecks-\(UUID().uuidString)")
+            .appendingPathComponent("OdeShippingChecks-\(UUID().uuidString)")
         do {
-            guard let neutralEngine = ProcessInfo.processInfo.environment["XODUS_NEUTRAL_ENGINE"],
-                  let neutralFixture = ProcessInfo.processInfo.environment["XODUS_NEUTRAL_FIXTURE"] else {
-                XCTFail("Missing XODUS_NEUTRAL_ENGINE or XODUS_NEUTRAL_FIXTURE. Run sh tools/check_shipping.sh.")
+            guard let neutralEngine = ProcessInfo.processInfo.environment["ODE_NEUTRAL_ENGINE"],
+                  let neutralFixture = ProcessInfo.processInfo.environment["ODE_NEUTRAL_FIXTURE"] else {
+                XCTFail("Missing ODE_NEUTRAL_ENGINE or ODE_NEUTRAL_FIXTURE. Run sh tools/check_shipping.sh.")
                 return
             }
             try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false,
@@ -105,12 +105,12 @@ final class ShippingChecks: XCTestCase {
             let app = root.appendingPathComponent("Neutral.app")
             let macOS = app.appendingPathComponent("Contents/MacOS")
             let resources = app.appendingPathComponent("Contents/Resources")
-            let engine = resources.appendingPathComponent("XodusEngine/xodus-cli")
-            let helper = macOS.appendingPathComponent("XodusAuthHost")
+            let engine = resources.appendingPathComponent("OdeEngine/ode-cli")
+            let helper = macOS.appendingPathComponent("OdeAuthHost")
             try FileManager.default.createDirectory(at: engine.deletingLastPathComponent(), withIntermediateDirectories: true)
             try FileManager.default.createDirectory(at: macOS, withIntermediateDirectories: true)
             try PropertyListSerialization.data(fromPropertyList: [
-                "CFBundleIdentifier": "invalid.example.shippingchecks", "CFBundleExecutable": "Xodus",
+                "CFBundleIdentifier": "invalid.example.shippingchecks", "CFBundleExecutable": "Ode",
                 "CFBundlePackageType": "APPL"
             ], format: .xml, options: 0).write(to: app.appendingPathComponent("Contents/Info.plist"))
             try FileManager.default.copyItem(at: URL(fileURLWithPath: neutralEngine), to: engine)
@@ -123,7 +123,7 @@ final class ShippingChecks: XCTestCase {
                 SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
             }
             let source = String(repeating: "a", count: 40)
-            let receipt = resources.appendingPathComponent("XodusAuthHost.json")
+            let receipt = resources.appendingPathComponent("OdeAuthHost.json")
             let canonical = Data("{\"sha256\": \"\(hash(helperData))\", \"sourceCommit\": \"\(source)\", \"version\": 1}\n".utf8)
             try canonical.write(to: receipt)
             guard let bundle = Bundle(url: app) else { throw ManagementError.invalidPayload }

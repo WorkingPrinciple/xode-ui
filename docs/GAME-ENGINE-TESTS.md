@@ -15,7 +15,7 @@ and corrective work; it must not inherit Session 1's conclusions uncritically.
 
 ## Testing constitution
 
-1. Test **Ode to X together with our modified Xodus services/libraries, built
+1. Test **Ode to X together with our modified Ode services/libraries, built
    shims and the exact Wine/CrossOver build**. Inspect local modifications rather
    than silently substituting stock dependencies.
 2. Aim to find, reproduce and fix defects, not maximize process-start or document
@@ -77,7 +77,7 @@ interactive sign-in consent, purchases or security bypasses.
 
 ## Joint delivery scope
 
-Owner clarification, 21 October 2026: **Ode to X and the modified Xodus
+Owner clarification, 21 October 2026: **Ode to X and the modified Ode
 libraries, services and shims are the product under test and will be delivered
 together.** Qualification is not an app-only review or an independent stock-Wine
 compatibility exercise.
@@ -117,7 +117,7 @@ qualification.
 | Failed launcher implied the game had started | Native app; Session 2 | Nonzero script exit now says the launcher reported an error, not that the game stopped. Existing generated-session log recovery remains unchanged. 247 presentation and 1,358 synthetic native checks pass | Mock children only; no live game, Keychain or Microsoft qualification. Not yet in an installed app |
 | Delegated CLI run still initialized another credential owner | Modified runtime; Session 2, `cf2e023` | macOS `Run` with service-backed licensing now uses an empty memory store instead of initializing the CLI Keychain provider; other commands retain their existing initialization. Twelve affected Rust tests pass and release artifacts rebuilt | No saved credentials migrated or repaired; not installed or credential-qualified |
 | Selected free engine was ignored by the registered generic adapter | Abiotic Factor route investigation; Session 2, `3be4fd1` | The generic script did not consume the selected engine and its IPC bridge always constructed a CrossOver command. The candidate now explicitly rejects Wine/GPTK/conflicting selectors before service access rather than silently choosing CrossOver. Four regression tests cover refusal, receipt status, direct bridge refusal and unchanged CrossOver command/default routing using stubs | This prevents wrong-engine testing; it does not implement free-Wine support. No actual Abiotic process or gameplay. The installed Minecraft-specific adapter is not present in the recovered source ref and was not patched |
-| Old runtime windows survived named-process cleanup | Evidence/cleanup; Session 2 | Exact research-owned Luanti consoles/explorers 44568/45627/44503/45595 were terminated and their windows verified gone. Separately identified three-day-old VM-test debugger pair 24524/23278 and Mono-installer pair 22093/22076 were bound to their test prefixes and terminated | The Mono dialog belonged to `control.exe` in `XodusVMServiceTest`, not Brogue or Cataclysm. No unnecessary .NET install. Other unrelated prefixes left untouched |
+| Old runtime windows survived named-process cleanup | Evidence/cleanup; Session 2 | Exact research-owned Luanti consoles/explorers 44568/45627/44503/45595 were terminated and their windows verified gone. Separately identified three-day-old VM-test debugger pair 24524/23278 and Mono-installer pair 22093/22076 were bound to their test prefixes and terminated | The Mono dialog belonged to `control.exe` in `OdeVMServiceTest`, not Brogue or Cataclysm. No unnecessary .NET install. Other unrelated prefixes left untouched |
 | Pre-Wine failure still invoked wineserver cleanup | Private harness; Session 2 | Candidate runner now skips server stop when no preserved-runtime Wine process was observed, and records actual sample elapsed separately from the target checkpoint | Not rerun against a game; no live cleanup qualification claimed |
 | Isolated account broker and package consumer had no matching route | Unified broker `0ccd528`; modified consumer `bc3afab` | Explicit exact-account package-license opt-in reuses the checked credential snapshot and authenticates the packed key. Consumer validates a private endpoint and refuses credential/global fallback; launcher and RPS bridge inherit the same endpoint. Both release CLIs built; 29 service, 77 CLI and 10 consumer checks pass, one pre-existing CLI check ignored; five adapter checks pass | Source/memory-only protocol evidence, not live credentials, full shim interoperability or game launch. Installed signed binaries and native Play gate unchanged |
 
@@ -222,7 +222,7 @@ completed and previously hidden applications were restored.
 
 After the games closed, a **Wine Mono Installer** remained behind them. Its
 owner was `control.exe` PID 22093, started **18 October**, with working directory
-inside `XodusVMServiceTest`; it was not evidence Brogue/Cataclysm required .NET.
+inside `OdeVMServiceTest`; it was not evidence Brogue/Cataclysm required .NET.
 That installer and its matching stale explorer were terminated. The separate
 old VM-game debugger and explorer were also removed after exact ownership
 checks. The capture helper now records runtime-dialog candidates, including
@@ -440,7 +440,7 @@ Do not infer a build-to-source mapping from a nearby branch or matching filename
 | NMS `runtime/xgameruntime.dll` | SHA-256 `6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8` | Record the rest of the actual loaded shim set and source mapping |
 | NMS `runtime/xgameruntime_legacy.dll` | SHA-256 `de6f1c47f3cfb087655a4852c185cf89c3d64ca5e2327146d424426d3b7944a5` | A file's presence does not prove that a game loaded it |
 | Hogwarts historical configuration | `HogwartsPrivateStock` bottle retains `xgameruntime.dll` and `windows.web.dll`; fork contains isolated Hogwarts launcher | Locate actual package/content and prior successful-run evidence before claiming a new launch |
-| Locally patched Wine build recipe | Fork `build-crossover-wine-af-unix.sh` references CrossOver source 26.3.0 and Xodus Wine AF_UNIX patch `6b7313c1bd` | Recipe inspection does not prove this Wine build is installed or used; do not run this provisioning script blindly |
+| Locally patched Wine build recipe | Fork `build-crossover-wine-af-unix.sh` references CrossOver source 26.3.0 and Ode Wine AF_UNIX patch `6b7313c1bd` | Recipe inspection does not prove this Wine build is installed or used; do not run this provisioning script blindly |
 | Private transport helper | Preserved `private-stock-ipc.py` accepts `--socket`; unified-account fork has a configurable private broker | Establish the complete consumer route and supported request protocol, not just endpoint configurability |
 
 ## Reproducibility and regression tracking
@@ -464,7 +464,7 @@ its setup from conversation history.
 ## Historical Xbox launches: do not reset the baseline
 
 Owner clarification, 21 October 2026: **No Man's Sky and Hogwarts Legacy
-previously launched using our modified Xodus fork, libraries and shims with
+previously launched using our modified Ode fork, libraries and shims with
 CrossOver.** These are not merely standalone Windows control games.
 `PAUSE-HANDOFF.md` independently records historical NMS 7.6 in-world rendering.
 The equivalent Hogwarts run receipt has not yet been located in this review;
@@ -583,7 +583,7 @@ No Man's Sky and Abiotic Factor passed real local inventory/readiness checks.
 Their preserved CLI expects service `24e78d536c05c52e0e5e1e8f4373c68c41c079ef68a7891eff307baeb17edfba`;
 the service actually mapped by the running process is
 `a3cc1dd758e47be52700f84ff6874c240cca3238ffdcb9282d26ba19888286eb`.
-Both endpoint users are fixed to `/tmp/xodus.sock`; the inspected macOS service
+Both endpoint users are fixed to `/tmp/ode.sock`; the inspected macOS service
 does not honor Linux's `XDG_RUNTIME_DIR` override. These are preflight failures,
 not Wine incompatibility findings. The other four candidate titles have public
 PC package records but no established current-account download access in the

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import Foundation
 import Darwin
-import XodusCore
-import XodusManagement
+import OdeCore
+import OdeManagement
 
 extension Checks {
     func runtimePlanChecks() async throws {

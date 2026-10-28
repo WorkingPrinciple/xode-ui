@@ -69,8 +69,8 @@ Do not use `-03` descriptor/manifest pins or the earlier backend
 The package builder accepts only CFBundleVersion values above the installed
 0.2.0 build 2, so the beta installs as an update rather than a downgrade.
 
-The producer's `eappx`, `msixvc`, `msixvc-common`, `xodus`, `xodus-cli`,
-`xodus-management`, and `xodus-service` workspace crates are licensed GPL-3.0
+The producer's `eappx`, `msixvc`, `msixvc-common`, `ode`, `ode-cli`,
+`ode-management`, and `ode-service` workspace crates are licensed GPL-3.0
 via the producer repository's root `LICENSE`; the corresponding source archive
 includes that file.
 
@@ -198,7 +198,7 @@ claims Apple acceptance. There is no independent stale exception tuple.
 Existing r7 build/source receipts resolve its provenance rather than requiring
 reconstruction of older evidence. Outer app/DMG acceptance remains mandatory.
 
-The active Xodus shipping pair is producer commit
+The active Ode shipping pair is producer commit
 `399957962f35eee6189b8fbcef9697f47e951581`, tree
 `6d9088562be95b466c4a6df5b102c3f24a72048c`, signed CLI
 `f77208c9fce39993b12d2bb649ea4a0de3a592dfcbe0d2101dea712d6d13713f`
@@ -213,11 +213,11 @@ archive `23374465684a78bba2fb1c3e5264cfa21ee17d932612d0f4cec12a3c44e17663`
 metadata naming the prior producer is historical, not an active shipping pin.
 
 Known test-only build issue: release-mode
-`swift build -c release --product XodusManagementChecks` fails identically on
+`swift build -c release --product OdeManagementChecks` fails identically on
 `8b58bb07`, `ae6b4ad4`, and `5a6a5802`, because
-`AccountTierChecks.swift:3` cannot resolve a compatible `XodusManagement`
-module. The `XodusManagement` module itself builds and imports directly, and
-the release `XodusPreview` product builds. This test-product failure predates
+`AccountTierChecks.swift:3` cannot resolve a compatible `OdeManagement`
+module. The `OdeManagement` module itself builds and imports directly, and
+the release `OdePreview` product builds. This test-product failure predates
 the producer merge and does not block packaging; the debug management suite
 (10,910 checks, 0 failures) remains the gate.
 
@@ -408,7 +408,7 @@ This tuple is accepted for standalone/source integration only:
 `buildAppExactCommandCompatible:false`. It is not permission to bypass the sealed
 input validator through the selected-signed refresh. The canonical predicate in
 `shipping_pair.verify_input` requires the actual command
-`cargo build --release --offline --locked -q -p xodus-cli --bin xodus-cli --target aarch64-apple-darwin --no-default-features --message-format=json`,
+`cargo build --release --offline --locked -q -p ode-cli --bin ode-cli --target aarch64-apple-darwin --no-default-features --message-format=json`,
 matching native feature/profile metadata before and after build, and
 `metadataPlatformFilter:aarch64-apple-darwin`, plus its existing ownership,
 mode, seal, source/tree, hash and byte-count checks. A genuinely compliant new
@@ -437,7 +437,7 @@ Focused source verification compares the bundled resource byte-for-byte and
 validates supported producer fixtures through both contracts:
 
 ```sh
-swift run XodusManagementChecks --contract-schema-checks /absolute/frozen-producer/docs/contracts/management-v1.schema.json
+swift run OdeManagementChecks --contract-schema-checks /absolute/frozen-producer/docs/contracts/management-v1.schema.json
 ```
 
 Schema parity does not admit a new executable. The existing debug CLI
@@ -457,7 +457,7 @@ CLI SHA256 `fd6c7a6427a7317e92ebfcd5d49a5f6b5ff75e3b7330ff2bcad887262ca06dd8`
 (8,577 bytes).
 The signed CLI passed strict fixed-leaf verification with the existing approved
 identity. Its actual producer command was
-`CARGO_BUILD_JOBS=1 CARGO_INCREMENTAL=0 cargo build --offline --locked --release -p xodus-cli`;
+`CARGO_BUILD_JOBS=1 CARGO_INCREMENTAL=0 cargo build --offline --locked --release -p ode-cli`;
 the unsigned provenance truthfully records that command, not the distinct
 sealed-input recipe's command. Use the explicit selected signed CLI refresh
 path with its paired helper and manifest. No integrity check is waived.
@@ -568,7 +568,7 @@ AX observation: the lens focused its 220-point editor, `mortis` returned Valor
 Mortis at `199,99 RON`, Asphalt Legends displayed Free, and its real external-page
 confirmation was cancelled by Escape without invoking Open. All eight distinct
 Verified working title badges remained. The receipt and full-screen captures are
-under `~/Library/Application Support/XodusCLI/proofs/ode-search-acquisition-122532b/`.
+under `~/Library/Application Support/Ode to X/CLI/proofs/ode-search-acquisition-122532b/`.
 Brotato runtime acceptance remains separate.
 
 ### Discover metadata and support defaults (#44)
@@ -611,7 +611,7 @@ pending request types through the actual catalogue queue. Search routes blocked 
 without repeating browse diagnostics or changing installation admission.
 The Library access check renders one-match and six-match synthetic compositions
 offscreen at 1440x874 and 1619x1231, including overflow and a package-blocked public
-result. Optional `XODUS_SEARCH_CAPTURE_DIRECTORY` saves these fixture PNGs and OCR
+result. Optional `ODE_SEARCH_CAPTURE_DIRECTORY` saves these fixture PNGs and OCR
 text in an existing directory. These are source regressions, not installed native
 keyboard, VoiceOver or provider-response acceptance.
 
@@ -687,7 +687,7 @@ Frozen S1 `f9dfc3483578101f9f4a0c8a017ae5867815f977` supplies exactly
 These are **not defaults, automatic retries or gameplay qualifications**.
 Only after observed base startup-crash/fiber/FLS/raw-GS symptoms and normal
 slot/input approval may an operator explicitly set
-`Xodus.lifecycle.fallback.<PRODUCT_ID>` to the matching sibling name in the
+`Ode.lifecycle.fallback.<PRODUCT_ID>` to the matching sibling name in the
 app's preferences, while the app is normally quit. Remove that exact key to
 restore the base. No key is set by source loading or this runbook.
 
@@ -718,7 +718,7 @@ python3 tools/release_candidate.py \
   --output-root "$PWD/.build/local-candidates" \
   --identity 410914520BCC840C0125D3826CCF0F247F603321 \
   --candidate "$HOME/Library/Application Support/Ode to X/Service/candidates/a1aade5e959a5ad27e695f85c15ef50addf036d4ab857d70e041f57a95abe664" \
-  --producer-source /absolute/frozen-xodus-macos-checkout \
+  --producer-source /absolute/frozen-ode-macos-checkout \
   --producer-source-archive /absolute/xodus-cli-beta-39995796-source.tar \
   --notary-profile notary \
   --dry-run
@@ -828,10 +828,10 @@ python3 tools/refresh_local_candidate.py \
   --installed-app "$HOME/Applications/Ode to X Local Candidate.app" \
   --output-root /absolute/owned-output-directory \
   --identity 410914520BCC840C0125D3826CCF0F247F603321 \
-  --cli /absolute/immutable-candidate/xodus-cli \
+  --cli /absolute/immutable-candidate/ode-cli \
   --producer-source /absolute/producer-repository \
   --producer-commit f54654db11a67497323f5e49625a48c847e1f41b \
-  --windows-helper /absolute/immutable-candidate/xodus-window-monitor.exe
+  --windows-helper /absolute/immutable-candidate/ode-window-monitor.exe
 ```
 
 The tool verifies the signed CLI and exact helper embedding, resolves the
@@ -862,7 +862,7 @@ Optional per-title launch profiles live in the selected profile directory as
 {"version":1,"productID":"BQVQTL3PCH05","engine":"exact-registry-engine","environment":{"CX_ENV":"explicit adapter options"}}
 ```
 
-Bundled title bindings in `Sources/XodusManagement/Resources/LaunchRecipes/`
+Bundled title bindings in `Sources/OdeManagement/Resources/LaunchRecipes/`
 take precedence over historical local profile files. Other titles still use
 the selected local profile directory. Explicit provider selection remains an
 engine override, except that an observed engine-specific STA setting cannot
@@ -941,7 +941,7 @@ provider remains an override. Otherwise the latest successful gameplay ledger
 entry selects its exact registry engine; without successful evidence the first
 available PASS engine is used, preferring Free Wine. An unavailable proven or
 explicit engine is reported rather than silently substituted. Launch requests
-and pre-launch failures are logged under `io.github.dragoshont.xodus/GameLaunch`;
+and pre-launch failures are logged under `com.workingprinciple.xode/GameLaunch`;
 tile failures are shown inline. A bounded foreground handoff targets a newly
 created same-user game window with an exact game-title match and the configured
 executable/Wine owner. It excludes pre-existing windows and browser titles,
@@ -964,7 +964,7 @@ absence claims and incomplete scans cannot qualify a title.
 
 The Mac test evidence JSON automatically loads from
 `~/Library/Application Support/Ode to X/Evidence/tried-games.json`; an advanced
-Runtime setting (`Xodus.evidence.triedGames`) can select a different ledger.
+Runtime setting (`Ode.evidence.triedGames`) can select a different ledger.
 Schema version 1 has `updatedAt` and `games[]`,
 with `productId`, `title`, `verdict`, `scope`, `engine`, optional `runId`,
 `screenshots[]` (`path`, `caption`), `owner`, and optional `blocker`.
@@ -1012,7 +1012,7 @@ contains S3's exact `WORKING` evidence: first run
 and ordinary menu quit. Its published `s3-halls-retention-02/invocation.json`
 binds Apple4/default COM, direct `Halls of Torment.exe`, no game arguments,
 adf8/7106/native-web shims and the existing
-`XodusCLI/prefixes/s2-9NMNMS626R59-apple4-passive-v1` save prefix.
+`Ode to X/CLI/prefixes/s2-9NMNMS626R59-apple4-passive-v1` save prefix.
 No prefix is copied or changed by resolution. Global provider/fallback
 preferences cannot substitute another recipe. Missing, partial, unknown or
 mismatched evidence keeps Launch unavailable; `complete` installation is still
@@ -1086,7 +1086,7 @@ claims the game is running or an MSIXVC package is complete. These source
 changes do not activate or replace the installed c22029c RC.
 
 In unified-account mode, the app discovers complete game configurations under
-`~/Games/Xodus` and registers native lifecycle records without launcher scripts
+`~/Games/Xode` and registers native lifecycle records without launcher scripts
 or a file-picker step. Invalid sibling folders are reported separately and
 never suppress valid imports. Registration alone does not grant Play: a
 read-only, account-independent `install-status` query must return `complete`.
@@ -1209,7 +1209,7 @@ only supported way to build a local candidate:
   before execution. Preserve those checks when updating the build path.
 
 The expected release profile is opt3/debug0 with no debug assertions, overflow
-checks or test mode; features are xodus/CLI empty, management live, native
+checks or test mode; features are ode/CLI empty, management live, native
 Keychain and security-framework. Record the actual profile/features and explain
 any intentional development difference rather than labeling a different build
 as the expected release input.
@@ -1288,10 +1288,10 @@ Use the owner's valid Developer ID Application identity for new candidates.
 Do not re-sign a preserved working engine in place. Sign a separate candidate
 and regenerate its package identity metadata consistently.
 
-The app bundle identifier remains `io.github.dragoshont.xodus.development`;
-the fixed code-signing identifiers remain `io.github.dragoshont.xodus`,
-`io.github.dragoshont.xodus.cli` and
-`io.github.dragoshont.xodus.auth-host`. The existing signing helper uses an
+The app bundle identifier remains `com.workingprinciple.xode.development`;
+the fixed code-signing identifiers remain `com.workingprinciple.xode`,
+`com.workingprinciple.xode.cli` and
+`com.workingprinciple.xode.auth-host`. The existing signing helper uses an
 exact certificate-leaf requirement. This is not yet a team-based renewal policy.
 Certificate renewal therefore needs a tested identity update, not an assumption
 that a matching team automatically satisfies the current requirement.
@@ -1323,7 +1323,7 @@ while the working app still depends on it.
 
 ## Local testing versus distribution
 
-`XODUS_SHIPPING=1` excludes fixture state, synthetic install/job success,
+`ODE_SHIPPING=1` excludes fixture state, synthetic install/job success,
 illustrations, exports and native test entrypoints. It uses bundled engine/
 helper paths and rejects development arguments and backend overrides.
 Nonshipping products remain available for explicitly requested development.

@@ -1,6 +1,6 @@
 # Proposed management contract v1
 
-**Scoped producer/client implementation now exists; the complete game lifecycle remains a proposal.** The pinned canonical schema and actual client/provider evidence are in [native integration](NATIVE-INTEGRATION.md). The sections below retain the full intended lifecycle requirements; they do not claim that gated inventory/install/launch/update operations succeed today. Runtime `xodus-service` IPC is separate.
+**Scoped producer/client implementation now exists; the complete game lifecycle remains a proposal.** The pinned canonical schema and actual client/provider evidence are in [native integration](NATIVE-INTEGRATION.md). The sections below retain the full intended lifecycle requirements; they do not claim that gated inventory/install/launch/update operations succeed today. Runtime `ode-service` IPC is separate.
 
 Stable handoff: **protocol 1.0**, [canonical scoped JSON Schema](contracts/management-v1.schema.json), [implementation ledger](IMPLEMENTATION-LEDGER.md). The [original foundation proposal](contracts/foundation-v1.schema.json) is preserved. The producer fills strict operation schemas for implemented public-catalog/registry/activity/diagnostic operations and explicitly gates game lifecycle success. Native clients validate the expected command's result, not any success-shaped object. A future minor/operation extension needs its own agreed schema/consumer pin; never guess forward compatibility.
 
@@ -21,18 +21,18 @@ installation or gameplay acceptance.
 
 ## Transport and negotiation
 
-Current scoped entry: `xodus-cli manage --protocol 1 --state-dir <absolute-private-directory>`, one JSON request per stdin line, one JSON response/event per stdout line (UTF-8, LF). stderr is redacted human diagnostics, never machine results; the native client drains/discards it. No interactive prompts. Max frame size 1 MiB; strict 1.0 rejects unknown envelope/parameter fields and incompatible versions. Never place credentials in argv/stdout/stderr. Backend-owned native authentication keeps its credential handoff separate.
+Current scoped entry: `ode-cli manage --protocol 1 --state-dir <absolute-private-directory>`, one JSON request per stdin line, one JSON response/event per stdout line (UTF-8, LF). stderr is redacted human diagnostics, never machine results; the native client drains/discards it. No interactive prompts. Max frame size 1 MiB; strict 1.0 rejects unknown envelope/parameter fields and incompatible versions. Never place credentials in argv/stdout/stderr. Backend-owned native authentication keeps its credential handoff separate.
 
-Authentication reuses the backend's existing macOS Keychain token abstraction as a single credential owner. Shipping manifests must disable `key-chain-file`/`.xodus-keyring.ron`. Hello must also expose non-secret **per-capability audience requirements**; the broker obtains scoped proofs for inventory/catalog/package/launch as required. Existing Xbox Live scopes and configurable XSTS relying party do not authorize arbitrary inventory APIs.
+Authentication reuses the backend's existing macOS Keychain token abstraction as a single credential owner. Shipping manifests must disable `key-chain-file`/`.ode-keyring.ron`. Hello must also expose non-secret **per-capability audience requirements**; the broker obtains scoped proofs for inventory/catalog/package/launch as required. Existing Xbox Live scopes and configurable XSTS relying party do not authorize arbitrary inventory APIs.
 
 ### Separate private Swift authentication host
 
 This is not a public management-protocol extension. The immutable private-host
 contract is producer
-[`bb6397033fc38497a73684a9ecdb2929caba1f63`](https://github.com/dragoshont/xodus-macos/blob/bb6397033fc38497a73684a9ecdb2929caba1f63/docs/NATIVE-AUTH-HOST.md);
+[`bb6397033fc38497a73684a9ecdb2929caba1f63`](https://github.com/dragoshont/ode-macos/blob/bb6397033fc38497a73684a9ecdb2929caba1f63/docs/NATIVE-AUTH-HOST.md);
 its exact schema LF SHA256 is
 `c7ca7de8ee8a610b71e9e458f13469554467dd2632f88d35317a1ce2646af430`.
-Public sanitized schema/fixtures are copied into `XodusAuthHost/Resources`,
+Public sanitized schema/fixtures are copied into `OdeAuthHost/Resources`,
 not private source or a credential cache.
 
 The Rust worker launches the reviewed bundled Swift executable on an inherited
@@ -60,20 +60,20 @@ gates; local Swift synthetic tests do not establish that they have shipped.
 First request:
 
 ```json
-{"kind":"request","protocol":{"major":1,"minor":0},"requestID":"req-001","command":"hello","params":{"client":"xodus-macos-app","clientVersion":"0.2.0"}}
+{"kind":"request","protocol":{"major":1,"minor":0},"requestID":"req-001","command":"hello","params":{"client":"ode-macos-app","clientVersion":"0.2.0"}}
 ```
 
 ```json
-{"kind":"result","protocol":{"major":1,"minor":0},"requestID":"req-001","ok":true,"data":{"protocol":{"major":1,"minor":0},"backendVersion":"fixture","runtimeFingerprint":null,"capabilities":[{"command":"inventory.snapshot","supported":false,"audience":null,"reason":"Authoritative PC inventory is not established."}],"sessionID":"fixture-session","schema":"urn:xodus:management:1.0","catalogCorpus":"observedPublicProducts"}}
+{"kind":"result","protocol":{"major":1,"minor":0},"requestID":"req-001","ok":true,"data":{"protocol":{"major":1,"minor":0},"backendVersion":"fixture","runtimeFingerprint":null,"capabilities":[{"command":"inventory.snapshot","supported":false,"audience":null,"reason":"Authoritative PC inventory is not established."}],"sessionID":"fixture-session","schema":"urn:ode:management:1.0","catalogCorpus":"observedPublicProducts"}}
 ```
 
 This example is synthetic, not runtime certification. Capability entries are typed objects, not strings; a null runtime fingerprint is not a pretend version. Major/minor/schema mismatch or failed hello disables integration with an explicit update instruction. Unsupported operations remain disabled without disabling supported read-only catalog functions. Never assume pause, offline launch, delta updates or rollback just because an engine is present.
 
 ## Commands and ownership
 
-`xodus runtime-plan` is a **separate configuration-only route**, pinned to public
+`ode runtime-plan` is a **separate configuration-only route**, pinned to public
 producer `9ef0f298481fb48840734b538e0f6d22e1c98ff3` and namespace
-`urn:xodus:runtime-provider-configuration:1`; it adds no management operation.
+`urn:ode:runtime-provider-configuration:1`; it adds no management operation.
 The [provider contract](RUNTIME-PROVIDERS.md) defines explicit stdin EOF and
 required nullable fields. Native consumption caps input at 16,384 bytes, stdout
 at 32,768 bytes and discarded stderr at 8,192 bytes, with a five-second default

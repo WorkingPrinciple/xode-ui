@@ -97,7 +97,7 @@ def build_evidence(messages):
             require(frame.get("profile") == PROFILE, "Unexpected native release build profile: " + name)
             require(name not in native_features, "Duplicate native build artifact: " + name)
             native_features[name] = frame.get("features")
-        if name == "xodus-cli" and frame.get("executable"):
+        if name == "ode-cli" and frame.get("executable"):
             artifacts.append(frame)
     require(len(artifacts) == 1, "Expected one actual CLI build artifact")
     require(native_features == FEATURES, "Missing or incompatible native release features")
@@ -119,7 +119,7 @@ def build(engine_root, output_root, identity, engine_notice=None):
             "Engine source differs from the approved shipping producer")
     cargo_lock = owned_bytes(engine_root / "Cargo.lock", CARGO_LOCK_SHA256)[0]
     contract = engine_root / "docs/contracts/management-v1.schema.json"
-    consumer = project / "Sources/XodusManagement/Resources/management-v1.schema.json"
+    consumer = project / "Sources/OdeManagement/Resources/management-v1.schema.json"
     require(contract.read_bytes() == consumer.read_bytes(),
             "Engine and app management contracts differ; update the actual contract before packaging")
     stage = Path(tempfile.mkdtemp(prefix="Ode-local-", dir=output_root))
@@ -136,8 +136,8 @@ def build(engine_root, output_root, identity, engine_notice=None):
     environment = os.environ.copy()
     environment.update(CARGO_TARGET_DIR=str(stage / "engine-target"), CARGO_INCREMENTAL="0",
                        CARGO_BUILD_JOBS="1")
-    command = ["cargo", "build", "--release", "--offline", "--locked", "-p", "xodus-cli",
-               "--bin", "xodus-cli", "--target", "aarch64-apple-darwin",
+    command = ["cargo", "build", "--release", "--offline", "--locked", "-p", "ode-cli",
+               "--bin", "ode-cli", "--target", "aarch64-apple-darwin",
                "--no-default-features", "--message-format=json"]
     messages = run(command, engine_root, log, environment)
     artifact, native_features = build_evidence(messages)
@@ -148,35 +148,35 @@ def build(engine_root, output_root, identity, engine_notice=None):
     app = stage / "X Ode.app"
     macos, resources = app / "Contents/MacOS", app / "Contents/Resources"
     macos.mkdir(parents=True)
-    (resources / "XodusEngine").mkdir(parents=True)
-    engine = resources / "XodusEngine/xodus-cli"
+    (resources / "OdeEngine").mkdir(parents=True)
+    engine = resources / "OdeEngine/ode-cli"
     shutil.copyfile(artifact["executable"], engine)
     engine.chmod(0o755)
     owned_bytes(engine, unsigned["sha256"], unsigned["bytes"])
     sign(engine, "cli", identity, developer_id=True)
     signed_engine, _ = owned_bytes(engine)
     environment = os.environ.copy()
-    environment["XODUS_SHIPPING"] = "1"
-    run(["swift", "build", "--jobs", "1", "-c", "release", "--product", "XodusAuthHost"] + path_remap(source),
+    environment["ODE_SHIPPING"] = "1"
+    run(["swift", "build", "--jobs", "1", "-c", "release", "--product", "OdeAuthHost"] + path_remap(source),
         source, log, environment)
     binary_dir = Path(run(["swift", "build", "-c", "release", "--show-bin-path"] + path_remap(source),
                          source, log, environment).decode().strip())
-    helper = macos / "XodusAuthHost"
-    shutil.copyfile(binary_dir / "XodusAuthHost", helper)
+    helper = macos / "OdeAuthHost"
+    shutil.copyfile(binary_dir / "OdeAuthHost", helper)
     helper.chmod(0o755)
     strip_debug(helper)
     sign(helper, "helper", identity, developer_id=True)
     signed_helper, _ = owned_bytes(helper)
-    pins = source / "Sources/XodusPreview/ShippingPairPins.swift"
+    pins = source / "Sources/OdePreview/ShippingPairPins.swift"
     pins.write_text(swift_pins(app_source["commit"], app_source["tree"],
                               signed_engine, signed_helper, engine_source["commit"], engine_source["tree"]))
-    producer_pins = source / "Sources/XodusPreview/ShippingProducerPins.swift"
+    producer_pins = source / "Sources/OdePreview/ShippingProducerPins.swift"
     producer_pins.write_text(swift_producer_pins())
-    run(["swift", "build", "--jobs", "1", "-c", "release", "--product", "XodusPreview"] + path_remap(source),
+    run(["swift", "build", "--jobs", "1", "-c", "release", "--product", "OdePreview"] + path_remap(source),
         source, log, environment)
-    shutil.copyfile(binary_dir / "XodusPreview", macos / "Xodus")
-    (macos / "Xodus").chmod(0o755)
-    strip_debug(macos / "Xodus")
+    shutil.copyfile(binary_dir / "OdePreview", macos / "Ode")
+    (macos / "Ode").chmod(0o755)
+    strip_debug(macos / "Ode")
     info = plistlib.loads((source / "tools/Info.plist").read_bytes())
     require(re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+",
                          info.get("CFBundleShortVersionString", "")) is not None,
@@ -188,21 +188,21 @@ def build(engine_root, output_root, identity, engine_notice=None):
         plistlib.dump(info, output)
     copy_release_notices(source, resources)
     engine_notice_record = copy_engine_notice(engine_notice, resources) if engine_notice else None
-    run(["swiftc", "Sources/XodusCore/XOdeMark.swift", "tools/RenderAppIcon.swift",
+    run(["swiftc", "Sources/OdeCore/XOdeMark.swift", "tools/RenderAppIcon.swift",
          "-o", str(stage / "RenderAppIcon")], source, log)
-    run([str(stage / "RenderAppIcon"), str(resources / "Xodus.iconset")], source, log)
-    run(["iconutil", "-c", "icns", str(resources / "Xodus.iconset"),
-         "-o", str(resources / "Xodus.icns")], source, log)
-    shutil.copytree(binary_dir / "XodusAppFoundation_XodusManagement.bundle",
-                    resources / "XodusAppFoundation_XodusManagement.bundle")
-    (resources / "XodusAuthHost.json").write_text(json.dumps({
+    run([str(stage / "RenderAppIcon"), str(resources / "Ode.iconset")], source, log)
+    run(["iconutil", "-c", "icns", str(resources / "Ode.iconset"),
+         "-o", str(resources / "Ode.icns")], source, log)
+    shutil.copytree(binary_dir / "OdeApp_OdeManagement.bundle",
+                    resources / "OdeApp_OdeManagement.bundle")
+    (resources / "OdeAuthHost.json").write_text(json.dumps({
         "version": 1, "sha256": signed_helper["sha256"],
         "sourceCommit": app_source["commit"]}, sort_keys=True) + "\n")
     sign(app, "app", identity, developer_id=True)
     run(["codesign", "--verify", "--deep", "--strict", str(app)], source, log)
     for path, kind in ((engine, "cli"), (helper, "helper"), (app, "app")):
         verify_designated_requirement(path, kind, identity)
-    for executable in (engine, helper, macos / "Xodus"):
+    for executable in (engine, helper, macos / "Ode"):
         require(run(["lipo", "-archs", str(executable)], source, log).decode().strip() == "arm64",
                 "Candidate executables must all be arm64")
     owned_bytes(engine, signed_engine["sha256"], signed_engine["bytes"])

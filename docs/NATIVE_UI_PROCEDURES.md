@@ -41,7 +41,7 @@ REQ109 / COR152-154: Settings → Engines and the Engines account page share one
 configurator. Its default picker and installed engine rows use the same bounded
 bundled admission bindings as launch and the per-game Engine menu, not the
 user-selected diagnostic registry. Selecting a default persists the exact
-verified admission in `Xodus.lifecycle.defaultAdmission.v2`; an unset selection
+verified admission in `Ode.lifecycle.defaultAdmission.v2`; an unset selection
 uses the bundled launch default. Per-game overrides and title profiles retain
 precedence. Only explicitly declared Calimocho records consume the diagnostic
 registry's 16-candidate inspection limit; generic free Wine entries do not.
@@ -55,7 +55,7 @@ bundle identity, then /Applications and ~/Applications, and is signature-checked
 A saved CrossOver location always wins over detection; **Get CrossOver** links to
 https://www.codeweavers.com/crossover when it is absent. Routine explanatory
 paragraphs are removed. `--engine-selection-check` covers absent, present,
-renamed, invalid and saved-choice cases; `XODUS_ENGINE_RENDER_DIRECTORY` saves
+renamed, invalid and saved-choice cases; `ODE_ENGINE_RENDER_DIRECTORY` saves
 detached configurator PNGs.
 
 REQ95 / COR132-134 launch routing uses the Settings default admission unless
@@ -85,7 +85,7 @@ logs remain available in the game's existing Actions menu, not below Play.
 The isolated engine-selection check also exercises synthetic lifecycle cancellation
 and the old NMS broker-teardown receipt shape without launching a real game.
 
-REQ106 adds only the top-level `Xodus` folder on currently mounted volumes directly
+REQ106 adds only the top-level `Ode` folder on currently mounted volumes directly
 under `/Volumes` or `~/Mounts` to existing saved/registered discovery roots.
 Mounted reads have a three-second deadline and retain their worker reservation
 until a blocked syscall returns; discovery shares the existing 512-child budget.
@@ -196,8 +196,8 @@ RO/en-US, limit-eight responses captured from the signed a31 producer, including
 DLC-only and failed-candidate pages. Its test backend adds a separately labelled
 synthetic seventh exhausted page; that is not claimed as a live observation.
 
-`swift run XodusPreview --self-check` exercises the detached presentation.
-Optionally set `XODUS_REFINEMENT_EVIDENCE` to an existing private output directory
+`swift run OdePreview --self-check` exercises the detached presentation.
+Optionally set `ODE_REFINEMENT_EVIDENCE` to an existing private output directory
 to save synthetic light/dark cover and constrained welcome PNGs. No window,
 account read, service connection or installed-product observation is involved.
 
@@ -289,11 +289,11 @@ origin: `diagnosticLifetime`, `stdoutQueue`, `stderrQueue`, `eventQueue` or
 fix; the owned management child's exit can be a consequence of transport
 retirement. The existing 1MiB diagnostic lifetime, 128-chunk/event queues and
 64-pending-request limits remain unchanged. Source-only reproductions run with
-`swift run XodusManagementChecks --overflow-checks`; they distinguish candidate
+`swift run OdeManagementChecks --overflow-checks`; they distinguish candidate
 paths but do not identify the origin of a prior uninstrumented installed failure.
 
 Descriptor measurement is disabled unless the app process has the exact
-`XODUS_DESCRIPTOR_METRICS=1` opt-in. Its owned launcher forwards only that exact
+`ODE_DESCRIPTOR_METRICS=1` opt-in. Its owned launcher forwards only that exact
 value in addition to the existing operational environment allowlist. It does not
 forward arbitrary environment variables or change the fixed Rust log level.
 
@@ -303,14 +303,14 @@ and applies pipe backpressure instead of dropping a response fragment. The
 stream retains its overflow guard; frame, diagnostic-lifetime, event and request
 limits and account admission are unchanged. Cancelling a full stream wakes its
 owned reader; transport failure never replays a mutation. Run
-`swift run XodusManagementChecks --overflow-checks` for delayed-consumer byte
+`swift run OdeManagementChecks --overflow-checks` for delayed-consumer byte
 and frame preservation, exact capacity and cancellation checks. The installed
 950 incident established `stdoutQueue` count 129, not its triggering payload or
 a causal relationship to observed SwiftUI CPU work. Passing synthetic checks
 does not establish an installed recurrence-free interval.
 
 Account dismissal has an independent focused source check:
-`swift run XodusPreview --account-presentation-check`. It renders the real
+`swift run OdePreview --account-presentation-check`. It renders the real
 Account footer detached during a synthetic in-flight status read, activates
 its Close button and verifies Escape binding, dismissal callback, protected
 account guards and completion of the unrelated read. It creates no window or
@@ -507,8 +507,8 @@ describe account recovery first, then aggregate-library refresh, never infer
 ownership loss from unrelated missing metadata.
 The existing public descriptor cache already persists scoped metadata for five
 minutes; do not create account ownership records from that cache.
-Synthetic source checks use `swift run XodusPreview --library-access-check`
-and `swift run XodusPreview --game-operation-check`; these do not establish
+Synthetic source checks use `swift run OdePreview --library-access-check`
+and `swift run OdePreview --game-operation-check`; these do not establish
 the disabled branch or successful installation of any title in a running app.
 
 The recurring Discover Halloween shelf uses a provisional local Gregorian
@@ -564,7 +564,7 @@ binding before publishing consent rather than stamping a new account onto
 an old title-access decision.
 
 The default `--game-operation-check` remains window-free. The explicit
-`XODUS_NATIVE_CONSENT_PRESENTATION_CHECK=1 swift run XodusPreview --game-operation-check`
+`ODE_NATIVE_CONSENT_PRESENTATION_CHECK=1 swift run OdePreview --game-operation-check`
 opt-in also creates an offscreen, ordered-back, non-key synthetic host to
 observe the old native detail sheet detach and a distinct consent sheet
 attach, followed by Cancel. It must run only under an allocated native
@@ -607,7 +607,7 @@ facts. Catalog and installed config titles may differ for the same StoreID;
 the header action uses the displayed catalog name without rewriting config.
 
 Settings offers a persistent default install folder and a return to the original
-`~/Games/Xodus` default. Under REQ110, a new game's actual review shows an editable
+`~/Games/Xode` default. Under REQ110, a new game's actual review shows an editable
 **Install folder** root and native **Browse…**, with the resolved game destination
 shown separately and following the draft root immediately. Tab or Return
 validates the edited root off-main; free-space information is withheld until
@@ -746,7 +746,7 @@ rebuild that replaces the editor keeps the open search focused.
 `--search-performance-check` drives the real session against the single-slot
 fixture producer (2 s synthetic latency) and reports time-to-first-result,
 repeated-query and superseded-query timing plus main run-loop gaps; set
-`XODUS_SEARCH_EVIDENCE` to a private directory for detached loading-state PNGs.
+`ODE_SEARCH_EVIDENCE` to a private directory for detached loading-state PNGs.
 These are synthetic measurements, not installed input latency. Horizontal shelves and its main scroll view hide indicators without
 changing native scrolling or accessibility routes. Genre shelves are bounded
 cached projections keyed by search scope and metadata revision; selection

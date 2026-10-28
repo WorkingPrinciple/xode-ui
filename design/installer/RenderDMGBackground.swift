@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Renders the X Ode disk-image background (original artwork) at 1x and 2x.
-// swiftc Sources/XodusCore/XOdeMark.swift design/installer/RenderDMGBackground.swift -o /tmp/RenderDMGBackground
+// swiftc Sources/OdeCore/XOdeMark.swift design/installer/RenderDMGBackground.swift -o /tmp/RenderDMGBackground
 // /tmp/RenderDMGBackground design/installer
 // Finder layout (points, top-left origin, window 660×400): app icon at (165, 190), Applications at (495, 190), icon size 128.
 import CoreGraphics

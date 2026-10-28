@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import Foundation
-import XodusCore
+import OdeCore
 
 extension Checks {
     /// M1: evidence-grounded package-type detection. Every case pins gathered

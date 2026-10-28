@@ -7,7 +7,7 @@ import sys
 
 root = Path(__file__).resolve().parent.parent
 source = root / "docs" / "contracts" / "management-v1.schema.json"
-target = root / "Sources" / "XodusManagement" / "Resources" / source.name
+target = root / "Sources" / "OdeManagement" / "Resources" / source.name
 if source.read_bytes() != target.read_bytes():
     sys.exit("Management schema mismatch: update both contract copies from the accepted backend source.")
 print("Management schema SHA256:", hashlib.sha256(target.read_bytes()).hexdigest())

@@ -28,7 +28,7 @@ class DistributionChecks(unittest.TestCase):
         if (app / COMPONENT_PATHS["app"]).read_bytes() != b"Never executed neutral component":
             raise ValueError("Signed app verification failed")
         return {"app": {
-            "identifier": "io.github.dragoshont.xodus",
+            "identifier": "com.workingprinciple.xode",
             "teamIdentifier": team_id,
             "certificateSha1": identity,
             "cdhash": "d" * 40,
@@ -53,7 +53,7 @@ class DistributionChecks(unittest.TestCase):
             path = app / relative
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(b"Never executed neutral component")
-        management = app / "Contents/Resources/XodusAppFoundation_XodusManagement.bundle"
+        management = app / "Contents/Resources/OdeApp_OdeManagement.bundle"
         for relative in RUNTIME_RESOURCES:
             path = management / relative
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -107,7 +107,7 @@ class DistributionChecks(unittest.TestCase):
             self.assertNotIn("sha256", component)
             self.assertNotIn("bytes", component)
             self.assertEqual(component["signatureVerification"], {
-                "identifier": "io.github.dragoshont.xodus",
+                "identifier": "com.workingprinciple.xode",
                 "teamIdentifier": "M62Z4M5EUY",
             })
 
@@ -119,7 +119,7 @@ class DistributionChecks(unittest.TestCase):
             executable.write_bytes(b"Executable after code signing")
             with patch("distribution_manifest.verify_developer_id_bundle",
                        return_value={"app": {
-                           "identifier": "io.github.dragoshont.xodus",
+                           "identifier": "com.workingprinciple.xode",
                            "teamIdentifier": "M62Z4M5EUY",
                            "certificateSha1": TEST_SIGNING_IDENTITY,
                            "cdhash": "d" * 40,
@@ -217,7 +217,7 @@ class DistributionChecks(unittest.TestCase):
             (app / "Contents/Resources/distribution-components.json").unlink()
             value = resource_inventory(app)
             paths = {item["path"] for item in value["resources"]}
-            self.assertIn("XodusAppFoundation_XodusManagement.bundle/LaunchRecipes/title-profiles-v1.json",
+            self.assertIn("OdeApp_OdeManagement.bundle/LaunchRecipes/title-profiles-v1.json",
                           paths)
             self.assertTrue(all(item["classification"] == "runtime-needed"
                                 and len(item["sha256"]) == 64 and item["bytes"] > 0
@@ -242,7 +242,7 @@ class DistributionChecks(unittest.TestCase):
                 resource_inventory(app)
 
     def test_resource_inventory_scans_non_json_resources_for_developer_paths(self):
-        for name in ("NOTICE.txt", "Xodus.icns"):
+        for name in ("NOTICE.txt", "Ode.icns"):
             with self.subTest(name=name), tempfile.TemporaryDirectory() as tmp:
                 app, _ = self.fixture(Path(tmp).resolve())
                 (app / "Contents/Resources/distribution-components.json").unlink()
@@ -252,7 +252,7 @@ class DistributionChecks(unittest.TestCase):
                     resource_inventory(app)
 
     def test_changed_binary_and_removed_notice_are_not_admitted(self):
-        for target in ("Contents/MacOS/Xodus", "Contents/Resources/XodusAppFoundation_XodusManagement.bundle/CompatibilityData/AWACY-LICENSE.txt"):
+        for target in ("Contents/MacOS/Ode", "Contents/Resources/OdeApp_OdeManagement.bundle/CompatibilityData/AWACY-LICENSE.txt"):
             with self.subTest(target=target), tempfile.TemporaryDirectory() as tmp:
                 app, _ = self.fixture(Path(tmp).resolve())
                 (app / target).write_bytes(b"Altered")
@@ -317,7 +317,7 @@ class DistributionChecks(unittest.TestCase):
             app, _ = self.fixture(Path(tmp).resolve())
             manifest = app / "Contents/Resources/distribution-components.json"
             manifest.unlink()
-            broker = app / "Contents/Resources/XodusCredentialBroker.json"
+            broker = app / "Contents/Resources/OdeCredentialBroker.json"
             broker.write_text(json.dumps({"version": 1, "sha256": "c" * 64, "bytes": 123}))
             source = {"commit": "a" * 40, "tree": "b" * 40}
             write_manifest(app, source, source, Path(tmp).resolve() / "source.tar")
@@ -334,12 +334,12 @@ class DistributionChecks(unittest.TestCase):
             root = Path(tmp).resolve()
             app, _ = self.fixture(root)
             (app / "Contents/Resources/distribution-components.json").unlink()
-            interpreter = app / "Contents/Resources/XodusPython/bin/python3"
+            interpreter = app / "Contents/Resources/OdePython/bin/python3"
             interpreter.parent.mkdir(parents=True)
             interpreter.write_bytes(b"neutral interpreter")
             from shipping_pair import owned_bytes
             metadata = {"files": {"bin/python3": owned_bytes(interpreter)[0]}}
-            (app / "Contents/Resources/XodusPython.json").write_text(json.dumps(metadata))
+            (app / "Contents/Resources/OdePython.json").write_text(json.dumps(metadata))
             source = {"commit": "a" * 40, "tree": "b" * 40}
             with patch("python_runtime.verify_runtime") as verify:
                 write_manifest(app, source, source, root / "source.tar")
@@ -353,7 +353,7 @@ class DistributionChecks(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             app, _ = self.fixture(Path(tmp).resolve())
             self.resolve_fixture_obligations(app)
-            (app / "Contents/Resources/XodusCredentialBroker.json").write_text(
+            (app / "Contents/Resources/OdeCredentialBroker.json").write_text(
                 json.dumps({"version": 1, "sha256": "c" * 64, "bytes": 123}))
             with self.assertRaisesRegex(ValueError, "Optional distribution inventory"):
                 self.blockers(app)

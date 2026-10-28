@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import Foundation
-import XodusCore
+import OdeCore
 
 struct CheckFailure: Error, CustomStringConvertible {
     let description: String
@@ -58,7 +58,7 @@ let checks: [(String, () throws -> Void)] = [
         try require(decision(Fixtures.games[0], fingerprint: other).reason != nil, "Pair mismatch must block")
     }),
     ("Architecture mismatch blocks package", {
-        let other = RuntimeFingerprint(os: "Fixture macOS", architecture: "x86_64", runtime: "fixture-xodus-pair-1")
+        let other = RuntimeFingerprint(os: "Fixture macOS", architecture: "x86_64", runtime: "fixture-ode-pair-1")
         try require(decision(Fixtures.games[2], fingerprint: other).reason ==
                     "This package architecture does not match the current configuration.",
                     "Architecture must not be guessed")

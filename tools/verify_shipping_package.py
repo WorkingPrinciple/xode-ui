@@ -17,30 +17,30 @@ from package_resources import verify_resources
 def main():
     stage = Path(sys.argv[1])
     require(stage.is_absolute() and stage.resolve(strict=True) == stage, "Noncanonical package stage")
-    app = stage / "Xodus.app"
+    app = stage / "Ode.app"
     record = json.loads((stage / "paired-inputs.json").read_bytes(), object_pairs_hook=unique_object)
     source, tree = record["approvedAppSourceCommit"], record["approvedAppSourceTree"]
     hex_value(source, 40)
     hex_value(tree, 40)
     for key, relative in [
-        ("signedBundledCLI", "Contents/Resources/XodusEngine/xodus-cli"),
-        ("signedHelper", "Contents/MacOS/XodusAuthHost"),
+        ("signedBundledCLI", "Contents/Resources/OdeEngine/ode-cli"),
+        ("signedHelper", "Contents/MacOS/OdeAuthHost"),
     ]:
         path = app / relative
         expected = record[key]
         owned_bytes(path, expected["sha256"], expected["bytes"])
         with path.open("rb") as stream:
             require(struct.unpack("<II", stream.read(8)) == (0xFEEDFACF, 0x0100000C), "Expected arm64 Mach-O")
-    launcher = app / "Contents/MacOS/Xodus"
+    launcher = app / "Contents/MacOS/Ode"
     owned_bytes(launcher)
     with launcher.open("rb") as stream:
         require(struct.unpack("<II", stream.read(8)) == (0xFEEDFACF, 0x0100000C), "Expected arm64 launcher")
     expected_pins = swift_pins(source, tree, record["signedBundledCLI"], record["signedHelper"]).encode()
-    pin_path = stage / "source/Sources/XodusPreview/ShippingPairPins.swift"
+    pin_path = stage / "source/Sources/OdePreview/ShippingPairPins.swift"
     require(pin_path.read_bytes() == expected_pins
             and hashlib.sha256(expected_pins).hexdigest() == record["generatedPinsSHA256"],
             "Generated compiler pins changed")
-    metadata = app / "Contents/Resources/XodusAuthHost.json"
+    metadata = app / "Contents/Resources/OdeAuthHost.json"
     expected_receipt = (json.dumps({"version": 1, "sha256": record["signedHelper"]["sha256"],
                                   "sourceCommit": source}, sort_keys=True) + "\n").encode()
     owned_bytes(metadata, hashlib.sha256(expected_receipt).hexdigest(), len(expected_receipt))
@@ -48,12 +48,12 @@ def main():
         broker = record["frozenCredentialBroker"]
         require(type(broker) is dict and set(broker) == {"version", "sha256", "bytes"}
                 and type(broker["version"]) is int and broker["version"] == 1, "Invalid frozen broker pin")
-        owned_bytes(stage / "CredentialBroker/XodusCredentialBroker", broker["sha256"], broker["bytes"])
+        owned_bytes(stage / "CredentialBroker/OdeCredentialBroker", broker["sha256"], broker["bytes"])
         expected = (json.dumps(broker, sort_keys=True) + "\n").encode()
-        owned_bytes(app / "Contents/Resources/XodusCredentialBroker.json",
+        owned_bytes(app / "Contents/Resources/OdeCredentialBroker.json",
                     hashlib.sha256(expected).hexdigest(), len(expected))
     else:
-        require(not (app / "Contents/Resources/XodusCredentialBroker.json").exists(),
+        require(not (app / "Contents/Resources/OdeCredentialBroker.json").exists(),
                 "Unreviewed broker metadata")
     source_root = stage / "source"
     for target, original in [
@@ -65,7 +65,7 @@ def main():
         original_identity, _ = owned_bytes(original)
         owned_bytes(target, original_identity["sha256"], original_identity["bytes"])
     info = plistlib.loads((app / "Contents/Info.plist").read_bytes())
-    require(info.get("CFBundleExecutable") == "Xodus" and info.get("CFBundlePackageType") == "APPL"
+    require(info.get("CFBundleExecutable") == "Ode" and info.get("CFBundlePackageType") == "APPL"
             and info.get("LSMinimumSystemVersion") == "14.0",
             "Unexpected packaged executable/deployment baseline")
     resources = app / "Contents/Resources"
@@ -75,8 +75,8 @@ def main():
                 "Private capsule differs from explicit packaging input")
     else:
         require(not capsule.exists() and not capsule.is_symlink(), "Unreviewed private capsule")
-    python_root = resources / "XodusPython"
-    python_manifest = resources / "XodusPython.json"
+    python_root = resources / "OdePython"
+    python_manifest = resources / "OdePython.json"
     if "privatePythonRuntime" in record:
         _, data = owned_bytes(python_manifest, bounded=4 * 1024 * 1024)
         metadata = json.loads(data, object_pairs_hook=unique_object)
@@ -89,10 +89,10 @@ def main():
         if "privateLaunchAssociation" in record:
             _, data = owned_bytes(capsule / "manifest.json", bounded=4096)
             require(not json.loads(data)["enabled"], "Enabled capsule requires a packaged interpreter")
-    require(not (resources / "XodusAppFoundation_XodusPreview.bundle").exists()
-            and not (resources / "XodusAppFoundation_XodusAuthHost.bundle").exists(),
+    require(not (resources / "OdeApp_OdePreview.bundle").exists()
+            and not (resources / "OdeApp_OdeAuthHost.bundle").exists(),
             "Shipping package contains preview/private check resources")
-    management = resources / "XodusAppFoundation_XodusManagement.bundle"
+    management = resources / "OdeApp_OdeManagement.bundle"
     verify_resources(management)
     layouts = [management, management / "Contents/Resources"]
     schemas = ("management-v1.schema.json", "runtime-providers-v1.schema.json")
@@ -103,7 +103,7 @@ def main():
                 for layout in layouts if layout != selected for name in schemas),
             "Mixed or duplicate SwiftPM management resources")
     for name in schemas:
-        expected, _ = owned_bytes(source_root / "Sources/XodusManagement/Resources" / name)
+        expected, _ = owned_bytes(source_root / "Sources/OdeManagement/Resources" / name)
         owned_bytes(selected / name, expected["sha256"], expected["bytes"])
     archived_inputs = {}
     with tarfile.open(stage / "source.tar") as archive:
@@ -111,11 +111,11 @@ def main():
             if member.isfile() and (member.name == "Package.swift" or member.name.startswith("Sources/")):
                 require(member.name not in archived_inputs, "Duplicate archived source input")
                 data = archive.extractfile(member).read()
-                if member.name == "Sources/XodusPreview/ShippingPairPins.swift":
+                if member.name == "Sources/OdePreview/ShippingPairPins.swift":
                     data = expected_pins
                 identity, _ = owned_bytes(source_root / member.name, hashlib.sha256(data).hexdigest(), len(data))
                 archived_inputs[member.name] = identity
-    require(all("Sources/XodusManagement/Resources/" + name in archived_inputs for name in schemas),
+    require(all("Sources/OdeManagement/Resources/" + name in archived_inputs for name in schemas),
             "Source archive must bind both packaged management schemas")
     # Limit inventory to the new owned package, never another app/game/root.
     package = {}

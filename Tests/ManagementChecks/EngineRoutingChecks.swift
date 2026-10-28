@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import Foundation
-import XodusCore
-import XodusManagement
+import OdeCore
+import OdeManagement
 
 extension Checks {
     /// M3: the pure launch-routing decision. Every case pins (package type x

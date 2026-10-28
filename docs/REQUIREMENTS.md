@@ -64,7 +64,7 @@ No fixture render or synthetic operation check counts as real game acceptance.
 | RUNTIME-02 | Independent components and isolated generations | Engine provenance/version/artifact identity and graphics backend/provenance/version/artifact identity are represented independently. A Wine 11 + D3DMetal 4 configuration is accepted as configuration, not verified gameplay. Changes to either component invalidate applicable evidence and require a new isolated prefix generation; no old bottle/save reuse, migration or deletion occurs silently. Versioned configuration negotiation must not silently rewrite management C95. |
 | PARITY-01 | Independent account entitlement and Game Pass membership | A title may show both Owned and In Game Pass. Both filters include overlapping titles. Owned means held by the PC-library account; when acquisition kind is absent the app records Unknown and never claims a paid purchase. |
 | PARITY-02 | Xbox game-service profile and achievements | Account-bound caches must match the current service account hash. Profile hides absent bio/location. Achievements use exact decimal title IDs, preserve earned/progress/G fields, and never present an incomplete page as complete. Recent play history never becomes ownership. |
-| PARITY-03 | Consoles and remote-play handoff | Show only cached consoles actually returned by Xbox. Console IDs are never placed in URLs. Remote Play opens `https://www.xbox.com/remoteplay` in the default browser; Xodus provides no wake, power, install-to-console or native streaming command. |
+| PARITY-03 | Consoles and remote-play handoff | Show only cached consoles actually returned by Xbox. Console IDs are never placed in URLs. Remote Play opens `https://www.xbox.com/remoteplay` in the default browser; Ode provides no wake, power, install-to-console or native streaming command. |
 | PARITY-04 | Dedicated Engines destination | Account, Settings and keyboard commands open one Engines page that reuses the governed runtime configuration UI. CrossOver observation, declared GPTK/Wine and graphics identities remain independent, and unsupported download/removal/runner actions stay absent. |
 
 ## SDD-LIB source acceptance
@@ -85,7 +85,7 @@ is authorized by these statuses.
 | SDD-LIB-07 | Implemented source distinction: code 11 is package authorization/account-or-edition resolution, not unowned or Mac-unsupported. The package-check controller preserves prior compatibility/collection facts; code 12 remains separate. |
 | SDD-LIB-08 | Unresolved: exact Launcher `9PGW18NPBZV5` and playable Windows `9NBLGGH2JHXJ` are distinct public identities; metadata is not access proof. Older `BZ8MZF8444Z5` has no observed PC SKU. No title-name substitution, new OAuth or broad licence experiments. Root owns further exact identity/access tracing. |
 
-Focused neutral command: `swift run XodusPreview --library-access-check`.
+Focused neutral command: `swift run OdePreview --library-access-check`.
 It reaches the live `LibraryGame.collection`, local-record and presentation
 selection seam plus `PCGamesController` with synthetic transport. Full native
 checks additionally exercise public discovery failures and real controller
@@ -95,7 +95,7 @@ package-check failure paths using synthetic scripts.
 test reproduced seven failures before the fix. Final source passed 104 focused
 Library access checks, 15 core checks, 2,978 management checks, 172 preview
 checks, 934 native-session checks, 152 native-host checks and 19 credential-wire
-checks. Debug build and the shipping-configuration Release `XodusPreview`
+checks. Debug build and the shipping-configuration Release `OdePreview`
 compile passed without signing or packaging. The existing full `tools/check.sh`
 gate stopped at the shipping test target because this Mac's Command Line Tools
 SDK cannot resolve `XCTest`; that gate is **not PASS** and requires the existing
@@ -137,4 +137,4 @@ was performed.
 
 ## Prototype-specific acceptance
 
-P-01: Visible "Fixture preview" notice in every main screen and sheets; no action is named simply "Install" or "Play" when it only simulates. P-02: No network clients, credentials, subprocess runtime adapter or package IO in the preview. P-03: `swift build`, `swift run XodusFixtureChecks`, and `swift run XodusPreview --self-check` pass on the isolated Mac tooling directory (no XCTest/Testing dependency; those frameworks are absent from the tested CLT). P-04: original Library, Discover/Search, detail/install, Downloads, onboarding, blocked and error SVGs are editable and reproducible. P-05: one public durable branch and one draft PR, no merge.
+P-01: Visible "Fixture preview" notice in every main screen and sheets; no action is named simply "Install" or "Play" when it only simulates. P-02: No network clients, credentials, subprocess runtime adapter or package IO in the preview. P-03: `swift build`, `swift run OdeFixtureChecks`, and `swift run OdePreview --self-check` pass on the isolated Mac tooling directory (no XCTest/Testing dependency; those frameworks are absent from the tested CLT). P-04: original Library, Discover/Search, detail/install, Downloads, onboarding, blocked and error SVGs are editable and reproducible. P-05: one public durable branch and one draft PR, no merge.

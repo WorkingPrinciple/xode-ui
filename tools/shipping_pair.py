@@ -21,12 +21,12 @@ CARGO_LOCK_SHA256 = "b03657f83cbf14dbf1f4b2cc70fa51ffe75e14934b816b4e21ae103f29a
 SOURCE_ARCHIVE_NAME = "xodus-cli-beta-39995796-source.tar"
 SOURCE_ARCHIVE_SHA256 = "23374465684a78bba2fb1c3e5264cfa21ee17d932612d0f4cec12a3c44e17663"
 SOURCE_ARCHIVE_BYTES = 10_188_800
-FEATURES = {"xodus": [], "xodus-cli": [], "xodus-management": ["live"],
+FEATURES = {"ode": [], "ode-cli": [], "ode-management": ["live"],
             "apple-native-keyring-store": ["keychain", "security-framework"]}
 PROFILE = {"opt_level": "3", "debuginfo": 0, "debug_assertions": False,
            "overflow_checks": False, "test": False}
 COMMAND = ["cargo", "build", "--release", "--offline", "--locked", "-q", "-p",
-           "xodus-cli", "--bin", "xodus-cli", "--target", "aarch64-apple-darwin",
+           "ode-cli", "--bin", "ode-cli", "--target", "aarch64-apple-darwin",
            "--no-default-features", "--message-format=json"]
 
 

@@ -6,7 +6,7 @@ on run arguments
         set ownedProcesses to every application process whose unix id is ownedPID
         if (count of ownedProcesses) is not 1 then error "Exact owned process unavailable."
         set ownedProcess to item 1 of ownedProcesses
-        if bundle identifier of ownedProcess is not "io.github.dragoshont.xodus.development" then error "Unexpected bundle identity."
+        if bundle identifier of ownedProcess is not "com.workingprinciple.xode.development" then error "Unexpected bundle identity."
         if (count of windows of ownedProcess) is not 1 then error "Refusing Settings while another owned window is open."
         set mainWindow to window "Ode to X" of ownedProcess
         if (count of sheets of mainWindow) is not 0 then error "Refusing Settings during a modal flow."
@@ -21,12 +21,12 @@ on run arguments
         end repeat
         if (count of settingsWindows) is not 1 then error "Exact native Settings window unavailable."
         set settingsWindow to item 1 of settingsWindows
-        set previewButton to my identifiedButton(settingsWindow, "xodus.diagnostics.preview")
+        set previewButton to my identifiedButton(settingsWindow, "ode.diagnostics.preview")
         if not enabled of previewButton then error "Diagnostic preview is disabled."
         click previewButton
         set saveButton to missing value
         repeat 50 times
-            set saveButton to my optionalIdentifiedButton(settingsWindow, "xodus.diagnostics.save")
+            set saveButton to my optionalIdentifiedButton(settingsWindow, "ode.diagnostics.save")
             if saveButton is not missing value then exit repeat
             delay 0.1
         end repeat

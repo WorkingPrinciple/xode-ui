@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "productID": "9MW9469V91LM",
+  "title": "Hollow Knight",
+  "qualification": "inactive candidate only; not applied",
+  "applyCondition": "Apply only if a verified save-and-relaunch test shows the game does not retain local saves, and only after explicit approval of this correction.",
+  "engine": "hollowknight-crossover-nativejson",
+  "environment": {
+    "ODE_PRIVATE_LOCAL_SAVES": "1",
+    "ODE_XBL_ONLINE": "1",
+    "ODE_WINE_DEBUG": "-all,warn+gdkc,err+all,+msgbox"
+  },
+  "crossOverEnvironment": {
+    "ODE_PRIVATE_LOCAL_SAVES": "1"
+  }
+}

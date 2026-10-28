@@ -17,9 +17,9 @@ swift build
 python3 tools/check_shipping_pair.py
 python3 tools/check_python_runtime.py
 sh tools/check_shipping.sh
-swift run XodusFixtureChecks
-swift run XodusManagementChecks
-swift run XodusPreview --self-check
-swift run XodusPreview --live-check
-swift run XodusAuthHost --self-check
-swift run XodusCredentialChecks --self-check
+swift run OdeFixtureChecks
+swift run OdeManagementChecks
+swift run OdePreview --self-check
+swift run OdePreview --live-check
+swift run OdeAuthHost --self-check
+swift run OdeCredentialChecks --self-check

@@ -16,7 +16,7 @@ Make four independent questions understandable: **Do I have access? Can I downlo
 
 ## Positioning
 
-An original Apple-native, standalone experience over the scoped Xodus management adapter. The mechanism is explicit entitlement, package and runtime evidence, not a broad promise that all Xbox PC games work on Mac. Heroic integration was considered; no shipping new-store plugin API has been established.
+An original Apple-native, standalone experience over the scoped Ode management adapter. The mechanism is explicit entitlement, package and runtime evidence, not a broad promise that all Xbox PC games work on Mac. Heroic integration was considered; no shipping new-store plugin API has been established.
 
 ## Operating context
 
@@ -126,7 +126,7 @@ claim purchasability or ownership.
 Profile, real Xbox connection fields, per-title Achievements, cached My Consoles and a
 dedicated Engines page. Recent Xbox activity is play history, never an owned
 library. Remote Play is an official default-browser handoff to
-`https://www.xbox.com/remoteplay`; Xodus does not wake, power, address or stream
+`https://www.xbox.com/remoteplay`; Ode does not wake, power, address or stream
 from a console. The PC collection currently supplies an active account-held
 entitlement but no paid/free acquisition kind, so the app records acquisition
 as unknown and never relabels Owned as Purchased. Owned and Game Pass membership
@@ -162,7 +162,7 @@ in [native integration](docs/NATIVE-INTEGRATION.md), never inferred from mocks.
 An explicit nonshipping `--fixture` mode retains the original demonstration;
 its non-durable jobs and invented titles never become live evidence.
 
-**User-decided:** original app code/docs/art use GPL-3.0-only, matching the user's stated Xodus licensing intent without assuming an "or later" grant.
+**User-decided:** original app code/docs/art use GPL-3.0-only, matching the user's stated Ode licensing intent without assuming an "or later" grant.
 
 **Shipping truth boundary:** the production compile excludes the offline demo's
 views/state/art/resources and development check/export paths. Live screens use

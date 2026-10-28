@@ -31,7 +31,7 @@ class ReleaseCandidateChecks(unittest.TestCase):
         contents.mkdir(parents=True, exist_ok=True)
         resources = contents / "Resources"
         resources.mkdir()
-        (resources / "Xodus.icns").write_bytes(b"icns neutral icon")
+        (resources / "Ode.icns").write_bytes(b"icns neutral icon")
         engine_notices = resources / "EngineNotices"
         engine_notices.mkdir()
         (engine_notices / "NOTICE.txt").write_text("Calimocho notice fixture\n")
@@ -49,8 +49,8 @@ class ReleaseCandidateChecks(unittest.TestCase):
     def fixture(self, root):
         helper = b"Neutral Windows helper. Never executed."
         cli = b"Neutral CLI containing " + helper
-        (root / "xodus-cli").write_bytes(cli)
-        (root / "xodus-window-monitor.exe").write_bytes(helper)
+        (root / "ode-cli").write_bytes(cli)
+        (root / "ode-window-monitor.exe").write_bytes(helper)
         release.CLI_SIZE = refresh_tool.CLI_BYTES = len(cli)
         release.HELPER_SIZE = refresh_tool.WINDOWS_HELPER_BYTES = len(helper)
         notarization = root / "notarization"
@@ -95,7 +95,7 @@ class ReleaseCandidateChecks(unittest.TestCase):
                 self.assertFalse(receipt["standaloneNotarized"])
                 self.assertIsNone(receipt["combinedAppleSubmission"])
                 self.assertTrue(receipt["outerAppNotarizationRequired"])
-                (root / "xodus-cli").write_bytes(b"Unknown or altered binary")
+                (root / "ode-cli").write_bytes(b"Unknown or altered binary")
                 with self.assertRaises(ValueError):
                     release.frozen_payloads(root, cli_hash)
 
@@ -176,7 +176,7 @@ class ReleaseCandidateChecks(unittest.TestCase):
                     release.frozen_payloads(root, cli_hash)
 
     def test_altered_producer_receipt_or_helper_is_rejected(self):
-        for target in ("build-manifest.json", "xodus-window-monitor.exe"):
+        for target in ("build-manifest.json", "ode-window-monitor.exe"):
             with self.subTest(target=target), tempfile.TemporaryDirectory() as temporary:
                 root = Path(temporary).resolve()
                 cli_hash, helper_hash, manifest_hash = self.unnotarized_fixture(root)
@@ -204,10 +204,10 @@ class ReleaseCandidateChecks(unittest.TestCase):
 
     def test_swift_resource_refresh_and_release_pins_agree(self):
         project = Path(__file__).resolve().parent.parent
-        lifecycle = (project / "Sources/XodusPreview/NativeGameLifecycle.swift").read_text()
-        producer = (project / "Sources/XodusPreview/ShippingProducerPins.swift").read_text()
-        configuration = (project / "Sources/XodusPreview/NativeLaunchConfiguration.swift").read_text()
-        recipe_bytes = (project / "Sources/XodusManagement/Resources/LaunchRecipes/title-runtime-v1.json").read_bytes()
+        lifecycle = (project / "Sources/OdePreview/NativeGameLifecycle.swift").read_text()
+        producer = (project / "Sources/OdePreview/ShippingProducerPins.swift").read_text()
+        configuration = (project / "Sources/OdePreview/NativeLaunchConfiguration.swift").read_text()
+        recipe_bytes = (project / "Sources/OdeManagement/Resources/LaunchRecipes/title-runtime-v1.json").read_bytes()
         recipe = json.loads(recipe_bytes)
         self.assertIn(f'static let cliSHA256 = "{pins.CLI_SHA256}"', lifecycle)
         self.assertIn(f'static let commit = "{pins.PRODUCER}"', producer)
@@ -227,7 +227,7 @@ class ReleaseCandidateChecks(unittest.TestCase):
         self.assertNotIn("/Users/", recipe_bytes.decode("utf-8"))
         self.assertNotIn("receiptPath", recipe_bytes.decode("utf-8"))
         profiles = json.loads(
-            (project / "Sources/XodusManagement/Resources/LaunchRecipes/title-profiles-v1.json")
+            (project / "Sources/OdeManagement/Resources/LaunchRecipes/title-profiles-v1.json")
             .read_text())
         self.assertTrue(all("sourceRecipe" not in item and "sourceRecipeSHA256" not in item
                             for item in profiles["profiles"] + profiles["providerOverrides"]))
@@ -241,7 +241,7 @@ class ReleaseCandidateChecks(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary).resolve()
             cli_hash, helper_hash = self.fixture(root)
-            cli, helper = root / "xodus-cli", root / "xodus-window-monitor.exe"
+            cli, helper = root / "ode-cli", root / "ode-window-monitor.exe"
             with patch.object(refresh_tool, "CLI_SHA256", cli_hash), \
                     patch.object(refresh_tool, "WINDOWS_HELPER_SHA256", helper_hash):
                 refresh_tool.validate_payload_pair(cli, helper, pins.PRODUCER, pins.PRODUCER_TREE)
@@ -294,7 +294,7 @@ class ReleaseCandidateChecks(unittest.TestCase):
                 def read_asset(path, *args, **kwargs):
                     if Path(path) == background:
                         return asset_identity, b"II*\x00neutral background"
-                    if Path(path).name == "Xodus.icns":
+                    if Path(path).name == "Ode.icns":
                         return asset_identity, b"icns neutral icon"
                     if Path(path).name == "NOTICE.txt":
                         return asset_identity, b"Calimocho notice fixture\n"
@@ -364,7 +364,7 @@ class ReleaseCandidateChecks(unittest.TestCase):
             cli_hash, helper_hash = self.fixture(root)
             with patch.object(release, "CLI_SHA256", cli_hash), patch.object(release, "HELPER_SHA256", helper_hash):
                 release.frozen_payloads(root)
-                helper = root / "xodus-window-monitor.exe"
+                helper = root / "ode-window-monitor.exe"
                 original = helper.read_bytes()
                 helper.write_bytes(b"Changed helper")
                 with self.assertRaises(ValueError):

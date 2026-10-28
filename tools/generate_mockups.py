@@ -55,7 +55,7 @@ def chrome(active="Library", search=None, search_y=414):
     pieces = []
     for x, fill in [(28, "#fa625a"), (50, "#f5bf50"), (72, "#53bd69")]:
         pieces.append(f'<circle cx="{x}" cy="27" r="6.5" fill="{fill}"/>')
-    pieces += [text(99, 34, "Xodus", 16, "#ffffff", 600),
+    pieces += [text(99, 34, "Ode", 16, "#ffffff", 600),
                rect(486, 17, 468, 58, "#132033", 29, .78, "#a6b3c3")]
     for i, tab in enumerate(["Library", "Discover", "Downloads"]):
         x = 493+i*152
@@ -152,7 +152,7 @@ def detail(blocked=False):
         y = 584+i*62
         s += text(56, y, label, 18, C["secondary"])+text(250, y, value, 19)
         s += line(56, y+23, 775)
-    s += text(56, 882, "Fixed fixture time / fixture OS / arm64 / fixture-xodus-pair-1", 15, C["secondary"])
+    s += text(56, 882, "Fixed fixture time / fixture OS / arm64 / fixture-ode-pair-1", 15, C["secondary"])
     s += text(56, 914, "Product, edition and package identities remain distinct.", 15, C["secondary"])
     if blocked:
         s += (text(849, 590, "Cannot install this fixture", 26, weight=600)
@@ -175,7 +175,7 @@ def install():
     for i, (label, value) in enumerate([("Download", "4 GB"), ("Expanded game", "8 GB"), ("Staging", "4 GB"),
                                       ("Safety reserve", "2 GB"), ("Required free", "14 GB"),
                                       ("Available (simulated)", "120 GB"), ("Destination", "Demo storage / Games"),
-                                      ("Package version", "1.0-demo"), ("Runtime pair", "fixture-xodus-pair-1")]):
+                                      ("Package version", "1.0-demo"), ("Runtime pair", "fixture-ode-pair-1")]):
         y = 372+i*34
         s += text(397, y, label, 17, C["secondary"])+text(715, y, value, 17)
     return (s+text(397, 712, "No download or install is performed. This is a simulated plan.", 16, C["secondary"])
@@ -231,7 +231,7 @@ def write(name, generate):
         encoded = base64.b64encode((ASSETS / f"{kind}.jpg").read_bytes()).decode("ascii")
         images.append(f'<image id="asset-{kind}" width="2048" height="1152" href="data:image/jpeg;base64,{encoded}"/>')
     svg = (f'<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="980" viewBox="0 0 1440 980">'
-           f'<title>Xodus v0.2 {escape(name)} fixture concept</title>'
+           f'<title>Ode v0.2 {escape(name)} fixture concept</title>'
            '<desc>Original illustrated placeholders. Editable text/vector layout. Static glass placement is not proof of native refraction.</desc>'
            f'<defs>{"".join(images)}</defs><g font-family="{TOKENS["type"]["family"]}">{body}</g></svg>')
     ET.fromstring(svg)

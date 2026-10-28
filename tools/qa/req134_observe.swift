@@ -36,7 +36,7 @@ func refuse(_ message: String) -> Never { fail("REFUSED: " + message, code: 3) }
 let environment = ProcessInfo.processInfo.environment
 let appURL = URL(fileURLWithPath: environment["XODE_APP"]
     ?? (NSHomeDirectory() + "/Applications/Ode to X Local Candidate.app"))
-let bundleIdentifier = "io.github.dragoshont.xodus.development"
+let bundleIdentifier = "com.workingprinciple.xode.development"
 let idleSeconds = Double(environment["XODE_IDLE_SECONDS"] ?? "20") ?? 20
 let stamp: String = {
     let formatter = ISO8601DateFormatter()
@@ -334,11 +334,11 @@ let deniedWords = ["Play", "Install", "Download", "Uninstall", "Remove", "Repair
                    "Sign In", "Sign Out", "Approve", "Delete", "Stop", "Cancel", "Buy", "Quit", "Discard", "Pause", "Resume",
                    "Ask Now", "Find consoles", "Choose", "Import", "Reset", "Clear"]
 let allowedIdentifiers: Set<String> = [
-    "xodus.navigation.library", "xodus.navigation.discover", "xodus.navigation.downloads", "xodus.navigation.home",
-    "xodus.account", "xodus.catalog.openSearch", "xodus.library.continuePlaying.showAll", "xodus.library.back",
-    "xodus.discover.hero.details", "xodus.welcome.acknowledgments", "xodus.library.openRecentActivity",
-    "xodus.game.description.expand", "xodus.catalog.loadMore", "xodus.settings.general", "xodus.settings.engines",
-    "xodus.settings.account", "xodus.support", "xodus.account.close"
+    "ode.navigation.library", "ode.navigation.discover", "ode.navigation.downloads", "ode.navigation.home",
+    "ode.account", "ode.catalog.openSearch", "ode.library.continuePlaying.showAll", "ode.library.back",
+    "ode.discover.hero.details", "ode.welcome.acknowledgments", "ode.library.openRecentActivity",
+    "ode.game.description.expand", "ode.catalog.loadMore", "ode.settings.general", "ode.settings.engines",
+    "ode.settings.account", "ode.support", "ode.account.close"
 ]
 let allowedMenuItems: Set<String> = ["Acknowledgments…", "Open-Source Licences…", "Settings…", "About X Ode",
                                      "Acknowledgments and Licences"]
@@ -408,7 +408,7 @@ func press(_ target: String) {
 func setSearch(_ text: String) {
     requireIdle()
     let ax = application(runningApp())
-    let fields = windows(ax).flatMap { walk($0) }.filter { ($0.record["identifier"] as? String) == "xodus.catalog.search" }
+    let fields = windows(ax).flatMap { walk($0) }.filter { ($0.record["identifier"] as? String) == "ode.catalog.search" }
     guard fields.count == 1, let field = fields.first else { fail("expected one search field, found \(fields.count)") }
     let result = AXUIElementSetAttributeValue(field.element, kAXValueAttribute as CFString, text as CFString)
     appendLog("set-search value=\(text) result=\(result.rawValue)")
@@ -502,7 +502,7 @@ func signposts(minutes: Int) {
     let process = Process()
     process.executableURL = URL(fileURLWithPath: "/usr/bin/log")
     process.arguments = ["show", "--last", "\(minutes)m", "--style", "ndjson", "--signpost", "--info",
-                         "--predicate", "subsystem == \"io.github.dragoshont.xodus\""]
+                         "--predicate", "subsystem == \"com.workingprinciple.xode\""]
     let file = outDirectory.appendingPathComponent("signposts-\(minutes)m.ndjson")
     FileManager.default.createFile(atPath: file.path, contents: nil)
     guard let handle = try? FileHandle(forWritingTo: file) else { fail("cannot write \(file.path)") }

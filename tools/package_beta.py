@@ -25,7 +25,7 @@ from signing_identity import (IDENTIFIERS, verify_developer_id_bundle,
 MINIMUM_UPDATE_BUILD = 2
 IDENTITY = "410914520BCC840C0125D3826CCF0F247F603321"
 TEAM_ID = "M62Z4M5EUY"
-APP_BUNDLE_IDENTIFIER = "io.github.dragoshont.xodus.development"
+APP_BUNDLE_IDENTIFIER = "com.workingprinciple.xode.development"
 APP_SIGNING_IDENTIFIER = IDENTIFIERS["app"]
 PRODUCER_NOTICES_SHA256 = "11091d7be26134170229d86e552b643a1c746d9de2b835cd459063df0f615af7"
 PRODUCER_NOTICES_EVIDENCE_SHA256 = "4bee37c126578d537f4c37966aa24b0123ef40f0e2ff11a4234828546a43d726"
@@ -63,8 +63,8 @@ Private-tester package only. Do not upload or redistribute publicly. The exact
 producer source is inside ZIP packages and paired with DMG packages as
 PRIVATE-TESTER-SOURCE.tar.
 
-The six local workspace crates (msixvc, msixvc-common, xodus, xodus-cli,
-xodus-management, and xodus-service) are governed by the GNU General Public License version 3, as provided in the producer repository's root LICENSE. No version-grant statement appears in that LICENSE or the producer README. The corresponding source archive includes that LICENSE.
+The six local workspace crates (msixvc, msixvc-common, ode, ode-cli,
+ode-management, and ode-service) are governed by the GNU General Public License version 3, as provided in the producer repository's root LICENSE. No version-grant statement appears in that LICENSE or the producer README. The corresponding source archive includes that LICENSE.
 
 eappx is a separate external MIT-licensed dependency; its upstream README
 credits WalkingCat and dalion619.
@@ -232,7 +232,7 @@ def validate_dmg_background(background_image):
 def create_installer_dmg(payload, artifact, product_name, identity,
                          background_image, app_bundle, run_command):
     background_record = validate_dmg_background(background_image)
-    volume_icon = app_bundle / "Contents/Resources/Xodus.icns"
+    volume_icon = app_bundle / "Contents/Resources/Ode.icns"
     icon_record, icon_data = owned_bytes(volume_icon, bounded=8 * 1024 * 1024)
     require(icon_data.startswith(b"icns"), "App volume icon is not a valid ICNS file")
     settings = Path(__file__).with_name("xode_dmg_settings.py").resolve(strict=True)
@@ -370,7 +370,7 @@ def package_beta(app, output_root, package_format, source, identity=IDENTITY,
     }
     write_receipt(receipt_path, receipt)
     try:
-        with tempfile.TemporaryDirectory(prefix="xodus-beta-", dir=package_dir) as temporary:
+        with tempfile.TemporaryDirectory(prefix="ode-beta-", dir=package_dir) as temporary:
             staging = Path(temporary)
             payload = staging / artifact_stem
             payload.mkdir(mode=0o700)

@@ -4,13 +4,13 @@ on run arguments
     set ownedPID to (item 1 of arguments) as integer
     set requestedAction to item 2 of arguments
     if requestedAction is not in {"snapshot", "Library", "Discover", "Downloads", "Account", "CheckStatus", "CloseAccount", "SearchHalo", "More", "InspectCancel"} then error "Unsupported action."
-    set navigationIDs to {"xodus.navigation.library", "xodus.navigation.discover", "xodus.navigation.downloads", "xodus.account", "xodus.account.checkStatus", "xodus.account.close", "xodus.catalog.search", "xodus.catalog.loadMore", "xodus.library.inspectFolder"}
-    set safeLabels to {"Library", "Discover", "Downloads", "Account", "Your Library", "Registered on this Mac", "Live Xodus connection - development build", "Xodus for Mac - development build", "Connect your Xodus engine", "Check your saved sign-in or sign in with Microsoft. Public browsing does not read your Keychain.", "Sign in with Microsoft", "Sign-in needs attention", "Microsoft Store search results", "PC Game Pass discovery", "No Store matches", "Search stopped"}
+    set navigationIDs to {"ode.navigation.library", "ode.navigation.discover", "ode.navigation.downloads", "ode.account", "ode.account.checkStatus", "ode.account.close", "ode.catalog.search", "ode.catalog.loadMore", "ode.library.inspectFolder"}
+    set safeLabels to {"Library", "Discover", "Downloads", "Account", "Your Library", "Registered on this Mac", "Live Ode connection - development build", "Ode for Mac - development build", "Connect your Ode engine", "Check your saved sign-in or sign in with Microsoft. Public browsing does not read your Keychain.", "Sign in with Microsoft", "Sign-in needs attention", "Microsoft Store search results", "PC Game Pass discovery", "No Store matches", "Search stopped"}
     tell application "System Events"
         set ownedProcesses to every application process whose unix id is ownedPID
         if (count of ownedProcesses) is not 1 then error "Exact owned process unavailable."
         set ownedProcess to item 1 of ownedProcesses
-        if bundle identifier of ownedProcess is not "io.github.dragoshont.xodus.development" then error "Unexpected bundle identity."
+        if bundle identifier of ownedProcess is not "com.workingprinciple.xode.development" then error "Unexpected bundle identity."
         set ownedWindows to every window of ownedProcess whose name is "Ode to X"
         if (count of ownedWindows) is not 1 then error "Expected exactly one normal, non-fixture Ode to X window."
         set ownedWindow to item 1 of ownedWindows
@@ -26,9 +26,9 @@ on run arguments
                 set identifier to my nativeNavigationIdentifier(element)
             end if
             if identifier is in navigationIDs then
-                if identifier is "xodus.catalog.search" then
+                if identifier is "ode.catalog.search" then
                     if role of element is not "AXTextField" then error "Search identifier is not a native text field."
-                else if identifier is in {"xodus.navigation.library", "xodus.navigation.discover", "xodus.navigation.downloads"} then
+                else if identifier is in {"ode.navigation.library", "ode.navigation.discover", "ode.navigation.downloads"} then
                     if role of element is not in {"AXButton", "AXRadioButton"} then error "Navigation target is not a native button or segment."
                 else
                     if role of element is not "AXButton" then error "Navigation identifier is not an actionable button."
@@ -62,7 +62,7 @@ on run arguments
                 if (count of elements) > 3000 then error "Accessibility bound exceeded after scroll."
                 repeat with element in elements
                     if exists attribute "AXIdentifier" of element then
-                        if value of attribute "AXIdentifier" of element is "xodus.library.inspectFolder" then
+                        if value of attribute "AXIdentifier" of element is "ode.library.inspectFolder" then
                             if role of element is not "AXButton" then error "Inspection identifier is not an actionable native button."
                             set end of navigationMatches to contents of element
                         end if
@@ -120,9 +120,9 @@ on nativeNavigationIdentifier(element)
         repeat with fieldName in {"AXTitle", "AXDescription"}
             if exists attribute (fieldName as text) of element then
                 set labelValue to value of attribute (fieldName as text) of element
-                if labelValue is "Library" then return "xodus.navigation.library"
-                if labelValue is "Discover" then return "xodus.navigation.discover"
-                if labelValue is "Downloads" then return "xodus.navigation.downloads"
+                if labelValue is "Library" then return "ode.navigation.library"
+                if labelValue is "Discover" then return "ode.navigation.discover"
+                if labelValue is "Downloads" then return "ode.navigation.downloads"
             end if
         end repeat
     end tell
@@ -142,14 +142,14 @@ on isNamedButton(element, expectedName)
 end isNamedButton
 
 on targetIdentifier(destination)
-    if destination is "Library" then return "xodus.navigation.library"
-    if destination is "Discover" then return "xodus.navigation.discover"
-    if destination is "Downloads" then return "xodus.navigation.downloads"
-    if destination is "Account" then return "xodus.account"
-    if destination is "CheckStatus" then return "xodus.account.checkStatus"
-    if destination is "CloseAccount" then return "xodus.account.close"
-    if destination is "SearchHalo" then return "xodus.catalog.search"
-    if destination is "More" then return "xodus.catalog.loadMore"
-    if destination is "InspectCancel" then return "xodus.library.inspectFolder"
+    if destination is "Library" then return "ode.navigation.library"
+    if destination is "Discover" then return "ode.navigation.discover"
+    if destination is "Downloads" then return "ode.navigation.downloads"
+    if destination is "Account" then return "ode.account"
+    if destination is "CheckStatus" then return "ode.account.checkStatus"
+    if destination is "CloseAccount" then return "ode.account.close"
+    if destination is "SearchHalo" then return "ode.catalog.search"
+    if destination is "More" then return "ode.catalog.loadMore"
+    if destination is "InspectCancel" then return "ode.library.inspectFolder"
     error "Unknown destination."
 end targetIdentifier

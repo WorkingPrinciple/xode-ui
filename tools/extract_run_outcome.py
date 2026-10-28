@@ -14,14 +14,14 @@ import sys
 
 # Runtime outcome lines (warn+gdkc only): fixed text plus an HRESULT, no identities.
 OUTCOMES = {
-    "signIn": re.compile(r"gdkc:.*xodus outcome: sign-in "),
-    "userAddResult": re.compile(r"gdkc:.*xodus outcome: XUserAddResult "),
-    "gameLicence": re.compile(r"gdkc:.*(xodus outcome: game licence |Microsoft-issued matching full-game licen[cs]e validated"
+    "signIn": re.compile(r"gdkc:.*ode outcome: sign-in "),
+    "userAddResult": re.compile(r"gdkc:.*ode outcome: XUserAddResult "),
+    "gameLicence": re.compile(r"gdkc:.*(ode outcome: game licence |Microsoft-issued matching full-game licen[cs]e validated"
                               r"|Authoritative Microsoft game licen[cs]e validation failed)"),
-    "storeLicenseResult": re.compile(r"gdkc:.*xodus outcome: XStoreQueryGameLicenseResult "),
+    "storeLicenseResult": re.compile(r"gdkc:.*ode outcome: XStoreQueryGameLicenseResult "),
     "signInFailure": re.compile(r"gdkc:.*user initialization failed at "),
     # L12 0fec3d7: XStore product queries report counts only.
-    "storeProducts": re.compile(r"gdkc:.*xodus outcome: XStore (entitled|by-id|associated) products "),
+    "storeProducts": re.compile(r"gdkc:.*ode outcome: XStore (entitled|by-id|associated) products "),
 }
 REQUIRED = ("signIn", "userAddResult", "gameLicence", "storeLicenseResult")
 SIGN_IN_ONLY = ("signIn", "userAddResult")
@@ -39,17 +39,17 @@ def expected(product, override=None):
     return EXPECTED.get(product, REQUIRED)
 # A kept line only passes when it carries the explicit success form; FAILED or non-zero status fails.
 SUCCESS = {
-    "signIn": re.compile(r"xodus outcome: sign-in OK status 0\.?$"),
-    "userAddResult": re.compile(r"xodus outcome: XUserAddResult status 0\.?$"),
-    "gameLicence": re.compile(r"xodus outcome: game licence validated status 0\.?$"),
-    "storeLicenseResult": re.compile(r"xodus outcome: XStoreQueryGameLicenseResult status 0 isActive 1\.?$"),
+    "signIn": re.compile(r"ode outcome: sign-in OK status 0\.?$"),
+    "userAddResult": re.compile(r"ode outcome: XUserAddResult status 0\.?$"),
+    "gameLicence": re.compile(r"ode outcome: game licence validated status 0\.?$"),
+    "storeLicenseResult": re.compile(r"ode outcome: XStoreQueryGameLicenseResult status 0 isActive 1\.?$"),
 }
 
 
 def verdict(name, lines):
     if not lines:
         return "missing"
-    outcome_lines = [line for line in lines if "xodus outcome:" in line]
+    outcome_lines = [line for line in lines if "ode outcome:" in line]
     if not outcome_lines:
         return "missing"
     return "pass" if all(SUCCESS[name].search(line) for line in outcome_lines) else "fail"

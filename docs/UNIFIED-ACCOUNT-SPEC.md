@@ -17,7 +17,7 @@ downloadability, compatibility or gameplay merely because authentication succeed
 Subsequent owner-authorized interactive test: the owner explicitly requested
 sign-out and offered to complete Microsoft login. The native account sheet's
 sign-out confirmation was invoked; the app returned to its one
-`xodus.welcome.signIn` action with sign-out no longer available. Starting that
+`ode.welcome.signIn` action with sign-out no longer available. Starting that
 action opened the bundled native auth host. Subsequently the host closed and
 the app's account control reported `Microsoft sign-in saved`, with no pending
 or welcome sign-in control. No Microsoft login fields, passwords or MFA values
@@ -92,7 +92,7 @@ The installed app and its self-signed engine were untouched and still passed
 strict deep verification. No shipping pins or sealed-input approvals changed.
 The owner's subsequent request to revoke "the other" certificate was ambiguous
 between an older Apple Development certificate shown by Xcode and the local
-Xodus identity; neither was revoked or removed without identifying the target.
+Ode identity; neither was revoked or removed without identifying the target.
 
 The subsequent foreground `auth.status` check on that Developer ID candidate
 returned `ok: true`, `state: credentialPresent`. Its initial attempt was
@@ -275,7 +275,7 @@ the existing license acquisition code, authenticates the one packed content key
 and rechecks the profile before returning it over the private socket. Keys never
 enter management JSON, logs or disk. Failure is a closed nonempty error frame.
 
-The modified staging consumer at `bc3afab` accepts `XODUS_LICENSE_SOCKET` only as
+The modified staging consumer at `bc3afab` accepts `ODE_LICENSE_SOCKET` only as
 an explicit owned private socket, with no global fallback on invalid selection.
 The generic launcher preflight and RPS bridge inherit that same endpoint.
 An explicit endpoint without service-backed licensing is rejected before
@@ -330,7 +330,7 @@ broker's owned socket was removed on parent EOF. These are distinct game-identit
 and package-read proofs, not a content-license key acquisition, consumer pairing
 or observed game process; no legacy credential source or game start was used.
 
-The existing default Xodus login and credential stores are unchanged. The new
+The existing default Ode login and credential stores are unchanged. The new
 Rust readers live in product-owned `ode_account` modules; management wiring and
 the schema generator are the integration hooks. The native route is selected
 only when the paired engine advertises the explicitly versioned operation.
@@ -343,9 +343,9 @@ the approved sealed shipping input.
 ## Decision and repository boundary
 
 Changes are required in **both repositories**. Ode to X is the native product in
-`xodus-macos-app`; its forked Xodus Rust producer is the authentication/runtime
+`ode-macos-app`; its forked Ode Rust producer is the authentication/runtime
 implementation. Authentication unification belongs primarily in that fork, not
-in Swift views, and does not require changing upstream Xodus itself.
+in Swift views, and does not require changing upstream Ode itself.
 
 The proposed smallest durable architecture extends the existing management
 credential owner and authenticated-read pattern through isolated Ode to X
@@ -354,7 +354,7 @@ browser-based frontend.
 
 ### Upstream-update constraint
 
-Keep original Xodus behavior and default build paths unchanged wherever
+Keep original Ode behavior and default build paths unchanged wherever
 possible. Put product-specific account orchestration, provider adapters and
 wire-contract extensions in separately named modules or crates in the fork.
 Reuse upstream libraries through their existing public APIs first; do not copy
@@ -378,7 +378,7 @@ not a workaround credential owner.
 Select this integration explicitly in the paired Ode to X build. An ordinary
 upstream/default build must retain its existing login, storage and service
 behavior. The new path must never silently fall back to legacy authentication.
-Do not migrate, delete or repurpose original Xodus/global credentials as a side
+Do not migrate, delete or repurpose original Ode/global credentials as a side
 effect of enabling Ode to X. Legacy removal remains limited to explicitly
 identified app-owned sessions under the migration contract below.
 
@@ -399,12 +399,12 @@ part of this work.
 
 | Owner | Required changes | Existing seams |
 | --- | --- | --- |
-| Forked Xodus, `crates/xodus` | Account-session authority, audience-specific authorization, refresh, account/generation fencing and service credential access | `tokens/manager.rs`, `tokens/backend/keychain.rs`, `auth.rs`, `api/xbox` |
-| Forked Xodus, `crates/xodus-management` | Negotiated account/capability snapshot, operation authorization, explicit recovery and coordinated logout contract | `adapter.rs`, `wire.rs`, `auth_verify.rs` |
-| Forked Xodus, `crates/xodus-cli` | Library/profile/achievement adapters using that authority; retain existing native issuance and lifecycle controls | `management_auth.rs`, `provider_credentials.rs`, `recent_library.rs`, `commands/login.rs` |
-| Forked Xodus runtime/service and private-script producer | Consume scoped authorization for the selected account; report unavailable/expired/transport failures distinctly; retire independent interactive login in the paired route | Current `xodus-service` IPC and `private-xodus-manage.py`; exact producer module for installed social helper remains to be located |
-| Ode to X, `Sources/XodusManagement` and contracts | Typed consumer of the new negotiated contract, no credentials | `WireModels.swift`, `ManagementClient.swift`, `ContractValidator.swift`, canonical schema/resources |
-| Ode to X, `Sources/XodusPreview` | One account coordinator, capability-based access, honest partial states, accessible layout and branding | `AppState`, `LiveSession`, `LiveRootView`, `PCGamesController`, `GameOperationsController`, `XboxCompanionController`, Account/Welcome views |
+| Forked Ode, `crates/ode` | Account-session authority, audience-specific authorization, refresh, account/generation fencing and service credential access | `tokens/manager.rs`, `tokens/backend/keychain.rs`, `auth.rs`, `api/xbox` |
+| Forked Ode, `crates/ode-management` | Negotiated account/capability snapshot, operation authorization, explicit recovery and coordinated logout contract | `adapter.rs`, `wire.rs`, `auth_verify.rs` |
+| Forked Ode, `crates/ode-cli` | Library/profile/achievement adapters using that authority; retain existing native issuance and lifecycle controls | `management_auth.rs`, `provider_credentials.rs`, `recent_library.rs`, `commands/login.rs` |
+| Forked Ode runtime/service and private-script producer | Consume scoped authorization for the selected account; report unavailable/expired/transport failures distinctly; retire independent interactive login in the paired route | Current `ode-service` IPC and `private-ode-manage.py`; exact producer module for installed social helper remains to be located |
+| Ode to X, `Sources/OdeManagement` and contracts | Typed consumer of the new negotiated contract, no credentials | `WireModels.swift`, `ManagementClient.swift`, `ContractValidator.swift`, canonical schema/resources |
+| Ode to X, `Sources/OdePreview` | One account coordinator, capability-based access, honest partial states, accessible layout and branding | `AppState`, `LiveSession`, `LiveRootView`, `PCGamesController`, `GameOperationsController`, `XboxCompanionController`, Account/Welcome views |
 | Ode to X packaging | New exact producer pairing, component identities and admission evidence | `tools/build_app.sh`, shipping pins, helper/broker manifests, shipping documentation |
 
 The sealed producer snapshot `28f737df46b29cc195145425e3fd1397ebc09be3`
@@ -597,7 +597,7 @@ eligibility; technical exchange success alone is not distribution permission.
 Land paired producer/schema/client changes locally, preserving existing native
 auth lifecycle and bounded IO. Retire the old interactive paths only in the
 paired Ode to X route after the new vertical slice passes parity; retain
-original Xodus default behavior. Add per-capability state and update
+original Ode default behavior. Add per-capability state and update
 `UX-FLOWS.md`, `BACKEND-CONTRACT.md`, `NATIVE-INTEGRATION.md` and shipping pins
 at implementation time; historical docs must not claim the proposal shipped.
 
@@ -614,7 +614,7 @@ at implementation time; historical docs must not claim the proposal shipped.
 | Account A -> B during refresh | A results/caches never publish into B; old grants and runtime requests fenced |
 | Logout during refresh / partial removal / process death | No resurrection; restart reconciles partial state; no success until required acknowledgements |
 | Old service or missing negotiated contract | Truthful update-required state; no fallback to separate interactive login |
-| Original/default Xodus build | Existing auth/storage/service behavior retained; Ode to X modules inactive and no implicit credential migration |
+| Original/default Ode build | Existing auth/storage/service behavior retained; Ode to X modules inactive and no implicit credential migration |
 | Upstream update | Default-path regression and paired-path contract/lifecycle tests pass; hook changes explicitly reviewed |
 | Offline, timeout, throttled or malformed response | Bounded retry policy and specific stage; no new consent or destruction of unrelated state |
 | Concurrent clicks/windows/foreground events | One flow and coalesced preparation; cancellation joins owned children |

@@ -58,15 +58,15 @@ This is implementation work beyond the immutable foundation at `44d7338`. It is 
 
 The user approved C3's native regular-glass Library direction. Source
 `a080225966a9519acad54540a19ee90041e297c2` is pushed and passed
-[exact-source CI](https://github.com/dragoshont/xodus-macos-app/actions/runs/37811471091).
+[exact-source CI](https://github.com/dragoshont/ode-macos-app/actions/runs/37811471091).
 Its separate signed reviewer is not installed and never refreshes Xbox stats.
 The shipping app remains independently admitted at `2d420d1`.
 
 Follow-up source `6485592cc99294ca206c0c07a2e3f7efbe10c815` is pushed and passed
-[exact-source CI](https://github.com/dragoshont/xodus-macos-app/actions/runs/37816907637),
+[exact-source CI](https://github.com/dragoshont/ode-macos-app/actions/runs/37816907637),
 110 presentation/888 synthetic native checks and shipping compilation. It is
 still pending live frontend acceptance and shipping admission. It extends the fixed private
-script protocol with `private-xodus-manage.py game-stats <generatedRunId>`:
+script protocol with `private-ode-manage.py game-stats <generatedRunId>`:
 no extra arguments, a 120-second deadline, the usual private status/result
 receipts and exact process-exit/status agreement. The result's `accountHash`
 (64 lowercase hex), `games` and `friends` must match the fresh 0600 cache.
@@ -77,7 +77,7 @@ account change, new game sign-in and signed-out status.
 
 Ordinary launch/foreground and Library Refresh first confirm game-service
 status; they do not initiate sign-in. A matching recent cache avoids the stats
-command. A locked, atomic 0600 refresh ledger in Xodus Application Support
+command. A locked, atomic 0600 refresh ledger in Ode Application Support
 stores only the account hash and attempt date, fencing repeated/failed requests
 inside 15 minutes even after restart. Concurrent clicks coalesce. Account
 retirement hides stats and joins its cancelled child; normal Quit fences new
@@ -85,7 +85,7 @@ jobs and joins cancellation. Xbox hours remain explicitly Xbox-wide, separate
 from the Mac installed registry's last-played time.
 
 Public media persistence is separate from personal metadata: atomic binary
-entries under `~/Library/Caches/Xodus/CatalogMedia` use SHA-256 URL names, body
+entries under `~/Library/Caches/Ode to X/CatalogMedia` use SHA-256 URL names, body
 digests, expiry, ETag/Last-Modified and a 512 MiB LRU ceiling. Restart reuse and
 304 revalidation retain image/MIME/redirect/byte/pixel guards. No cookies,
 credentials or trailers are stored; public product metadata remains a separate
@@ -133,7 +133,7 @@ browse, populated search and empty states and confirmed every job finished
 normally. The user approved the direction with the consumer-copy batch above
 required before freeze. That correction is now frozen at
 `d2be5943943363afe9cfc4708719ef6bf057c56f`, with
-[exact-source CI](https://github.com/dragoshont/xodus-macos-app/actions/runs/37822024468)
+[exact-source CI](https://github.com/dragoshont/ode-macos-app/actions/runs/37822024468)
 green. The earlier signed/captured D2 bundle remains unchanged; it does not
 contain the final copy correction. Final shipping admission remains pending.
 
@@ -203,7 +203,7 @@ HLS playback or shipping admission. Root owns capture and final admission.
 
 Frozen source is `fee7f5f186d402d2c08ca76dc9a50e638ba5c5e2`, tree
 `4363d81f0363e25982590f5fc23d6b64237d750a`.
-[Exact-source CI](https://github.com/dragoshont/xodus-macos-app/actions/runs/37676485849)
+[Exact-source CI](https://github.com/dragoshont/ode-macos-app/actions/runs/37676485849)
 passed. After independent source review, the one-use signed package retained
 the previously admitted C8 byte-for-byte. The owner independently verified
 the receipt, all 21 files and strict signatures, then freshly confirmed no
@@ -218,7 +218,7 @@ automated in deployment. Ordinary startup may perform its configured
 read-only Setup check.
 
 The owner separately observed cached Active status, the four Setup items,
-successful in-app Repair Xodus (status 0) with refreshed readiness, and the
+successful in-app Repair Ode (status 0) with refreshed readiness, and the
 Library Game Pass section header. The locked login Keychain initially blocked
 title-flow acceptance. The user completed native unlock without automation;
 the owner resumed acceptance and found two defects described below.
@@ -228,7 +228,7 @@ Remaining shelf/Install/Play/Stop outcomes are not inferred from deployment.
 
 The independently admitted `208939cb3b52e99a15f24f6c6303cb0ed0700aad`
 package passed exact CI
-[37688479927](https://github.com/dragoshont/xodus-macos-app/actions/runs/37688479927).
+[37688479927](https://github.com/dragoshont/ode-macos-app/actions/runs/37688479927).
 The owner freshly authorized normal Quit/replacement after confirming game-ended.
 The full prior `fee7f5f` app, untouched profile and identical private installed
 list were preserved through one Library reopen. All admitted files/signatures
@@ -263,7 +263,7 @@ Saved cache provenance is visible. There is no subscription end date.
 
 Explicit Check chooses only a validated loaded Discover ID outside the loaded
 S4 owned set; no loaded ownership or eligible candidate means no probe.
-`private-xodus-gamepass-status.sh <generatedRunId> <productId>` shares the
+`private-ode-gamepass-status.sh <generatedRunId> <productId>` shares the
 mutation fence and requires matching terminal status/process exit plus a strict
 result with boolean/null active, exact probeProductId and ISO checkedAt.
 Unknown/failure removes active access and exposes product recovery/Show log.
@@ -281,8 +281,8 @@ cached status and feed membership are not independent title-license receipts.
 The owner's B4 licensing and Abiotic gameplay findings are backend evidence,
 not acceptance of this app package.
 
-B9 invokes only `private-xodus-stop.sh <generatedRunId> <launchedStoreId>` for
-the one live session launched by Xodus. No process scan or unrelated-game kill
+B9 invokes only `private-ode-stop.sh <generatedRunId> <launchedStoreId>` for
+the one live session launched by Ode. No process scan or unrelated-game kill
 is added. It reserves the existing mutation fence; the shared Installed,
 Continue Playing and exact matching-tile Play control becomes Stop, disabled
 with Stopping during the request. The script result must have the exact StoreId
@@ -296,13 +296,13 @@ still leaves ordinary gameplay running. Both new script commands have a
 120-second observation deadline; installation still has no deadline.
 
 B7 changes only the fixed script directory to
-`~/Library/Application Support/Xodus/Runtime/scripts/macos`. Receipt, log,
+`~/Library/Application Support/Ode to X/State/Runtime/scripts/macos`. Receipt, log,
 game, compatibility-cache, journal and registered launcher paths are unchanged.
 The owner assembles and installs that self-contained runtime separately;
 no engine, inventory, private scripts or game DLLs are bundled by this change.
 The admitted signed C8 engine remains byte-for-byte unchanged.
 
-B8 invokes only `private-xodus-setup.sh <generatedRunId> check|repair`, using
+B8 invokes only `private-ode-setup.sh <generatedRunId> check|repair`, using
 the same private receipts, matching process exit/status and 120-second deadline.
 Ready is strictly boolean; items must contain exactly one crossover,
 environment, service and signin entry with bounded title/fix text and boolean
@@ -312,12 +312,12 @@ One read-only startup check runs once per app process, without Repair or
 sign-in. Reported unready/error state supplies a single Setup banner. Its
 focused Account route does not read unrelated launcher credentials.
 
-Explicit Repair Xodus uses the mutation fence, refuses tracked running games
+Explicit Repair Ode uses the mutation fence, refuses tracked running games
 and pending consent, blocks every Play while repairing, and joins before
 normal Quit. Game-service status reads cannot race Repair in either direction.
 The owner confirms generated launcher files are rewritten in place; legacy
 launchers and the installed registry are untouched. Repair creates the shared
-XodusGameTemplate only when missing, starts the service only when absent, and
+OdeGameTemplate only when missing, starts the service only when absent, and
 creates an absent title environment from that template; it never rebuilds an
 existing title environment or touches saves. Both installed Runtime and dev
 scripts refuse Repair with code 22 when any launch/download process exists,
@@ -355,7 +355,7 @@ The approved 2.5-hour slice requires an explicit fixed-certificate-bound
 app-owned access policy, migration without deleting the existing credential,
 and qualification with two different signed synthetic builds. One human
 migration authorization is allowed; its required UI copy is
-Xodus needs one-time Keychain approval. The game service's item is out of scope.
+Ode needs one-time Keychain approval. The game service's item is out of scope.
 
 At that boundary, no policy was implemented or qualified. Two original synthetic probes had
 different binaries and the same fixed-certificate designated requirement.
@@ -387,7 +387,7 @@ does not modify the management engine or the game service's item.
 
 **Trust and installation.** The helper is a one-request child, not a daemon.
 It is installed separately at
-`~/Library/Application Support/Xodus/CredentialBroker/XodusCredentialBroker`.
+`~/Library/Application Support/Ode to X/State/CredentialBroker/OdeCredentialBroker`.
 Each package's signed resources pin its version, SHA-256 and byte count. Packaging
 copies the approved signed artifact without rebuilding or re-signing it.
 Installation is a separate owner gate and must preserve an already installed
@@ -408,14 +408,14 @@ with a specific denial, before any item access.
 frames permit only read (including presence-only), write, delete and explicit
 migration. The token ceiling is 128 KiB; deadlines bound ordinary transport
 and explicit approval. Tokens never use argv, stdout, stderr, files or app
-logs. Only fixed `Xodus Library` generic-password identities are reachable:
+logs. Only fixed `Ode Library` generic-password identities are reachable:
 legacy `xbox-web` and broker-owned `xbox-web.credential-broker-v1`. The backend
-and `Xodus Service` identities are not exposed. A missing helper permits the
+and `Ode Service` identities are not exposed. A missing helper permits the
 existing direct store; an existing rejected, mismatched or unavailable helper
 never causes silent direct fallback.
 
 **Migration and recovery.** Presence-only inspection shows the explicit native
-UI message **Xodus needs one-time Keychain approval.** before any credential read.
+UI message **Ode needs one-time Keychain approval.** before any credential read.
 Only the user's approval action enables interaction for the legacy read. The
 helper creates its own fixed-requirement item, verifies an actual no-UI re-read
 of the new bytes, then disables interaction and attempts deletion of the exact
@@ -501,7 +501,7 @@ The search view observes the PC library, Installed and game-operation
 controllers directly and shares the existing tile/Play/Install controls.
 It neither loads personal data automatically nor infers ownership from activity.
 
-`private-xodus-check.sh <generatedRunId> <productId>` uses the existing fixed
+`private-ode-check.sh <generatedRunId> <productId>` uses the existing fixed
 script, private atomic receipt and matching process-exit/status contract.
 The result requires the requested StoreId, nonnegative/null packageBytes,
 boolean supported, bounded optional product reason and ISO checkedAt. Extra
@@ -512,7 +512,7 @@ service-restart and normal-Quit fence; explicit Cancel joins its owned script.
 No game files are downloaded by this check according to the backend contract.
 
 Tile/search badges read only
-`~/Library/Application Support/XodusRemote/compatibility/<StoreId>.json`,
+`~/Library/Application Support/Ode to X/Remote/compatibility/<StoreId>.json`,
 with the same 0600, current-user, regular-file, no-symlink and 64 KiB bounds.
 Missing cache means no support badge; malformed/nonprivate cache is a quiet
 explicit error. Cache reads never invoke a script. Package support is not a
@@ -530,7 +530,7 @@ single-check fencing and cancellation. Mac network-denied qualification passed
 removed-cache regression passed in the 104-check focused operation suite with
 another successful shipping-debug build. These are synthetic checks only.
 Root source review was GREEN at `7c3c1f0` / tree `459a6012`.
-[Exact-source CI 37668302715](https://github.com/dragoshont/xodus-macos-app/actions/runs/37668302715)
+[Exact-source CI 37668302715](https://github.com/dragoshont/ode-macos-app/actions/runs/37668302715)
 completed successfully at the full frozen head. Signed package `UcVKTf` contains
 21 files, verifies strict signatures and actual fixed-certificate leaf
 requirements, and preserves admitted C8 byte-for-byte. Its private receipt is
@@ -555,27 +555,27 @@ and artifact.
 
 The separate next package is timeboxed to 2.5 hours of B6 work: explicit
 ACL/partition policy anchored on the fixed-certificate designated requirement,
-plus migration of the existing Xodus Library item. One human authorization is
-acceptable and must be introduced as Xodus needs one-time Keychain approval.
+plus migration of the existing Ode Library item. One human authorization is
+acceptable and must be introduced as Ode needs one-time Keychain approval.
 Qualification requires two differently signed synthetic builds; only qualified
 scope may freeze at the timebox, with the rest reported explicitly. The
-Xodus Service item remains outside this app lane. That ACL candidate was not shipped. The user subsequently selected the
+Ode Service item remains outside this app lane. That ACL candidate was not shipped. The user subsequently selected the
 [frozen broker](#b6-frozen-credential-broker-candidate); its live migration and
 replacement remain separate owner gates.
 
 ### S3/S5/S6 game operations (admitted, installed and live-accepted)
 
 This app-only batch implements the approved
-[remaining-work spec at bda88fe](https://github.com/dragoshont/xodus-macos/blob/bda88fe/docs/xodus/remaining-work-plan.md).
+[remaining-work spec at bda88fe](https://github.com/dragoshont/ode-macos/blob/bda88fe/docs/ode/remaining-work-plan.md).
 The owner confirmed four existing private script entrypoints under
-`~/src/xodus-macos-private-ai/scripts/macos`: `private-xodus-service-status.sh`,
-`private-xodus-service-signin.sh`, `private-xodus-install.sh`, and
-`private-xodus-uninstall.sh`. The public app contains their invocation contract,
+`~/src/xode-macos-private-ai/scripts/macos`: `private-ode-service-status.sh`,
+`private-ode-service-signin.sh`, `private-ode-install.sh`, and
+`private-ode-uninstall.sh`. The public app contains their invocation contract,
 not their source, credentials or runtime. No engine/schema pin is changed.
 
 Every invocation uses `/bin/bash`, an exact generated run ID, separate arguments,
 and the existing minimal Play environment. Receipts under
-`~/Library/Application Support/XodusRemote/processed` are bounded, private,
+`~/Library/Application Support/Ode to X/Remote/processed` are bounded, private,
 regular nonsymlink files. The owner guarantees atomic receipt publication with
 status last and process exit equal to status, including SIGTERM. Missing or
 conflicting terminal status is an explicit failure, never success.
@@ -588,7 +588,7 @@ mutation. PC-library authentication and game-service authentication remain
 separate truthful states.
 
 An uninstalled account-bound PC tile offers Install. Consent shows the exact
-ASCII-title destination under `~/Games/Xodus`, measured volume capacity, and
+ASCII-title destination under `~/Games/Xode`, measured volume capacity, and
 unknown-size copy because the current catalog DTO does not retain a proven
 download size. The operation view uses real receipt bytes/phases, not estimated
 or simulated progress. Cancellation signals only its owned script and joins it;
@@ -601,7 +601,7 @@ validator/store path and preserves entry identity/session history.
 Uninstall requires confirmation, refuses a running game, and delegates deletion
 to the private script. The owner guarantees verified save copying before
 deletion, code 20 without deletion if preservation fails, and a folder under
-`~/Games/Xodus` whose config StoreId matches. The app itself never deletes game
+`~/Games/Xode` whose config StoreId matches. The app itself never deletes game
 files. Only confirmed code zero removes its list entry. Remove from list
 remains nondestructive. One mutation reserves edits/affected-game Play; normal
 Quit refuses to orphan a mutation or game sign-in, without changing the prior
@@ -630,7 +630,7 @@ operation suite passed 77 checks and shipping-debug compilation.
 
 The admitted runtime is `1463cdb5260356a536f29d8f39d90d4e69b06689`, tree
 `fa3eac5f6d78e534c10e3816f615511003a5d22d`.
-[Exact-source CI 37640727574 passed](https://github.com/dragoshont/xodus-macos-app/actions/runs/37640727574).
+[Exact-source CI 37640727574 passed](https://github.com/dragoshont/ode-macos-app/actions/runs/37640727574).
 The owner independently admitted package `uybU6j`, receipt
 `a929185184862f9af0a095625cc7344da6130053cbd730fd4c78ad3b89c1e73f`
 (15,035 bytes, 21 files). Launcher SHA-256 is
@@ -666,8 +666,8 @@ of the consent/invocation/sign-in-required failure path, not a successful repair
 
 At that intermediate checkpoint, live acceptance was held on human-only
 Keychain approvals. The owner
-reported an `Xodus Library` access prompt while PC games remained at Loading
-your PC games, with an `Xodus Service` credential read queued behind it. The
+reported an `Ode Library` access prompt while PC games remained at Loading
+your PC games, with an `Ode Service` credential read queued behind it. The
 service credential-writing follow-up is owned outside this app repository; no
 app change was requested. This lane did not approve prompts, rewrite credentials
 or bypass Keychain protections. The subsequent acceptance below supersedes
@@ -697,7 +697,7 @@ and general gameplay certification are not established by this slice.
 ### S4 owned PC Library (admitted, installed and live-accepted)
 
 This slice implements AC4.1–AC4.5 of the
-[remaining-work spec at fbf849d](https://github.com/dragoshont/xodus-macos/blob/fbf849d/docs/xodus/remaining-work-plan.md).
+[remaining-work spec at fbf849d](https://github.com/dragoshont/ode-macos/blob/fbf849d/docs/ode/remaining-work-plan.md).
 Root supplied observed protocol evidence after one user-approved device-code
 sign-in: a complete two-page collection, 136 items including 69 Game entries.
 That producer-side probe is not evidence of this app's installed Library or
@@ -708,7 +708,7 @@ Device-code and refresh POSTs use the approved Microsoft consumer OAuth client
 and `XboxLive.signin offline_access`. The native sheet exposes only user_code
 and an exact Microsoft verification link. Pending/slow_down/expiry/decline and
 Cancel are explicit. Only refresh_token is stored as a nonsynchronizing,
-app-owned generic-password item (service `Xodus Library`, account `xbox-web`,
+app-owned generic-password item (service `Ode Library`, account `xbox-web`,
 AfterFirstUnlockThisDeviceOnly); rotated refresh tokens replace that item.
 Access/user/XSTS tokens remain in memory, never argv, URLs, logs, registry,
 UserDefaults or exported diagnostics. Sign out deletes that one item.
@@ -753,7 +753,7 @@ The signed C8, profile, contracts/pins and frozen support packets are unchanged.
 Frozen corrected source `7ec1daaf1c5f3985c29eec01ed7eb90c151f001f`, tree
 `997d3970bfc43cd1ae0f2ef18c900253808327e9`, passed the same 607 native checks
 from its exact Git-LF archive. Exact-source
-[CI 37617059339](https://github.com/dragoshont/xodus-macos-app/actions/runs/37617059339)
+[CI 37617059339](https://github.com/dragoshont/ode-macos-app/actions/runs/37617059339)
 completed successfully, including Release ShippingChecks and resource exclusion.
 Root's bounded source review correction is included: only candidate games
 contribute to the hidden count, incomplete third-party items cannot fail a valid
@@ -799,7 +799,7 @@ remain unchanged.
 ### S1 artwork and Continue Playing (admitted, installed and live-accepted)
 
 This slice implements AC1.1–AC1.6 of the
-[published remaining-work spec](https://github.com/dragoshont/xodus-macos/blob/dragoshont-heroic-xbox-integration/docs/xodus/remaining-work-plan.md).
+[published remaining-work spec](https://github.com/dragoshont/ode-macos/blob/dragoshont-heroic-xbox-integration/docs/ode/remaining-work-plan.md).
 Tile preference is ShellVisuals Square480x480Logo, Square150x150Logo, StoreLogo;
 hero preference is SplashScreenImage then the same tile order. Windows
 backslashes are parsed as relative separators. Component-by-component `openat`
@@ -836,7 +836,7 @@ deployment lane did not interrupt or launch the game.
 
 The user-directed AC2.3 addition shares this batch: a nonzero session exposes
 Show log only when its generated-runID stderr file exists in
-`~/Library/Logs/XodusRemote`. The fixed suffix is `.stderr.log`; paths never
+`~/Library/Logs/Ode to X/Remote`. The fixed suffix is `.stderr.log`; paths never
 come from script output or arbitrary input. Finder reveals the selected file
 without reading/uploading its contents. RunIDs/log locations remain in memory,
 clear on retry/removal and do not become registry or diagnostic payloads.
@@ -846,7 +846,7 @@ Frozen source `e4014647328654c4c8688ca5954b5b3f5dfd162e` (tree
 `78d5b8b0cea272ce0fdaaba21d899c9c6aefd853`) passed 558 native session,
 75 presentation and 29 portable checks on the user's Mac with outbound
 networking denied, plus a shipping Debug build. Exact-source
-[CI 37610002150](https://github.com/dragoshont/xodus-macos-app/actions/runs/37610002150)
+[CI 37610002150](https://github.com/dragoshont/ode-macos-app/actions/runs/37610002150)
 also passed, including Release ShippingChecks and shipping resource exclusions.
 These are neutral/source evidence, not real game-art/session evidence.
 
@@ -881,7 +881,7 @@ unchanged.
 
 Main Library offers an Installed section independently of owned-PC inventory,
 which remains unavailable. The user chooses one game folder and then one
-executable working Xodus launch script through native file panels. The folder
+executable working Ode launch script through native file panels. The folder
 must contain one case-insensitive `MicrosoftGame.config`; bounded `XMLParser`
 reads Identity Name/Version, StoreId and ShellVisuals DefaultDisplayName, falling
 back to Identity Name. Malformed/missing identity, version or StoreId is refused;
@@ -889,7 +889,7 @@ external entities are not resolved. No provider, title-name mapping, engine
 snapshot, entitlement or installation check is inferred from this import.
 
 Entries contain UUID, title, identityName, version, storeId, folder, launcher and
-importedAt. `~/Library/Application Support/Xodus/installed-games.json` is separate
+importedAt. `~/Library/Application Support/Ode to X/State/installed-games.json` is separate
 from the existing Management profile. Writes use an exclusive 0600 temporary
 file, sync and atomic rename inside a 0700 directory. Corrupt/unreadable lists
 produce a visible failure and block mutations, not a success-empty overwrite.
@@ -898,7 +898,7 @@ Remove edits only this JSON; it never deletes game, launcher or save files.
 
 Play checks the selected folder and executable regular launcher, then starts
 `/bin/bash <launcher> <runID>` off the main thread. The argument array passes no
-shell-interpolated command. The runID is `xodus-yyyyMMddTHHmmssZ-xxxxxxxx` in UTC,
+shell-interpolated command. The runID is `ode-yyyyMMddTHHmmssZ-xxxxxxxx` in UTC,
 with eight lowercase hexadecimal characters. Environment inheritance is limited
 to HOME, USER and LANG; PATH is fixed to
 `/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin`. The script owns the game session;
@@ -923,7 +923,7 @@ The frozen UI-only implementation is consumer
 presentation checks and 29 portable packaging checks passed. Native checks ran
 with outbound networking denied; a separate shipping Debug composition built.
 Exact-source CI
-[37603065132](https://github.com/dragoshont/xodus-macos-app/actions/runs/37603065132)
+[37603065132](https://github.com/dragoshont/ode-macos-app/actions/runs/37603065132)
 completed successfully, including Release ShippingChecks and exclusion of
 private fixture resources. Fake scripts and neutral bytes are not live
 Hogwarts gameplay or compositor/accessibility certification.
@@ -979,7 +979,7 @@ code and retryability and cannot decode as successful empty snapshots. Corrupt o
 partial local state must remain a failure; only an absent entire staging scope
 can truthfully produce an empty registry. No operation-specific registry diagnostic
 category or new error mapping was added. The targeted check entry point is
-`XodusManagementChecks --registry-development-checks`; it starts no engine and
+`OdeManagementChecks --registry-development-checks`; it starts no engine and
 makes no `installed.snapshot`, credential, provider or artwork request.
 
 ## Development-only installation-planning failures
@@ -1004,7 +1004,7 @@ cache, enqueue path, license authorization or UI. The existing transport and
 auth/history failure decoding are unchanged. Reserved plan descriptors remain
 codec-only and excluded from live success; no descriptor establishes payload,
 runtime, entitlement or installation readiness. Production resources and pins
-remain unchanged. `XodusManagementChecks --install-plan-development-checks`
+remain unchanged. `OdeManagementChecks --install-plan-development-checks`
 runs the retained registry checks and new plan data checks without starting an
 engine or making any management, credential, provider or artwork request.
 
@@ -1032,7 +1032,7 @@ Consumer `2d741a745217f52330ad79208eb2e8374a708a0d`, tree
 `8f529988df80d2005371216cabf940453106cefc`, passed 481 native session and 75
 presentation checks with outbound networking denied, plus 28 portable checks.
 Exact-source CI
-[37522058333](https://github.com/dragoshont/xodus-macos-app/actions/runs/37522058333)
+[37522058333](https://github.com/dragoshont/ode-macos-app/actions/runs/37522058333)
 completed successfully, including shipping checks. Root independently reviewed
 the semantic change and admitted all 21 package files, fixed app/CLI/helper
 signatures and sealed producer bindings. Receipt SHA256 is
@@ -1081,7 +1081,7 @@ counts on stderr expose no URLs, assets, account identifiers or query values;
 they are not management responses and remain discarded in production.
 The controlled 113be57/c1073100 pair was Release-qualified, independently admitted
 and installed after exact consumer CI
-[37502060591](https://github.com/dragoshont/xodus-macos-app/actions/runs/37502060591)
+[37502060591](https://github.com/dragoshont/ode-macos-app/actions/runs/37502060591)
 passed. It is not a distribution release.
 
 Actual artwork confirmation on 2026-10-06 used consumer
@@ -1138,7 +1138,7 @@ profile are unchanged.
 Actual shipping confirmation on 2026-10-06 used consumer
 `7aa9eb9de094c5f96233a6e99fb08b48c61fc92a`, tree
 `bc23e93f4e0de2a870616bf2a18ba325666bc0ce`, after exact CI
-[37509107895](https://github.com/dragoshont/xodus-macos-app/actions/runs/37509107895)
+[37509107895](https://github.com/dragoshont/ode-macos-app/actions/runs/37509107895)
 succeeded and independent source/package admission passed. Receipt SHA256 is
 `b36305e73a4b0aa4fd779582089f716d3f368e86049582d0d06975626bc61035`.
 The signed c107 CLI remains byte-for-byte
@@ -1177,7 +1177,7 @@ Artwork sizing, tokens and the current native composition are unchanged.
 The action's routing and explicit candidate selection were qualified with
 425 native neutral session checks, unchanged portable pair gates, direct source
 review and exact successful CI
-[37512166260](https://github.com/dragoshont/xodus-macos-app/actions/runs/37512166260).
+[37512166260](https://github.com/dragoshont/ode-macos-app/actions/runs/37512166260).
 Genuine empty/error responses stay distinct, and these tests confirm no
 additional saved-status or personal-history read during title-name navigation.
 
@@ -1280,7 +1280,7 @@ separate from actual account/history evidence.
 
 ## Implemented client and native surfaces
 
-`Sources/XodusManagement` implements exact protocol 1.0, request IDs, schema validation against the producer's pinned schema, typed capability objects, bounded UTF-8 JSONL and a supervised native `Process`. It never scrapes interactive output or uses runtime-service IPC as management.
+`Sources/OdeManagement` implements exact protocol 1.0, request IDs, schema validation against the producer's pinned schema, typed capability objects, bounded UTF-8 JSONL and a supervised native `Process`. It never scrapes interactive output or uses runtime-service IPC as management.
 
 Each request is correlated to its expected command-specific result definition. EOF, malformed/truncated/oversized frames, wrong IDs/shapes, unexpected major/minor, timeout and nonzero exit invalidate the connection; exit zero cannot supply a missing result. Output/event buffers and outstanding requests are bounded. stderr is drained and discarded with a byte limit, not retained as diagnostics. Error messages shown by the app are generated locally from validated error codes, not raw upstream text.
 
@@ -1420,8 +1420,8 @@ source remain unchanged. This integration is source/headless only, not deployed
 or a claim of any installed/runtime/game qualification.
 
 The current producer pin is public commit
-`d00a8b97501a2ce1045d579e62568c5feb017ca8` in `dragoshont/xodus-macos`,
-branch `dragoshont-xodus-launcher-management`: 88 positive, 47 negative and four
+`d00a8b97501a2ce1045d579e62568c5feb017ca8` in `dragoshont/ode-macos`,
+branch `dragoshont-ode-launcher-management`: 88 positive, 47 negative and four
 independent evidence-edge frames. This additive contract includes public
 `catalog.query`, read-only `installed.inspect` and explicit `auth.verify`; capabilities are negotiated from the running producer, not
 copied from a fixture.
@@ -1480,7 +1480,7 @@ it does not mutate that deployed app, engine or authentication flow.
 The preceding reviewed eighteen-pair diagnostic engine source was
 `2acb452a7ee66b2c9d3ad75ecf85e2be2f94fbc3`, paired with app
 `5ae30fd4bd4e17cb235857e5c41fba1627c317f7`.
-Preserved immutable input is `xodus-cli-xml-proof-v1-8a4b8d56aad18841`,
+Preserved immutable input is `ode-cli-xml-proof-v1-8a4b8d56aad18841`,
 SHA256 `8a4b8d56aad18841326834e5ad57860072560f4739963323875ffa52d41a545b`;
 the separate signed embedded copy is
 `125a05dd0a2a577cc8fc71e4d3eaf324b9c70b3d409a54fd5b0eeef17ad45cf4`.
@@ -1491,7 +1491,7 @@ e604/360e8bf 47f/c50a pairings and all older immutable inputs remain preserved.
 
 The historical first human-entry engine source was
 `2a47eafc930603773583ce4c1d6be89a2f0ccd60`. Its preserved unsigned input is
-`xodus-cli-soap-nonces-v1-57d4500d6de922d6`, SHA256
+`ode-cli-soap-nonces-v1-57d4500d6de922d6`, SHA256
 `57d4500d6de922d644071ff6749b662c56d75f5f4646da2a884a363169373c0b`;
 the separate ad-hoc-signed embedded copy has SHA256
 `7a6edd58efa81f567ebf7ecc8c7cf089fb7fc155533e2db28ab797111ec2230d`.
@@ -1619,7 +1619,7 @@ pending; source/framework/AX-role evidence is not visual conformance.
 
 ## Dedicated Swift native authentication host: source only
 
-`XodusAuthHost` is a dependency-free AppKit/WebKit/Foundation SwiftPM executable,
+`OdeAuthHost` is a dependency-free AppKit/WebKit/Foundation SwiftPM executable,
 not a second management transport. The private contract and neutral corpus are
 pinned to public producer `bb6397033fc38497a73684a9ecdb2929caba1f63`;
 schema SHA256 is
@@ -1700,7 +1700,7 @@ including auth producer `94353b5cc3196a2b73b89655855ec50c31d35b81`.
 The old e7/304 engine does not support the three native-host flags; omitting them
 selects its old legacy path, not the new Swift host. HELLO's supported auth
 capabilities, version and C95 hash do not establish this producer pairing.
-`XODUS_BACKEND_PATH` and the explicit developer engine picker are nonshipping
+`ODE_BACKEND_PATH` and the explicit developer engine picker are nonshipping
 only. Shipping has neither override and cannot borrow bundled helper evidence.
 
 The new [controlled local admission](SHIPPING-ADMISSION.md) tooling verifies
@@ -1741,7 +1741,7 @@ sh tools/build_app.sh /absolute/reviewed/engine UNSIGNED_SHA BYTES PROVENANCE_SH
 ```
 
 The script reports a new distinct bundle and external package receipt; it never
-opens a window or replaces `dist/Xodus.app`. Launch requires separate approval.
+opens a window or replaces `dist/Ode.app`. Launch requires separate approval.
 The supplied exact fingerprint must match an existing code-signing identity in
 the OS Keychain; a local self-signed identity need not have global OS trust for
 the fixed-leaf requirement. Provisioning and private-key prompts require separate
@@ -1761,7 +1761,7 @@ bundled.
 
 Settings provides account controls, explicit catalog market/language, advanced public-product lookup and a bounded redacted diagnostic preview; the native engine picker exists only in nonshipping development. After preview, a native save panel can save exactly the displayed counts-only summary atomically off the main actor. Unreviewed/stale preview and nonlocal destinations are rejected; filesystem errors are visible, not success. No account data, raw logs, URLs or personal paths enter this summary. Backend discovery in a developer bundle does not establish signed runtime certification.
 
-Default LaunchServices startup was exercised with `open Xodus.app`, no mode,
+Default LaunchServices startup was exercised with `open Ode.app`, no mode,
 backend flag or environment override. After fixing the automatic account read,
 the included-engine child survived beyond the original timeout and the normal
 Library/Discover/Downloads/Account controls passed bounded Accessibility
@@ -1782,7 +1782,7 @@ launcher Keychain profile, not implicit CLI/private-worker credential import.
 The separate **development-only** `--export-live-data <directory>` renders four
 actual live component hierarchies: unavailable Library, public Halo search,
 the first returned product and generic signed-in Account. It requires
-`XODUS_EXPORT_ADMITTED_BUNDLE` plus externally generated compiler pins for that
+`ODE_EXPORT_ADMITTED_BUNDLE` plus externally generated compiler pins for that
 exact admitted installed engine/helper pair; an ordinary unpaired repository
 build fails closed. The operator must close the normal app first and admit
 this single read owner. The existing client validates structured results;

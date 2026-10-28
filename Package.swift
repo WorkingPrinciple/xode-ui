@@ -3,35 +3,35 @@
 import PackageDescription
 import Foundation
 
-let shipping = ProcessInfo.processInfo.environment["XODUS_SHIPPING"] == "1"
+let shipping = ProcessInfo.processInfo.environment["ODE_SHIPPING"] == "1"
 let previewOnly = ["NativeCheckOCR.swift", "SearchPresentationChecks.swift", "Artwork.swift", "RootView.swift", "FixtureLibraryView.swift", "DetailView.swift", "DownloadsView.swift",
                    "PreviewExporter.swift", "LibraryPreviewExporter.swift", "PreviewChecks.swift", "NativeChecks.swift",
                    "NativeUIChecks.swift", "CalimochoReleaseInstallerChecks.swift", "AccountCountryChecks.swift", "ApplicationTerminationChecks.swift", "CrossOverDependencyChecks.swift", "LaunchAssociationChecks.swift",
                    "OdeRuntimeChecks.swift", "RecentLibraryChecks.swift", "CatalogMediaChecks.swift", "LibraryStatsChecks.swift", "LibraryAccessChecks.swift", "InstalledGameChecks.swift", "PCGamesChecks.swift", "GameOperationChecks.swift", "DownloadQueueChecks.swift", "InstalledGameUpdateChecks.swift", "EngineManagementChecks.swift", "EngineConfiguratorChecks.swift", "CatalogDetailLoadingChecks.swift", "PresentationPerformanceChecks.swift", "SearchPerformanceChecks.swift", "PublicDescriptorChecks.swift", "BrandUXChecks.swift", "AccessibilityAuditChecks.swift", "StabilityChecks.swift", "Resources"]
 // A qualification variant (never the ordinary install) adds fixed diagnostic channels and the FH6 Play gate.
-let qualification = ProcessInfo.processInfo.environment["XODUS_QUALIFICATION"] == "1"
-let shippingSettings: [SwiftSetting] = (shipping ? [.define("XODUS_SHIPPING")] : [])
-    + (qualification ? [.define("XODUS_QUALIFICATION"), .define("XODUS_FH6_QUALIFICATION")] : [])
+let qualification = ProcessInfo.processInfo.environment["ODE_QUALIFICATION"] == "1"
+let shippingSettings: [SwiftSetting] = (shipping ? [.define("ODE_SHIPPING")] : [])
+    + (qualification ? [.define("ODE_QUALIFICATION"), .define("ODE_FH6_QUALIFICATION")] : [])
 
 let package = Package(
-    name: "XodusAppFoundation",
+    name: "OdeApp",
     platforms: [.macOS(.v14)],
     products: [
-        .library(name: "XodusCore", targets: ["XodusCore"]),
-        .library(name: "XodusManagement", targets: ["XodusManagement"]),
-        .library(name: "XodusCredentials", targets: ["XodusCredentials"]),
-        .executable(name: "XodusPreview", targets: ["XodusPreview"]),
-        .executable(name: "XodusAuthHost", targets: ["XodusAuthHost"]),
-        .executable(name: "XodusCredentialBroker", targets: ["XodusCredentialBroker"])
+        .library(name: "OdeCore", targets: ["OdeCore"]),
+        .library(name: "OdeManagement", targets: ["OdeManagement"]),
+        .library(name: "OdeCredentials", targets: ["OdeCredentials"]),
+        .executable(name: "OdePreview", targets: ["OdePreview"]),
+        .executable(name: "OdeAuthHost", targets: ["OdeAuthHost"]),
+        .executable(name: "OdeCredentialBroker", targets: ["OdeCredentialBroker"])
     ] + (shipping ? [] : [
-        .executable(name: "XodusFixtureChecks", targets: ["XodusFixtureChecks"]),
-        .executable(name: "XodusManagementChecks", targets: ["XodusManagementChecks"]),
-        .executable(name: "XodusCredentialChecks", targets: ["XodusCredentialChecks"])
+        .executable(name: "OdeFixtureChecks", targets: ["OdeFixtureChecks"]),
+        .executable(name: "OdeManagementChecks", targets: ["OdeManagementChecks"]),
+        .executable(name: "OdeCredentialChecks", targets: ["OdeCredentialChecks"])
     ]),
     targets: [
-        .target(name: "XodusCore", exclude: shipping ? ["Fixtures.swift"] : [],
+        .target(name: "OdeCore", exclude: shipping ? ["Fixtures.swift"] : [],
                 swiftSettings: shippingSettings),
-        .target(name: "XodusManagement", dependencies: ["XodusCore"],
+        .target(name: "OdeManagement", dependencies: ["OdeCore"],
                 exclude: ["QA/CompatibilityData/next-30-queue.json",
                           "QA/CompatibilityData/queue-inspection-v1.json",
                           "QA/LaunchRecipes/preflight-game-candidates.json",
@@ -42,23 +42,23 @@ let package = Package(
                             .copy("Resources/mac-game-status-v1.json"),
                             .copy("Resources/LaunchRecipes"),
                             .copy("Resources/CompatibilityData")]),
-        .target(name: "XodusCredentials"),
-        .target(name: "XodusProcessIdentity"),
-        .executableTarget(name: "XodusCredentialBroker", dependencies: ["XodusCredentials"]),
-        .executableTarget(name: "XodusPreview", dependencies: ["XodusCore", "XodusManagement", "XodusCredentials", "XodusProcessIdentity"],
+        .target(name: "OdeCredentials"),
+        .target(name: "OdeProcessIdentity"),
+        .executableTarget(name: "OdeCredentialBroker", dependencies: ["OdeCredentials"]),
+        .executableTarget(name: "OdePreview", dependencies: ["OdeCore", "OdeManagement", "OdeCredentials", "OdeProcessIdentity"],
                           exclude: shipping ? previewOnly : [],
                           resources: shipping ? [] : [.copy("Resources/Artwork")],
                           swiftSettings: shippingSettings),
-        .executableTarget(name: "XodusAuthHost", exclude: shipping ? ["AuthHostChecks.swift", "Resources"] : [],
+        .executableTarget(name: "OdeAuthHost", exclude: shipping ? ["AuthHostChecks.swift", "Resources"] : [],
                           resources: shipping ? [] : [.copy("Resources")], swiftSettings: shippingSettings)
     ] + (shipping ? [
-        .testTarget(name: "XodusShippingChecks", dependencies: ["XodusPreview", "XodusManagement"],
+        .testTarget(name: "OdeShippingChecks", dependencies: ["OdePreview", "OdeManagement"],
                     path: "Tests/ShippingChecks")
     ] : [
-        .executableTarget(name: "XodusFixtureChecks", dependencies: ["XodusCore"],
+        .executableTarget(name: "OdeFixtureChecks", dependencies: ["OdeCore"],
                           path: "Tests/FixtureChecks"),
-        .executableTarget(name: "XodusManagementChecks", dependencies: ["XodusManagement"],
+        .executableTarget(name: "OdeManagementChecks", dependencies: ["OdeManagement"],
                           path: "Tests/ManagementChecks", resources: [.copy("Fixtures")]),
-        .executableTarget(name: "XodusCredentialChecks", dependencies: ["XodusCredentials"])
+        .executableTarget(name: "OdeCredentialChecks", dependencies: ["OdeCredentials"])
     ])
 )

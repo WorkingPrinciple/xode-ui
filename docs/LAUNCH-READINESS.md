@@ -10,8 +10,8 @@ record or gameplay approval.
 | --- | --- |
 | Product | X Ode 0.2.0 (Beta), build 502 |
 | App source | `a6a45549550471bf8d8be92aee98eb37d8fce35d`; tree `73307652fdd8149a89f2b778a48a9913041146ff` |
-| App bundle ID | `io.github.dragoshont.xodus.development` |
-| Signing identifier | `io.github.dragoshont.xodus` |
+| App bundle ID | `com.workingprinciple.xode.development` |
+| Signing identifier | `com.workingprinciple.xode` |
 | Signature | Developer ID Application, team `M62Z4M5EUY`; deep strict verification passed |
 | Producer pair | Calimocho -04 source `99e20addf88932de7796fc966fe09e00b71e4981`, tree `7f9e8cc5…` |
 | Bundled CLI | `ae36f62c63ffbd371ce104559c29d2a5f1c8fa5170de5bc83e520ce9516defc9` |

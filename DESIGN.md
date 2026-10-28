@@ -172,7 +172,7 @@ with a counts-only diagnostic; no per-tile private package check is added.
 Frozen C3 has only a 64 MiB/40-image process cache. The subsequent functional
 source adds persistent public-image caching without altering C3's signed review:
 hashed URL keys in
-`~/Library/Caches/Xodus/CatalogMedia`, atomic files, HTTP validators/expiry,
+`~/Library/Caches/Ode to X/CatalogMedia`, atomic files, HTTP validators/expiry,
 512 MiB LRU ceiling and existing redirect/MIME/byte/pixel guards. A fresh file
 survives restart without another image request; expired files revalidate with
 ETag/Last-Modified and confirmed 304 responses. Cache failures are redacted
@@ -198,7 +198,7 @@ are cache-only in this review; command scheduling, account-bound refresh and
 the 15-minute backend refresh integration are not yet wired into ordinary
 startup in frozen C3. The functional follow-up reads service status on ordinary
 launch/foreground and Library Refresh, matches its opaque account hash to the
-0600 cache, and invokes only `private-xodus-manage.py game-stats RUN_ID` when due.
+0600 cache, and invokes only `private-ode-manage.py game-stats RUN_ID` when due.
 A private, atomic, locked timestamp ledger throttles failures across restart too.
 Current-account cached stats remain visible during revalidation; account change,
 new sign-in and sign-out invalidate them before late results can publish. Success
@@ -315,13 +315,13 @@ flow. Account adds a quiet PC Game Pass status and explicit Check with honest
 saved-status provenance, Unknown/failure and prerequisite states. No expiry,
 ownership promotion or new navigation is invented. The shared Installed /
 Continue Playing / matching-tile control becomes Stop only for the session
-Xodus launched. Its disabled in-flight state and Stopping indicator are shared
+Ode launched. Its disabled in-flight state and Stopping indicator are shared
 across every surface; confirmed completion says Stopped rather than showing
 a crash/retry. Ordinary gameplay Quit is unchanged. Source qualification and
 owner live acceptance are separate gates; the latter remains partial.
 Account also lists the four backend Setup items as Ready or their fix text.
-One quiet Xodus needs setup banner links to a focused Setup sheet without
-reading unrelated launcher credentials. Repair Xodus is explicit, fenced and
+One quiet Ode needs setup banner links to a focused Setup sheet without
+reading unrelated launcher credentials. Repair Ode is explicit, fenced and
 shows progress/error/Show log; missing game sign-in offers its existing action.
 Supported Install consent shows the real download size; unsupported consent
 shows only its reason, not unknown-size or future-download copy.
@@ -335,7 +335,7 @@ No authorization is automated.
 
 **B6 credential approval:** preserve the native PC Library header and grid.
 Presence inspection never reads a saved token or presents a native prompt.
-When migration is needed, a quiet key label says **Xodus needs one-time Keychain
+When migration is needed, a quiet key label says **Ode needs one-time Keychain
 approval.** with an explicit Approve Keychain access button. Explain that the
 separate credential helper stays unchanged on app updates, while updating the
 helper itself may need another approval. Waiting has a small system progress
@@ -390,7 +390,7 @@ verified live by the owner.
 Square480, Square150, then StoreLogo from the imported folder's ShellVisuals,
 with the existing 60-point square geometry and system-symbol fallback.
 Continue Playing appears above Installed only for the newest recorded
-Xodus-launched imported game whose folder/script are available. Its splash
+Ode-launched imported game whose folder/script are available. Its splash
 (tile fallback) leads a native 12-point-radius hero; title, optional publisher,
 relative last-played date and the shared Play control sit on system material
 below the image so contrast is independent of the artwork. This preserves the
@@ -420,7 +420,7 @@ file panels select the installed folder and its executable working launch
 script; cancellation changes nothing. Launching/Playing replace the Play label
 for the one active session; other Play buttons are disabled. Nonzero exit shows
 one plain error and Try again. Native button focus, title-specific accessibility
-labels and `xodus.installed.*` identifiers preserve keyboard/VoiceOver access.
+labels and `ode.installed.*` identifiers preserve keyboard/VoiceOver access.
 Quit leaves the game running; Remove keeps game files, launch script and saves.
 This local list is not an ownership or engine registry claim. Main Library
 still never reads TitleHub history; Recent activity remains separate.
@@ -430,7 +430,7 @@ for admission or deployment; those outcomes are not implied by neutral checks.
 
 **User-directed Library semantic correction (historical unavailable state):** Library is the
 default. Before S4's account-bound collection/PC join, it used one stock native
-empty state, “Your PC library isn't available yet” / “Xodus can't yet verify
+empty state, “Your PC library isn't available yet” / “Ode can't yet verify
 which PC games you own,” with real Browse games and Recent activity routes.
 No TitleHub image feature, owned game count or fake install/play action was used
 to fill this unavailable surface. That history boundary remains in S4. The
@@ -511,7 +511,7 @@ illustrations remain only in the nonshipping preview source/resource set.
 Remote metadata references are not a general redistribution/license grant;
 distribution rights remain a separate release question.
 
-`XodusToolbar` uses a principal `ToolbarItemGroup`, a real `.tabs` `Picker` on
+`OdeToolbar` uses a principal `ToolbarItemGroup`, a real `.tabs` `Picker` on
 macOS 27+ with a `.segmented` fallback on 14-26, stock `NSSearchField` and an
 ordinary trailing toolbar `Button`. These are platform controls, not a
 third-party kit or custom navigation shape. SDK 27+ is a build requirement,

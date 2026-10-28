@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-CATALOG = Path("Sources/XodusManagement/Resources/CompatibilityData/game-compatibility-v1.json")
+CATALOG = Path("Sources/OdeManagement/Resources/CompatibilityData/game-compatibility-v1.json")
 STATE = Path("docs/game-test-ledger-state.json")
 OUTPUT = Path("docs/GAME-TEST-LEDGER.md")
 FORMATS = frozenset({"MSIXVC", "MSIX"})

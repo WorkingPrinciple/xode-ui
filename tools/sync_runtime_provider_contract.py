@@ -7,7 +7,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = ROOT / "docs" / "contracts" / "runtime-providers-v1.schema.json"
-RESOURCE = ROOT / "Sources" / "XodusManagement" / "Resources" / SCHEMA.name
+RESOURCE = ROOT / "Sources" / "OdeManagement" / "Resources" / SCHEMA.name
 EXPECTED = "6b08b6a6dd9e9575a35ac771b0d5418964fdbb669685e2be15adc4e166356772"
 
 

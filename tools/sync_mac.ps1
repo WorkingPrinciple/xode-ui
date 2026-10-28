@@ -1,15 +1,15 @@
 # SPDX-License-Identifier: GPL-3.0-only
 param(
-    [string]$SshTarget = 'xodus-mac',
+    [string]$SshTarget = 'ode-mac',
     [string]$HostName,
     [string]$HostKeyAlias,
-    [ValidatePattern('^xodus-app-tooling/[A-Za-z0-9_-]+$')]
-    [string]$RemoteDirectory = 'xodus-app-tooling/app-foundation',
+    [ValidatePattern('^ode-app-tooling/[A-Za-z0-9_-]+$')]
+    [string]$RemoteDirectory = 'ode-app-tooling/app-foundation',
     [switch]$Check
 )
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot
-$archive = Join-Path ([IO.Path]::GetTempPath()) ("xodus-public-app-" + [guid]::NewGuid() + ".tar")
+$archive = Join-Path ([IO.Path]::GetTempPath()) ("ode-public-app-" + [guid]::NewGuid() + ".tar")
 $options = @('-o', 'BatchMode=yes', '-o', 'ConnectTimeout=10', '-o', 'StrictHostKeyChecking=yes')
 if ($HostName) { $options += @('-o', "HostName=$HostName") }
 if ($HostKeyAlias) { $options += @('-o', "HostKeyAlias=$HostKeyAlias") }
@@ -21,13 +21,13 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Pinned runtime provider schema resource differs.' }
     & tar -cf $archive Package.swift Sources Tests tools docs README.md PRODUCT.md DESIGN.md LICENSE
     if ($LASTEXITCODE -ne 0) { throw 'Public source archive failed.' }
-    & scp @options $archive "${SshTarget}:${RemoteDirectory}/xodus-public-app-transfer.tar"
+    & scp @options $archive "${SshTarget}:${RemoteDirectory}/ode-public-app-transfer.tar"
     if ($LASTEXITCODE -ne 0) { throw 'Trusted SSH source transfer failed.' }
     $script = @"
 set -eu
 cd "`$HOME/$RemoteDirectory"
-tar -xf xodus-public-app-transfer.tar
-rm xodus-public-app-transfer.tar
+tar -xf ode-public-app-transfer.tar
+rm ode-public-app-transfer.tar
 python3 -c 'from pathlib import Path; [p.write_bytes(p.read_bytes().replace(b"\r\n", b"\n")) for p in Path("tools").glob("*.sh")]'
 "@
     if ($Check) { $script += "`nsh tools/check.sh`n" }

@@ -18,6 +18,6 @@ cask "x-ode" do
   app "X Ode.app"
 
   zap trash: [
-    "~/Library/Preferences/io.github.dragoshont.xodus.development.plist",
+    "~/Library/Preferences/com.workingprinciple.xode.development.plist",
   ]
 end

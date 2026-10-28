@@ -63,7 +63,7 @@ def frozen_payloads(candidate, approved_unnotarized_cli=None):
             and manifest["helper_sha256"] == HELPER_SHA256
             and manifest["helper_embedded_bytes_verified"] is True,
             "Frozen payload receipts do not agree")
-    cli, helper = candidate / "xodus-cli", candidate / "xodus-window-monitor.exe"
+    cli, helper = candidate / "ode-cli", candidate / "ode-window-monitor.exe"
     cli_identity, cli_bytes = owned_bytes(cli, CLI_SHA256, CLI_SIZE, bounded=512 * 1024 * 1024)
     helper_identity, helper_bytes = owned_bytes(helper, HELPER_SHA256, HELPER_SIZE,
                                                 bounded=16 * 1024 * 1024)
@@ -305,11 +305,11 @@ def resume(receipt_path, profile, approved_unnotarized_cli=None, producer_notice
     background_identity = validate_dmg_background(dmg_background)
     require(background_identity == receipt.get("dmgBackground"),
             "DMG background differs from the reviewed dry-run asset")
-    for name, relative in (("launcher", "Contents/MacOS/Xodus"),
-                           ("authenticationHelper", "Contents/MacOS/XodusAuthHost"),
+    for name, relative in (("launcher", "Contents/MacOS/Ode"),
+                           ("authenticationHelper", "Contents/MacOS/OdeAuthHost"),
                            ("resourceSeal", "Contents/_CodeSignature/CodeResources"),
-                           ("bundledCLI", "Contents/Resources/XodusEngine/xodus-cli"),
-                           ("bundledWindowsHelper", "Contents/Resources/XodusEngine/xodus-window-monitor.exe")):
+                           ("bundledCLI", "Contents/Resources/OdeEngine/ode-cli"),
+                           ("bundledWindowsHelper", "Contents/Resources/OdeEngine/ode-window-monitor.exe")):
         expected = receipt["artifacts"][name]
         owned_bytes(app / relative, expected["sha256"], expected["bytes"])
     expected = receipt["sealedAppResourceReceipt"]
@@ -430,8 +430,8 @@ def build(args):
         receipt["buildInvocation"]["log"] = str(log)
         execute(["/usr/bin/codesign", "--verify", "--deep", "--strict", str(app)],
                 stage, receipt, receipt_path, "app-signature")
-        owned_bytes(app / "Contents/Resources/XodusEngine/xodus-cli", CLI_SHA256)
-        owned_bytes(app / "Contents/Resources/XodusEngine/xodus-window-monitor.exe", HELPER_SHA256)
+        owned_bytes(app / "Contents/Resources/OdeEngine/ode-cli", CLI_SHA256)
+        owned_bytes(app / "Contents/Resources/OdeEngine/ode-window-monitor.exe", HELPER_SHA256)
         if args.dry_run:
             receipt["distributionBlockers"] = distribution_blockers(
                 app, notices_sha, expected_signing_identity=args.identity)
@@ -444,11 +444,11 @@ def build(args):
                        notices_sha, args.dmg_background)
         require(source_identity(project) == source, "Source changed during release build")
         frozen_payloads(args.candidate.resolve(strict=True), args.approve_unnotarized_cli)
-        receipt["artifacts"]["bundledCLI"] = owned_bytes(app / "Contents/Resources/XodusEngine/xodus-cli")[0]
+        receipt["artifacts"]["bundledCLI"] = owned_bytes(app / "Contents/Resources/OdeEngine/ode-cli")[0]
         receipt["artifacts"]["bundledWindowsHelper"] = owned_bytes(
-            app / "Contents/Resources/XodusEngine/xodus-window-monitor.exe")[0]
-        for name, relative in (("launcher", "Contents/MacOS/Xodus"),
-                               ("authenticationHelper", "Contents/MacOS/XodusAuthHost"),
+            app / "Contents/Resources/OdeEngine/ode-window-monitor.exe")[0]
+        for name, relative in (("launcher", "Contents/MacOS/Ode"),
+                               ("authenticationHelper", "Contents/MacOS/OdeAuthHost"),
                                ("resourceSeal", "Contents/_CodeSignature/CodeResources")):
             receipt["artifacts"][name] = owned_bytes(app / relative)[0]
         receipt["sealedAppResourceReceipt"] = owned_bytes(app / "Contents/Resources/local-candidate-receipt.json")[0]

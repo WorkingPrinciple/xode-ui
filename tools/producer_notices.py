@@ -460,8 +460,8 @@ def add_supplement(output, report_directory, report_sha256, evidence_directory,
         resolved.update(item.get("resolvesObligations", []))
     if workspace_packages:
         require(workspace_packages == {
-            "msixvc", "msixvc-common", "xodus", "xodus-cli",
-            "xodus-management", "xodus-service",
+            "msixvc", "msixvc-common", "ode", "ode-cli",
+            "ode-management", "ode-service",
         }, "Producer root-license evidence does not cover exactly the six local workspace crates")
         require(any(item["path"] == "LICENSE" for item in producer_files)
                 and any(item["path"] == "README.md" for item in producer_files),

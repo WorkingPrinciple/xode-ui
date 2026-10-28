@@ -18,13 +18,13 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[2]
-DATA_DIR = ROOT / "Sources/XodusManagement/Resources/CompatibilityData"
-QA_DIR = ROOT / "Sources/XodusManagement/QA/CompatibilityData"
+DATA_DIR = ROOT / "Sources/OdeManagement/Resources/CompatibilityData"
+QA_DIR = ROOT / "Sources/OdeManagement/QA/CompatibilityData"
 CATALOGUE = DATA_DIR / "game-compatibility-v1.json"
 PUBLISHER_EVIDENCE = DATA_DIR / "publisher-anti-cheat-v1.json"
 NEXT_30_QUEUE = QA_DIR / "next-30-queue.json"
 CATALOGUE_ENDPOINT = "https://displaycatalog.mp.microsoft.com/v7.0/products"
-USER_AGENT = "XodusCompatibilityClassification/1.0"
+USER_AGENT = "OdeCompatibilityClassification/1.0"
 FORMATS = {
     "MSIXVC": "MSIXVC",
     "EAppx": "EAppx",
@@ -769,7 +769,7 @@ def validate_next30_queue(database: dict[str, Any]) -> None:
                 installed
                 and (
                     not isinstance(item.get("installRoot"), str)
-                    or not item["installRoot"].startswith("~/Games/Xodus/")
+                    or not item["installRoot"].startswith("~/Games/Xode/")
                 )
             )
             or (

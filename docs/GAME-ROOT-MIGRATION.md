@@ -1,7 +1,7 @@
 # Owned game-root migration
 
 `tools/migrate_game_root.py` is an operator library, not an automatic startup
-migration. COR180 authorizes the exact `~/Games/Xodus` to `~/Games/Xode`
+migration. COR180 authorizes the exact `~/Games/Xode` to `~/Games/Xode`
 transaction only after the reviewed app successor supports the new default and
 preserved NMS binding. The runtime owner supplies a fresh process/lock
 quiescence check; no process termination or restart is implicit in this tool.
@@ -13,7 +13,7 @@ only each record's `folder` value is mapped. Kind `resumable` maps only each
 retry record's `destination`. Kind `json` structurally maps exact old-root path
 values in separately reviewed live launch profiles, never keys or substrings.
 Kind `launcher` changes only the reviewed unquoted
-`export XODUS_GAME_FOLDER=` assignment; any remaining old-root reference fails.
+`export ODE_GAME_FOLDER=` assignment; any remaining old-root reference fails.
 Do not include historical receipts, credentials or prefixes in the file set.
 
 `apply(stage, quiescent)` revalidates snapshots, partial and immediate child

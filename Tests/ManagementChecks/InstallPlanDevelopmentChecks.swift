@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import CryptoKit
 import Foundation
-import XodusManagement
+import OdeManagement
 
 extension Checks {
     func installPlanDevelopmentChecks() throws {
@@ -25,7 +25,7 @@ extension Checks {
               let alternatives = try fixture("install-plan-development.schema")["$defs"]?["installPlanError"]?["oneOf"]?.array else {
             throw ManagementError.invalidPayload
         }
-        let development = try ContractValidator(schemaURL: schema, schemaIdentifier: "urn:xodus:management:1.0")
+        let development = try ContractValidator(schemaURL: schema, schemaIdentifier: "urn:ode:management:1.0")
         check(positive.count == 119 && negative.count == 172 && alternatives.count == 17,
               "Exact plan contract has 119 positive frames, 172 negatives and 17 complete tuple alternatives")
         for (index, frame) in positive.enumerated() {

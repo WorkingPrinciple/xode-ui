@@ -68,7 +68,7 @@ assert settings["background"] == "/tmp/background.tiff"
 with (Path(__file__).with_name("Info.plist")).open("rb") as source_info_file:
     source_info = plistlib.load(source_info_file)
 assert source_info["CFBundleIdentifier"] == beta.APP_BUNDLE_IDENTIFIER
-assert beta.APP_SIGNING_IDENTIFIER == "io.github.dragoshont.xodus"
+assert beta.APP_SIGNING_IDENTIFIER == "com.workingprinciple.xode"
 DMG_INVENTORY_IDENTITIES = []
 
 
@@ -107,7 +107,7 @@ def fixture(root):
     }))
     (app / "Contents/Resources/distribution-components.json").write_text("{}")
     (app / "Contents/Resources/mac-game-evidence-v1.json").write_text("{}")
-    engine_defaults = (app / "Contents/Resources/XodusAppFoundation_XodusManagement.bundle/"
+    engine_defaults = (app / "Contents/Resources/OdeApp_OdeManagement.bundle/"
                        "LaunchRecipes/engine-defaults-v1.json")
     engine_defaults.parent.mkdir(parents=True)
     engine_defaults.write_text(json.dumps({"bindings": [{
@@ -133,7 +133,7 @@ def signatures():
     return {
         "app": {"identifier": beta.APP_SIGNING_IDENTIFIER, "teamIdentifier": TEAM_ID,
                 "certificateSha1": IDENTITY, "hardenedRuntime": True, "secureTimestamp": True},
-        "Contents/MacOS/Xodus": {"identifier": beta.APP_SIGNING_IDENTIFIER,
+        "Contents/MacOS/Ode": {"identifier": beta.APP_SIGNING_IDENTIFIER,
                 "teamIdentifier": TEAM_ID, "certificateSha1": IDENTITY,
                 "hardenedRuntime": True, "secureTimestamp": True},
     }
@@ -158,7 +158,7 @@ def fake_runner(calls):
             assert resource_inventory["schemaVersion"] == 1
             assert resource_inventory["exceptions"] == [{
                 "type": "approved-developer-local-engine-binding",
-                "resource": "XodusAppFoundation_XodusManagement.bundle/LaunchRecipes/engine-defaults-v1.json",
+                "resource": "OdeApp_OdeManagement.bundle/LaunchRecipes/engine-defaults-v1.json",
                 "path": NMS_DEVELOPER_LOCAL_REGISTRY,
                 "engine": "calimocho-wine11.20-gptk4b3-tls-vulkan-private",
             }]
@@ -199,7 +199,7 @@ def rejected(operation):
     raise AssertionError("Unsafe beta package was accepted")
 
 
-with tempfile.TemporaryDirectory(prefix="xodus-beta-package-") as temporary:
+with tempfile.TemporaryDirectory(prefix="ode-beta-package-") as temporary:
     root = Path(temporary).resolve()
     app, output, source, producer_source_archive = fixture(root)
     commands = []
@@ -350,7 +350,7 @@ with tempfile.TemporaryDirectory(prefix="xodus-beta-package-") as temporary:
     commands.clear()
     background = root / "installer.tiff"
     background.write_bytes(b"II*\x00Neutral background fixture")
-    (app / "Contents/Resources/Xodus.icns").write_bytes(b"icnsNeutral icon fixture")
+    (app / "Contents/Resources/Ode.icns").write_bytes(b"icnsNeutral icon fixture")
     with patch.object(beta, "distribution_blockers", return_value=[]), \
             patch.object(beta, "verify_developer_id_bundle", return_value=signatures()), \
             patch.object(beta, "verify_developer_id_component",
@@ -368,7 +368,7 @@ with tempfile.TemporaryDirectory(prefix="xodus-beta-package-") as temporary:
     assert dmg_receipt["artifacts"]["background"]["sha256"] == hashlib.sha256(
         background.read_bytes()).hexdigest()
     assert dmg_receipt["artifacts"]["volumeIcon"]["sha256"] == hashlib.sha256(
-        (app / "Contents/Resources/Xodus.icns").read_bytes()).hexdigest()
+        (app / "Contents/Resources/Ode.icns").read_bytes()).hexdigest()
     resource_inventory_record = dmg_receipt["artifacts"]["resourceInventory"]
     assert resource_inventory_record == {
         "file": "RESOURCE-INVENTORY.json", **DMG_INVENTORY_IDENTITIES[-1],

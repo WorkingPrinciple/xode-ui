@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "defaultEngine": "calimocho-11.20-4.0b3-06",
+  "bindings": [
+    {
+      "engineName": "calimocho-11.20-4.0b3-06-fh6",
+      "wineSha256": "803a62d101303bb3160da4aa8a506857c3d1e1146aa4a0c9ee8250357ef12505",
+      "wineserverSha256": "7102d70405e7667acf143e710723f58fb24d32eee81468b1f0f02279343601d0"
+    },
+    {
+      "engineName": "calimocho-11.20-4.0b3-06",
+      "wineSha256": "803a62d101303bb3160da4aa8a506857c3d1e1146aa4a0c9ee8250357ef12505",
+      "wineserverSha256": "7102d70405e7667acf143e710723f58fb24d32eee81468b1f0f02279343601d0"
+    },
+    {
+      "engineName": "calimocho-11.20-4.0b3-04",
+      "wineSha256": "2482af598928431f89fc32c99de72e72e146195dd86a859cc834bcab57fad3d0",
+      "wineserverSha256": "655812965207694589e550bd58156c7841c08eeae50ecd09a1c8d803ed78cfc9"
+    },
+    {
+      "registryPath": "${HOME}/src/copilot-worktrees/calimocho/dragoshont-cautious-potato/build/winehq-11.20/metal-port-11b-private-binding-01/calimocho-wine11.20-gptk4b3-tls-vulkan-private.registry.local.PERF-FROZEN-170ca4ad.json",
+      "registrySha256": "170ca4ad08a5274b614e74bf740866ef219a97fdc7855270c5d8fa03192ed609",
+      "engineName": "calimocho-wine11.20-gptk4b3-tls-vulkan-private",
+      "wineSha256": "f6d0546fad2d0dafaa09a9fe6cabe75bb070567df6b0933ecd3622dcb6349194",
+      "wineserverSha256": "e3ec4e7e76cee273f17d5fa3459902642f73d6921e94c576aa74e8cdbdcd7da1",
+      "developerLocal": true
+    },
+    {
+      "engineName": "crossover-26.3-mvk142",
+      "provider": "crossover",
+      "registryPath": "${HOME}/Library/Application Support/Ode to X/CLI/renderers/moltenvk-1.4.2-private-api-x86_64-cor224/crossover-26.3-mvk142.registry.json",
+      "registrySha256": "c246dd2977fc42daf933d1e39507d5c1e2b49a7aa37beaaa6fe5348bcccbf80d",
+      "wineSha256": "04da13c940c57919334520f2fee4adb2186edb41904faf8f86647a0a03114953",
+      "wineserverSha256": "f9c4ed146c7d6dfc94334255907d4e0658218585085ca2107a5181b4deb474fc",
+      "developerLocal": true
+    },
+    {
+      "engineName": "highball-x64-crossover26.3-r27",
+      "provider": "highball",
+      "wineSha256": "8cce786bce298f601a415f2e2952a82512c02243689df5b40e0af8e6e63991ca",
+      "wineserverSha256": "7f842c62de7cb8a0409440cafa183d7177c820bc01d117683bd7d84f311d0709",
+      "developerLocal": true
+    }
+  ]
+}

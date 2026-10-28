@@ -16,17 +16,17 @@ flowchart LR
   Host --> Browser[Fresh nonpersistent native WKWebView]
 ```
 
-**Implemented:** SwiftPM `XodusCore` typed evidence/fixture policy, a supervised
-`XodusManagement` JSONL client, the live `XodusPreview` SwiftUI/AppKit shell,
+**Implemented:** SwiftPM `OdeCore` typed evidence/fixture policy, a supervised
+`OdeManagement` JSONL client, the live `OdePreview` SwiftUI/AppKit shell,
 dependency-free native checks and original scene resources. Explicit fixture
-mode never connects an engine. The separately staged `XodusAuthHost` executable
+mode never connects an engine. The separately staged `OdeAuthHost` executable
 has no management-module dependency; it owns native browser callbacks and the
 strict private seven-string handoff, not credentials in the main application.
 Its source/headless checks are not a deployed producer pairing or successful
 human authentication. Optional explicit exports write only this app's own views.
 
 **Future/gated:** authoritative inventory, authorized installation and a signed,
-exactly paired gameplay runtime. Existing `xodus-service` runtime IPC is not
+exactly paired gameplay runtime. Existing `ode-service` runtime IPC is not
 account/catalog/install/queue management. No private Rust source is imported.
 
 ## Model and ownership
@@ -157,7 +157,7 @@ The engine owns persistent raw caching; the app keeps at most 512 records/32 MiB
 and preserves each original five-minute expiry instead of extending it on reuse.
 REQ-121 adds a saved public copy for restarts: each verified public product
 record (product ID, market, language; schema version 1) is written to
-`~/Library/Caches/Xodus/PublicDescriptors` (0700 folder, 0600 files, at most
+`~/Library/Caches/Ode to X/PublicDescriptors` (0700 folder, 0600 files, at most
 64 MiB, 2,048 entries and seven days old, written with fsync before rename).
 It stores public descriptors keyed by product, market and language: no
 account, entitlement or token data, but the saved product IDs reflect what the
@@ -192,7 +192,7 @@ downloads while fresh.
 `--media-check` covers bounded metadata/artwork reuse, expiry, locale/source
 retirement, cancellation and finite size-error retries. To additionally exercise
 the actual Swift consumer against a compatible source-built CLI, use
-`XODUS_DESCRIPTOR_CHECK_CLI=/absolute/path/to/xodus-cli .build/debug/XodusPreview --media-check`.
+`ODE_DESCRIPTOR_CHECK_CLI=/absolute/path/to/ode-cli .build/debug/OdePreview --media-check`.
 That opt-in fixture creates only a new canonical private directory with one
 neutral raw public record and requests the seeded exact locale with Cache.
 It checks real hello/capability negotiation, rich-field decoding, original expiry
@@ -230,8 +230,8 @@ download progress remains in operation status. Package admission still uses the
 original metadata, while a blocked browse action points to the detail sheet.
 
 Reproduce the isolated CPU-preparation comparison with
-`swift build --product XodusPreview --jobs 1` followed by
-`swift run --skip-build XodusPreview --presentation-performance-check`.
+`swift build --product OdePreview --jobs 1` followed by
+`swift run --skip-build OdePreview --presentation-performance-check`.
 On Apple M5 Max, macOS 27.0.1, Swift 6.4, debug build, 20 samples per cell:
 
 | Synthetic titles | Original Discover p95 ms | Indexed cold p95 ms | Retained warm p95 ms |
@@ -286,9 +286,9 @@ kind and late completion after account retirement. These are synthetic transport
 operation counts, not real Wi-Fi latency or authenticated scrolling evidence.
 No 565-title wire-coverage claim is made.
 For a fresh checkout, build the isolated management helper first:
-`swift build --product XodusManagementChecks --jobs 1`, then
-`swift build --product XodusPreview --jobs 1` and
-`swift run --skip-build XodusPreview --library-access-check`.
+`swift build --product OdeManagementChecks --jobs 1`, then
+`swift build --product OdePreview --jobs 1` and
+`swift run --skip-build OdePreview --library-access-check`.
 The shipping Library embeds the same partial-resolution notice outside the
 legacy pane's collection-grid flag; a failed partial refresh never claims to
 show a complete prior library.
@@ -313,7 +313,7 @@ resized tile draws an already decoded copy of the same URL on its first frame. T
 session, when its running total passes 512 MiB and every ten minutes, not after
 every save, and skips entries another instance removed mid-sweep.
 Load-latency signposts (`log stream --signpost --predicate 'subsystem ==
-"io.github.dragoshont.xodus" AND category == "load-latency"'`) mark each
+"com.workingprinciple.xode" AND category == "load-latency"'`) mark each
 `DescriptorBatch` (hit, stale or miss), `DescriptorFetch`, `FirstTilesDrawn`
 (12 tiles) and each `VisibleArtworkDrawn` burst, with milliseconds since launch.
 Admission queues at most 64 jobs; excess requests surface the ordinary artwork

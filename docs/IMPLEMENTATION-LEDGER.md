@@ -42,8 +42,8 @@ arrays/jobs remain in `--fixture`; no client milestone waives the full real jour
 | ID | Status | Output / evidence | Verification |
 | --- | --- | --- | --- |
 | F-SPEC | specified | PRODUCT/DESIGN; requirements with measurable acceptance; UX, architecture, evidence and release gates | Documentation links resolve; unknowns explicitly retained |
-| F-DOMAIN | implemented-fixture | `Sources/XodusCore`: typed access/installability/compatibility evidence, identity, disk plan and queue policy | `swift run XodusFixtureChecks`: 14 checks |
-| F-NATIVE | implemented-fixture | `Sources/XodusPreview`: native SwiftUI/AppKit, actual macOS26+ Glass, original image resources, scoped search and simulated flows | `swift run XodusPreview --self-check`: 15 checks; Mac build + bounded own-view/AX evidence in VERIFICATION |
+| F-DOMAIN | implemented-fixture | `Sources/OdeCore`: typed access/installability/compatibility evidence, identity, disk plan and queue policy | `swift run OdeFixtureChecks`: 14 checks |
+| F-NATIVE | implemented-fixture | `Sources/OdePreview`: native SwiftUI/AppKit, actual macOS26+ Glass, original image resources, scoped search and simulated flows | `swift run OdePreview --self-check`: 15 checks; Mac build + bounded own-view/AX evidence in VERIFICATION |
 | F-DESIGN | specified | Nine original editable v0.2 SVG/PNG concepts, source/provenance, compact embedded art; unapproved v0.1 archived | Generator/XML/upload-budget checks; Figma revision status in design/README |
 | F-PROTOCOL | specified | `docs/BACKEND-CONTRACT.md`, preserved `docs/contracts/foundation-v1.schema.json` | Original proposed protocol **1.0**; current canonical producer schema/client evidence is recorded separately above |
 | F-LICENSE | implemented-fixture | GPL-3.0-only grant + verbatim LICENSE; original assets/source included | Runtime/component redistribution remains separate, blocked before shipping |
@@ -80,6 +80,6 @@ because XCTest/Testing are absent in that CLT; no fake shim is provided. Hosted
 workflow results must be read separately. Actual producer probes use explicit
 immutable engines and isolated app-adapter state, not private game roots.
 
-**Actual design commands:** `python3 tools/generate_mockups.py`; `swift tools/render_mockups.swift`; original art reproduction/export commands in design/README. Optional `swift run XodusPreview --export-preview <explicit-directory>` renders only this app's own views and exits; no desktop capture.
+**Actual design commands:** `python3 tools/generate_mockups.py`; `swift tools/render_mockups.swift`; original art reproduction/export commands in design/README. Optional `swift run OdePreview --export-preview <explicit-directory>` renders only this app's own views and exits; no desktop capture.
 
 Future live rows need their own committed runner commands, fault-injection fixtures and evidence before status changes to `implemented-live`. Never copy fixture check success into a live row. The user pre-approved overnight development after this foundation; the coordinating session owns subsequent work partitioning and the requested final adversarial review with **gpt-6-astra / high**. That review is not performed or claimed on this foundation branch.

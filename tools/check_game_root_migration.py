@@ -11,13 +11,13 @@ import migrate_game_root as migration
 
 class MigrationChecks(unittest.TestCase):
     def fixture(self, root):
-        old, new = root / "Xodus", root / "Xode"
+        old, new = root / "Ode", root / "Xode"
         old.mkdir()
         game = old / "Witcher"
         game.mkdir()
-        partial = game / ".xodus-streaming-tmp.msixvc"
+        partial = game / ".ode-streaming-tmp.msixvc"
         partial.write_bytes(b"neutral partial, not game data")
-        (old / ".Witcher.xodus-lifecycle.lock").touch()
+        (old / ".Witcher.ode-lifecycle.lock").touch()
         registry = root / "installed-games.json"
         registry.write_text(json.dumps([{"id": "stable", "folder": str(game),
                                         "engine": str(old) + "-not-a-descendant",
@@ -26,7 +26,7 @@ class MigrationChecks(unittest.TestCase):
         journal.write_text(json.dumps({"neutral": {"destination": str(game), "id": "stable",
                                                  "nativeAccountHash": "neutral-fixture"}}))
         launcher = root / "launcher.sh"
-        launcher.write_text("#!/bin/sh\nexport XODUS_GAME_FOLDER=" + str(game) + "\nexec /bin/true\n")
+        launcher.write_text("#!/bin/sh\nexport ODE_GAME_FOLDER=" + str(game) + "\nexec /bin/true\n")
         launcher.chmod(0o750)
         files = [(registry, "registry"), (journal, "resumable"), (launcher, "launcher")]
         return old, new, partial, files, root / "evidence"

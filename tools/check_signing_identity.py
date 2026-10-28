@@ -89,7 +89,7 @@ rejected(lambda: sign("/neutral/distribution", "cli", fingerprint,
                           "Developer ID Application:", "Apple Development:"),
                       developer_id=True))
 
-with tempfile.TemporaryDirectory(prefix="xodus-signing-neutral-") as temporary:
+with tempfile.TemporaryDirectory(prefix="ode-signing-neutral-") as temporary:
     signed_metadata = (
         "Identifier=neutral.component\n"
         "Format=Mach-O thin (arm64)\n"
@@ -147,8 +147,8 @@ with tempfile.TemporaryDirectory(prefix="xodus-signing-neutral-") as temporary:
             "CDHash=invalid"))))
 
     app = Path(temporary).resolve() / "Neutral.app"
-    for relative in ("Contents/MacOS/Xodus", "Contents/MacOS/XodusAuthHost",
-                     "Contents/Resources/XodusEngine/xodus-cli"):
+    for relative in ("Contents/MacOS/Ode", "Contents/MacOS/OdeAuthHost",
+                     "Contents/Resources/OdeEngine/ode-cli"):
         target = app / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(b"\xcf\xfa\xed\xfe" + b"Neutral signed Mach-O test fixture")
@@ -156,8 +156,8 @@ with tempfile.TemporaryDirectory(prefix="xodus-signing-neutral-") as temporary:
         app, component_identity, run=signed_component_command())
     assert signature_inventory["app"]["cdhash"] == \
         "0123456789abcdef0123456789abcdef01234567"
-    assert {"app", "Contents/MacOS/Xodus", "Contents/MacOS/XodusAuthHost",
-            "Contents/Resources/XodusEngine/xodus-cli"} == set(signature_inventory)
+    assert {"app", "Contents/MacOS/Ode", "Contents/MacOS/OdeAuthHost",
+            "Contents/Resources/OdeEngine/ode-cli"} == set(signature_inventory)
     (app / "Contents/Resources/Linked").symlink_to("missing")
     rejected(lambda: verify_developer_id_bundle(app, component_identity, run=signed_component_command()))
 
@@ -198,7 +198,7 @@ with tempfile.TemporaryDirectory(prefix="xodus-signing-neutral-") as temporary:
                 "externalProvenance": {"sha256": "c" * 64, "bytes": 200},
                 "profile": PROFILE, "features": FEATURES}
     base_receipt = {**approval, "signedBundledCLI": signed,
-                    "finalPackageFiles": {"Contents/Resources/XodusEngine/xodus-cli": signed}}
+                    "finalPackageFiles": {"Contents/Resources/OdeEngine/ode-cli": signed}}
     receipt = Path(temporary).resolve() / "prior-package-receipt.json"
     destination = Path(temporary).resolve() / "new-copy"
 
@@ -219,14 +219,14 @@ with tempfile.TemporaryDirectory(prefix="xodus-signing-neutral-") as temporary:
         ("externalProvenance", {"sha256": "e" * 64, "bytes": 200}),
         ("externalUnsignedCLI", {"sha256": "b" * 64, "bytes": 100.0}),
         ("profile", {**PROFILE, "debug_assertions": 0}),
-        ("features", {**FEATURES, "xodus-cli": ["plaintext"]}),
+        ("features", {**FEATURES, "ode-cli": ["plaintext"]}),
         ("signedBundledCLI", {"sha256": "f" * 64, "bytes": signed["bytes"]}),
         ("signedBundledCLI", {**signed, "bytes": float(signed["bytes"])}),
         ("signedBundledCLI", {**signed, "bytes": signed["bytes"] + 1}),
         ("finalPackageFiles", {}),
-        ("finalPackageFiles", {"Contents/Resources/XodusEngine/xodus-cli":
+        ("finalPackageFiles", {"Contents/Resources/OdeEngine/ode-cli":
                               {"sha256": "f" * 64, "bytes": signed["bytes"]}}),
-        ("finalPackageFiles", {"Contents/Resources/XodusEngine/xodus-cli":
+        ("finalPackageFiles", {"Contents/Resources/OdeEngine/ode-cli":
                               {**signed, "bytes": float(signed["bytes"])}}),
     ]:
         payload = copy.deepcopy(base_receipt)
@@ -270,7 +270,7 @@ with tempfile.TemporaryDirectory(prefix="xodus-signing-neutral-") as temporary:
 
     runtime_receipt = copy.deepcopy(base_receipt)
     runtime_receipt["finalPackageFiles"].update({
-        f"Contents/Resources/XodusPython/lib/neutral-{index}.py":
+        f"Contents/Resources/OdePython/lib/neutral-{index}.py":
             {"sha256": "d" * 64, "bytes": 12} for index in range(2000)})
     encoded = json.dumps(runtime_receipt, sort_keys=True).encode()
     assert 65536 < len(encoded) < PACKAGE_RECEIPT_LIMIT

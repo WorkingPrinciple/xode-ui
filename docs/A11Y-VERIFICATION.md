@@ -1,6 +1,6 @@
 # Live verification scripts: input, accessibility, permissions and lifecycle
 
-Source checks (`swift run XodusPreview --self-check`, `--settings-check`, `ManagementChecks`) prove the code paths
+Source checks (`swift run OdePreview --self-check`, `--settings-check`, `ManagementChecks`) prove the code paths
 and rendered states; they are not live acceptance. The steps below are the human-run part. Record for each run:
 the installed app build and executable SHA-256, macOS version, the exact settings before and after, and a
 screenshot or recording per step. Restore every changed setting afterwards. Do not launch a game, sign in with a
@@ -45,9 +45,9 @@ cost. If the difference is under measurement noise, record the hypothesis as ope
 
 ## REQ-19 VoiceOver and contrast on the actual app
 
-1. Start VoiceOver (Command-F5). With VO-Right, walk: sign-in screen (Sign in with Microsoft, the Wine and Xodus
+1. Start VoiceOver (Command-F5). With VO-Right, walk: sign-in screen (Sign in with Microsoft, the Wine and Ode
    line and the Acknowledgments link), toolbar, Home, a Library card, game detail, Settings ▸ General ▸
-   Permissions, Acknowledgments (featured Wine and Xodus links), and the Account popup. Each control is announced
+   Permissions, Acknowledgments (featured Wine and Ode links), and the Account popup. Each control is announced
    with a name and role; no control is announced only as "button" or "group".
 2. Open Accessibility Inspector ▸ Audit on each window and save the report.
 3. Take lossless screenshots in light and dark appearance and measure text against its backing with the Digital

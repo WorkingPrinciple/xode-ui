@@ -41,7 +41,7 @@ run() { # run STEP REQS ARGS... ; retries while the owner is active (exit 3 from
 run 00-preflight "all" preflight "$OUT" || { echo "Not ready; see $OUT/preflight.json"; exit 3; }
 run 01-launch "REQ-75 REQ-119 REQ-4" snapshot "$OUT" 01-launch
 run 01b-activate "all" activate "$OUT"
-run 02-library "REQ-5 REQ-60 REQ-61 REQ-62 REQ-63 REQ-64 REQ-85" press "$OUT" xodus.navigation.library
+run 02-library "REQ-5 REQ-60 REQ-61 REQ-62 REQ-63 REQ-64 REQ-85" press "$OUT" ode.navigation.library
 run 03-library-down "REQ-64 REQ-76 REQ-21" scroll "$OUT" down 2
 run 04-library-end "REQ-64 REQ-21" scroll "$OUT" down 10
 run 05-library-top "REQ-15 REQ-66" scroll "$OUT" up 20
@@ -49,23 +49,23 @@ for size in "1619 897" "1500 897" "1619 897" "1280 800" "1100 700"; do
     run "06-size-${size// /x}" "REQ-4 REQ-11" resize "$OUT" $size
 done
 run 07-library-position "REQ-8" scroll "$OUT" down 2
-run 08-discover "REQ-5 REQ-65 REQ-91 REQ-60 REQ-61" press "$OUT" xodus.navigation.discover
+run 08-discover "REQ-5 REQ-65 REQ-91 REQ-60 REQ-61" press "$OUT" ode.navigation.discover
 run 09-discover-down "REQ-91 REQ-21" scroll "$OUT" down 2
-run 10-back-to-library "REQ-8 REQ-9" press "$OUT" xodus.navigation.library
-run 11-back-to-discover "REQ-8 REQ-9" press "$OUT" xodus.navigation.discover
-run 11b-library-for-detail "REQ-11" press "$OUT" xodus.navigation.library
+run 10-back-to-library "REQ-8 REQ-9" press "$OUT" ode.navigation.library
+run 11-back-to-discover "REQ-8 REQ-9" press "$OUT" ode.navigation.discover
+run 11b-library-for-detail "REQ-11" press "$OUT" ode.navigation.library
 run 12-detail "REQ-11 REQ-23 REQ-62 REQ-63 REQ-77 REQ-61" press "$OUT" "label:View $DETAIL_TITLE"
 run 13-detail-close "REQ-11" press "$OUT" "label:Close"
-run 14a-discover "REQ-10" press "$OUT" xodus.navigation.discover
-run 14b-open-search "REQ-10 REQ-59" press "$OUT" xodus.catalog.openSearch
+run 14a-discover "REQ-10" press "$OUT" ode.navigation.discover
+run 14b-open-search "REQ-10 REQ-59" press "$OUT" ode.catalog.openSearch
 run 14-search "REQ-10 REQ-59 REQ-60 REQ-61 REQ-62 REQ-9" set-search "$OUT" "$SEARCH_QUERY"
-run 15-downloads "REQ-51 REQ-23" press "$OUT" xodus.navigation.downloads
-run 16-account "REQ-93 REQ-49" press "$OUT" xodus.account
-run 17-account-close "REQ-93" press "$OUT" xodus.account.close
+run 15-downloads "REQ-51 REQ-23" press "$OUT" ode.navigation.downloads
+run 16-account "REQ-93 REQ-49" press "$OUT" ode.account
+run 17-account-close "REQ-93" press "$OUT" ode.account.close
 run 18-acknowledgments "REQ-117 REQ-122 REQ-19" press "$OUT" "menu:Acknowledgments…"
 run 19-settings "REQ-118 REQ-20" press "$OUT" "menu:Settings…"
-run 20-settings-general "REQ-118" press "$OUT" xodus.settings.general
-run 21-library-final "REQ-21 REQ-8" press "$OUT" xodus.navigation.library
+run 20-settings-general "REQ-118" press "$OUT" ode.settings.general
+run 21-library-final "REQ-21 REQ-8" press "$OUT" ode.navigation.library
 
 for png in "$OUT"/*.png; do
     [ -e "$png" ] && run "30-contrast-$(basename "$png" .png)" "REQ-19 REQ-20" contrast "$OUT" "$png"
