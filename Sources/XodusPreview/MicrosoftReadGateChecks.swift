@@ -12,6 +12,91 @@ enum MicrosoftReadGateChecks {
         for scenario in ["odegate", "odegaterejected"] {
             try await matrix(scenario: scenario, check: check)
         }
+        try await playJoinsAutomaticOperation(check: check)
+        try await provisionalCountryVersusPlay(check: check)
+    }
+
+    /// c71aada6 minor-4: a Play that joins a running automatic licence operation reads as an explicit action, even
+    /// after the gate is held; the operation's own automatic reads are refused at the boundary.
+    private static func playJoinsAutomaticOperation(check: (Bool, String) -> Void) async throws {
+        let account = String(repeating: "a", count: 64)
+        let gate = MicrosoftReadGate()
+        let installed = (0..<4).map { String(format: "9GATE%07d", $0) }
+        let played = installed[3]
+        var sent: [String] = [], refused: [String] = []
+        let read: @MainActor (String) async throws -> OdeAccountRead = { id in
+            do { try gate.admit(account: account) } catch { refused.append(id); throw error }
+            sent.append(id)
+            try await Task.sleep(for: .milliseconds(200))
+            let payload: [String: Any] = ["section": "license", "accountHash": account,
+                "checkedAt": "2030-01-01T00:00:00Z",
+                "payload": ["productID": id, "access": "permitted", "reason": NSNull(), "expiresAt": NSNull()]]
+            return try JSONDecoder().decode(OdeAccountRead.self, from: JSONSerialization.data(withJSONObject: payload))
+        }
+        let store = InstalledProductAccess()
+        // An automatic operation (no explicit context) checks the installed games one by one.
+        let sweep = Task { @MainActor in
+            await MicrosoftReadContext.automatic {
+                Task { @MainActor in await store.refresh(account: account, installedIDs: installed, read: read) }
+            }.value
+        }
+        try await Task.sleep(for: .milliseconds(60))
+        let firstInFlight = store.inFlightID == installed[0]
+        gate.record(ManagementError.authenticatedReadThrottled(retryAfterSeconds: 90), account: account)
+        // Play joins the running operation once (the production Play path is explicit).
+        await MicrosoftReadContext.explicit {
+            await store.prioritize(played, account: account, installedIDs: installed, read: read)
+        }
+        let joined = sent == [installed[0]]
+        await sweep.value
+        check(firstInFlight && joined && store.facts[played] != nil && sent == [installed[0], played]
+              && Set(refused) == Set(installed[1...2]),
+              "c71aada6 minor-4: Play joining an automatic licence operation reads as Play (explicit) while the gate is held; the operation's automatic reads are refused (sent \(sent), refused \(refused))")
+    }
+
+    /// c71aada6 minor-5: the provisional country re-check never fails a Play licence read.
+    private static func provisionalCountryVersusPlay(check: (Bool, String) -> Void) async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("xodus-gate-country-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: root) }
+        let config = BackendConfiguration(executable: URL(fileURLWithPath: CommandLine.arguments[0])
+            .deletingLastPathComponent().appendingPathComponent("XodusManagementChecks"),
+            stateDirectory: root.appendingPathComponent("odeslow"))
+        let suite = "xodus-gate-country-\(UUID().uuidString)"
+        guard let defaults = UserDefaults(suiteName: suite) else { check(false, "Country defaults"); return }
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let account = String(repeating: "a", count: 64)
+        defaults.set("US", forKey: LiveSession.lastVerifiedCountryKey(account))
+        let session = LiveSession(configuration: config, countryDefaults: defaults)
+        session.checksAdmitLifecycleExecutable = true
+        await session.connect()
+        await session.refreshAccount()
+        session.applyProvisionalAccountCountry()
+        // Wait until the provisional re-check's profile read (0.3 s on this child) holds the account operation.
+        for _ in 0..<100 where !session.accountCountryChecking || !session.accountBusy {
+            try await Task.sleep(for: .milliseconds(5))
+        }
+        let recheckInFlight = session.accountCountryChecking && session.accountBusy
+        // Play's licence read, entering directly while the re-check holds the account operation.
+        var direct: Result<OdeAccountRead, Error>?
+        do {
+            direct = .success(try await MicrosoftReadContext.explicit {
+                try await session.readUnifiedAccount(.license, productID: "9NBLGGH4R315")
+            })
+        } catch { direct = .failure(error) }
+        let directOK = (try? direct?.get())?.section == .license
+        // And through the production Play path while another re-check runs.
+        let access = InstalledProductAccess()
+        let countryRecheck = Task { @MainActor in await session.refreshAccountCountry() }
+        try await Task.sleep(for: .milliseconds(20))
+        await MicrosoftReadContext.explicit {
+            await access.prioritize("9NBLGGH4R316", session: session, installedIDs: ["9NBLGGH4R316"])
+        }
+        for _ in 0..<200 where access.checking { try await Task.sleep(for: .milliseconds(10)) }
+        await countryRecheck.value
+        check(recheckInFlight && directOK && access.facts["9NBLGGH4R316"] != nil && access.errors.isEmpty
+              && session.accountCountryVerified,
+              "c71aada6 minor-5: a provisional country re-check in flight never fails a Play licence read; the licence read waits and succeeds, and the country is still confirmed (re-check in flight \(recheckInFlight), direct \(directOK), facts \(access.facts.count), errors \(access.errors), verified \(session.accountCountryVerified), ready \(session.accountCountryReady), lifecycle \(session.nativeLifecycleConfiguration != nil))")
+        check(await session.disconnect(), "c71aada6 minor-5: country/Play management child is joined")
     }
 
     private static func rules(check: (Bool, String) -> Void) {
@@ -75,6 +160,8 @@ enum MicrosoftReadGateChecks {
         guard let defaults = UserDefaults(suiteName: suite) else { check(false, "Read-gate defaults"); return }
         defer { defaults.removePersistentDomain(forName: suite) }
         let session = LiveSession(configuration: config, countryDefaults: defaults)
+        // The product-page row needs the native lifecycle; the synthetic child is admitted for checks only.
+        session.checksAdmitLifecycleExecutable = true
         await session.connect()
         await session.refreshAccount()
         guard session.hasConfirmedSignIn, let account = session.accountHash else {
@@ -121,7 +208,12 @@ enum MicrosoftReadGateChecks {
         let companion = XboxCompanionController()
         companion.useUnifiedAccount(session)
         let access = InstalledProductAccess()
+        // Bound to this account and scope as after earlier use (no product given, so no read).
+        let beforeBinding = outbound()
+        await access.refresh(session: session, installedIDs: [])
+        check(outbound() == beforeBinding, "d270a2c5 \(scenario): binding the licence store reads nothing")
         let product = "9NBLGGH4R315", title = "1915865634"
+        var lifecycleNote = ""
         let rows: [Row] = [
             Row(trigger: "library scene active", source: "LiveRootView .task(scenePhase) → refreshInBackground") {
                 await library.refreshInBackground() },
@@ -138,7 +230,8 @@ enum MicrosoftReadGateChecks {
             Row(trigger: "achievements on the title view", source: "XboxCompanionViews → loadAchievements(titleID:status:)") {
                 await companion.loadAchievements(titleID: title, status: nil) },
             Row(trigger: "licence product page appear", source: "LiveProductView .task → checkProduct(_:session:)") {
-                await access.checkProduct(product, session: session) },
+                await access.checkProduct(product, session: session)
+                lifecycleNote = "ready \(session.accountCountryReady) lifecycle \(session.nativeLifecycleConfiguration != nil) checking \(access.checking) facts \(access.facts.count) errors \(access.errors) paused \(access.pausedNotice() ?? "-")" },
             Row(trigger: "licence read reaching the boundary unmarked", source: "LiveSession.readUnifiedAccount(.license)") {
                 _ = try? await session.readUnifiedAccount(.license, productID: product) },
             Row(trigger: "runtime verify (automatic prepare)", source: "LiveRootView → prepareUnifiedRuntime") {
@@ -162,11 +255,12 @@ enum MicrosoftReadGateChecks {
                     : ManagementError.authenticatedReadThrottled(retryAfterSeconds: 90), account: account)
             }
             allHeld = allHeld && during == 0
-            allAfter = allAfter && after <= 1
-            lines.append("\(row.trigger) [\(row.source)]: held \(during), after \(after)")
+            // c71aada6 minor-1: no dead rows; each trigger reads exactly once after the window.
+            allAfter = allAfter && after == 1
+            lines.append("\(row.trigger) [\(row.source)]: held \(during), after \(after)\(row.trigger.hasPrefix("licence product") ? " (\(lifecycleNote))" : "")")
         }
         check(allHeld && allAfter,
-              "d270a2c5 \(scenario) matrix: 0 outbound Microsoft reads per automatic trigger while held, at most 1 after — " + lines.joined(separator: "; "))
+              "d270a2c5 \(scenario) matrix: 0 outbound Microsoft reads per automatic trigger while held, exactly 1 after — " + lines.joined(separator: "; "))
 
         if !rejected {
             // minor-2: a detail retry scheduled while open re-checks the gate when it fires.
@@ -202,10 +296,17 @@ enum MicrosoftReadGateChecks {
         let disconnected = await session.disconnect()
         let heldWhileDisconnected = !session.readGate.allowsAutomaticRead(account: account)
         await library.retireUnifiedAccount()
-        access.retire(keepingPause: true)
+        // c71aada6 minor-2: the licence store sees the scope change while confirmation is lost and again after it
+        // returns; its own pause (and rejection) for this account survive both.
+        let storePausedBefore = access.pausedNotice() != nil
+        await access.refresh(session: session, installedIDs: [])
         await session.connect()
         await session.refreshAccount()
         let reconnected = session.hasConfirmedSignIn && session.accountHash == account
+        await access.refresh(session: session, installedIDs: [])
+        let storePauseKept = storePausedBefore && access.pausedNotice() != nil && access.signInRejected == rejected
+        check(storePauseKept,
+              "c71aada6 minor-2 \(scenario): the licence store's pause\(rejected ? " and sign-in rejection" : "") survive the scope changes of a lost and regained confirmation")
         let restartBaseline = outbound()
         await session.loadRecentLibraryOnEntry()
         await library.loadOnAppear()
@@ -218,6 +319,28 @@ enum MicrosoftReadGateChecks {
         check(disconnected && heldWhileDisconnected && reconnected && afterRestart == 0
               && beforeRestart == restartBaseline && !session.readGate.allowsAutomaticRead(account: account),
               "d270a2c5 MAJOR-1 \(scenario): restarting the management child keeps the gate; recent library for the new connection, library appear/foreground, profile, product page and runtime make 0 reads (\(afterRestart))")
+        // c71aada6 minor-1: positive control on the reconnected child; with the gate open each trigger reads once.
+        let freshAccess = InstalledProductAccess()
+        await freshAccess.refresh(session: session, installedIDs: [])
+        let controls: [(String, @MainActor () async -> Void)] = [
+            ("recent library for the new connection", { await session.loadRecentLibraryOnEntry() }),
+            ("library appear", { await library.loadOnAppear() }),
+            ("companion profile", { await companion.refresh(for: nil) }),
+            ("licence product page", { await freshAccess.checkProduct(product, session: session) }),
+            ("runtime prepare", { await session.prepareUnifiedRuntime() }),
+        ]
+        var controlLines: [String] = [], controlsRead = true
+        for (name, trigger) in controls {
+            openGate()
+            let before = outbound()
+            await trigger()
+            await settle()
+            let reads = outbound() - before
+            controlsRead = controlsRead && reads == 1
+            controlLines.append("\(name) \(reads)")
+        }
+        check(controlsRead,
+              "c71aada6 minor-1 \(scenario): after the restart, with the gate open, each trigger reads exactly once (" + controlLines.joined(separator: ", ") + ")")
         check(await session.disconnect(), "d270a2c5 \(scenario): read-gate management child is joined")
     }
 }

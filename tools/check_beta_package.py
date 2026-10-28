@@ -20,13 +20,13 @@ from package_beta import (IDENTITY, TEAM_ID,
 PRODUCER_SOURCE_ARCHIVE_BYTES = b"Neutral private tester source archive"
 PRODUCER_SOURCE_ARCHIVE_SHA256 = hashlib.sha256(PRODUCER_SOURCE_ARCHIVE_BYTES).hexdigest()
 assert beta.PRODUCER_NOTICES_SHA256 == (
-    "790a0eb1d7c6292087f8408273effd504f23040539007122dd47bc04cf82cd06")
+    "e81effd6895ce8c41469b5fd701a8c9b30aa6b4be3e904a69ae5e4316b34bbb3")
 assert beta.PRODUCER_NOTICES_EVIDENCE_SHA256 == (
-    "7511c563116dd4147c48d6aadc8c12c80f096cd9c7b246615fba27476dcd1d1b")
-assert beta.PRODUCER_SOURCE_COMMIT == "b1714928bd791c9ca1ce06e1551f2f91247e3ecc"
-assert beta.PRODUCER_SOURCE_TREE == "79763e70c6951e5fc91d18e21c812e385f9be46e"
+    "9214c87d9038930e76cdb388023de9a657cb240180dd36438bd9c4e66b943c1a")
+assert beta.PRODUCER_SOURCE_COMMIT == "bcc11c98621cf9f90679e383f02ec4516df57ad5"
+assert beta.PRODUCER_SOURCE_TREE == "617a861319c3d9812ab43801c21c0a9352cf40ea"
 assert beta.PRODUCER_SOURCE_ARCHIVE_SHA256 == (
-    "10d5a0afeff522ac5309676023004331392dac230daaaa51144df74d3978bc70")
+    "374ee6e11cef6f9caf65ca7d55210dc2e176ca762b859a07b64f66877081b69a")
 assert beta.PRODUCER_SOURCE_ARCHIVE_BYTES == 10_086_400
 shipping.SOURCE_ARCHIVE_SHA256 = PRODUCER_SOURCE_ARCHIVE_SHA256
 shipping.SOURCE_ARCHIVE_BYTES = len(PRODUCER_SOURCE_ARCHIVE_BYTES)
@@ -270,7 +270,7 @@ with tempfile.TemporaryDirectory(prefix="xodus-beta-package-") as temporary:
     assert "installer are signed" not in beta.RELEASE_INSTALL_NOTE
     assert "disk image are stapled" not in beta.RELEASE_INSTALL_NOTE
     assert "PRIVATE-TESTER-SOURCE.tar" not in beta.RELEASE_INSTALL_NOTE
-    assert "xodus-cli-beta-b1714928-source.tar" in beta.RELEASE_INSTALL_NOTE
+    assert "xodus-cli-beta-bcc11c98-source.tar" in beta.RELEASE_INSTALL_NOTE
     assert "Attach that exact archive to the GitHub draft release before publication" in beta.RELEASE_INSTALL_NOTE
     assert "Acknowledge every open-source project" not in beta.PUBLIC_RELEASE_NOTES
     assert "must be attached to" in beta.PUBLIC_RELEASE_NOTES

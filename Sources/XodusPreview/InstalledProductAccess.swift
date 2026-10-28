@@ -83,7 +83,7 @@ final class InstalledProductAccess: ObservableObject {
     /// A product a waiting request needs now (e.g. a deep link); a running sweep checks it next.
     private var priorityID: String?
     /// d270a2c5 MAJOR-3: how the queued priority reads, so a cancel can re-issue it as a fresh check.
-    private var priorityRead: (account: String?, read: @MainActor (String) async throws -> OdeAccountRead)?
+    private var priorityRead: (account: String?, explicit: Bool, read: @MainActor (String) async throws -> OdeAccountRead)?
     /// The product the running operation is reading now.
     private(set) var inFlightID: String?
     /// The account a kept pause belongs to.
@@ -180,8 +180,10 @@ final class InstalledProductAccess: ObservableObject {
         guard let (id, how) = queued, id != productID else { return }
         let installedIDs = Array(installedGames.union([id]))
         Task { @MainActor in
-            await self.refresh(account: how.account, installedIDs: installedIDs, force: true,
-                               selectedProductID: id, read: how.read)
+            await MicrosoftReadContext.$explicit.withValue(how.explicit) {
+                await self.refresh(account: how.account, installedIDs: installedIDs, force: true,
+                                   selectedProductID: id, read: how.read)
+            }
         }
     }
 
@@ -302,7 +304,9 @@ final class InstalledProductAccess: ObservableObject {
                  selectedProductID: String? = nil) async {
         let scope = session.accountCatalogScope
         if catalogScope != scope {
-            retire()
+            // d270a2c5 minor-2: a scope change (including a temporarily lost confirmation) keeps the pause,
+            // backoff and sign-in rejection for the same account; another account clears them below.
+            retire(keepingPause: true)
             catalogScope = scope
         }
         guard session.accountCountryReady else { return }
@@ -393,7 +397,10 @@ final class InstalledProductAccess: ObservableObject {
             var queue = ids
             while !queue.isEmpty || priorityID != nil {
                 let id: String
+                // d270a2c5 minor-4: a Play that joined this (possibly automatic) operation reads as Play did.
+                var explicitRead = MicrosoftReadContext.explicit
                 if let urgent = priorityID {
+                    explicitRead = explicitRead || priorityRead?.explicit == true
                     priorityID = nil
                     priorityRead = nil
                     queue.removeAll { $0 == urgent }
@@ -411,7 +418,8 @@ final class InstalledProductAccess: ObservableObject {
                     let response: OdeAccountRead
                     readCount += 1
                     do {
-                        response = try await read(id)
+                        response = explicitRead ? try await MicrosoftReadContext.explicit { try await read(id) }
+                            : try await read(id)
                         LoadSignposts.end("LicenseRead", licenseSpan, "outcome=success")
                     } catch {
                         LoadSignposts.end("LicenseRead", licenseSpan, "outcome=failed")
@@ -467,7 +475,7 @@ final class InstalledProductAccess: ObservableObject {
         if operation != nil, accountHash == account, account != nil {
             installed.insert(productID)
             priorityID = productID
-            priorityRead = (account, read)
+            priorityRead = (account, MicrosoftReadContext.explicit, read)
             return
         }
         await refresh(account: account, installedIDs: installedIDs, force: true,

@@ -444,11 +444,22 @@ final class LiveSession: ObservableObject {
     var accountHash: String? {
         authentication?.accountHash.flatMap { XboxAccountBinding.valid($0) ? $0 : nil }
     }
+#if !XODUS_SHIPPING
+    /// Checks only (compiled out of shipping builds): admits the synthetic management child as the lifecycle CLI.
+    var checksAdmitLifecycleExecutable = false
+#endif
+    private var lifecycleExecutableAdmitted: Bool {
+#if !XODUS_SHIPPING
+        if checksAdmitLifecycleExecutable { return true }
+#endif
+        guard let configuration = connectedConfiguration else { return false }
+        return configuration.executableIdentity?.sha256 == NativeLifecyclePins.cliSHA256
+            && configuration.executableIdentity?.executable == configuration.executable
+    }
     var nativeLifecycleConfiguration: BackendConfiguration? {
         guard hasConfirmedSignIn, !connectionTransitioning, !signingOut, !applicationTerminating,
               supports(.odeAccountRead), let configuration = connectedConfiguration,
-              configuration.executableIdentity?.sha256 == NativeLifecyclePins.cliSHA256,
-              configuration.executableIdentity?.executable == configuration.executable else { return nil }
+              lifecycleExecutableAdmitted else { return nil }
         return configuration
     }
     var nativeInstallStatusConfiguration: BackendConfiguration? {
@@ -736,9 +747,9 @@ final class LiveSession: ObservableObject {
             do {
                 result = try await client.request(.libraryRecent, params: ["limit": .integer(20)])
                     .decode(RecentLibrarySnapshot.self)
-                if let gateAccount { readGate.recordSuccess(account: gateAccount) }
+                if let gateAccount, accountHash == gateAccount { readGate.recordSuccess(account: gateAccount) }
             } catch {
-                if let gateAccount { readGate.record(error, account: gateAccount) }
+                if let gateAccount, accountHash == gateAccount { readGate.record(error, account: gateAccount) }
                 throw error
             }
             guard token == generation, authToken == authenticationGeneration,
@@ -1121,6 +1132,16 @@ final class LiveSession: ObservableObject {
                 }
             }
         }
+        // d270a2c5 minor-5: a licence read (Play) waits, bounded, behind another account read such as the
+        // provisional country re-check, instead of failing because that read holds the account operation.
+        if section == .license {
+            for _ in 0..<200 where accountOperationBusy || recentLibraryBootstrapRunning {
+                try await Task.sleep(for: .milliseconds(50))
+                guard generation == admissionGeneration, authenticationGeneration == admissionAuthentication else {
+                    throw ManagementError.notSent
+                }
+            }
+        }
         // f51e60fe B1: these refusals happen before anything leaves this Mac.
         guard hasConfirmedSignIn, !accountOperationBusy, !recentLibraryBootstrapRunning,
               section == .runtime || !accountRuntimeStarting, !applicationTerminating, let client,
@@ -1154,9 +1175,10 @@ final class LiveSession: ObservableObject {
         let result: OdeAccountRead
         do {
             result = try await client.request(command, params: params).decode(OdeAccountRead.self)
-            readGate.recordSuccess(account: account)
+            if accountHash == account { readGate.recordSuccess(account: account) }
         } catch {
-            readGate.record(error, account: account)
+            // d270a2c5 minor-3: an answer feeds the gate only for the account that is still current.
+            if accountHash == account { readGate.record(error, account: account) }
             throw error
         }
         try Task.checkCancellation()
