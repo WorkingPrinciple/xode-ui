@@ -331,7 +331,7 @@ import XodusManagement
               && !PCGamesController.automaticRetryAllowed(after: ManagementError.authenticatedReadFailed(.authExchangeFailed))
               && PCGamesController.automaticRetryAllowed(after: ManagementError.authenticatedReadFailed(.transportFailed))
               && PCGamesController.throttlePause(after: ManagementError.authenticatedReadThrottled(retryAfterSeconds: nil)) == 600
-              && library.throttledUntil.map { $0.timeIntervalSinceNow > 80 } == true && !library.detailRetryPending,
+              && library.throttledUntil.map { $0.timeIntervalSince(throttleAt) == 90 } == true,
               "bc33adf2 M-a: library detail retries honour Microsoft's throttle delay and never retry a rejected sign-in")
         let productSource = (try? String(contentsOfFile: "Sources/XodusPreview/LiveProductView.swift", encoding: .utf8)) ?? ""
         let appSource = (try? String(contentsOfFile: "Sources/XodusPreview/XodusPreviewApp.swift", encoding: .utf8)) ?? ""

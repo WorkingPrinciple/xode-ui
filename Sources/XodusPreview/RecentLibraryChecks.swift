@@ -365,13 +365,14 @@ enum RecentLibraryChecks {
         await throttled.refreshRecentLibrary()
         let survived = throttled.isReady
         let errorAfterThrottle = throttled.recentLibraryError
+        let staleTitles = throttled.recentLibrary?.titles.count ?? -1
         await throttled.refreshAccount()
         let accountReadAfter = throttled.accountStatusCurrent
         let lifecycle = try trace("recentthrottled")
         check(errorAfterThrottle == LiveSession.throttledMessage(retryAfterSeconds: 90)
-              && survived && throttled.isReady && accountReadAfter && throttled.recentLibrary?.titles.count == 1
+              && survived && throttled.isReady && accountReadAfter && staleTitles == 1
               && lifecycle.filter { $0 == "started" }.count == 1 && lifecycle.filter { $0 == "library.recent" }.count == 2,
-              "bc33adf2 B-new: a throttled recent-history read keeps the game-service connection and says when to try again (\(throttled.recentLibraryError ?? "nil"))")
+              "bc33adf2 B-new: a throttled recent-history read keeps the game-service connection and says when to try again (error \(errorAfterThrottle ?? "nil"), ready \(survived)/\(throttled.isReady), account \(accountReadAfter), titles \(staleTitles), trace \(lifecycle))")
         check(await throttled.disconnect(), "Throttled history owner closes")
         let retired = LiveSession(configuration: configuration("recentslow"))
         await retired.connect()
