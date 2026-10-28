@@ -5,7 +5,7 @@ import OSLog
 import OdeManagement
 
 enum NativeLifecyclePins {
-    static let cliSHA256 = "4034e2cab0bf3bdad9bd2ce840783fbc92bad160fa24c1fcdb50213b39d325b1"
+    static let cliSHA256 = "3da6b7a42acaf33fa0ab36c44ddc5f4574f7f644bd4434ad6de70e2c85632db6"
 }
 
 struct NativeWindowsVersion: Equatable, Sendable {
@@ -39,7 +39,7 @@ struct NativeWindowsVersion: Equatable, Sendable {
         return Self(build: UInt32(build), profile: profile)
     }
 
-    /// Mirrors the producer's WINDOWS_PROFILE_FAMILIES (lifecycle.rs, 285696f9).
+    /// Mirrors the producer's WINDOWS_PROFILE_FAMILIES (lifecycle.rs, dcc7dbda).
     static let families: [(profile: String, first: UInt32)] = [
         ("win7", 7600), ("win8", 9200), ("win81", 9600), ("win10", 10240), ("win11", 22000), ("win11-24h2", 26100),
     ]

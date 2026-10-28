@@ -29,8 +29,8 @@ IDENTITY = "410914520BCC840C0125D3826CCF0F247F603321"
 TEAM_ID = "M62Z4M5EUY"
 APP_BUNDLE_IDENTIFIER = "com.workingprinciple.xode.development"
 APP_SIGNING_IDENTIFIER = IDENTIFIERS["app"]
-PRODUCER_NOTICES_SHA256 = "056477226f1d044c813a8af2c68ea0f936e49496399bedfbb631cf775ac113ce"
-PRODUCER_NOTICES_EVIDENCE_SHA256 = "51c7627e81838c8b1ce1343ddc7a582bbf6ad5d08964495f8ee08bf23e441bce"
+PRODUCER_NOTICES_SHA256 = "8bec4043328e2965dd63b489ffee2de3a405e6cfa9077ea9f3d1b750a66770d4"
+PRODUCER_NOTICES_EVIDENCE_SHA256 = "607906a26ec4511f30e3acc0298ee71b3499e989077a9b0620b32415bc3a10ed"
 PRODUCER_SOURCE_COMMIT = PRODUCER
 PRODUCER_SOURCE_TREE = PRODUCER_TREE
 PRODUCER_SOURCE_ARCHIVE_SHA256 = SOURCE_ARCHIVE_SHA256
@@ -54,8 +54,8 @@ X Ode.app is signed with Developer ID and notarized by Apple. The app's
 notarization ticket is stapled.
 
 The corresponding source archive for the bundled backend is provided next to
-this disk image as xodus-cli-285696f9-source.tar (SHA-256
-d068b2afb1ff625d68050cccadafca0aef7ef1c84900e1d74ee920b58e8ac4be).
+this disk image as xodus-cli-dcc7dbda-source.tar (SHA-256
+f47e44f24bc89e190d8ea7527f3366b56133edf5a8eb900f287169897b5a92cd).
 Attach that exact archive to the GitHub draft release before publication; do
 not publish the app without its corresponding source.
 """
@@ -136,7 +136,7 @@ In-game voice chat and microphone input aren't supported in this beta. Updates k
 - X Ode and its backend are **GPL-3.0**; the backend builds on
   [Xodus](https://github.com/xodus-gaming/xodus). The corresponding source
   archive for the backend binary must be attached to the draft release before
-  publication as `xodus-cli-285696f9-source.tar`.
+  publication as `xodus-cli-dcc7dbda-source.tar`.
 - The Calimocho engine is **LGPL-2.1-or-later** (based on Wine). It includes
   Apple's D3DMetal under Apple's Game Porting Toolkit licence, which allows
   free, non-commercial distribution only. Engine source is attached to its own
@@ -147,7 +147,7 @@ In-game voice chat and microphone input aren't supported in this beta. Updates k
 
 | File | SHA-256 |
 |---|---|
-| xodus-cli-285696f9-source.tar | d068b2afb1ff625d68050cccadafca0aef7ef1c84900e1d74ee920b58e8ac4be |
+| xodus-cli-dcc7dbda-source.tar | f47e44f24bc89e190d8ea7527f3366b56133edf5a8eb900f287169897b5a92cd |
 """
 def run(arguments, timeout=1800):
     result = subprocess.run(arguments, capture_output=True, text=True, timeout=timeout)

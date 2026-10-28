@@ -15,7 +15,7 @@ Swift has its own single counterpart: Sources/OdeLegacyCompatibility/LegacyCompa
 CRATE_CORE = "xodus"
 CRATE_CLI = "xodus-cli"
 CRATE_SERVICE = "xodus-service"
-# Owned management crate, renamed in the pinned producer 285696f9 (REQ-161).
+# Owned management crate, renamed in the pinned producer dcc7dbda (REQ-161).
 CRATE_MANAGEMENT = "ode-management"
 WORKSPACE_CRATES = frozenset({"msixvc", "msixvc-common", CRATE_CORE, CRATE_CLI, CRATE_MANAGEMENT, CRATE_SERVICE})
 

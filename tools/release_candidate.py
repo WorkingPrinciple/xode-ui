@@ -31,7 +31,7 @@ from package_beta import (PRODUCER_NOTICES_EVIDENCE_SHA256, PRODUCER_NOTICES_SHA
 from legacy_compatibility import PRODUCER_CLI, PRODUCER_WINDOW_HELPER
 from shipping_pair import require_renamed_producer
 
-PRODUCER_SOURCE_ARCHIVE_NAME = "xodus-cli-285696f9-source.tar"
+PRODUCER_SOURCE_ARCHIVE_NAME = "xodus-cli-dcc7dbda-source.tar"
 
 
 def read_json(path):

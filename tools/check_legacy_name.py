@@ -137,7 +137,7 @@ SELF_TEST = (
     ("README.md", "https://github.com/xodus-gaming/xodusevil", True),
     ("README.md", "https://github.com/xodus-gaming/xodus.evil", True),
     ("README.md", "https://evil.example/https://github.com/WorkingPrinciple/x/blob/" + "0" * 40 + "/xodus", True),
-    ("README.md", "XODUS_XBL_ONLINE=1 xodus-cli-beta-285696f9-source.tar", False),
+    ("README.md", "XODUS_XBL_ONLINE=1 xodus-cli-beta-dcc7dbda-source.tar", False),
     ("README.md", "[a](https://github.com/WorkingPrinciple/xode-ui/blob/" + "0" * 40 + "/Sources/XodusPreview/A.swift#L1)", False),
     ("README.md", "Built on [xodus-gaming](https://github.com/WorkingPrinciple/xodus-macos).", False),
     ("README.md", "[notes](https://github.com/WorkingPrinciple/xodus-macos/blob/main/docs/xodus/a.md) of Xodus.", False),
