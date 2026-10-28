@@ -53,9 +53,15 @@ FROZEN = {
 # (its paths are upstream's), and links to a file at a pinned commit in our own repositories (which keep
 # that commit's paths).
 LINK_END = r"[^\s)\]>\"'`]*"
-ATTRIBUTION = re.compile(r"(?:https?://)?(?:github\.com/)?xodus-gaming(?:/xodus\b)?"
-                         r"|(?:https?://github\.com/)?WorkingPrinciple/xodus-macos(?![-\w])(?:/" + LINK_END + ")?"
-                         r"|https?://github\.com/(?:WorkingPrinciple|dragoshont)/[\w.-]+/blob/[0-9a-f]{40}/" + LINK_END)
+# A span starts at a token boundary (not inside a host, path or word) and ends at one: no trailing word
+# character, hyphen or dotted continuation, so look-alike hosts, owners and repositories don't match.
+START = r"(?<![\w./:@-])"
+END = r"(?![\w-]|\.\w)"
+GITHUB = r"(?:(?:https?://)?github\.com/)?"
+ATTRIBUTION = re.compile(START + GITHUB + r"xodus-gaming(?:/xodus" + END + r")?" + END
+                         + r"|" + START + GITHUB + r"WorkingPrinciple/xodus-macos" + END + r"(?:/" + LINK_END + r")?"
+                         + r"|" + START + r"https?://github\.com/(?:WorkingPrinciple|dragoshont)/[\w.-]+/blob/[0-9a-f]{40}/"
+                         + LINK_END)
 # On a line that credits the upstream project or links the fork, the upstream project's own name.
 UPSTREAM_NAME = re.compile(r"\bXodus\b(?![\w-]|\.\w)")
 # Tokens allowed anywhere: the pinned producer source archive name, until producer #7 is replaced.
@@ -119,10 +125,26 @@ SELF_TEST = (
     ("Sources/OdeManagement/Resources/LaunchRecipes/a.json", "XODUS_PRIVATE_OTHER", True),
     ("README.md", "Built on [Xodus](https://github.com/xodus-gaming/xodus); see Xodus.app", True),
     ("README.md", "Xodus alone, with no credit on the line", True),
+    # Look-alike hosts, owners and repositories (REQ-150 review after da9cc503, finding 1).
+    ("README.md", "https://github.com/evil/xodus-gaming", True),
+    ("README.md", "https://evil.example/xodus-gaming", True),
+    ("README.md", "https://github.com/xodus-gaming-evil/xodus-gaming", True),
+    ("README.md", "https://github.com/WorkingPrinciple/xodus-macos.evil", True),
+    ("README.md", "https://github.com/WorkingPrinciple/xodus-macos-evil", True),
+    ("README.md", "https://evil.example/WorkingPrinciple/xodus-macos", True),
+    ("README.md", "https://xodus-gaming.evil.example/x", True),
+    ("README.md", "evilxodus-gaming/xodus", True),
+    ("README.md", "https://github.com/xodus-gaming/xodusevil", True),
+    ("README.md", "https://github.com/xodus-gaming/xodus.evil", True),
+    ("README.md", "https://evil.example/https://github.com/WorkingPrinciple/x/blob/" + "0" * 40 + "/xodus", True),
     ("README.md", "XODUS_XBL_ONLINE=1 xodus-cli-beta-285696f9-source.tar", False),
     ("README.md", "[a](https://github.com/WorkingPrinciple/xode-ui/blob/" + "0" * 40 + "/Sources/XodusPreview/A.swift#L1)", False),
     ("README.md", "Built on [xodus-gaming](https://github.com/WorkingPrinciple/xodus-macos).", False),
     ("README.md", "[notes](https://github.com/WorkingPrinciple/xodus-macos/blob/main/docs/xodus/a.md) of Xodus.", False),
+    ("README.md", "Upstream game-management project (xodus-gaming/xodus)", False),
+    ("README.md", 'linkText: "github.com/xodus-gaming/xodus",', False),
+    ("README.md", "a fork of the Xodus game-management project (xodus-gaming, GPL-3.0).", False),
+    ("README.md", "is the [macOS backend fork](https://github.com/WorkingPrinciple/xodus-macos) of Xodus.", False),
     ("Sources/OdeManagement/Resources/LaunchRecipes/a.json", "+xodus_user,+ode_user XODUS_PRIVATE_LOCAL_SAVES", False),
 )
 

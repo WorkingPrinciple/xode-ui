@@ -125,7 +125,10 @@ the profile may have changed partly. The prefix is then marked unverified
 installation using that prefix), and Play refuses for it until an inspect
 reports the prefix idle (`inUse` false), a later set verifies, or a refusal
 finds it unmarked. An inspect that still reports the prefix in use keeps the
-mark and says so. The app pins producer 3999579, which includes REQ-165.
+mark and says so. The app pins the renamed producer 285696f9 (tree 8b3acd17).
+It does not yet carry the `prefix-windows-profile` command (REQ-156/165,
+producer 3486231..3999579); until a renamed producer that includes it is
+pinned, the paired CLI does not provide that command.
 `--engine-selection-check` covers synthetic inspect/set receipts, closed refusal codes,
 binding mismatches and command shape without running Wine or reading licences.
 Live application/confirmation, effective build and save-preservation acceptance
