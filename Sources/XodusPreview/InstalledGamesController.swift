@@ -784,6 +784,22 @@ final class InstalledGamesController: ObservableObject {
         return message
     }
 
+    /// 9015da43 M1/m1: a Play waits for its access answer; only a read that never left this Mac is retried, once,
+    /// inside the same timeout. A Microsoft failure is never retried here (the pause governs it).
+    static func settleAccessForPlay(timeout: Duration, canPlay: @escaping () -> Bool, settled: @escaping () -> Bool,
+                                    failedLocally: @escaping () -> Bool,
+                                    retry: @escaping () async -> Void) async -> Bool {
+        let deadline = ContinuousClock.now.advanced(by: timeout)
+        let first = await waitUntil(timeout: timeout) { settled() }
+        guard first, !canPlay(), failedLocally() else { return first }
+        var retried = false
+        let attempt = Task { @MainActor in await retry(); retried = true }
+        let remaining = ContinuousClock.now.duration(to: deadline)
+        let second = remaining > .zero ? await waitUntil(timeout: remaining) { retried && settled() } : false
+        attempt.cancel()
+        return second
+    }
+
     private func launchRequestOutcome(_ game: InstalledGame, engine: String?, timeout: Duration) async -> String? {
         if let refusal = Self.newerBuildRefusal() { return refusal }
         // 4ea60eb3 F2: a deep-link Play during a pause reports it instead of waiting out the timeout.
@@ -794,13 +810,18 @@ final class InstalledGamesController: ObservableObject {
                 await productAccess.prioritize(game.storeId, session: session, installedIDs: games.map(\.storeId))
             }
         }
-        var settled = await Self.waitUntil(timeout: timeout) { productAccessSettled(game.storeId) }
-        // 683 Play test: a read that lost the local game service at startup is retried once, after it reconnects.
-        if !canRequestPlay(game.storeId), productAccess.lastFailureWasLocal, let session = unifiedSession {
-            _ = await Self.waitUntil(timeout: .seconds(20)) { session.nativeLifecycleConfiguration != nil && !session.accountBusy }
-            await productAccess.prioritize(game.storeId, session: session, installedIDs: games.map(\.storeId))
-            settled = await Self.waitUntil(timeout: timeout) { productAccessSettled(game.storeId) }
-        }
+        let settled = await Self.settleAccessForPlay(timeout: timeout,
+            canPlay: { self.canRequestPlay(game.storeId) },
+            settled: { self.productAccessSettled(game.storeId) },
+            failedLocally: { self.productAccess.lastFailureWasLocal(game.storeId) },
+            retry: {
+                guard let session = self.unifiedSession else { return }
+                _ = await Self.waitUntil(timeout: .seconds(20)) {
+                    session.nativeLifecycleConfiguration != nil && !session.accountBusy
+                }
+                await self.productAccess.prioritize(game.storeId, session: session,
+                                                    installedIDs: self.games.map(\.storeId))
+            })
         guard canRequestPlay(game.storeId) else {
             return settled ? (productAccessNotice(for: game) ?? "Access to this game hasn't been confirmed for your Xbox account.")
                 : "Access to this game wasn't confirmed within \(timeout.components.seconds) seconds. Open the game and try again."

@@ -226,6 +226,8 @@ struct LiveProductView: View {
         if notIncluded { return }
         if checksTitleAccess {
             guard session.nativeLifecycleConfiguration != nil else { openSettings(); return }
+            // 9015da43 m4: "Try Again after HH:MM" does nothing until then; the label already says so.
+            guard titleAccess.pausedEnd() == nil else { return }
             Task { await titleAccess.checkProduct(product.id, session: session, force: true) }
             return
         }

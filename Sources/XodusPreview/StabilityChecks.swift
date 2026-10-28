@@ -156,6 +156,64 @@ import XodusManagement
                             selectedProductID: played) { _ in throw ManagementError.disconnected }
         check(local.lastFailureWasLocal && local.pausedUntil == nil && local.pausedNotice(now: start) == nil,
               "683 Play test: losing the local game service is retried, never treated as Microsoft throttling (no pause)")
+        // 9015da43 M1: Play's access settle retries once only when the read never left this Mac.
+        func playSettle(_ firstError: Error?) async -> (reads: Int, playable: Bool, paused: Bool) {
+            let store = InstalledProductAccess()
+            var reads = 0
+            let product = installed[20]
+            let read: @MainActor (String) async throws -> OdeAccountRead = { id in
+                reads += 1
+                if reads == 1, let firstError { throw firstError }
+                return try await reader(id)
+            }
+            await store.prioritize(product, account: account, installedIDs: installed, read: read)
+            _ = await InstalledGamesController.settleAccessForPlay(timeout: .seconds(3),
+                canPlay: { store.permits(product, account: account, now: start) },
+                settled: { !store.checking && (store.facts[product] != nil || store.errors[product] != nil) },
+                failedLocally: { store.lastFailureWasLocal(product) },
+                retry: { await store.prioritize(product, account: account, installedIDs: installed, read: read) })
+            return (reads, store.permits(product, account: account, now: start), store.pausedUntil != nil)
+        }
+        let localRun = await playSettle(ManagementError.backendUnavailable)
+        let upstreamRun = await playSettle(ManagementError.authenticatedReadFailed(.transportFailed))
+        let cleanRun = await playSettle(nil)
+        check(localRun.reads == 2 && localRun.playable && !localRun.paused
+              && upstreamRun.reads == 1 && !upstreamRun.playable && upstreamRun.paused
+              && cleanRun.reads == 1 && cleanRun.playable
+              && InstalledProductAccess.isLocalServiceFailure(ManagementError.startFailed)
+              && !InstalledProductAccess.isLocalServiceFailure(ManagementError.disconnected),
+              "9015da43 M1/m2: Play retries exactly once when the read never left this Mac, never after a Microsoft failure, and reads once when it works")
+        // 9015da43 m3: 101 installed games exceed the bound even with page products; 100 plus 20 pages read normally.
+        let bounded = InstalledProductAccess()
+        var boundedReads = 0
+        let many = (0..<101).map { String(format: "9BOUND%06d", $0) }
+        await bounded.refresh(account: account, installedIDs: many, now: start, force: true,
+                              selectedProductID: many[0]) { id in boundedReads += 1; return try await reader(id) }
+        let overBound = boundedReads
+        let within = InstalledProductAccess()
+        for index in 0..<20 {
+            await within.checkProduct(String(format: "9PAGED%06d", index), account: account, now: start) { id in try await reader(id) }
+        }
+        var withinReads = 0
+        await within.refresh(account: account, installedIDs: Array(many.prefix(100)), now: start, force: true,
+                             selectedProductID: many[1]) { id in withinReads += 1; return try await reader(id) }
+        check(overBound == 0 && withinReads == 1,
+              "9015da43 m3: the 100-product bound counts installed games before page products join (101 refused, 100 + 20 pages read)")
+        // 9015da43 m5: a read queued behind another uses the time after waiting (683/684 used the call's start time).
+        let queued = InstalledProductAccess()
+        let slowFirst = Task { @MainActor in
+            await queued.refresh(account: account, installedIDs: installed, now: start, force: true,
+                                 selectedProductID: installed[21]) { id in
+                try await Task.sleep(for: .milliseconds(600)); return try await reader(id)
+            }
+        }
+        try await Task.sleep(for: .milliseconds(50))
+        await queued.refresh(account: account, installedIDs: installed, now: start, force: true,
+                             selectedProductID: installed[22]) { _ in throw ManagementError.authenticatedReadFailed(.transportFailed) }
+        await slowFirst.value
+        let pauseFrom = queued.pausedUntil.map { $0.timeIntervalSince(start) - InstalledProductAccess.backoff(afterFailures: 1) } ?? -1
+        check(pauseFrom >= 0.4,
+              "9015da43 m5: a read that waited behind another dates its failure after the wait (\(String(format: "%.2f", pauseFrom)) s), not at the call's start")
         let productSource = (try? String(contentsOfFile: "Sources/XodusPreview/LiveProductView.swift", encoding: .utf8)) ?? ""
         let appSource = (try? String(contentsOfFile: "Sources/XodusPreview/XodusPreviewApp.swift", encoding: .utf8)) ?? ""
         check(m2Reads == 1 && m2Permits

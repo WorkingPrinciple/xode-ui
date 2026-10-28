@@ -30,8 +30,9 @@ final class InstalledProductAccess: ObservableObject {
     private var failures: [String: Int] = [:]
     /// 72450bd3 L2: consecutive failures across all products set the global pause length.
     private var globalFailures = 0
-    /// 683 Play test: whether the latest failed read lost the local game service rather than reaching Microsoft.
-    private(set) var lastFailureWasLocal = false
+    /// 683 Play test / 9015da43 m1: products whose latest read failed before leaving this Mac.
+    private var localFailures = Set<String>()
+    func lastFailureWasLocal(_ productID: String) -> Bool { localFailures.contains(productID) }
     /// Every licence read, swept or deep-linked, waits (bounded, 10 s) until the account connection is idle.
     static func awaitAccountIdle(_ busy: () -> Bool) async throws {
         for _ in 0..<100 where busy() { try await Task.sleep(for: .milliseconds(100)) }
@@ -40,7 +41,8 @@ final class InstalledProductAccess: ObservableObject {
     nonisolated static func isLocalServiceFailure(_ error: Error) -> Bool {
         guard let management = error as? ManagementError else { return false }
         switch management {
-        case .disconnected, .backendUnavailable, .startFailed, .backendStopped: return true
+        // 9015da43 m2: only failures where the request never left this Mac (the service couldn't be reached).
+        case .backendUnavailable, .startFailed: return true
         default: return false
         }
     }
@@ -212,6 +214,7 @@ final class InstalledProductAccess: ObservableObject {
         attempts = [:]
         failures = [:]
         globalFailures = 0
+        localFailures = []
         pagedOrder = []
         pausedUntil = nil
         installed = []
@@ -257,6 +260,7 @@ final class InstalledProductAccess: ObservableObject {
     func refresh(account: String?, installedIDs: [String], now: Date = Date(), force: Bool = false,
                  selectedProductID: String? = nil,
                  read: @escaping @MainActor (String) async throws -> OdeAccountRead) async {
+        let callStarted = Date()
         if account != accountHash {
             let old = operation
             retire()
@@ -266,8 +270,10 @@ final class InstalledProductAccess: ObservableObject {
             accountHash = account
         }
         guard let account, XboxAccountBinding.valid(account) else { return }
-        let currentInstalled = Set(installedIDs.filter(PCGamesClient.validProductID)).union(pagedIDs)
-        guard currentInstalled.subtracting(pagedIDs).count <= 100 else {
+        // 9015da43 m3: the 100-product bound counts the installed games given, before page products join.
+        let givenInstalled = Set(installedIDs.filter(PCGamesClient.validProductID))
+        let currentInstalled = givenInstalled.union(pagedIDs)
+        guard givenInstalled.subtracting(pagedIDs).count <= 100 else {
             logger.error("Installed product access scan exceeds the 100-product bound")
             return
         }
@@ -285,16 +291,18 @@ final class InstalledProductAccess: ObservableObject {
             await operation.value
             guard !Task.isCancelled, generation == requestEpoch, accountHash == account else { return }
         }
+        // 9015da43 m5: time spent waiting behind another read counts; cache, backoff and the pause use the real time.
+        let effectiveNow = now.addingTimeInterval(Date().timeIntervalSince(callStarted))
         // REQ-159: every read, swept or selected, reuses a 10-minute answer and respects the per-product and
         // global backoff after a failure; production never sweeps (it only calls `track`).
-        if let pausedUntil, now < pausedUntil { return }
+        if let pausedUntil, effectiveNow < pausedUntil { return }
         let ids = installed.sorted { (attempts[$0] == nil ? 0 : 1, $0) < (attempts[$1] == nil ? 0 : 1, $1) }.filter { id in
             if let selectedProductID, id != selectedProductID { return false }
             if let failed = failures[id], let last = attempts[id],
-               now.timeIntervalSince(last) < Self.backoff(afterFailures: failed) { return false }
-            if force { return errors[id] != nil || facts[id] == nil || !fresh(id, now: now) }
+               effectiveNow.timeIntervalSince(last) < Self.backoff(afterFailures: failed) { return false }
+            if force { return errors[id] != nil || facts[id] == nil || !fresh(id, now: effectiveNow) }
             guard let last = attempts[id] else { return true }
-            return now.timeIntervalSince(last) >= 60 && (errors[id] != nil || !fresh(id, now: now))
+            return effectiveNow.timeIntervalSince(last) >= 60 && (errors[id] != nil || !fresh(id, now: effectiveNow))
         }
         guard !ids.isEmpty else { return }
         let epoch = generation
@@ -313,7 +321,7 @@ final class InstalledProductAccess: ObservableObject {
                 } else { id = queue.removeFirst() }
                 guard !Task.isCancelled, generation == epoch, accountHash == account else { return }
                 guard installed.contains(id) else { continue }
-                attempts[id] = now
+                attempts[id] = effectiveNow
                 let requestStarted = Date()
                 do {
                     let licenseSpan = LoadSignposts.begin("LicenseRead",
@@ -341,7 +349,7 @@ final class InstalledProductAccess: ObservableObject {
                     }
                     facts[id] = Fact(value: value, checkedAt: checkedAt)
                     failures[id] = nil
-                    lastFailureWasLocal = false
+                    localFailures.remove(id)
                     globalFailures = 0
                     pausedUntil = nil
                     scheduleExpiry()
@@ -351,15 +359,15 @@ final class InstalledProductAccess: ObservableObject {
                 catch {
                     guard generation == epoch, accountHash == account else { return }
                     errors[id] = LiveSession.describe(error)
-                    lastFailureWasLocal = Self.isLocalServiceFailure(error)
-                    // A local game-service hiccup isn't Microsoft limiting us; it never starts the shared pause.
-                    guard !lastFailureWasLocal else { continue }
+                    logger.error("Product access \(id, privacy: .public) failed: \(LiveSession.describe(error), privacy: .public)")
+                    // A request that never left this Mac isn't Microsoft limiting us; it never starts the shared pause.
+                    guard !Self.isLocalServiceFailure(error) else { localFailures.insert(id); continue }
+                    localFailures.remove(id)
                     failures[id] = (failures[id] ?? 0) + 1
                     globalFailures += 1
                     // 4ea60eb3 F4: the pause runs from when the read failed, not from when the request began.
-                    pausedUntil = now.addingTimeInterval(Date().timeIntervalSince(requestStarted)
+                    pausedUntil = effectiveNow.addingTimeInterval(Date().timeIntervalSince(requestStarted)
                         + Self.backoff(afterFailures: globalFailures))
-                    logger.error("Product access \(id, privacy: .public) failed: \(LiveSession.describe(error), privacy: .public)")
                 }
                 await Task.yield()
             }
