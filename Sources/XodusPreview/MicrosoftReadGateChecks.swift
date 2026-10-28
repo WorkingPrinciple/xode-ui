@@ -67,7 +67,9 @@ enum MicrosoftReadGateChecks {
         let account = String(repeating: "a", count: 64)
         defaults.set("US", forKey: LiveSession.lastVerifiedCountryKey(account))
         let session = LiveSession(configuration: config, countryDefaults: defaults)
+#if !XODUS_SHIPPING
         session.checksAdmitLifecycleExecutable = true
+#endif
         await session.connect()
         await session.refreshAccount()
         session.applyProvisionalAccountCountry()
@@ -161,7 +163,9 @@ enum MicrosoftReadGateChecks {
         defer { defaults.removePersistentDomain(forName: suite) }
         let session = LiveSession(configuration: config, countryDefaults: defaults)
         // The product-page row needs the native lifecycle; the synthetic child is admitted for checks only.
+#if !XODUS_SHIPPING
         session.checksAdmitLifecycleExecutable = true
+#endif
         await session.connect()
         await session.refreshAccount()
         guard session.hasConfirmedSignIn, let account = session.accountHash else {
