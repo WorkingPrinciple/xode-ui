@@ -10,6 +10,8 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+
+from legacy_compatibility import LEGACY_SIGNING_IDENTIFIERS
 from shipping_pair import (FEATURES, PROFILE, PRODUCER, PRODUCER_TREE, hex_value,
                            owned_bytes, positive, require, unique_object, verify_input)
 
@@ -82,7 +84,8 @@ def compare(first, second, kind, identity, run=command):
     return COMPARISON_RESULT
 
 
-def verify_designated_requirement(path, kind, identity, run=command):
+def verify_designated_requirement(path, kind, identity, run=command, accept_legacy=False):
+    """`accept_legacy` admits the pre-rename identifier, only for reading an already installed app."""
     require(isinstance(identity, str) and re.fullmatch(r"[0-9a-fA-F]{40}", identity) is not None,
             "Exact public certificate SHA1 is required for fixed-leaf verification")
     signer = identity.upper()
@@ -90,10 +93,13 @@ def verify_designated_requirement(path, kind, identity, run=command):
     metadata = run(["/usr/bin/codesign", "--display", "--requirements", "-", "--verbose=2", str(path)])
     identifiers = re.findall(r"^Identifier=(.+)$", metadata, re.MULTILINE)
     designated = re.findall(r"^(?:# )?designated => (.+)$", metadata, re.MULTILINE)
-    require(identifiers == [IDENTIFIERS[kind]] and len(designated) == 1,
+    expected = IDENTIFIERS[kind]
+    if accept_legacy and identifiers == [LEGACY_SIGNING_IDENTIFIERS[kind]]:
+        expected = LEGACY_SIGNING_IDENTIFIERS[kind]
+    require(identifiers == [expected] and len(designated) == 1,
             "Expected one fixed signing identifier and designated requirement")
     requirement = designated[0]
-    require(re.fullmatch(r'identifier "' + re.escape(IDENTIFIERS[kind])
+    require(re.fullmatch(r'identifier "' + re.escape(expected)
                          + r'" and certificate leaf = H"' + signer + r'"',
                          requirement, re.IGNORECASE) is not None,
             "Requirement must bind only the fixed identifier and supplied certificate")

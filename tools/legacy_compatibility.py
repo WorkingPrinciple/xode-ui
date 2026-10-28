@@ -40,3 +40,10 @@ LEGACY_OUTCOME_PREFIX = "xodus outcome:"
 # Schema ID prefix of producers built before the rename; the renamed app must not pair with them.
 # REMOVE AFTER NEXT RELEASE.
 LEGACY_SCHEMA_ID_PREFIX = "urn:xodus:"
+
+# Signing identifiers of apps installed before the rename. Only the read-only check of the installed
+# prior candidate accepts them; new signatures use the Ode identifiers. REMOVE AFTER NEXT RELEASE.
+LEGACY_SIGNING_IDENTIFIERS = {"app": "io.github.dragoshont.xodus",
+                              "cli": "io.github.dragoshont.xodus.cli",
+                              "helper": "io.github.dragoshont.xodus.auth-host",
+                              "broker": "io.github.dragoshont.xodus.credential-broker"}

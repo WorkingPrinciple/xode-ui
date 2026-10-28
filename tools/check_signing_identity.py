@@ -189,6 +189,16 @@ with tempfile.TemporaryDirectory(prefix="ode-signing-neutral-") as temporary:
         rejected(lambda: verify_designated_requirement(first, "cli", fingerprint, altered))
     rejected(lambda: verify_designated_requirement(first, "cli", fingerprint, lambda arguments:
              metadata(arguments).replace("Identifier=" + identifier, "Identifier=wrong")))
+    # REQ-150: only reading an installed pre-rename app accepts its old identifier.
+    from legacy_compatibility import LEGACY_SIGNING_IDENTIFIERS
+    old = LEGACY_SIGNING_IDENTIFIERS["cli"]
+    def previous(arguments):
+        return metadata(arguments).replace(identifier, old)
+    rejected(lambda: verify_designated_requirement(first, "cli", fingerprint, previous))
+    assert verify_designated_requirement(first, "cli", fingerprint, previous,
+                                         accept_legacy=True) == requirement.replace(identifier, old)
+    rejected(lambda: verify_designated_requirement(first, "cli", fingerprint, lambda arguments:
+             metadata(arguments).replace("Identifier=" + identifier, "Identifier=wrong"), accept_legacy=True))
     second.write_bytes(first.read_bytes())
     rejected(lambda: compare(first, second, "cli", fingerprint, metadata))
 

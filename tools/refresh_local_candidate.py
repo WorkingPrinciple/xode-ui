@@ -79,7 +79,7 @@ def refresh(installed, output_root, identity, selected_cli=None, producer_source
             "Use a canonical existing output directory")
     info = output_root.stat()
     require(info.st_uid == os.getuid() and info.st_mode & 0o022 == 0, "Unsafe output directory")
-    verify_designated_requirement(installed, "app", identity)
+    verify_designated_requirement(installed, "app", identity, accept_legacy=True)
     supplied = (selected_cli is not None, producer_source is not None, producer_commit is not None)
     require(all(supplied) or not any(supplied),
             "An explicit CLI needs both its producer source repository and frozen commit")
