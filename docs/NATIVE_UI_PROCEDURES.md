@@ -120,8 +120,12 @@ incomplete setup and executable-specific overrides block Apply with a reason
 the producer). A requested profile below the package minimum has an explicit
 warning; it is not silently promoted. Failed or unverifiable results never
 claim success: a `failed` set (any code) or the app's own 420 s timeout says
-the profile may have changed partly, and Play for that game stays blocked until
-an inspect succeeds. The app pins producer 3999579, which includes REQ-165.
+the profile may have changed partly. The prefix is then marked unverified
+(kept in user defaults by prefix path, so it survives relaunch and covers every
+installation using that prefix), and Play refuses for it until an inspect
+reports the prefix idle (`inUse` false), a later set verifies, or a refusal
+finds it unmarked. An inspect that still reports the prefix in use keeps the
+mark and says so. The app pins producer 3999579, which includes REQ-165.
 `--engine-selection-check` covers synthetic inspect/set receipts, closed refusal codes,
 binding mismatches and command shape without running Wine or reading licences.
 Live application/confirmation, effective build and save-preservation acceptance

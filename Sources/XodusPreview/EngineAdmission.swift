@@ -182,6 +182,11 @@ enum AdmittedProviderScope {
 
 actor EngineInspectionClient {
     private var child: Process?
+    /// Checks shorten the Windows profile set timeout; production uses `windowsProfileSetTimeout`.
+    private let setTimeout: Duration
+    init(windowsProfileSetTimeout: Duration = EngineInspectionClient.windowsProfileSetTimeout) {
+        setTimeout = windowsProfileSetTimeout
+    }
     var hasOwnedProcess: Bool { child?.isRunning == true }
 
     func closeOwnedProcess() async throws {
@@ -311,7 +316,7 @@ actor EngineInspectionClient {
         try await run(executable: configuration.executable,
             arguments: arguments, executableIdentity: configuration.executableIdentity,
             // 908606e9 M2: well past the producer's 300 s APPLY_TIMEOUT plus its kill, wineserver -k and verification.
-            timeout: changing ? Self.windowsProfileSetTimeout : .seconds(15))
+            timeout: changing ? setTimeout : .seconds(15))
     }
     static let windowsProfileSetTimeout: Duration = .seconds(420)
 

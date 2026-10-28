@@ -44,12 +44,40 @@ enum WindowsProfileFailure: String, Error, LocalizedError, CaseIterable, Codable
         case .inUse: "This prefix is in use. Finish playing and wait for its current operation to stop, then try again."
         case .unreadable: "This prefix couldn't be read or locked. Check its availability and permissions before retrying."
         case .engineChanged: "The engine or registry changed. Refresh Engines and inspect the Windows profile again."
-        case .applyFailed: "The engine couldn't apply and verify the Windows profile. It may have changed partially. Inspect it again before playing."
+        // 1327a6e4 nit: as a refusal (before the run step started) nothing was changed; the partial-change outcome
+        // for a started set is WindowsProfilePartialChange.
+        case .applyFailed: "The engine couldn't start the Windows profile change. Nothing was changed."
         case .shadowed: "This executable has its own Windows version setting, which overrides the prefix's profile. Choose the profile it already uses, or nothing can be changed here."
         case .incomplete: "This prefix's setup never completed or failed. Changing its Windows profile won't repair it. Use a fresh prefix."
         case .receipt: "The Windows profile result couldn't be verified. Inspect it again before playing; no successful change is claimed."
         }
     }
+}
+
+/// 908606e9 M2 / 1327a6e4 MAJ-1, m-1, m-3: prefixes whose Windows profile set didn't verify, keyed by prefix path and
+/// kept in user defaults across relaunches. Play refuses for a marked prefix; only a verified set, a pure refusal that
+/// found it unmarked, or an inspect reporting the prefix idle (inUse false) clears it.
+@MainActor
+final class WindowsProfileUnverifiedMarks: ObservableObject {
+    static let key = "Xodus.windowsProfileUnverifiedPrefixes.v1"
+    static let copy = "This game's Windows profile may have changed partly. Open Engine → Windows version… and let it read the profile before playing."
+    static let stillInUseCopy = "The prefix is still in use, so the Windows profile can't be confirmed yet. Wait for the engine to stop, then use Refresh; Play stays unavailable until then."
+    private let defaults: UserDefaults
+    @Published private(set) var prefixes: Set<String>
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        prefixes = Set(defaults.stringArray(forKey: Self.key) ?? [])
+    }
+    func contains(prefix: String) -> Bool { prefixes.contains(Self.normal(prefix)) }
+    func mark(prefix: String) { prefixes.insert(Self.normal(prefix)); save() }
+    func clear(prefix: String) { prefixes.remove(Self.normal(prefix)); save() }
+    private func save() { defaults.set(prefixes.sorted(), forKey: Self.key) }
+    private static func normal(_ path: String) -> String { URL(fileURLWithPath: path).standardizedFileURL.path }
+}
+
+/// Play refused because the launch's prefix carries an unverified Windows profile mark.
+struct WindowsProfilePlayHeld: Error, Equatable {
+    static let copy = "This game's Windows profile may have changed partly. Open Engine → Windows version… and let it read the profile before playing."
 }
 
 /// 908606e9 M1/M2: a set that reached the prefix but didn't verify (status "failed" with any code, or the app's own
@@ -227,7 +255,8 @@ final class WindowsProfileSettingsModel: ObservableObject {
     @Published private(set) var message: String?
     @Published private(set) var appliedBelowMinimum = false
     private var binding: WindowsProfileBinding?
-    private let client = EngineInspectionClient()
+    private let client: EngineInspectionClient
+    init(client: EngineInspectionClient = EngineInspectionClient()) { self.client = client }
 
     func unavailable() {
         receipt = nil
@@ -241,46 +270,83 @@ final class WindowsProfileSettingsModel: ObservableObject {
         receipt = nil
         binding = nil
         message = nil
-        defer { busy = false }
+        let target: WindowsProfileBinding
         do {
             let launch = try await library.windowsProfileLaunch(for: game, configuration: configuration)
             guard let digest = launch.admittedSelection?.inspection.registrySha256 else { throw NativeLaunchError.engineUnavailable }
-            let target = WindowsProfileBinding(product: game.storeId, folder: game.folder,
+            target = WindowsProfileBinding(product: game.storeId, folder: game.folder,
                 prefix: launch.prefix.path, engine: launch.engine, registry: launch.registry.path, digest: digest)
+        } catch {
+            busy = false
+            message = Self.failureMessage(error)
+            return
+        }
+        busy = false
+        await load(target: target, configuration: configuration, marks: library.windowsProfileMarks)
+    }
+
+    /// The inspect itself (also driven directly by checks through a fake CLI).
+    func load(target: WindowsProfileBinding, configuration: BackendConfiguration, marks: WindowsProfileUnverifiedMarks) async {
+        guard !busy else { return }
+        busy = true
+        receipt = nil
+        binding = nil
+        message = nil
+        defer { busy = false }
+        do {
             let output = try await client.windowsProfile(configuration: configuration, arguments: target.arguments(), changing: false)
-            receipt = try WindowsProfileReceipt.decode(output.0, exitCode: output.1, binding: target)
+            let inspected = try WindowsProfileReceipt.decode(output.0, exitCode: output.1, binding: target)
+            receipt = inspected
             binding = target
-            library.clearWindowsProfileUnverified(game)
+            // 1327a6e4 MAJ-1: only an inspect that reports the prefix idle clears the mark; leftover engine processes
+            // from a timed-out or cancelled set may still be writing it.
+            if inspected.inUse == false { marks.clear(prefix: target.prefix) }
+            else if marks.contains(prefix: target.prefix) { message = WindowsProfileUnverifiedMarks.stillInUseCopy }
         } catch { message = Self.failureMessage(error) }
     }
 
     func apply(_ profile: WindowsProfile, game: InstalledGame, library: InstalledGamesController,
                configuration: BackendConfiguration) async {
         guard !busy, let binding, receipt?.supportedProfiles?.contains(profile) == true else { return }
+        if let block = receipt?.changeBlock(for: profile) { message = block.localizedDescription; return }
+        guard library.runningGameID == nil else { message = WindowsProfileFailure.inUse.localizedDescription; return }
+        do { try library.reserveWindowsProfileChange() } catch { message = Self.failureMessage(error); return }
+        defer { library.releaseWindowsProfileChange() }
+        do {
+            let current = try await library.windowsProfileLaunch(for: game, configuration: configuration)
+            guard binding == WindowsProfileBinding(product: game.storeId, folder: game.folder, prefix: current.prefix.path,
+                engine: current.engine, registry: current.registry.path,
+                digest: current.admittedSelection?.inspection.registrySha256 ?? "") else { throw WindowsProfileFailure.engineChanged }
+        } catch {
+            receipt = nil
+            self.binding = nil
+            message = Self.failureMessage(error)
+            return
+        }
+        await apply(profile, target: binding, configuration: configuration, marks: library.windowsProfileMarks)
+    }
+
+    /// The set itself (also driven directly by checks through a fake CLI).
+    func apply(_ profile: WindowsProfile, target binding: WindowsProfileBinding, configuration: BackendConfiguration,
+               marks: WindowsProfileUnverifiedMarks) async {
+        guard !busy else { return }
         busy = true
         changing = true
         message = nil
         appliedBelowMinimum = false
         defer { busy = false; changing = false }
+        let wasMarked = marks.contains(prefix: binding.prefix)
         do {
-            if let block = receipt?.changeBlock(for: profile) { throw block }
-            guard library.runningGameID == nil else { throw WindowsProfileFailure.inUse }
-            try library.reserveWindowsProfileChange()
-            defer { library.releaseWindowsProfileChange() }
-            let current = try await library.windowsProfileLaunch(for: game, configuration: configuration)
-            guard binding == WindowsProfileBinding(product: game.storeId, folder: game.folder, prefix: current.prefix.path,
-                engine: current.engine, registry: current.registry.path,
-                digest: current.admittedSelection?.inspection.registrySha256 ?? "") else { throw WindowsProfileFailure.engineChanged }
-            // From here the prefix may change: any unverified outcome blocks Play until an inspect succeeds.
-            library.markWindowsProfileUnverified(game)
+            // From here the prefix may change: any unverified outcome blocks Play until an idle inspect.
+            marks.mark(prefix: binding.prefix)
             let result: WindowsProfileReceipt
             do {
                 let output = try await client.windowsProfile(configuration: configuration,
                     arguments: binding.arguments(profile: profile), changing: true)
                 result = try WindowsProfileReceipt.decode(output.0, exitCode: output.1, binding: binding, requested: profile)
             } catch let error as WindowsProfileFailure where error != .receipt {
-                // A refusal: the producer changed nothing.
-                library.clearWindowsProfileUnverified(game)
+                // A refusal: the producer changed nothing, so the mark returns to what it was before this set.
+                if !wasMarked { marks.clear(prefix: binding.prefix) }
                 throw error
             } catch let error as WindowsProfilePartialChange { throw error }
             catch {
@@ -292,7 +358,7 @@ final class WindowsProfileSettingsModel: ObservableObject {
             let applied = result.status == "unchanged" ? "The prefix already reports \(resulting.label)."
                 : "The prefix now reports \(resulting.label)."
             message = applied
-            library.clearWindowsProfileUnverified(game)
+            marks.clear(prefix: binding.prefix)
             let refreshed = await Self.refreshAfterSet(applied: applied) {
                 let inspection = try await self.client.windowsProfile(configuration: configuration,
                     arguments: binding.arguments(), changing: false)

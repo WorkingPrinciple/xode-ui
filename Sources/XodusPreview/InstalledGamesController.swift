@@ -644,6 +644,7 @@ final class InstalledGamesController: ObservableObject {
     }
 
     nonisolated static func nativeLaunchFailureMessage(_ error: Error) -> String {
+        if error is WindowsProfilePlayHeld { return WindowsProfilePlayHeld.copy }
         if let failure = error as? EngineInspectionError { return failure.localizedDescription }
         if let failure = error as? NativeLaunchError { return failure.localizedDescription }
         return InstalledGameActionCopy.launchUnavailable
@@ -941,10 +942,6 @@ final class InstalledGamesController: ObservableObject {
                 playNotices[game.id] = "This game is already running."
             } else { playErrors[game.id] = message }
             Self.launchLog.error("Play unavailable: \(game.storeId, privacy: .public): \(message, privacy: .public)")
-            return
-        }
-        guard !windowsProfileUnverified.contains(game.id) else {
-            playErrors[game.id] = Self.windowsProfileUnverifiedCopy
             return
         }
         let issues = LibrarySupportVisibility.issues(productID: game.storeId, installed: true,
@@ -1327,6 +1324,8 @@ final class InstalledGamesController: ObservableObject {
                 evidence: MacGameEvidenceStore.shared.games[game.storeId])
             Self.launchLog.notice("Effective launch: \(game.storeId, privacy: .public); engine=\(launch.engine, privacy: .public); registry=\(launch.registry.path, privacy: .public); prefix=\(launch.prefix.path, privacy: .public)")
             guard launch.admittedSelection != nil else { throw NativeLaunchError.providerPolicy }
+            // 1327a6e4 m-3: keyed by the prefix this launch would use, so any installation sharing it is held too.
+            guard !windowsProfileMarks.contains(prefix: launch.prefix.path) else { throw WindowsProfilePlayHeld() }
             let arguments = try await launch.arguments(manifestExecutables: config.executables)
             let prefixNotice = try await launch.prefixNotice()
             let legacyPrefixIDs = try await store.prefixInstallationIDs(productID: game.storeId) + [game.id]
@@ -1753,11 +1752,8 @@ final class InstalledGamesController: ObservableObject {
             provider: defaultEngine(), evidence: MacGameEvidenceStore.shared.games[game.storeId], persistDefault: false)
     }
 
-    /// 908606e9 M2: games whose Windows profile set didn't verify; Play waits until an inspect succeeds.
-    @Published private(set) var windowsProfileUnverified = Set<UUID>()
-    static let windowsProfileUnverifiedCopy = "This game's Windows profile may have changed partly. Open Engine → Windows version… and let it read the profile before playing."
-    func markWindowsProfileUnverified(_ game: InstalledGame) { windowsProfileUnverified.insert(game.id) }
-    func clearWindowsProfileUnverified(_ game: InstalledGame) { windowsProfileUnverified.remove(game.id) }
+    /// 1327a6e4: prefixes whose Windows profile set didn't verify (persisted, keyed by prefix path).
+    var windowsProfileMarks = WindowsProfileUnverifiedMarks()
 
     func reserveWindowsProfileChange() throws {
         guard runningGameID == nil else { throw WindowsProfileFailure.inUse }

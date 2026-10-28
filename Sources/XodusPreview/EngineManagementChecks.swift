@@ -18,6 +18,7 @@ enum EngineManagementChecks {
         }
         windowsProfileChecks(check: check)
         try await windowsProfileTransportChecks(root: root, check: check)
+        try await windowsProfileModelChecks(root: root, check: check)
         try await selectionPersistenceChecks(root: root, check: check)
     }
     static func windowsReceiptChecks(check: (Bool, String) -> Void) {
@@ -259,6 +260,106 @@ enum EngineManagementChecks {
         } catch {
             check(!(await client.hasOwnedProcess), "REQ-156: cancelled set joins its exact owned process before returning")
         }
+    }
+
+    /// 1327a6e4 m-2: WindowsProfileSettingsModel's real load/apply against a fake CLI; the mark lives in isolated defaults.
+    static func windowsProfileModelChecks(root: URL, check: (Bool, String) -> Void) async throws {
+        let dir = root.appendingPathComponent("windows-profile-model-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let cli = dir.appendingPathComponent("cli"), response = dir.appendingPathComponent("response.json")
+        let mode = dir.appendingPathComponent("mode")
+        try Data("""
+        #!/bin/sh
+        m=$(/bin/cat '\(mode.path)')
+        if [ "$m" = sleep ]; then exec /bin/sleep 30; fi
+        /bin/cat '\(response.path)'
+        exit "$m"
+
+        """.utf8).write(to: cli)
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: cli.path)
+        let binding = WindowsProfileBinding(product: "9PROFILETEST", folder: "/tmp/Game",
+            prefix: "/tmp/Prefixes/9PROFILETEST/main", engine: "fixture-engine",
+            registry: "/tmp/registry.json", digest: String(repeating: "a", count: 64))
+        let base: [String: Any] = [
+            "schemaVersion": 1, "product": binding.product, "prefix": binding.prefix,
+            "engine": ["name": binding.engine, "registrySha256": binding.digest],
+            "executable": "bin\\Game.exe", "appDefaultsName": "Game.exe",
+            "error": NSNull(), "checkedAt": "2026-10-28T06:00:00Z",
+        ]
+        func inspect(inUse: Bool) -> [String: Any] {
+            base.merging(["operation": "inspect", "status": "ok",
+                "binding": ["ownership": "owned", "productBound": true], "windowsSetup": "applied", "inUse": inUse,
+                "supportedProfiles": ["win10", "win11", "win11-24h2"],
+                "global": ["profile": ["name": "win11", "known": true]],
+                "perExecutable": ["profile": NSNull(), "shadowsGlobal": false], "currentBuildNumber": 22631,
+                "effective": ["profile": "win11", "reportedBuild": 22631, "source": "global"],
+                "packageRequiredMinimum": 26100, "meetsPackageMinimum": false]) { _, new in new }
+        }
+        func set(_ status: String, code: WindowsProfileFailure? = nil) -> [String: Any] {
+            var value = base.merging(["operation": "set", "status": status, "requestedProfile": "win11",
+                "previous": ["profile": "win10", "reportedBuild": 19045],
+                "resulting": ["profile": "win11", "reportedBuild": 22631],
+                "savesPreserved": true, "packageRequiredMinimum": 26100, "requestedBelowPackageMinimum": true]) { _, new in new }
+            if status == "unchanged" { value["previous"] = ["profile": "win11", "reportedBuild": 22631] }
+            if let code {
+                value["error"] = ["code": code.rawValue, "message": "fixture"]
+                value["resulting"] = NSNull(); value["savesPreserved"] = NSNull()
+                if status == "refused" { value["previous"] = NSNull() }
+            }
+            return value
+        }
+        func respond(_ object: [String: Any], exit: Int32) throws {
+            try JSONSerialization.data(withJSONObject: object).write(to: response)
+            try Data("\(exit)".utf8).write(to: mode)
+        }
+        let suite = "Xodus.windowsProfileMarks.\(UUID().uuidString)"
+        guard let defaults = UserDefaults(suiteName: suite) else { check(false, "1327a6e4 m-2 isolated defaults"); return }
+        defer { defaults.removePersistentDomain(forName: suite); try? FileManager.default.removeItem(at: dir) }
+        let marks = WindowsProfileUnverifiedMarks(defaults: defaults)
+        let configuration = BackendConfiguration(executable: cli, stateDirectory: dir)
+        let model = WindowsProfileSettingsModel(client: EngineInspectionClient(windowsProfileSetTimeout: .milliseconds(400)))
+        var rows: [String] = [], ok = true
+        func row(_ name: String, _ expectMarked: Bool, _ extra: Bool = true) {
+            let marked = marks.contains(prefix: binding.prefix)
+            ok = ok && marked == expectMarked && extra
+            rows.append("\(name) \(marked ? "marked" : "clear")\(extra ? "" : " (copy wrong: \(model.message ?? "nil"))")")
+        }
+        try respond(set("failed", code: .applyFailed), exit: 1)
+        await model.apply(.win11, target: binding, configuration: configuration, marks: marks)
+        row("failed", true, model.message?.contains("may have changed partly") == true)
+        try respond(inspect(inUse: true), exit: 0)
+        await model.load(target: binding, configuration: configuration, marks: marks)
+        row("inspect inUse true", true, model.message == WindowsProfileUnverifiedMarks.stillInUseCopy)
+        let relaunched = WindowsProfileUnverifiedMarks(defaults: defaults)
+        let persisted = relaunched.contains(prefix: binding.prefix) && relaunched.contains(prefix: binding.prefix + "/")
+        ok = ok && persisted
+        rows.append("survives relaunch (same prefix path) \(persisted)")
+        try respond(set("refused", code: .inUse), exit: 1)
+        await model.apply(.win11, target: binding, configuration: configuration, marks: marks)
+        row("refused while already marked", true)
+        try respond(inspect(inUse: false), exit: 0)
+        await model.load(target: binding, configuration: configuration, marks: marks)
+        row("inspect inUse false", false)
+        try Data("sleep".utf8).write(to: mode)
+        await model.apply(.win11, target: binding, configuration: configuration, marks: marks)
+        row("timeout", true, model.message?.contains("didn't finish in time") == true)
+        try respond(set("applied"), exit: 0)
+        await model.apply(.win11, target: binding, configuration: configuration, marks: marks)
+        row("applied", false, model.message?.hasPrefix("The prefix now reports") == true)
+        try respond(set("refused", code: .applyFailed), exit: 1)
+        await model.apply(.win11, target: binding, configuration: configuration, marks: marks)
+        row("refused APPLY_FAILED on an unmarked prefix", false,
+            model.message?.contains("Nothing was changed") == true && model.message?.contains("partly") == false)
+        marks.mark(prefix: binding.prefix)
+        try respond(set("unchanged"), exit: 0)
+        await model.apply(.win11, target: binding, configuration: configuration, marks: marks)
+        row("unchanged", false, model.message?.hasPrefix("The prefix already reports") == true)
+        check(ok, "1327a6e4 m-2/MAJ-1/m-1/nit: the real settings model through a fake CLI: " + rows.joined(separator: "; "))
+        let controller = (try? String(contentsOfFile: "Sources/XodusPreview/InstalledGamesController.swift", encoding: .utf8)) ?? ""
+        check(InstalledGamesController.nativeLaunchFailureMessage(WindowsProfilePlayHeld()) == WindowsProfilePlayHeld.copy
+              && controller.contains("guard !windowsProfileMarks.contains(prefix: launch.prefix.path) else { throw WindowsProfilePlayHeld() }")
+              && !controller.contains("windowsProfileUnverified.contains(game.id)"),
+              "1327a6e4 m-3: Play checks the mark by the prefix the launch resolves (any installation sharing it is held), with the partial-change copy")
     }
 
     static func launchSupportChecks(check: (Bool, String) -> Void) {
