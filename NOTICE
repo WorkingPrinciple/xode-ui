@@ -24,6 +24,21 @@ Wine and Calimocho
   Calimocho bundles Apple D3DMetal under Apple's non-commercial licence; it is
   downloaded separately and is not included in this app.
 
+xgameruntime
+  X Ode's game runtime pair (xgameruntime.dll and xgameruntime_legacy.dll) is a
+  Working Principle fork of nocts-software/xgameruntime, licensed under the GNU
+  Lesser General Public License, version 2.1 or later (LGPL-2.1-or-later). Two
+  builds are pinned: 49c423d for qualification and be7ad79 for release. It is
+  installed separately under Application Support/Ode to X/Runtime and is not
+  included in this app.
+
+Native sign-in components (native-web-shims-v1)
+  windows.web.dll is built from Wine's dlls/windows.web and keeps Wine's licence,
+  LGPL-2.1-or-later. XCurl.dll and the CA root bundle (cacert.pem) are in the
+  same set; their origin and licence are not yet recorded (NOASSERTION), so no
+  licence is claimed for them here. These components are kept separately under
+  Application Support/Ode to X/Engines/profiles and are not included in this app.
+
 CrossOver
   CrossOver is a trademark of CodeWeavers, Inc. X Ode does not include or copy
   CrossOver; you install and license it yourself.
