@@ -288,6 +288,20 @@ import XodusManagement
               && rejected.pausedNotice(now: start.addingTimeInterval(9_000)) == LiveSession.signInRejectedMessage
               && LiveSession.describe(ManagementError.authenticatedReadFailed(.authExchangeFailed)) == LiveSession.signInRejectedMessage,
               "L15 #12: Microsoft rejecting the saved sign-in says to sign in again and stops licence reads until then")
+        // Producer #12: AUTH_INVALID / authExchangeFailed arrives retryable:true on the wire; the app still never retries.
+        let authWire = try JSONDecoder().decode(JSONValue.self, from: Data(#"{"code":"AUTH_INVALID","retryable":true,"message":"Authenticated read failed: authExchangeFailed.","details":{"category":"authenticatedReadFailure","stage":"authExchangeFailed"}}"#.utf8))
+        let authStage = AuthenticatedReadFailure(error: authWire)
+        let rejectedWire = InstalledProductAccess()
+        var rejectedWireReads = 0
+        await rejectedWire.refresh(account: account, installedIDs: installed, now: start, force: true,
+                                   selectedProductID: played) { _ in
+            rejectedWireReads += 1; throw ManagementError.authenticatedReadFailed(authStage ?? .responseInvalid)
+        }
+        await rejectedWire.refresh(account: account, installedIDs: installed, now: start.addingTimeInterval(9_000),
+                                   force: true, selectedProductID: played) { id in rejectedWireReads += 1; return try await reader(id) }
+        check(authStage == .authExchangeFailed && authStage?.retryable == true && rejectedWireReads == 1
+              && rejectedWire.signInRejected,
+              "Producer #12: a retryable:true AUTH_INVALID/authExchangeFailed (user.auth 400/401, collection 404) prompts sign-in and is never retried")
         check(rejected.tryAgainTitle(now: start) == "Sign in again in Account",
               "bc33adf2 m4: after a rejected sign-in, Try Again tells you to sign in again instead of retrying")
         check(throttledStore.unavailableNotice(now: start.addingTimeInterval(1)).hasPrefix("Microsoft is limiting requests from this Mac.")
@@ -355,6 +369,18 @@ import XodusManagement
         let required = try producerResult("launch", "TITLE_RECIPE_REQUIRED")
         check(NativeGameResult.failureCodes.contains("TITLE_RECIPE_REQUIRED") && required.installVerdict == nil,
               "REQ-153: TITLE_RECIPE_REQUIRED is a valid launch receipt")
+        // Producer #12: an optional popup_monitor object and POPUP_MONITOR_DEGRADED are accepted; lost monitoring
+        // isn't a game failure.
+        let monitored = """
+            {"version":1,"operation":"launch","product":"FIXTURE00130","run_id":"\(UUID().uuidString.lowercased())",\
+            "success":true,"exit_code":0,"game_dir":"\(game.path)","log_dir":"LOG","result_path":"LOG/result.json",\
+            "progress_path":"LOG/progress.jsonl","warnings":[{"code":"POPUP_MONITOR_DEGRADED","message":"Popup monitoring was degraded."}],\
+            "popup_monitor":{"status":"degraded"}}
+            """
+        let monitorRun = try JSONDecoder().decode(NativeGameResult.self, from: Data(monitored.utf8))
+        check(monitorRun.success && monitorRun.launchFailureMessage(stoppedByUser: false) == nil
+              && monitorRun.warnings?.map(\.code) == ["POPUP_MONITOR_DEGRADED"],
+              "Producer #12: a launch with a degraded popup monitor (popup_monitor object, POPUP_MONITOR_DEGRADED) is a normal successful receipt")
         let recipe = try producerResult("launch", "TITLE_RECIPE_REJECTED")
         check(recipe.installVerdict == nil && recipe.launchFailureMessage(stoppedByUser: false) == InstalledGameActionCopy.launchUnavailable,
               "fc2f17d1 H1: TITLE_RECIPE_REJECTED is a valid launch receipt, not a broken one")

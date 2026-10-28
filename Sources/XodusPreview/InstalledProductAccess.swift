@@ -151,7 +151,7 @@ final class InstalledProductAccess: ObservableObject {
     /// The Try Again title, carrying the pause's end time while Retry can't read.
     func tryAgainTitle(now: Date = Date()) -> String {
         if signInRejected { return "Sign in again in Account" }
-        pausedEnd(now: now).map { "Try Again after \($0)" } ?? Self.tryAgainTitle
+        return pausedEnd(now: now).map { "Try Again after \($0)" } ?? Self.tryAgainTitle
     }
 
     /// REQ-159: a current answer that this account can't play the product; until then Play stays offered and
