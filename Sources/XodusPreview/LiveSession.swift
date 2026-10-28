@@ -1036,7 +1036,18 @@ final class LiveSession: ObservableObject {
                        "tokenExchange.responseEncoding", "tokenExchange.continuationRequired",
                        "tokenExchange.faultWithoutContinuation", "tokenExchange.continuationRejected",
                        "exchangeRetentionFailed"]
-        return reasons.map { "Native sign-in failed: \($0)." }.first { $0 == failure.message }
+        let xboxStages = ["credentials", "passportExchange", "passportTicket", "userAuthentication",
+                          "userProof", "xstsAuthorization", "xstsProof", "accountIdentity"]
+        let xboxReasons = ["invalidCredentials", "requestBuild", "requestSerialization",
+                           "requestTransport", "requestTimeout", "httpUnauthorized", "httpForbidden",
+                           "httpThrottled", "httpClientError", "httpServerError", "httpStatusRejected",
+                           "responseParsing", "responseSignature", "responseEncoding",
+                           "responseCryptography", "responseTooLarge", "invalidResponse"]
+        let xboxObservations = xboxStages.flatMap { stage in
+            xboxReasons.map { "Native sign-in failed: xbox.\(stage).\($0)." }
+        }
+        return (reasons.map { "Native sign-in failed: \($0)." } + xboxObservations)
+            .first { $0 == failure.message }
     }
 
     var accountFailureTitle: String {

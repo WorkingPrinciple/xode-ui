@@ -485,7 +485,34 @@ enum NativeChecks {
                       && snapshot.observation == message,
                       "Latest-failure snapshot keeps only the closed \(reason) diagnostic")
             }
-            for message in ["Native sign-in failed: helper.unknown.", "Native sign-in failed: channelEOF. secret",
+            let xboxStages = ["credentials", "passportExchange", "passportTicket", "userAuthentication",
+                              "userProof", "xstsAuthorization", "xstsProof", "accountIdentity"]
+            let xboxReasons = ["invalidCredentials", "requestBuild", "requestSerialization",
+                               "requestTransport", "requestTimeout", "httpUnauthorized", "httpForbidden",
+                               "httpThrottled", "httpClientError", "httpServerError", "httpStatusRejected",
+                               "responseParsing", "responseSignature", "responseEncoding",
+                               "responseCryptography", "responseTooLarge", "invalidResponse"]
+            for stage in xboxStages {
+                for reason in xboxReasons {
+                    let message = "Native sign-in failed: xbox.\(stage).\(reason)."
+                    let snapshot = try LiveSession.SignInFailureSnapshot(observationFailure(message))
+                    check(snapshot.observation == message,
+                          "REQ-166: closed Xbox stage and reason survive the sign-in failure snapshot")
+                    for invalid in [message + " secret", message + "\n", " " + message] {
+                        check(try LiveSession.validatedNativeSignInObservation(observationFailure(invalid)) == nil,
+                              "REQ-166: Xbox diagnostics reject extended or noncanonical provider wording")
+                    }
+                    check(try LiveSession.validatedNativeSignInObservation(
+                        observationFailure(message, code: "INTERNAL")) == nil
+                          && LiveSession.validatedNativeSignInObservation(
+                            observationFailure(message, reason: "unexpected")) == nil,
+                          "REQ-166: Xbox diagnostics require the agreed authentication failure tuple")
+                }
+            }
+            for message in ["Native sign-in failed: xbox.unknown.invalidResponse.",
+                            "Native sign-in failed: xbox.userAuthentication.unknown.",
+                            "Native sign-in failed: xbox.userAuthentication.httpUnauthorized",
+                            "Native sign-in failed: helper.unknown.", "Native sign-in failed: channelEOF. secret",
                             " Native sign-in failed: helper.bridgeInvalid.", "Native sign-in failed: channelEOF.\n",
                             "secret raw provider text", "Native sign-in failed: helper.navigationFailed",
                             "Native sign-in failed: helper.navigationFailed. https://provider.invalid/?token=secret",
