@@ -362,7 +362,12 @@ enum InstalledProductAccessChecks {
         let config = BackendConfiguration(executable: URL(fileURLWithPath: CommandLine.arguments[0])
             .deletingLastPathComponent().appendingPathComponent("XodusManagementChecks"),
             stateDirectory: root.appendingPathComponent("odeslow"))
-        let session = LiveSession(configuration: config)
+        // Isolated defaults: a country saved by an earlier run would start a provisional re-check that races the
+        // licence-then-profile ordering this fixture asserts.
+        let defaultsSuite = "InstalledAccessChecks-\(UUID().uuidString)"
+        let countryDefaults = UserDefaults(suiteName: defaultsSuite) ?? .standard
+        defer { countryDefaults.removePersistentDomain(forName: defaultsSuite) }
+        let session = LiveSession(configuration: config, countryDefaults: countryDefaults)
         await session.connect()
         await session.refreshAccount()
         await session.refreshAccountCountry()
