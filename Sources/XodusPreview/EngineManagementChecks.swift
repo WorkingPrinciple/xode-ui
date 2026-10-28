@@ -1170,6 +1170,46 @@ enum EngineManagementChecks {
                             "--runtime-dll", primary.path, "--shim-dir", shimFolder.path]
                             + QualificationDiagnostics.arguments(provider: selection.inspection.admittedProvider),
               "REQ95 actual launch arguments carry the reloaded exact registry digest/engine/prefix/runtime, not an enum selector")
+        // f51e60fe M1 (#10f): the real argv builder, for Calimocho and CrossOver selections and bundled profiles.
+        let base = ["--engine", resolved.engine, "--registry", registry.path, "--expected-registry-sha256", hash(bytes),
+                    "--prefix", prefix.path, "--runtime-dll", primary.path, "--shim-dir", shimFolder.path]
+        let crossoverInspection = try JSONDecoder().decode(EngineInspection.self, from: JSONSerialization.data(
+            withJSONObject: (try JSONSerialization.jsonObject(with: JSONEncoder().encode(selection.inspection)) as? [String: Any] ?? [:])
+                .merging(["admittedProvider": "crossover"]) { _, new in new }))
+        let crossoverLaunch = NativeLaunchConfiguration(engine: resolved.engine, registry: registry, prefix: prefix,
+            runtime: runtime, profile: nil, shims: .init(directory: shimFolder, hashes: shimHashes),
+            admittedSelection: AdmittedEngineSelection(registryPath: registry.path, inspection: crossoverInspection))
+        let crossoverArguments = try await crossoverLaunch.arguments(manifestExecutables: [])
+        let bundled = try NativeTitleLaunchProfile.bundledProfiles()
+        func plain(_ productID: String) -> NativeTitleLaunchProfile? {
+            guard var profile = bundled.first(where: { $0.productID == productID }) else { return nil }
+            profile.engine = nil; profile.wineSha256 = nil; profile.wineserverSha256 = nil
+            profile.runtime = nil; profile.registrySHA256 = nil
+            return profile
+        }
+        var profiledArguments: [String: [String]] = [:]
+        for productID in ["9P9VNSQK1W3K", "9P8DL6W0JBB8"] {
+            guard let profile = plain(productID) else { continue }
+            let profiledLaunch = NativeLaunchConfiguration(engine: resolved.engine, registry: registry, prefix: prefix,
+                runtime: runtime, profile: profile, shims: .init(directory: shimFolder, hashes: shimHashes),
+                admittedSelection: selection)
+            profiledArguments[productID] = try? await profiledLaunch.arguments(manifestExecutables: [])
+        }
+        let qual = QualificationDiagnostics.arguments(provider: selection.inspection.admittedProvider)
+        #if XODUS_QUALIFICATION
+        let reviewedQual = qual == ["--diagnostic-wine-debug", "warn+gdkc"]
+        #else
+        let reviewedQual = qual.isEmpty
+        #endif
+        let brotato = profiledArguments["9P9VNSQK1W3K"]
+        let hades = profiledArguments["9P8DL6W0JBB8"]
+        check(reviewedQual && arguments == base + qual && crossoverArguments == base
+              && brotato == base + (plain("9P9VNSQK1W3K")?.playArguments ?? ["?"]) + qual
+              && brotato?.contains("--game-recipe") == false
+              && (hades == nil || hades?.filter { $0 == "--game-recipe" }.count == 1)
+              && [arguments, crossoverArguments, brotato ?? []].allSatisfy { argv in
+                  !argv.contains { $0.hasPrefix("--diagnostic") && !qual.contains($0) } },
+              "#10f/f51e60fe M1: the Play argv builder gives the exact argv for Calimocho and CrossOver selections and bundled profiles; ordinary builds add no --diagnostic-*, only Hades may carry --game-recipe (Brotato \(brotato ?? []), Hades \(hades.map { "\($0.count) args" } ?? "refused off its release engine"))")
         do {
             func admitted(_ name: String, _ provider: String) -> AdmittedEngineSelection {
                 AdmittedEngineSelection(registryPath: "/tmp/\(name).json", inspection: EngineInspection(

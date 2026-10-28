@@ -819,6 +819,8 @@ final class InstalledGamesController: ObservableObject {
                 _ = await Self.waitUntil(timeout: .seconds(20)) {
                     session.nativeLifecycleConfiguration != nil && !session.accountBusy
                 }
+                // f51e60fe m-a: a Play that already timed out never sends a late read.
+                guard !Task.isCancelled else { return }
                 await self.productAccess.prioritize(game.storeId, session: session,
                                                     installedIDs: self.games.map(\.storeId))
             })

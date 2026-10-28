@@ -1350,6 +1350,13 @@
                     },
                     "message": {
                       "const": "Authenticated read failed: credentialUnavailable."
+                    },
+                    "details": {
+                      "not": {
+                        "required": [
+                          "retryAfterSeconds"
+                        ]
+                      }
                     }
                   }
                 }
@@ -1376,6 +1383,13 @@
                     },
                     "message": {
                       "const": "Authenticated read failed: profileChanged."
+                    },
+                    "details": {
+                      "not": {
+                        "required": [
+                          "retryAfterSeconds"
+                        ]
+                      }
                     }
                   }
                 }
@@ -1402,6 +1416,13 @@
                     },
                     "message": {
                       "const": "Authenticated read failed: authExchangeFailed."
+                    },
+                    "details": {
+                      "not": {
+                        "required": [
+                          "retryAfterSeconds"
+                        ]
+                      }
                     }
                   }
                 }
@@ -1428,6 +1449,13 @@
                     },
                     "message": {
                       "const": "Authenticated read failed: authRejected."
+                    },
+                    "details": {
+                      "not": {
+                        "required": [
+                          "retryAfterSeconds"
+                        ]
+                      }
                     }
                   }
                 }
@@ -1454,6 +1482,39 @@
                     },
                     "message": {
                       "const": "Authenticated read failed: transportFailed."
+                    },
+                    "details": {
+                      "not": {
+                        "required": [
+                          "retryAfterSeconds"
+                        ]
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "details": {
+                      "properties": {
+                        "stage": {
+                          "const": "throttled"
+                        }
+                      }
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "code": {
+                      "const": "NETWORK_UNAVAILABLE"
+                    },
+                    "retryable": {
+                      "const": true
+                    },
+                    "message": {
+                      "const": "Authenticated read failed: throttled."
                     }
                   }
                 }
@@ -1480,6 +1541,13 @@
                     },
                     "message": {
                       "const": "Authenticated read failed: responseInvalid."
+                    },
+                    "details": {
+                      "not": {
+                        "required": [
+                          "retryAfterSeconds"
+                        ]
+                      }
                     }
                   }
                 }
@@ -1506,6 +1574,13 @@
                     },
                     "message": {
                       "const": "Authenticated read failed: packageUnavailable."
+                    },
+                    "details": {
+                      "not": {
+                        "required": [
+                          "retryAfterSeconds"
+                        ]
+                      }
                     }
                   }
                 }
@@ -1561,6 +1636,13 @@
                     },
                     "message": {
                       "const": "Recent library read failed: credentialUnavailable."
+                    },
+                    "details": {
+                      "not": {
+                        "required": [
+                          "retryAfterSeconds"
+                        ]
+                      }
                     }
                   }
                 }
@@ -1587,6 +1669,13 @@
                     },
                     "message": {
                       "const": "Recent library read failed: profileChanged."
+                    },
+                    "details": {
+                      "not": {
+                        "required": [
+                          "retryAfterSeconds"
+                        ]
+                      }
                     }
                   }
                 }
@@ -1613,6 +1702,13 @@
                     },
                     "message": {
                       "const": "Recent library read failed: authExchangeFailed."
+                    },
+                    "details": {
+                      "not": {
+                        "required": [
+                          "retryAfterSeconds"
+                        ]
+                      }
                     }
                   }
                 }
@@ -1639,6 +1735,13 @@
                     },
                     "message": {
                       "const": "Recent library read failed: authRejected."
+                    },
+                    "details": {
+                      "not": {
+                        "required": [
+                          "retryAfterSeconds"
+                        ]
+                      }
                     }
                   }
                 }
@@ -1665,6 +1768,39 @@
                     },
                     "message": {
                       "const": "Recent library read failed: transportFailed."
+                    },
+                    "details": {
+                      "not": {
+                        "required": [
+                          "retryAfterSeconds"
+                        ]
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "details": {
+                      "properties": {
+                        "stage": {
+                          "const": "throttled"
+                        }
+                      }
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "code": {
+                      "const": "NETWORK_UNAVAILABLE"
+                    },
+                    "retryable": {
+                      "const": true
+                    },
+                    "message": {
+                      "const": "Recent library read failed: throttled."
                     }
                   }
                 }
@@ -1691,6 +1827,13 @@
                     },
                     "message": {
                       "const": "Recent library read failed: responseInvalid."
+                    },
+                    "details": {
+                      "not": {
+                        "required": [
+                          "retryAfterSeconds"
+                        ]
+                      }
                     }
                   }
                 }
@@ -2292,9 +2435,15 @@
             "authExchangeFailed",
             "authRejected",
             "transportFailed",
+            "throttled",
             "responseInvalid",
             "packageUnavailable"
           ]
+        },
+        "retryAfterSeconds": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 86400
         }
       },
       "additionalProperties": false
@@ -2316,8 +2465,14 @@
             "authExchangeFailed",
             "authRejected",
             "transportFailed",
+            "throttled",
             "responseInvalid"
           ]
+        },
+        "retryAfterSeconds": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 86400
         }
       },
       "additionalProperties": false

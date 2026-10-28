@@ -83,7 +83,12 @@ struct InstalledGameAttentionView: View {
                         Text(notice).font(.callout).fixedSize(horizontal: false, vertical: true)
                             .accessibilityIdentifier("xodus.game.accessReason")
                         if installed.canRetryProductAccess {
-                            Button("Retry") { Task { await installed.retryProductAccess(for: game) } }
+                            // f51e60fe m-b: during the pause, Retry says until when and stays disabled.
+                            let pausedEnd = installed.productAccess.pausedEnd()
+                            Button(pausedEnd.map { "Retry after \($0)" } ?? "Retry") {
+                                Task { await installed.retryProductAccess(for: game) }
+                            }
+                                .disabled(pausedEnd != nil)
                                 .help("Checks this exact game's account access without downloading or launching.")
                                 .accessibilityIdentifier("xodus.game.retryAccess")
                         } else {

@@ -247,7 +247,7 @@ public actor ManagementClient {
                 try await Task.sleep(for: .milliseconds(10))
             }
             try Task.checkCancellation()
-            guard !stopped else { throw ManagementError.disconnected }
+            guard !stopped else { throw ManagementError.notSent }
             guard ContinuousClock.now < deadline else {
                 fail(.requestTimedOut)
                 throw ManagementError.requestTimedOut
@@ -264,7 +264,7 @@ public actor ManagementClient {
         let budget = timeout ?? command.defaultTimeout
         guard budget > .zero else { throw ManagementError.invalidRequest }
         guard !stopped, let child = process, child.isRunning, let stdin else {
-            throw ManagementError.disconnected
+            throw ManagementError.notSent
         }
         if [.authBegin, .authLogout, .authVerify, .odeAccountRead, .odeRuntimeVerify].contains(command),
            let admitted = admittedConfiguration, let identity = admitted.executableIdentity {
@@ -274,7 +274,7 @@ public actor ManagementClient {
             } catch { throw ManagementError.pairedEngineUnavailable }
         }
         if command != .hello {
-            guard let hello else { throw ManagementError.disconnected }
+            guard let hello else { throw ManagementError.notSent }
             guard hello.supports(command) else { throw ManagementError.capabilityMissing(command.rawValue) }
         } else if hello != nil { throw ManagementError.alreadyConnected }
         guard pending.count + descriptorAdmissionWaiters < 64, usedIDs.count < 100_000 else {
@@ -404,7 +404,9 @@ public actor ManagementClient {
                 guard let stage = AuthenticatedReadFailure(error: error) else {
                     throw ManagementError.invalidPayload
                 }
-                failure = .authenticatedReadFailed(stage)
+                failure = stage == .throttled
+                    ? .authenticatedReadThrottled(retryAfterSeconds: AuthenticatedReadFailure.retryAfterSeconds(error: error))
+                    : .authenticatedReadFailed(stage)
             } else if waiter.command == .libraryRecent,
                       error["details"]?["category"]?.string == "recentLibraryFailure" {
                 guard let stage = RecentLibraryFailure(error: error) else {

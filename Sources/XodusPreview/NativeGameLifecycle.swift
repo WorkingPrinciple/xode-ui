@@ -5,7 +5,7 @@ import OSLog
 import XodusManagement
 
 enum NativeLifecyclePins {
-    static let cliSHA256 = "7b23bedb8b53ece41e18555850c347364651c054e04184fe119c9f37630867e6"
+    static let cliSHA256 = "7a6866096ab3104a0a79d77bd677184dcc06df253d7de104ea302916c38509b0"
 }
 
 struct NativeGameResult: Codable, Equatable, Sendable {
@@ -82,7 +82,12 @@ struct NativeGameResult: Codable, Equatable, Sendable {
         "PREFIX_OS_UNSUPPORTED", "PREFIX_OS_TOO_OLD", "PREFIX_OS_UNREADABLE",
         "PACKAGE_OS_REQUIREMENT_INVALID", "PACKAGE_COMMAND_LINE_INVALID",
         "RUNTIME_CAPABILITY_MISSING", "EXECUTABLE_AMBIGUOUS",
-        "COMPATIBILITY_BLOCKED", "COMPATIBILITY_DB_INVALID", "GENERIC_PREFIX_REQUIRED"
+        "COMPATIBILITY_BLOCKED", "COMPATIBILITY_DB_INVALID", "GENERIC_PREFIX_REQUIRED",
+        // Producer #11 (REQ-164): game prerequisites and the CrossOver bottle, all refused before the game starts.
+        "PREREQUISITE_PREFIX_UNOWNED", "PREREQUISITE_INSTALLER_UNAVAILABLE", "PREREQUISITE_INSTALLER_MISMATCH",
+        "PREREQUISITE_INSTALL_FAILED", "PREREQUISITE_LAYOUT_INVALID",
+        "CROSSOVER_BOTTLE_ENVIRONMENT_CONFLICT", "CROSSOVER_BOTTLE_REGISTRY_CONFLICT", "CROSSOVER_BOTTLE_IN_USE",
+        "PREFIX_PROFILE_INCOMPLETE"
     ]
 
     var preflightMessage: String? {
@@ -97,6 +102,20 @@ struct NativeGameResult: Codable, Equatable, Sendable {
             "This game's package information is damaged, so it wasn't started. Nothing was changed. Repair the installation, then play again."
         case "RUNTIME_CAPABILITY_MISSING":
             "This game needs a newer runtime than this version of X Ode includes, so it wasn't started. Update X Ode to play this game. Use Copy Diagnostics to share the details."
+        case "PREREQUISITE_PREFIX_UNOWNED":
+            "This game needs a Windows component installed in a prefix X Ode manages, and this prefix isn't one, so the game wasn't started. Nothing was changed."
+        case "PREREQUISITE_INSTALLER_UNAVAILABLE":
+            "A Windows component this game needs couldn't be downloaded, so the game wasn't started. Check your connection, then play again."
+        case "PREREQUISITE_INSTALLER_MISMATCH":
+            "The Windows component this game needs didn't match its verified download, so it wasn't installed and the game wasn't started."
+        case "PREREQUISITE_INSTALL_FAILED", "PREREQUISITE_LAYOUT_INVALID":
+            "A Windows component this game needs couldn't be set up in its prefix, so the game wasn't started. Use Copy Diagnostics and send them to support."
+        case "CROSSOVER_BOTTLE_ENVIRONMENT_CONFLICT", "CROSSOVER_BOTTLE_REGISTRY_CONFLICT":
+            "This game's CrossOver bottle has settings that conflict with the verified setup, so the game wasn't started. Nothing was changed."
+        case "CROSSOVER_BOTTLE_IN_USE":
+            "This game's CrossOver bottle is in use by another program. Close it in CrossOver, then play again."
+        case "PREFIX_PROFILE_INCOMPLETE":
+            "This game's prefix isn't fully set up for the selected engine, so the game wasn't started. Nothing was changed. Use Copy Diagnostics and send them to support."
         case "COMPATIBILITY_BLOCKED":
             "This game can't run in X Ode yet (for example, it uses anti-cheat or isn't a supported package), so it wasn't started. Nothing was changed."
         case "COMPATIBILITY_DB_INVALID":

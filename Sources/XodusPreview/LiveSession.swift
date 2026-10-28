@@ -741,7 +741,7 @@ final class LiveSession: ObservableObject {
                 case .authRejected:
                     recentLibraryError = "Microsoft rejected access to recent activity. Review your saved sign-in in Account."
                 case .authExchangeFailed:
-                    recentLibraryError = "Microsoft couldn't authorize recent activity. Try again."
+                    recentLibraryError = LiveSession.signInRejectedMessage
                 case .transportFailed:
                     recentLibraryError = "Recent activity couldn't connect. Try again."
                 case .responseInvalid:
@@ -1090,13 +1090,14 @@ final class LiveSession: ObservableObject {
             while licenseReadInFlight {
                 try await Task.sleep(for: .milliseconds(50))
                 guard generation == admissionGeneration, authenticationGeneration == admissionAuthentication else {
-                    throw ManagementError.disconnected
+                    throw ManagementError.notSent
                 }
             }
         }
+        // f51e60fe B1: these refusals happen before anything leaves this Mac.
         guard hasConfirmedSignIn, !accountOperationBusy, !recentLibraryBootstrapRunning,
               section == .runtime || !accountRuntimeStarting, !applicationTerminating, let client,
-              let account = accountHash else { throw ManagementError.disconnected }
+              let account = accountHash else { throw ManagementError.notSent }
         let command: ManagementCommand = section == .runtime ? .odeRuntimeVerify : .odeAccountRead
         guard supports(command) else {
             throw ManagementError.capabilityMissing(command.rawValue)
@@ -2431,17 +2432,30 @@ final class LiveSession: ObservableObject {
             && language.range(of: "^[a-z]{2,3}(-[A-Z]{2})?$", options: .regularExpression) != nil
     }
 
+    /// REQ-160: truthful copy for Microsoft rate-limiting this device; never "check your network".
+    static func throttledMessage(retryAfterSeconds: Int?) -> String {
+        let minutes = max(1, Int((Double(retryAfterSeconds ?? 600) / 60).rounded(.up)))
+        return "Microsoft is limiting requests from this Mac. Try again in \(minutes) min."
+    }
+
+    /// L15 #12: Xbox sign-in rejected the saved ticket (authExchangeFailed). Retrying won't help; signing in again will.
+    static let signInRejectedMessage = "Microsoft didn't accept your saved sign-in. Sign out and sign in again in Account."
+
     static func describe(_ error: Error) -> String {
         if case let ManagementError.authenticatedReadFailed(failure) = error {
             switch failure {
             case .credentialUnavailable: return "Your saved sign-in couldn't be read. Check account status."
             case .profileChanged: return "The account changed while loading. Reload to try again."
-            case .authExchangeFailed: return "Microsoft couldn't authorize this request. Try again."
+            case .authExchangeFailed: return signInRejectedMessage
             case .authRejected: return "Microsoft rejected access to this feature. Check account status before reconnecting."
             case .transportFailed: return "The connection didn't finish. Check your network and try again."
             case .responseInvalid: return "Microsoft returned details that couldn't be read safely. Reload to try again."
             case .packageUnavailable: return "The requested content isn't available."
+            case .throttled: return throttledMessage(retryAfterSeconds: nil)
             }
+        }
+        if case let ManagementError.authenticatedReadThrottled(seconds) = error {
+            return throttledMessage(retryAfterSeconds: seconds)
         }
         if case let ManagementError.backendError(code, _) = error {
             switch code {

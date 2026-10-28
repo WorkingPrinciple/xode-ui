@@ -439,7 +439,7 @@ actor Checks {
                     let queued = Task { try await client.request(.jobs) }
                     check(await client.close(), "Owned busy metrics fixture closes")
                     do { _ = try await queued.value; check(false, "Disconnect releases queued boundary requests") }
-                    catch { check(error as? ManagementError == .disconnected, "Disconnect releases queued boundary requests") }
+                    catch { check([ManagementError.disconnected, .notSent].contains(error as? ManagementError ?? .invalidFrame), "Disconnect releases queued boundary requests") }
                     _ = try? await disconnectFence.value
                     _ = try? await held.value
                     continue
@@ -502,7 +502,7 @@ actor Checks {
         _ = try await requests.connect(mockConfiguration("requestpressure"))
         let held = (0..<64).map { _ in Task {
             do { _ = try await requests.request(.jobs); return false }
-            catch { return error as? ManagementError == .disconnected }
+            catch { return [ManagementError.disconnected, .notSent].contains(error as? ManagementError ?? .invalidFrame) }
         } }
         let deadline = ContinuousClock.now.advanced(by: .seconds(3))
         while await requests.pendingRequestCount < 64, ContinuousClock.now < deadline {
@@ -863,8 +863,9 @@ actor Checks {
                         params: ["contentID": .string("513710f5-ab8e-4d7c-9ed5-d0ba94dcfb33")])
                     check(false, "Authenticated-read failures remain typed closed stages")
                 } catch {
-                    check(error as? ManagementError == .authenticatedReadFailed(stage),
-                          "Authenticated-read failures remain typed closed stages")
+                    check(error as? ManagementError == (stage == .throttled
+                            ? .authenticatedReadThrottled(retryAfterSeconds: nil) : .authenticatedReadFailed(stage)),
+                          "Authenticated-read failures remain typed closed stages (\(stage.rawValue))")
                 }
                 check(await verifier.close(), "Failed neutral verification transport closes")
             }

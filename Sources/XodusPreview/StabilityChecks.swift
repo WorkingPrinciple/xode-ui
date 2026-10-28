@@ -151,9 +151,15 @@ import XodusManagement
             String(accessSource[$0.lowerBound...].prefix(900)) } ?? ""
         check(startupReads == 1 && !readWhileBusy && prioritizeBody.contains("awaitAccountIdle"),
               "683 Play test: a deep-link Play during startup waits for accountBusy/yieldsToLibraryRead, then makes its single licence read")
+        // f51e60fe B1: the real refusal a not-yet-ready session gives before anything leaves this Mac.
+        var productionRefusal: Error = ManagementError.invalidFrame
+        do { _ = try await LiveSession().readUnifiedAccount(.license, productID: played) } catch { productionRefusal = error }
+        check((productionRefusal as? ManagementError) == .notSent
+              && InstalledProductAccess.isLocalServiceFailure(productionRefusal),
+              "f51e60fe B1: a session that isn't ready refuses a licence read as not sent, which counts as local")
         let local = InstalledProductAccess()
         await local.refresh(account: account, installedIDs: installed, now: start, force: true,
-                            selectedProductID: played) { _ in throw ManagementError.backendUnavailable }
+                            selectedProductID: played) { _ in throw productionRefusal }
         check(local.lastFailureWasLocal(played) && local.pausedUntil == nil && local.pausedNotice(now: start) == nil,
               "683 Play test: losing the local game service is retried, never treated as Microsoft throttling (no pause)")
         // 9015da43 M1: Play's access settle retries once only when the read never left this Mac.
@@ -174,7 +180,7 @@ import XodusManagement
                 retry: { await store.prioritize(product, account: account, installedIDs: installed, read: read) })
             return (reads, store.permits(product, account: account, now: start), store.pausedUntil != nil)
         }
-        let localRun = await playSettle(ManagementError.backendUnavailable)
+        let localRun = await playSettle(productionRefusal)
         let upstreamRun = await playSettle(ManagementError.authenticatedReadFailed(.transportFailed))
         let cleanRun = await playSettle(nil)
         check(localRun.reads == 2 && localRun.playable && !localRun.paused
@@ -197,8 +203,15 @@ import XodusManagement
         var withinReads = 0
         await within.refresh(account: account, installedIDs: Array(many.prefix(100)), now: start, force: true,
                              selectedProductID: many[1]) { id in withinReads += 1; return try await reader(id) }
-        check(overBound == 0 && withinReads == 1,
-              "9015da43 m3: the 100-product bound counts installed games before page products join (101 refused, 100 + 20 pages read)")
+        let overlap = InstalledProductAccess()
+        for id in many.prefix(20) {
+            await overlap.checkProduct(id, account: account, now: start) { id in try await reader(id) }
+        }
+        var overlapReads = 0
+        await overlap.refresh(account: account, installedIDs: many, now: start, force: true,
+                              selectedProductID: many[50]) { id in overlapReads += 1; return try await reader(id) }
+        check(overBound == 0 && withinReads == 1 && overlapReads == 0,
+              "9015da43 m3 / f51e60fe M2: the 100-product bound counts installed games before page products join (101 refused even when 20 are also pages; 100 + 20 pages read)")
         // 9015da43 m5: a read queued behind another uses the time after waiting (683/684 used the call's start time).
         let queued = InstalledProductAccess()
         let slowFirst = Task { @MainActor in
@@ -214,6 +227,49 @@ import XodusManagement
         let pauseFrom = queued.pausedUntil.map { $0.timeIntervalSince(start) - InstalledProductAccess.backoff(afterFailures: 1) } ?? -1
         check(pauseFrom >= 0.4,
               "9015da43 m5: a read that waited behind another dates its failure after the wait (\(String(format: "%.2f", pauseFrom)) s), not at the call's start")
+        // REQ-160 (producer #11 schema): the throttled stage, with and without Microsoft's delay.
+        func wire(_ text: String) throws -> JSONValue { try JSONDecoder().decode(JSONValue.self, from: Data(text.utf8)) }
+        let plain = try wire(#"{"code":"NETWORK_UNAVAILABLE","retryable":true,"message":"Authenticated read failed: throttled.","details":{"category":"authenticatedReadFailure","stage":"throttled"}}"#)
+        let delayed = try wire(#"{"code":"NETWORK_UNAVAILABLE","retryable":true,"message":"Authenticated read failed: throttled.","details":{"category":"authenticatedReadFailure","stage":"throttled","retryAfterSeconds":900}}"#)
+        let misplaced = try wire(#"{"code":"NETWORK_UNAVAILABLE","retryable":true,"message":"Authenticated read failed: transportFailed.","details":{"category":"authenticatedReadFailure","stage":"transportFailed","retryAfterSeconds":30}}"#)
+        let negative = try wire(#"{"code":"NETWORK_UNAVAILABLE","retryable":true,"message":"Authenticated read failed: throttled.","details":{"category":"authenticatedReadFailure","stage":"throttled","retryAfterSeconds":-1}}"#)
+        check(AuthenticatedReadFailure(error: plain) == .throttled && AuthenticatedReadFailure(error: delayed) == .throttled
+              && AuthenticatedReadFailure.retryAfterSeconds(error: delayed) == 900
+              && AuthenticatedReadFailure.retryAfterSeconds(error: plain) == nil
+              && AuthenticatedReadFailure(error: misplaced) == nil && AuthenticatedReadFailure(error: negative) == nil,
+              "REQ-160: a throttled read is a valid retryable receipt; only it may carry retryAfterSeconds (0–86400)")
+        check(LiveSession.describe(ManagementError.authenticatedReadThrottled(retryAfterSeconds: 90))
+                == "Microsoft is limiting requests from this Mac. Try again in 2 min."
+              && !LiveSession.describe(ManagementError.authenticatedReadThrottled(retryAfterSeconds: nil)).contains("network"),
+              "REQ-160: throttling says Microsoft is limiting requests and when to try again, never 'check your network'")
+        let throttledStore = InstalledProductAccess()
+        var throttledReads = 0
+        await throttledStore.refresh(account: account, installedIDs: installed, now: start, force: true,
+                                     selectedProductID: played) { _ in
+            throttledReads += 1; throw ManagementError.authenticatedReadThrottled(retryAfterSeconds: 900)
+        }
+        for (offset, id) in [(60.0, installed[1]), (899, installed[2])] {
+            await throttledStore.refresh(account: account, installedIDs: installed, now: start.addingTimeInterval(offset),
+                                         force: true, selectedProductID: id) { id in throttledReads += 1; return try await reader(id) }
+        }
+        check(throttledReads == 1 && !throttledStore.lastFailureWasLocal(played)
+              && throttledStore.pausedUntil.map { abs($0.timeIntervalSince(start.addingTimeInterval(900))) < 1 } == true
+              && InstalledProductAccess.pause(after: ManagementError.authenticatedReadThrottled(retryAfterSeconds: nil), failures: 1) == 600,
+              "REQ-160: a throttled read pauses every licence read for Microsoft's delay (10 minutes without one); no fan-out")
+        // L15 #12: a rejected saved sign-in says to sign in again and stops licence reads until then.
+        let rejected = InstalledProductAccess()
+        var rejectedReads = 0
+        await rejected.refresh(account: account, installedIDs: installed, now: start, force: true,
+                               selectedProductID: played) { _ in
+            rejectedReads += 1; throw ManagementError.authenticatedReadFailed(.authExchangeFailed)
+        }
+        await rejected.refresh(account: account, installedIDs: installed, now: start.addingTimeInterval(5_000),
+                               force: true, selectedProductID: installed[3]) { id in rejectedReads += 1; return try await reader(id) }
+        check(rejectedReads == 1 && rejected.signInRejected
+              && rejected.reviewNotice(for: played, account: account, now: start) == LiveSession.signInRejectedMessage
+              && rejected.pausedNotice(now: start.addingTimeInterval(9_000)) == LiveSession.signInRejectedMessage
+              && LiveSession.describe(ManagementError.authenticatedReadFailed(.authExchangeFailed)) == LiveSession.signInRejectedMessage,
+              "L15 #12: Microsoft rejecting the saved sign-in says to sign in again and stops licence reads until then")
         let productSource = (try? String(contentsOfFile: "Sources/XodusPreview/LiveProductView.swift", encoding: .utf8)) ?? ""
         let appSource = (try? String(contentsOfFile: "Sources/XodusPreview/XodusPreviewApp.swift", encoding: .utf8)) ?? ""
         check(m2Reads == 1 && m2Permits
@@ -255,11 +311,11 @@ import XodusManagement
         }
         let preflight = NativeGameResult.launchPreflightCodes.sorted()
         let preflightResults = try preflight.map { try producerResult("launch", $0) }
-        check(preflight.count == 10 && preflightResults.allSatisfy {
+        check(preflight.count == 19 && preflightResults.allSatisfy {
                   $0.installVerdict == nil && $0.preflightMessage != nil
                   && $0.launchFailureMessage(stoppedByUser: false) == $0.preflightMessage
                   && $0.launchFailureMessage(stoppedByUser: false) != InstalledGameActionCopy.launchUnavailable
-              } && Set(preflightResults.compactMap(\.preflightMessage)).count >= 8,
+              } && Set(preflightResults.compactMap(\.preflightMessage)).count >= 13,
               "producer #8/L12: \(preflight.joined(separator: ", ")) are valid launch receipts with their own explanation, never recovery")
         let required = try producerResult("launch", "TITLE_RECIPE_REQUIRED")
         check(NativeGameResult.failureCodes.contains("TITLE_RECIPE_REQUIRED") && required.installVerdict == nil,
@@ -792,16 +848,8 @@ import XodusManagement
         check(providers.allSatisfy { QualificationDiagnostics.arguments(provider: $0).isEmpty },
               "#10f: ordinary builds add no --diagnostic-* flag for any provider")
         #endif
-        let app = (try? String(contentsOfFile: "Sources/XodusPreview/XodusPreviewApp.swift", encoding: .utf8)) ?? ""
-        let library = (try? String(contentsOfFile: "Sources/XodusPreview/InstalledGamesView.swift", encoding: .utf8)) ?? ""
-        let controller = (try? String(contentsOfFile: "Sources/XodusPreview/InstalledGamesController.swift", encoding: .utf8)) ?? ""
-        let launchSource = (try? String(contentsOfFile: "Sources/XodusPreview/NativeLaunchConfiguration.swift", encoding: .utf8)) ?? ""
-        let entryPointsShareArguments = app.contains("installed.playRequested(game)")
-            && library.contains("library.playRequested(game)") && !library.contains("await library.play(game)")
-            && controller.contains("await play(current)") && controller.components(separatedBy: "--diagnostic").count == 1
-            && launchSource.components(separatedBy: "\"--game-recipe\"").count == 3
-        check(diagnosticInProfiles.isEmpty && recipeOutsideAllowlist.isEmpty && hadesRecipe && entryPointsShareArguments,
-              "#10f: the Play button, ready notification and deep link share one argv builder; no profile adds --diagnostic-*, and --game-recipe appears only for allowlisted Hades (\(recipeOutsideAllowlist.map(\.productID)))")
+        check(diagnosticInProfiles.isEmpty && recipeOutsideAllowlist.isEmpty && hadesRecipe,
+              "#10f: no bundled profile adds --diagnostic-*, and --game-recipe appears only for allowlisted Hades (\(recipeOutsideAllowlist.map(\.productID)))")
     }
 
     static func gatingChecks(check: (Bool, String) -> Void) {

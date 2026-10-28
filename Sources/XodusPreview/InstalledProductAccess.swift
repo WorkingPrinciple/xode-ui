@@ -30,6 +30,9 @@ final class InstalledProductAccess: ObservableObject {
     private var failures: [String: Int] = [:]
     /// 72450bd3 L2: consecutive failures across all products set the global pause length.
     private var globalFailures = 0
+    /// L15 #12: Microsoft rejected the saved sign-in; no licence read is retried until the account signs in again
+    /// (a new account binding retires this store).
+    private(set) var signInRejected = false
     /// 683 Play test / 9015da43 m1: products whose latest read failed before leaving this Mac.
     private var localFailures = Set<String>()
     func lastFailureWasLocal(_ productID: String) -> Bool { localFailures.contains(productID) }
@@ -41,8 +44,8 @@ final class InstalledProductAccess: ObservableObject {
     nonisolated static func isLocalServiceFailure(_ error: Error) -> Bool {
         guard let management = error as? ManagementError else { return false }
         switch management {
-        // 9015da43 m2: only failures where the request never left this Mac (the service couldn't be reached).
-        case .backendUnavailable, .startFailed: return true
+        // 9015da43 m2 / f51e60fe B1: only requests that never left this Mac (tagged at their throw sites).
+        case .notSent, .backendUnavailable, .startFailed: return true
         default: return false
         }
     }
@@ -50,6 +53,8 @@ final class InstalledProductAccess: ObservableObject {
     /// updates; at most `pagedLimit`, least recently viewed first out, and outside the installed bound.
     nonisolated static let pagedLimit = 20
     private var pagedOrder: [String] = []
+    /// f51e60fe M2: the installed games last given, apart from page products.
+    private var installedGames = Set<String>()
     private var pagedIDs: Set<String> { Set(pagedOrder) }
     private func rememberPaged(_ id: String) {
         pagedOrder.removeAll { $0 == id }
@@ -59,6 +64,14 @@ final class InstalledProductAccess: ObservableObject {
     private(set) var pausedUntil: Date?
     /// Every licence read this object started; a fixture bounds it.
     private(set) var readCount = 0
+    /// REQ-160: a throttled read pauses every read for Microsoft's delay, or 10 minutes when it gave none.
+    nonisolated static func pause(after error: Error, failures count: Int) -> TimeInterval {
+        if case let ManagementError.authenticatedReadThrottled(seconds) = error {
+            return max(backoff(afterFailures: count), TimeInterval(seconds ?? 600))
+        }
+        return backoff(afterFailures: count)
+    }
+
     nonisolated static func backoff(afterFailures count: Int) -> TimeInterval {
         min(maximumBackoff, 60 * pow(2, Double(max(0, count - 1))))
     }
@@ -79,7 +92,8 @@ final class InstalledProductAccess: ObservableObject {
     /// REQ-159: keeps the installed set current without reading any licence.
     func track(account: String?, installedIDs: [String]) {
         guard account == accountHash else { return }
-        installed = Set(installedIDs.filter(PCGamesClient.validProductID)).union(pagedIDs)
+        installedGames = Set(installedIDs.filter(PCGamesClient.validProductID))
+        installed = installedGames.union(pagedIDs)
         facts = facts.filter { installed.contains($0.key) }
         errors = errors.filter { installed.contains($0.key) }
     }
@@ -88,7 +102,7 @@ final class InstalledProductAccess: ObservableObject {
     func checkProduct(_ productID: String, session: LiveSession, force: Bool = false) async {
         guard PCGamesClient.validProductID(productID) else { return }
         rememberPaged(productID)
-        await refresh(session: session, installedIDs: Array(installed.union([productID])), force: force,
+        await refresh(session: session, installedIDs: Array(installedGames), force: force,
                       selectedProductID: productID)
         rememberPaged(productID)
     }
@@ -97,7 +111,7 @@ final class InstalledProductAccess: ObservableObject {
                       read: @escaping @MainActor (String) async throws -> OdeAccountRead) async {
         guard PCGamesClient.validProductID(productID) else { return }
         rememberPaged(productID)
-        await refresh(account: account, installedIDs: Array(installed.union([productID])), now: now, force: force,
+        await refresh(account: account, installedIDs: Array(installedGames), now: now, force: force,
                       selectedProductID: productID, read: read)
         // A first account binding retires the store; keep this page's product tracked afterwards.
         rememberPaged(productID)
@@ -105,7 +119,8 @@ final class InstalledProductAccess: ObservableObject {
 
     /// 72450bd3 L1: while reads are paused after a failure, say until when instead of waiting silently.
     func pausedNotice(now: Date = Date()) -> String? {
-        pausedEnd(now: now).map { "Access checks are paused until \($0) after a failed check. Try again then." }
+        if signInRejected { return LiveSession.signInRejectedMessage }
+        return pausedEnd(now: now).map { "Access checks are paused until \($0) after a failed check. Try again then." }
     }
 
     /// The pause's end time as shown to people (short time), while a pause is in effect.
@@ -119,7 +134,8 @@ final class InstalledProductAccess: ObservableObject {
 
     /// 4ea60eb3 F2: a failed read's error and Retry state also say when checks resume.
     func unavailableNotice(now: Date = Date()) -> String {
-        pausedEnd(now: now).map { "Couldn't confirm access right now. Try again after \($0)." } ?? Self.unavailableNotice
+        if signInRejected { return LiveSession.signInRejectedMessage }
+        return pausedEnd(now: now).map { "Couldn't confirm access right now. Try again after \($0)." } ?? Self.unavailableNotice
     }
 
     /// The Try Again title, carrying the pause's end time while Retry can't read.
@@ -214,8 +230,10 @@ final class InstalledProductAccess: ObservableObject {
         attempts = [:]
         failures = [:]
         globalFailures = 0
+        signInRejected = false
         localFailures = []
         pagedOrder = []
+        installedGames = []
         pausedUntil = nil
         installed = []
         checking = false
@@ -273,11 +291,12 @@ final class InstalledProductAccess: ObservableObject {
         // 9015da43 m3: the 100-product bound counts the installed games given, before page products join.
         let givenInstalled = Set(installedIDs.filter(PCGamesClient.validProductID))
         let currentInstalled = givenInstalled.union(pagedIDs)
-        guard givenInstalled.subtracting(pagedIDs).count <= 100 else {
+        guard givenInstalled.count <= 100 else {
             logger.error("Installed product access scan exceeds the 100-product bound")
             return
         }
         installed = currentInstalled
+        installedGames = givenInstalled
         if facts.keys.contains(where: { !installed.contains($0) }) {
             facts = facts.filter { installed.contains($0.key) }
         }
@@ -295,6 +314,7 @@ final class InstalledProductAccess: ObservableObject {
         let effectiveNow = now.addingTimeInterval(Date().timeIntervalSince(callStarted))
         // REQ-159: every read, swept or selected, reuses a 10-minute answer and respects the per-product and
         // global backoff after a failure; production never sweeps (it only calls `track`).
+        if signInRejected { return }
         if let pausedUntil, effectiveNow < pausedUntil { return }
         let ids = installed.sorted { (attempts[$0] == nil ? 0 : 1, $0) < (attempts[$1] == nil ? 0 : 1, $1) }.filter { id in
             if let selectedProductID, id != selectedProductID { return false }
@@ -362,12 +382,13 @@ final class InstalledProductAccess: ObservableObject {
                     logger.error("Product access \(id, privacy: .public) failed: \(LiveSession.describe(error), privacy: .public)")
                     // A request that never left this Mac isn't Microsoft limiting us; it never starts the shared pause.
                     guard !Self.isLocalServiceFailure(error) else { localFailures.insert(id); continue }
+                    if case ManagementError.authenticatedReadFailed(.authExchangeFailed) = error { signInRejected = true }
                     localFailures.remove(id)
                     failures[id] = (failures[id] ?? 0) + 1
                     globalFailures += 1
                     // 4ea60eb3 F4: the pause runs from when the read failed, not from when the request began.
                     pausedUntil = effectiveNow.addingTimeInterval(Date().timeIntervalSince(requestStarted)
-                        + Self.backoff(afterFailures: globalFailures))
+                        + Self.pause(after: error, failures: globalFailures))
                 }
                 await Task.yield()
             }

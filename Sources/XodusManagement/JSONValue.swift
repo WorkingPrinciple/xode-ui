@@ -84,6 +84,10 @@ public enum ManagementError: Error, Equatable, Sendable, LocalizedError {
     case discoveryFailed(CatalogDiscovery)
     case queryFailed(CatalogQuery)
     case authenticatedReadFailed(AuthenticatedReadFailure)
+    /// Review f51e60fe B1: a request refused on this Mac before it was sent (no service, busy, starting).
+    case notSent
+    /// REQ-160: a throttled authenticated read and the delay Microsoft asked for, if any.
+    case authenticatedReadThrottled(retryAfterSeconds: Int?)
     case recentLibraryFailed(RecentLibraryFailure)
 
     public var errorDescription: String? {
@@ -105,7 +109,7 @@ public enum ManagementError: Error, Equatable, Sendable, LocalizedError {
             "\(AppBrand.displayName) cannot access your Mac's Keychain. Review its native permission prompt or unlock the Keychain, then check status again. Your saved credentials were not replaced."
         case .startFailed: "\(AppBrand.displayName)'s game service couldn't start. Check the selected build and state directory."
         case .alreadyConnected: "An engine is already connected."
-        case .disconnected: "The connection to \(AppBrand.displayName)'s game service ended. Reconnect before taking another action."
+        case .disconnected, .notSent: "The connection to \(AppBrand.displayName)'s game service ended. Reconnect before taking another action."
         case .requestTimedOut: "\(AppBrand.displayName)'s game service didn't respond in time. Reconnect to recover its durable state."
         case .unexpectedResult: "\(AppBrand.displayName)'s game service returned a response for an unexpected request. The connection was stopped."
         case .writeFailed: "The request couldn't reach \(AppBrand.displayName)'s game service. Reconnect before retrying."
@@ -118,6 +122,7 @@ public enum ManagementError: Error, Equatable, Sendable, LocalizedError {
         case .discoveryFailed: "The attempted public products could not be checked. Their failures are listed; no empty owned library or successful discovery was assumed."
         case .queryFailed: "The Store search results could not be checked. Their failures are listed; no successful empty search or ownership was assumed."
         case .authenticatedReadFailed(let failure): failure.message
+        case .authenticatedReadThrottled: AuthenticatedReadFailure.throttled.message
         case .recentLibraryFailed(let failure): failure.message
         case .invalidEvent: "The activity stream is inconsistent. Reload the authoritative snapshot."
         }
