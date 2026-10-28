@@ -711,7 +711,43 @@ import XodusManagement
 
     // MARK: REQ-138 / REQ-139
 
+    /// #10f review: Play argv from the app never carries diagnostic flags in ordinary builds and carries a game
+    /// recipe only for allowlisted profiles; the qualification-only channel set is exactly the reviewed one.
+    static func playArgumentChecks(check: (Bool, String) -> Void) {
+        let profiles = (try? NativeTitleLaunchProfile.bundledProfiles()) ?? []
+        let recipeAllowlist: Set<String> = ["9P8DL6W0JBB8"]
+        let diagnosticInProfiles = profiles.filter { $0.playArguments.contains { $0.hasPrefix("--diagnostic") } }
+        let recipeOutsideAllowlist = profiles.filter {
+            $0.playArguments.contains("--game-recipe") && !recipeAllowlist.contains($0.productID)
+        }
+        let hadesRecipe = profiles.first { $0.productID == "9P8DL6W0JBB8" }?.playArguments
+            .split(separator: "--game-recipe", omittingEmptySubsequences: false).count == 2
+        let providers: [String?] = [nil, AdmittedProviderScope.calimocho, "crossover", "highball"]
+        #if XODUS_QUALIFICATION
+        let qualOnly = providers.allSatisfy { provider in
+            let arguments = QualificationDiagnostics.arguments(provider: provider)
+            return provider == nil || provider == AdmittedProviderScope.calimocho
+                ? arguments == ["--diagnostic-wine-debug", "warn+gdkc"] : arguments.isEmpty
+        }
+        check(qualOnly, "#10f: qualification builds add exactly the reviewed --diagnostic-wine-debug warn+gdkc, on Calimocho routes only")
+        #else
+        check(providers.allSatisfy { QualificationDiagnostics.arguments(provider: $0).isEmpty },
+              "#10f: ordinary builds add no --diagnostic-* flag for any provider")
+        #endif
+        let app = (try? String(contentsOfFile: "Sources/XodusPreview/XodusPreviewApp.swift", encoding: .utf8)) ?? ""
+        let library = (try? String(contentsOfFile: "Sources/XodusPreview/InstalledGamesView.swift", encoding: .utf8)) ?? ""
+        let controller = (try? String(contentsOfFile: "Sources/XodusPreview/InstalledGamesController.swift", encoding: .utf8)) ?? ""
+        let launchSource = (try? String(contentsOfFile: "Sources/XodusPreview/NativeLaunchConfiguration.swift", encoding: .utf8)) ?? ""
+        let entryPointsShareArguments = app.contains("installed.playRequested(game)")
+            && library.contains("library.playRequested(game)") && !library.contains("await library.play(game)")
+            && controller.contains("await play(current)") && controller.components(separatedBy: "--diagnostic").count == 1
+            && launchSource.components(separatedBy: "\"--game-recipe\"").count == 3
+        check(diagnosticInProfiles.isEmpty && recipeOutsideAllowlist.isEmpty && hadesRecipe && entryPointsShareArguments,
+              "#10f: the Play button, ready notification and deep link share one argv builder; no profile adds --diagnostic-*, and --game-recipe appears only for allowlisted Hades (\(recipeOutsideAllowlist.map(\.productID)))")
+    }
+
     static func gatingChecks(check: (Bool, String) -> Void) {
+        playArgumentChecks(check: check)
         let ordinary = "io.github.dragoshont.xodus.development", qual = "io.github.dragoshont.xodus.qualification"
         typealias Run = ConcurrentAppGuard.Running
         check(ConcurrentAppGuard.runningPeer(bundleID: ordinary, running: [Run(bundleID: ordinary, pid: 10), Run(bundleID: qual, pid: 11)], selfPID: 10) == "X Ode Qualification"
