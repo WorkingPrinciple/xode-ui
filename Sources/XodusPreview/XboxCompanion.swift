@@ -308,6 +308,10 @@ final class XboxCompanionController: ObservableObject {
     func resumeAfterTerminationRefusal() { terminating = false }
 
     func refresh(for status: GameServiceStatus?, force: Bool = false) async {
+        if force, !MicrosoftReadContext.explicit {
+            await MicrosoftReadContext.explicit { await refresh(for: status, force: true) }
+            return
+        }
         if let session = unifiedSession {
             await refreshUnifiedAccount(session, force: force)
             return
@@ -358,6 +362,10 @@ final class XboxCompanionController: ObservableObject {
     }
 
     func loadAchievements(titleID: String, status: GameServiceStatus?, force: Bool = false) async {
+        if force, !MicrosoftReadContext.explicit {
+            await MicrosoftReadContext.explicit { await loadAchievements(titleID: titleID, status: status, force: true) }
+            return
+        }
         if let session = unifiedSession {
             await loadUnifiedAchievements(session, titleID: titleID, force: force)
             return
@@ -426,6 +434,9 @@ final class XboxCompanionController: ObservableObject {
         if let task { await task.value; return }
         if !force, session.accountCountryReady, error == nil, let date = cache?.date,
            Date().timeIntervalSince(date) < 900 { return }
+        // d270a2c5: scene-active, recovery and Account-appear profile reads wait for the read gate.
+        guard force || MicrosoftReadContext.explicit
+                || session.readGate.allowsAutomaticRead(account: binding) else { return }
         let epoch = generation
         refreshing = true
         let job = Task {
@@ -474,6 +485,9 @@ final class XboxCompanionController: ObservableObject {
         await bind(binding, signedIn: true)
         if let task = achievementTasks[titleID] { await task.value; return }
         if !force, let date = achievements[titleID]?.date, Date().timeIntervalSince(date) < 900 { return }
+        // d270a2c5: opening a title's achievements is automatic; its explicit Refresh passes `force`.
+        guard force || MicrosoftReadContext.explicit
+                || session.readGate.allowsAutomaticRead(account: binding) else { return }
         let epoch = generation
         refreshingTitles.insert(titleID)
         let job = Task {

@@ -390,28 +390,33 @@ enum PCGamesChecks {
                         .filter { $0.hasPrefix("library:") }.count
                 }
                 let before = try libraryReads()
+                var fakeNow = next
+                session.readGate.clock = { fakeNow }
                 library.recordThrottle(after: ManagementError.authenticatedReadThrottled(retryAfterSeconds: 90), now: next)
                 for second in [61.0, 70, 80, 89] {
-                    await library.refreshInBackground(now: next.addingTimeInterval(second))
+                    fakeNow = next.addingTimeInterval(second)
+                    await library.refreshInBackground(now: fakeNow)
                     await library.loadOnAppear()
                 }
                 let during = try libraryReads() - before
-                await library.refreshInBackground(now: next.addingTimeInterval(91))
-                await library.refreshInBackground(now: next.addingTimeInterval(92))
+                fakeNow = next.addingTimeInterval(91)
+                await library.refreshInBackground(now: fakeNow)
+                fakeNow = next.addingTimeInterval(92)
+                await library.refreshInBackground(now: fakeNow)
                 let after = try libraryReads() - before - during
                 let clearedOnSuccess = library.throttledUntil == nil && library.error == nil
-                library.recordThrottle(after: ManagementError.authenticatedReadThrottled(retryAfterSeconds: 90), now: Date())
+                library.recordThrottle(after: ManagementError.authenticatedReadThrottled(retryAfterSeconds: 90), now: fakeNow)
                 library.refresh()
                 await library.waitForLoad()
                 let explicit = try libraryReads() - before - during - after
                 check(during == 0 && after == 1 && clearedOnSuccess && explicit == 1 && library.throttledUntil == nil,
                       "a36de2eb M-a: a foreground or appear refresh during the throttle window makes 0 library reads, at most 1 after it ends; an explicit refresh still reads and success clears the window (during \(during), after \(after), explicit \(explicit))")
-                library.recordThrottle(after: ManagementError.authenticatedReadThrottled(retryAfterSeconds: 90), now: Date())
-                await library.retireUnifiedAccount(keepingThrottle: true)
-                let keptOnScopeChange = library.throttledUntil != nil
+                library.recordThrottle(after: ManagementError.authenticatedReadThrottled(retryAfterSeconds: 90), now: fakeNow)
                 await library.retireUnifiedAccount()
-                check(keptOnScopeChange && library.throttledUntil == nil,
-                      "a36de2eb #3: an account-scope change keeps Microsoft's throttle window; account retirement clears it")
+                let keptOnRetire = library.throttledUntil != nil && !session.readGate.allowsAutomaticRead(account: session.accountHash)
+                session.readGate.clock = Date.init
+                check(keptOnRetire,
+                      "d270a2c5: retiring the library (scope change, lost confirmation) keeps the Mac-level read gate")
             }
             check(await session.disconnect(), "Warm Library fixture joins its management child")
             check(library.representedGames.isEmpty && !library.accessIsCurrent,

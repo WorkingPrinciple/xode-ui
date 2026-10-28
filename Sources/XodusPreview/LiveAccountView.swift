@@ -98,7 +98,7 @@ struct LiveAccountView: View {
                     .accessibilityLabel(session.signInPending ? "Cancel sign-in" : "Close account")
                     .accessibilityIdentifier(session.signInPending ? "xodus.account.cancelSignIn" : "xodus.account.close")
                     if session.isReady {
-                        Button("Check status") { Task {
+                        Button("Check status") { MicrosoftReadContext.explicit { Task {
                             await session.refreshAccount()
                             if state.pcGames.usesUnifiedAccount, session.hasConfirmedSignIn {
                                 await state.pcGames.retryLibraryLoad()
@@ -106,7 +106,7 @@ struct LiveAccountView: View {
                                 await companion.refresh(for: nil, force: true)
                                 if session.nativeLifecycleConfiguration == nil { await session.prepareUnifiedRuntime() }
                             }
-                        } }
+                        } } }
                             .disabled(session.accountBusy)
                             .accessibilityLabel("Check account status")
                             .accessibilityIdentifier("xodus.account.checkStatus")

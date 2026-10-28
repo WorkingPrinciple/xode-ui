@@ -317,6 +317,8 @@ final class LiveSession: ObservableObject {
     /// background; removed on sign-out.
     static func lastVerifiedCountryKey(_ account: String) -> String { "Xodus.accountCountry.lastVerified.\(account)" }
     @Published private(set) var accountCountryProvisional = false
+    /// d270a2c5: the Mac-level Microsoft read gate; it outlives management connections.
+    let readGate = MicrosoftReadGate()
     /// REQ-121: after a confirmed sign-out, saved artwork and saved public descriptors (whose product IDs
     /// reflect the library and whose market reflects the country) are removed. Injectable for checks.
     var signOutCleanup: @MainActor () async -> Void = {
@@ -337,22 +339,26 @@ final class LiveSession: ObservableObject {
         accountCountryError = nil
         accountCountryProvisional = true
         let token = countryGeneration
-        Task { [weak self] in
+        MicrosoftReadContext.automatic { Task { [weak self] in
             // Behind the library read; a different country re-scopes and refetches the library.
             guard let self, token == self.countryGeneration else { return }
             for _ in 0..<300 where self.yieldsToLibraryRead || self.accountBusy {
                 try? await Task.sleep(for: .milliseconds(100))
                 guard token == self.countryGeneration else { return }
             }
-            await self.refreshAccountCountry()
+            // d270a2c5: both automatic re-checks wait for the gate.
+            if self.readGate.allowsAutomaticRead(account: self.accountHash) { await self.refreshAccountCountry() }
             // One later retry if the re-check failed and the country is still provisional.
             guard token == self.countryGeneration, self.accountCountryProvisional else { return }
-            try? await Task.sleep(for: .seconds(Self.provisionalCountryRetry))
-            guard token == self.countryGeneration, self.accountCountryProvisional, !self.accountBusy else { return }
+            try? await Task.sleep(for: .seconds(self.provisionalCountryRetryDelay))
+            guard token == self.countryGeneration, self.accountCountryProvisional, !self.accountBusy,
+                  self.readGate.allowsAutomaticRead(account: self.accountHash) else { return }
             await self.refreshAccountCountry()
-        }
+        } }
     }
     static let provisionalCountryRetry: TimeInterval = 60
+    /// Injectable for checks.
+    var provisionalCountryRetryDelay: TimeInterval = LiveSession.provisionalCountryRetry
 
     /// Forgets the saved countries for an account; part of signing out.
     func forgetAccountCountry(_ account: String) {
@@ -661,7 +667,7 @@ final class LiveSession: ObservableObject {
     }
 
     func reloadRecentLibrary() async {
-        await loadRecentLibrary(automatically: false)
+        await MicrosoftReadContext.explicit { await loadRecentLibrary(automatically: false) }
     }
 
     private func loadRecentLibrary(automatically: Bool) async {
@@ -677,6 +683,8 @@ final class LiveSession: ObservableObject {
         }
         guard !applicationTerminating, canLoadRecentLibrary,
               !automatically || recentLibraryEntryGeneration != generation else { return }
+        // d270a2c5: an automatic entry read waits for the gate; the entry stays unread so it loads afterwards.
+        if automatically, !readGate.allowsAutomaticRead(account: accountHash) { return }
         let token = generation
         let id = UUID()
         recentLibraryEntryGeneration = token
@@ -702,6 +710,13 @@ final class LiveSession: ObservableObject {
 
     private func readRecentLibrary() async {
         guard recentLibraryReadAllowed, let client else { return }
+        if let account = accountHash {
+            do { try readGate.admit(account: account) } catch {
+                recentLibraryError = Self.describe(error)
+                return
+            }
+        }
+        let gateAccount = accountHash
         let token = generation
         let authToken = authenticationGeneration
         recentLibraryGeneration += 1
@@ -717,8 +732,15 @@ final class LiveSession: ObservableObject {
             }
         }
         do {
-            let result = try await client.request(.libraryRecent, params: ["limit": .integer(20)])
-                .decode(RecentLibrarySnapshot.self)
+            let result: RecentLibrarySnapshot
+            do {
+                result = try await client.request(.libraryRecent, params: ["limit": .integer(20)])
+                    .decode(RecentLibrarySnapshot.self)
+                if let gateAccount { readGate.recordSuccess(account: gateAccount) }
+            } catch {
+                if let gateAccount { readGate.record(error, account: gateAccount) }
+                throw error
+            }
             guard token == generation, authToken == authenticationGeneration,
                   recentToken == recentLibraryGeneration else { return }
             try result.validate(limit: 20)
@@ -1127,7 +1149,16 @@ final class LiveSession: ObservableObject {
         ]
         if let productID { params["productID"] = .string(productID) }
         try DebugFaultInjection.check(.account)
-        let result = try await client.request(command, params: params).decode(OdeAccountRead.self)
+        // d270a2c5: no automatic Microsoft read leaves this Mac while the gate is held; every answer feeds it.
+        try readGate.admit(account: account)
+        let result: OdeAccountRead
+        do {
+            result = try await client.request(command, params: params).decode(OdeAccountRead.self)
+            readGate.recordSuccess(account: account)
+        } catch {
+            readGate.record(error, account: account)
+            throw error
+        }
         try Task.checkCancellation()
         guard token == generation, authToken == authenticationGeneration,
               accountHash == account, hasConfirmedSignIn else { throw ManagementError.disconnected }
@@ -1142,6 +1173,8 @@ final class LiveSession: ObservableObject {
     func prepareUnifiedRuntime() async {
         guard hasConfirmedSignIn, !accountBusy, !accountRuntimeStarting,
               !applicationTerminating, !accountRuntimeReady else { return }
+        // d270a2c5: runtime verify is an RPS exchange with Microsoft; automatic starts wait for the gate.
+        guard MicrosoftReadContext.explicit || readGate.allowsAutomaticRead(account: accountHash) else { return }
         guard supports(.odeRuntimeVerify), let configuration = connectedConfiguration else {
             accountRuntimeError = "This engine doesn't include the single-account game connection."
             return
@@ -1671,7 +1704,10 @@ final class LiveSession: ObservableObject {
                     self.accountError = nil
                     self.failedAccountAction = nil
                     if status.flow?.state != .pending {
-                        if status.flow?.state == .completed { self.errorMessage = nil }
+                        if status.flow?.state == .completed {
+                            self.errorMessage = nil
+                            if let account = status.accountHash { self.readGate.signedIn(account: account) }
+                        }
                         return
                     }
                     if finalCheck || ContinuousClock.now >= deadline {
@@ -1778,6 +1814,7 @@ final class LiveSession: ObservableObject {
             }
             accountStatusCurrent = true
             diagnosticPreview = nil
+            readGate.signedOut()
             if let signedOutAccount { forgetAccountCountry(signedOutAccount) }
             await signOutCleanup()
             return true
@@ -2447,6 +2484,7 @@ final class LiveSession: ObservableObject {
     static let signInRejectedMessage = "Microsoft didn't accept your saved sign-in. Sign out and sign in again in Account."
 
     static func describe(_ error: Error) -> String {
+        if let paused = error as? MicrosoftReadsPaused { return paused.message }
         if case let ManagementError.authenticatedReadFailed(failure) = error {
             switch failure {
             case .credentialUnavailable: return "Your saved sign-in couldn't be read. Check account status."

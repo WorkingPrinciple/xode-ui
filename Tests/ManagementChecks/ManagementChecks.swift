@@ -1693,6 +1693,7 @@ enum MockBackend {
             var supported: Set<ManagementCommand> = [.authStatus, .authLogout, .jobs]
             if scenario.hasPrefix("descriptors") { supported.insert(.descriptors) }
             if scenario.hasPrefix("ode") { supported.insert(.odeAccountRead) }
+            if scenario.hasPrefix("odegate") { supported.formUnion([.odeRuntimeVerify, .libraryRecent]) }
             if scenario.hasPrefix("recent") { supported.formUnion([.libraryRecent, .query]) }
             if scenario == "verify" || scenario.hasPrefix("verify-") { supported.insert(.authVerify) }
             if scenario == "diagnostics" || scenario.hasPrefix("metrics") { supported.insert(.diagnostics) }
@@ -1794,6 +1795,30 @@ enum MockBackend {
                         try trace(command)
                         if command == "auth.status" {
                             try emit(.object(result(request, data: authStatus(loggedOut ? "signedOut" : "credentialPresent"))))
+                            continue
+                        }
+                        // d270a2c5: every Microsoft read is answered throttled (90 s) or with a rejected sign-in.
+                        if scenario.hasPrefix("odegate"),
+                           ["ode.account.read.v1", "ode.runtime.verify.v1", "library.recent"].contains(command) {
+                            let rejected = scenario == "odegaterejected"
+                            let code: String, message: String, retryable: Bool
+                            var details: [String: JSONValue]
+                            if command == "library.recent" {
+                                let stage: RecentLibraryFailure = rejected ? .authExchangeFailed : .throttled
+                                (code, message, retryable) = (stage.code, stage.message, stage.retryable)
+                                details = stage.details.object ?? [:]
+                            } else {
+                                let stage: AuthenticatedReadFailure = rejected ? .authExchangeFailed : .throttled
+                                (code, message, retryable) = (stage.code, stage.message, stage.retryable)
+                                details = stage.details.object ?? [:]
+                            }
+                            if !rejected { details["retryAfterSeconds"] = .integer(90) }
+                            var response = result(request, data: .null)
+                            response["ok"] = .bool(false)
+                            response.removeValue(forKey: "data")
+                            response["error"] = .object(["code": .string(code), "message": .string(message),
+                                                         "retryable": .bool(retryable), "details": .object(details)])
+                            try emit(.object(response))
                             continue
                         }
                         if command == "ode.account.read.v1" {

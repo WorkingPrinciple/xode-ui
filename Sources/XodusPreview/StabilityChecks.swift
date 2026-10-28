@@ -202,13 +202,15 @@ import XodusManagement
         let settledInTime = await InstalledGamesController.settleAccessForPlay(timeout: .milliseconds(300),
             canPlay: { slow.permits(slowProduct, account: account, now: start) },
             settled: { !slow.checking && (slow.facts[slowProduct] != nil || slow.errors[slowProduct] != nil) },
-            failedLocally: { false }, retry: {}, cancelRead: { slow.cancelInFlight() })
+            failedLocally: { false }, retry: {}, cancelRead: { slow.cancelInFlight(slowProduct) })
         try await Task.sleep(for: .seconds(2.5))
         _ = await slowRead.value
         check(!settledInTime && !lateLanded && slow.facts[slowProduct] == nil,
               "bc33adf2 m3: when Play's access wait times out, the in-flight read is cancelled and no late answer lands")
-        // a36de2eb m3: a reader that ignores cancellation fails late with Microsoft rejecting the sign-in; nothing
-        // is recorded, and a second Play queued behind it reads at once instead of waiting on the abandoned read.
+        // a36de2eb m3 / d270a2c5 MAJOR-3: two Plays, each calling prioritize once and settling as Play does. Play A's
+        // read ignores cancellation and fails late with Microsoft rejecting the sign-in; Play B queued its priority
+        // behind it. At A's deadline only A is abandoned (new epoch, nothing recorded) and B's queued priority is
+        // re-issued as a fresh check by the store itself; nothing calls prioritize for B again.
         let stubborn = InstalledProductAccess()
         let stuckProduct = installed[20], secondProduct = installed[21]
         var stubbornReads: [String] = []
@@ -226,20 +228,49 @@ import XodusManagement
             await stubborn.prioritize(stuckProduct, account: account, installedIDs: installed, read: stubbornRead)
         }
         try await Task.sleep(for: .milliseconds(50))
+        let stuckInFlight = stubborn.inFlightID == stuckProduct && stubborn.checking
         await stubborn.prioritize(secondProduct, account: account, installedIDs: installed, read: stubbornRead)
-        let firstTimedOut = await InstalledGamesController.settleAccessForPlay(timeout: .milliseconds(150),
+        let secondOnlyQueued = stubbornReads == [stuckProduct] && stubborn.facts[secondProduct] == nil
+        let secondPlay = Task { @MainActor in
+            await InstalledGamesController.settleAccessForPlay(timeout: .milliseconds(700),
+                canPlay: { stubborn.permits(secondProduct, account: account, now: start) },
+                settled: { stubborn.facts[secondProduct] != nil || stubborn.errors[secondProduct] != nil },
+                failedLocally: { false }, retry: {}, cancelRead: { stubborn.cancelInFlight(secondProduct) })
+        }
+        let firstSettled = await InstalledGamesController.settleAccessForPlay(timeout: .milliseconds(150),
             canPlay: { stubborn.permits(stuckProduct, account: account, now: start) },
             settled: { !stubborn.checking && stubborn.errors[stuckProduct] != nil },
-            failedLocally: { false }, retry: {}, cancelRead: { stubborn.cancelInFlight() })
-        let secondStarted = Date()
-        await stubborn.prioritize(secondProduct, account: account, installedIDs: installed, read: stubbornRead)
-        let secondPrompt = Date().timeIntervalSince(secondStarted) < 0.5 && stubborn.facts[secondProduct] != nil
+            failedLocally: { false }, retry: {}, cancelRead: { stubborn.cancelInFlight(stuckProduct) })
+        let secondSettled = await secondPlay.value
         try await Task.sleep(for: .seconds(1))
         _ = await firstPlay.value
-        check(!firstTimedOut && secondPrompt && stubborn.errors[stuckProduct] == nil && !stubborn.signInRejected
+        check(stuckInFlight && secondOnlyQueued && !firstSettled && secondSettled
+              && stubborn.permits(secondProduct, account: account, now: start)
+              && stubborn.errors[stuckProduct] == nil && !stubborn.signInRejected
               && stubborn.pausedNotice(now: Date()) == nil && stubborn.facts[stuckProduct] == nil
               && stubbornReads == [stuckProduct, secondProduct],
-              "a36de2eb m3: an abandoned read that ignores cancellation and later fails records no error, pause or sign-in rejection, and a second Play's queued check runs at once (reads \(stubbornReads))")
+              "a36de2eb m3 / d270a2c5 MAJOR-3: Play A's abandoned read (ignores cancellation, fails late) records no error, pause or sign-in rejection; Play B's single queued priority is re-issued by the store and B becomes playable before its deadline (reads \(stubbornReads))")
+        // d270a2c5 MAJOR-3: Play A's deadline never cancels another product's read in flight.
+        let busyStore = InstalledProductAccess()
+        let runningProduct = installed[18], waitingProduct = installed[19]
+        var busyReads: [String] = []
+        let busyRead: @MainActor (String) async throws -> OdeAccountRead = { id in
+            busyReads.append(id)
+            try await Task.sleep(for: .milliseconds(400))
+            return try await reader(id)
+        }
+        let runningPlay = Task { @MainActor in
+            await busyStore.prioritize(runningProduct, account: account, installedIDs: installed, read: busyRead)
+        }
+        try await Task.sleep(for: .milliseconds(50))
+        await busyStore.prioritize(waitingProduct, account: account, installedIDs: installed, read: busyRead)
+        let waitingSettled = await InstalledGamesController.settleAccessForPlay(timeout: .milliseconds(100),
+            canPlay: { busyStore.permits(waitingProduct, account: account, now: start) },
+            settled: { busyStore.facts[waitingProduct] != nil || busyStore.errors[waitingProduct] != nil },
+            failedLocally: { false }, retry: {}, cancelRead: { busyStore.cancelInFlight(waitingProduct) })
+        _ = await runningPlay.value
+        check(!waitingSettled && busyStore.facts[runningProduct] != nil && busyReads == [runningProduct],
+              "d270a2c5 MAJOR-3: one Play's deadline drops only its own queued check and never cancels another product's read in flight (reads \(busyReads))")
         // 9015da43 m3: 101 installed games exceed the bound even with page products; 100 plus 20 pages read normally.
         let bounded = InstalledProductAccess()
         var boundedReads = 0

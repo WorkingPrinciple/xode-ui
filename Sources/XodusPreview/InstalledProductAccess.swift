@@ -44,6 +44,7 @@ final class InstalledProductAccess: ObservableObject {
     }
 
     nonisolated static func isLocalServiceFailure(_ error: Error) -> Bool {
+        if error is MicrosoftReadsPaused { return true }
         guard let management = error as? ManagementError else { return false }
         switch management {
         // 9015da43 m2 / f51e60fe B1: only requests that never left this Mac (tagged at their throw sites).
@@ -81,6 +82,12 @@ final class InstalledProductAccess: ObservableObject {
     private var operation: Task<Void, Never>?
     /// A product a waiting request needs now (e.g. a deep link); a running sweep checks it next.
     private var priorityID: String?
+    /// d270a2c5 MAJOR-3: how the queued priority reads, so a cancel can re-issue it as a fresh check.
+    private var priorityRead: (account: String?, read: @MainActor (String) async throws -> OdeAccountRead)?
+    /// The product the running operation is reading now.
+    private(set) var inFlightID: String?
+    /// The account a kept pause belongs to.
+    private var pauseOwner: String?
     private var expiryNotification: Task<Void, Never>?
     private var generation = UUID()
     private let logger = Logger(subsystem: "io.github.dragoshont.xodus", category: "product-access")
@@ -104,8 +111,15 @@ final class InstalledProductAccess: ObservableObject {
     func checkProduct(_ productID: String, session: LiveSession, force: Bool = false) async {
         guard PCGamesClient.validProductID(productID) else { return }
         rememberPaged(productID)
-        await refresh(session: session, installedIDs: Array(installedGames), force: force,
-                      selectedProductID: productID)
+        // d270a2c5: a product page's appear check is automatic; its Retry passes `force` and is explicit.
+        if force {
+            await MicrosoftReadContext.explicit {
+                await refresh(session: session, installedIDs: Array(installedGames), force: true,
+                              selectedProductID: productID)
+            }
+        } else if MicrosoftReadContext.explicit || session.readGate.allowsAutomaticRead(account: session.accountHash) {
+            await refresh(session: session, installedIDs: Array(installedGames), selectedProductID: productID)
+        }
         rememberPaged(productID)
     }
 
@@ -146,13 +160,29 @@ final class InstalledProductAccess: ObservableObject {
     /// bc33adf2 m3: Play's deadline passed; stop the read this store is running so it can't land later.
     /// a36de2eb m3: the abandoned read gets a new epoch, so a reader that ignores cancellation can't record a late
     /// answer or failure (error, pause, signInRejected), and a second Play's queued priority doesn't wait on it.
-    func cancelInFlight() {
-        guard operation != nil || priorityID != nil else { return }
+    /// d270a2c5 MAJOR-3: only Play's own product is abandoned; a priority another Play queued behind it is
+    /// re-issued at once as a fresh check instead of being dropped.
+    func cancelInFlight(_ productID: String? = nil) {
+        guard operation != nil else { return }
+        if let productID, inFlightID != productID {
+            // Another product's read is running; leave it, and drop this one if it was only queued.
+            if priorityID == productID { priorityID = nil; priorityRead = nil }
+            return
+        }
+        let queued = priorityID.flatMap { id in priorityRead.map { (id, $0) } }
         generation = UUID()
         operation?.cancel()
         operation = nil
+        inFlightID = nil
         priorityID = nil
+        priorityRead = nil
         checking = false
+        guard let (id, how) = queued, id != productID else { return }
+        let installedIDs = Array(installedGames.union([id]))
+        Task { @MainActor in
+            await self.refresh(account: how.account, installedIDs: installedIDs, force: true,
+                               selectedProductID: id, read: how.read)
+        }
     }
 
     /// The Try Again title, carrying the pause's end time while Retry can't read.
@@ -236,8 +266,13 @@ final class InstalledProductAccess: ObservableObject {
         }
     }
 
-    func retire() {
+    /// `keepingPause`: losing the confirmed sign-in (a management restart) keeps the pause and the sign-in
+    /// rejection for the same account (d270a2c5 MAJOR-1); sign-out and another account clear them.
+    func retire(keepingPause: Bool = false) {
+        let keptPause = keepingPause ? (pausedUntil, pauseFromThrottle, signInRejected, globalFailures, accountHash ?? pauseOwner) : nil
         generation = UUID()
+        priorityID = nil
+        priorityRead = nil
         operation?.cancel()
         expiryNotification?.cancel()
         expiryNotification = nil
@@ -256,6 +291,11 @@ final class InstalledProductAccess: ObservableObject {
         pausedUntil = nil
         installed = []
         checking = false
+        pauseOwner = nil
+        if let keptPause, let owner = keptPause.4 {
+            (pausedUntil, pauseFromThrottle, signInRejected, globalFailures) = (keptPause.0, keptPause.1, keptPause.2, keptPause.3)
+            pauseOwner = owner
+        }
     }
 
     func refresh(session: LiveSession, installedIDs: [String], now: Date = Date(), force: Bool = false,
@@ -300,7 +340,7 @@ final class InstalledProductAccess: ObservableObject {
         let callStarted = Date()
         if account != accountHash {
             let old = operation
-            retire()
+            retire(keepingPause: account != nil && account == pauseOwner)
             let epoch = generation
             await old?.value
             guard generation == epoch else { return }
@@ -355,11 +395,14 @@ final class InstalledProductAccess: ObservableObject {
                 let id: String
                 if let urgent = priorityID {
                     priorityID = nil
+                    priorityRead = nil
                     queue.removeAll { $0 == urgent }
                     id = urgent
                 } else { id = queue.removeFirst() }
                 guard !Task.isCancelled, generation == epoch, accountHash == account else { return }
                 guard installed.contains(id) else { continue }
+                inFlightID = id
+                defer { if generation == epoch { inFlightID = nil } }
                 attempts[id] = effectiveNow
                 let requestStarted = Date()
                 do {
@@ -402,6 +445,7 @@ final class InstalledProductAccess: ObservableObject {
                     // A request that never left this Mac isn't Microsoft limiting us; it never starts the shared pause.
                     guard !Self.isLocalServiceFailure(error) else { localFailures.insert(id); continue }
                     if case ManagementError.authenticatedReadFailed(.authExchangeFailed) = error { signInRejected = true }
+                    pauseOwner = account
                     if case ManagementError.authenticatedReadThrottled = error { pauseFromThrottle = true } else { pauseFromThrottle = false }
                     localFailures.remove(id)
                     failures[id] = (failures[id] ?? 0) + 1
@@ -423,6 +467,7 @@ final class InstalledProductAccess: ObservableObject {
         if operation != nil, accountHash == account, account != nil {
             installed.insert(productID)
             priorityID = productID
+            priorityRead = (account, read)
             return
         }
         await refresh(account: account, installedIDs: installedIDs, force: true,

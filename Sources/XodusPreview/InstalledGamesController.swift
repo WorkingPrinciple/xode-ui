@@ -804,6 +804,10 @@ final class InstalledGamesController: ObservableObject {
     }
 
     private func launchRequestOutcome(_ game: InstalledGame, engine: String?, timeout: Duration) async -> String? {
+        // d270a2c5: Play (button or deep link) is an explicit action; its licence read is never gated.
+        if !MicrosoftReadContext.explicit {
+            return await MicrosoftReadContext.explicit { await launchRequestOutcome(game, engine: engine, timeout: timeout) }
+        }
         if let refusal = Self.newerBuildRefusal() { return refusal }
         // 4ea60eb3 F2: a deep-link Play during a pause reports it instead of waiting out the timeout.
         if !canRequestPlay(game.storeId), let paused = productAccess.pausedNotice() { return paused }
@@ -826,7 +830,7 @@ final class InstalledGamesController: ObservableObject {
                 guard !Task.isCancelled else { return }
                 await self.productAccess.prioritize(game.storeId, session: session,
                                                     installedIDs: self.games.map(\.storeId))
-            }, cancelRead: { self.productAccess.cancelInFlight() })
+            }, cancelRead: { self.productAccess.cancelInFlight(game.storeId) })
         guard canRequestPlay(game.storeId) else {
             return settled ? (productAccessNotice(for: game) ?? "Access to this game hasn't been confirmed for your Xbox account.")
                 : "Access to this game wasn't confirmed within \(timeout.components.seconds) seconds. Open the game and try again."
@@ -878,8 +882,10 @@ final class InstalledGamesController: ObservableObject {
     func retryProductAccess(for game: InstalledGame) async {
         guard canRetryProductAccess, games.contains(where: { $0.id == game.id && $0.storeId == game.storeId }),
               let session = unifiedSession else { return }
-        await productAccess.refresh(session: session, installedIDs: games.map(\.storeId),
-            force: true, selectedProductID: game.storeId)
+        await MicrosoftReadContext.explicit {
+            await productAccess.refresh(session: session, installedIDs: games.map(\.storeId),
+                force: true, selectedProductID: game.storeId)
+        }
     }
 
     func suspendAccountView() {

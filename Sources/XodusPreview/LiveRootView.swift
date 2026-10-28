@@ -433,7 +433,7 @@ struct LiveRootView: View {
             guard startupAllowed, unifiedAccountMode else { return }
             state.librarySelection.projection.clear(to: .empty)
             state.discoverSelection.clear()
-            await state.pcGames.retireUnifiedAccount(keepingThrottle: true)
+            await state.pcGames.retireUnifiedAccount()
             guard !Task.isCancelled, session.accountCountryReady else { return }
             await state.pcGames.refreshInBackground()
             if session.nativeLifecycleConfiguration == nil { await session.prepareUnifiedRuntime() }
@@ -572,7 +572,9 @@ struct LiveRootView: View {
                 state.discoverSelection.clear()
                 if unifiedAccountMode {
                     companion.invalidateBinding()
-                    state.installedGames.productAccess.retire()
+                    // d270a2c5 MAJOR-1: losing the confirmed sign-in (e.g. a management restart) keeps the
+                    // licence pause and sign-in rejection; sign-out and another account clear them.
+                    state.installedGames.productAccess.retire(keepingPause: true)
                     Task { await state.pcGames.retireUnifiedAccount() }
                 }
                 state.installedGames.setAccountAccessAllowed(false)

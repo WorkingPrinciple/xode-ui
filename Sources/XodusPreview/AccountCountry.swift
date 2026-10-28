@@ -76,7 +76,7 @@ struct AccountCountrySettings: View {
             }
             if session.hasConfirmedSignIn, !session.accountCountryChecking {
                 Button("Check account country again") {
-                    Task { await session.refreshAccountCountry() }
+                    MicrosoftReadContext.explicit { Task { await session.refreshAccountCountry() } }
                 }
             }
         }

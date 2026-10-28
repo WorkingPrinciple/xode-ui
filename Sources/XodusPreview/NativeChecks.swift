@@ -417,6 +417,7 @@ enum NativeChecks {
                 try await CatalogDetailLoadingChecks.run(check: check)
                 try await InstalledProductAccessChecks.run(check: check)
                 try await PCGamesChecks.run(check: check)
+                try await MicrosoftReadGateChecks.run(check: check)
                 print("\(count) Library access checks, \(failures) failures. Synthetic data only.")
                 return failures == 0
             }
@@ -450,6 +451,7 @@ enum NativeChecks {
             try await CatalogDetailLoadingChecks.run(check: check)
             try await InstalledProductAccessChecks.run(check: check)
             try await PCGamesChecks.run(check: check)
+            try await MicrosoftReadGateChecks.run(check: check)
             try await GameOperationChecks.run(check: check)
             try await StabilityChecks.run(check: check)
             try await DownloadQueueChecks.run(check: check)

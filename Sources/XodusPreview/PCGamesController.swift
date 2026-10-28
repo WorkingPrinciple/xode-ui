@@ -116,9 +116,14 @@ final class PCGamesController: ObservableObject {
     static func surfacedError(_ error: String?, retryPending: Bool) -> String? { retryPending ? nil : error }
 
     /// Re-reads the library after a backoff while some details failed; bounded, cancelled by sign-out.
-    /// bc33adf2 M-a: Microsoft throttling (with its delay) and a rejected sign-in stop automatic library retries.
-    private(set) var throttledUntil: Date?
+    /// bc33adf2 M-a / d270a2c5: Microsoft throttling and a rejected sign-in stop automatic library reads; the
+    /// state lives in the session's Mac-level read gate (a local one only for sessionless checks).
+    private let localReadGate = MicrosoftReadGate()
+    var readGate: MicrosoftReadGate { unifiedSession?.readGate ?? localReadGate }
+    private var gateAccount: String { unifiedSession?.accountHash ?? accountHash ?? "" }
+    var throttledUntil: Date? { readGate.account == gateAccount ? readGate.throttledUntil : nil }
     nonisolated static func automaticRetryAllowed(after error: Error) -> Bool {
+        if error is MicrosoftReadsPaused { return false }
         switch error as? ManagementError {
         case .authenticatedReadThrottled?, .recentLibraryThrottled?, .authenticatedReadFailed(.authExchangeFailed)?:
             return false
@@ -134,15 +139,15 @@ final class PCGamesController: ObservableObject {
     }
 
     func recordThrottle(after error: Error, now: Date = Date()) {
-        if let pause = Self.throttlePause(after: error) { throttledUntil = now.addingTimeInterval(pause) }
+        readGate.record(error, account: gateAccount, now: now)
     }
 
-    /// bc33adf2 M-a: whether an automatic detail retry may be scheduled at `now` (none during a throttle).
-    func detailRetryAllowed(now: Date = Date()) -> Bool {
-        throttledUntil.map { now >= $0 } ?? true
+    /// bc33adf2 M-a: whether an automatic library read may start at `now` (none while the gate is held).
+    func detailRetryAllowed(now: Date? = nil) -> Bool {
+        readGate.allowsAutomaticRead(account: gateAccount, now: now)
     }
 
-    func scheduleDetailRetry(account: String, now: Date = Date()) {
+    func scheduleDetailRetry(account: String, now: Date? = nil) {
         guard detailRetryAllowed(now: now) else { return }
         cancelDetailRetry()
         let attempt = Self.detailRetryDelays.count - detailRetriesLeft
@@ -151,17 +156,19 @@ final class PCGamesController: ObservableObject {
         let token = UUID()
         detailRetryToken = token
         detailRetryPending = true
-        detailRetry = Task { [weak self] in
+        // The timer is automatic even when an explicit refresh scheduled it.
+        detailRetry = MicrosoftReadContext.automatic { Task { [weak self] in
             try? await Task.sleep(for: delay)
             guard let self else { return }
             // Review M1: a retry that exits without firing must not keep the error hidden.
             if self.detailRetryToken == token { self.cancelDetailRetry() }
+            // d270a2c5 minor-2: the gate is checked again when the timer fires.
             guard !Task.isCancelled, !self.busy, !self.terminating, !self.accountDisconnecting,
-                  self.unifiedSession?.accountHash == account else { return }
+                  self.unifiedSession?.accountHash == account, self.detailRetryAllowed() else { return }
             self.detailRetriesLeft -= 1
             self.logger.notice("Retrying unavailable game details silently; \(self.detailRetriesLeft) retries left")
             self.refreshUnifiedAccount()
-        }
+        } }
     }
     private func cancelDetailRetry() {
         detailRetry?.cancel()
@@ -305,7 +312,8 @@ final class PCGamesController: ObservableObject {
     }
 
     /// Automatic (foreground, appear, account-scope) refresh; a36de2eb M-a: never inside Microsoft's throttle window.
-    func refreshInBackground(now: Date = Date()) async {
+    func refreshInBackground(now: Date? = nil) async {
+        let now = now ?? readGate.clock()
         guard detailRetryAllowed(now: now) else { return }
         guard usesUnifiedAccount, !busy, !accountDisconnecting, !terminating,
               let session = unifiedSession, session.hasConfirmedSignIn,
@@ -323,6 +331,10 @@ final class PCGamesController: ObservableObject {
     }
 
     func retryLibraryLoad() async {
+        if !MicrosoftReadContext.explicit {
+            await MicrosoftReadContext.explicit { await retryLibraryLoad() }
+            return
+        }
         resetDetailRetries()
         guard !busy, !restoringPresence, !accountDisconnecting, !terminating else { return }
         restored = false
@@ -378,10 +390,11 @@ final class PCGamesController: ObservableObject {
         }
     }
 
+    /// Refresh, Cmd-R and the error notices' retry: explicit, so never held by the read gate (d270a2c5).
     func refresh() {
         resetDetailRetries()
         if usesUnifiedAccount {
-            refreshUnifiedAccount()
+            MicrosoftReadContext.explicit { refreshUnifiedAccount() }
             return
         }
         guard !busy, !restoringPresence, !presenceUnavailable, hasSavedSignIn,
@@ -510,7 +523,6 @@ final class PCGamesController: ObservableObject {
                                             language: language, savedAt: Date()) {
                     savedLibrary?.save(saved)
                 }
-                throttledUntil = nil
                 FirstLoadTimeline.mark("libraryResolved", "games=\(result.games.count)")
                 logger.notice("Account PC resolution: \(result.games.count) games, \(result.excludedCount) excluded, \(result.unresolvedCount) unresolved")
                 if result.detailFailureCount > 0, detailRetriesLeft > 0 {
@@ -545,8 +557,8 @@ final class PCGamesController: ObservableObject {
 
     func waitForLoad() async { await operation?.value }
 
-    /// `keepingThrottle`: an account-scope change on this Mac keeps Microsoft's throttle window (a36de2eb M-a).
-    func retireUnifiedAccount(keepingThrottle: Bool = false) async {
+    /// d270a2c5: retiring never clears the read gate; only a real sign-out or another account does.
+    func retireUnifiedAccount() async {
         guard usesUnifiedAccount else { return }
         let token = UUID()
         generation = token
@@ -558,7 +570,6 @@ final class PCGamesController: ObservableObject {
         lastAutomaticAttempt = nil
         cancelDetailRetry()
         detailRetriesLeft = Self.detailRetryDelays.count
-        if !keepingThrottle { throttledUntil = nil }
         hasSavedSignIn = false
         restored = false
         attemptedAutomaticLoad = false
