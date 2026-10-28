@@ -29,7 +29,7 @@ from package_beta import (PRODUCER_NOTICES_EVIDENCE_SHA256, PRODUCER_NOTICES_SHA
                           RELEASE_INSTALL_NOTE, create_installer_dmg,
                           validate_dmg_background)
 
-PRODUCER_SOURCE_ARCHIVE_NAME = "xodus-cli-beta-39995796-source.tar"
+PRODUCER_SOURCE_ARCHIVE_NAME = "xodus-cli-9c9d85b2-source.tar"
 
 
 def read_json(path):

@@ -1,5 +1,23 @@
 # Local builds and release verification
 
+## Issue #37 local diagnostic prerequisite
+
+The bounded diagnostic source is producer
+`9c9d85b24a701c5b1c1932a8eda3391d9d31b81e`
+(tree `f668516a8efaf15850a29eed2a486d22818975d1`), based on installed
+producer `399957962f35eee6189b8fbcef9697f47e951581`.
+Independent review `c1cec1bc-fc9c-408a-9c38-87abbd8665bf` passed the
+installed-source port, including existing throttling and user-authentication
+error behavior. Consumer commit `e423a5306e809add7369ca584ed75901b7aaaa86`
+admits only the finite diagnostic vocabulary under the existing authentication
+failure envelope.
+
+This is a local diagnostic candidate for REQ-49 and REQ-166. Source review and
+mock checks do not establish successful Microsoft sign-in or Subnautica 2
+gameplay. No publishing or notarization is authorized by this local work.
+Keep the installed app rollback and account state; admit the candidate only
+after its exact signed CLI, source archive, notices and app pins agree.
+
 ## Exact dependency notices and complete component coverage
 
 Prepare producer notices locally before the final integrated build:

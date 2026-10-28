@@ -78,7 +78,7 @@ evidence establish provenance and notice-text identity, not legal clearance.
 Do not publish the draft or source archive before the source asset is attached
 and the owner makes the publication decision.
 
-The current -06 producer is `399957962f35eee6189b8fbcef9697f47e951581`
+The installed -06 producer is `399957962f35eee6189b8fbcef9697f47e951581`
 (tree `6d9088562be95b466c4a6df5b102c3f24a72048c`), with signed manifest
 `79bcfad5747ffbffed13542f7fadb805a509225197912ce16273ea38c9a8a84d`, CLI
 `f77208c9fce39993b12d2bb649ea4a0de3a592dfcbe0d2101dea712d6d13713f`, and
@@ -98,6 +98,26 @@ review obligation. The evidence establishes provenance and notice-text
 identity only, not legal clearance or an X Ode release. Do not publish the
 draft or source archive before the asset is attached and the owner makes the
 publication decision.
+
+The issue #37 diagnostic candidate is built from
+`9c9d85b24a701c5b1c1932a8eda3391d9d31b81e`
+(tree `f668516a8efaf15850a29eed2a486d22818975d1`), a bounded change on that
+installed producer. Its corresponding-source archive is
+`xodus-cli-9c9d85b2-source.tar`, SHA-256
+`d54cbf1fb8b1372491b477182a043b5d8315d0a896dc6049f55b523502e1046a`
+(10,209,280 bytes; 558 regular files), with the same private-directory
+exclusions. The change adds finite sign-in failure classes, not successful
+sign-in, gameplay, distribution or legal clearance.
+The signed CLI is SHA-256
+`e957ef375bf026235d5db68f6a272ca3cdcf1ea139e1751d81b06233e7a6fe1a`
+(30,995,552 bytes), and its manifest is
+`0ca09ff03fd3607ce25df5877c2c4c04255f6e57833a088ba10d240ec3b32eb0`.
+The helper is unchanged. The regenerated notice inventory is
+`4ed645219442726d1bbfe219c2142c2c4135ae654649e3f47277527b6ae94b16`;
+its matching supplemental evidence is
+`63ba7b48529ffaa064bf7ca7b33fb469f429bd77d99367dcee3ec96d30e8e21f`.
+It retains the existing unresolved corresponding-source delivery and applicable
+licence/notice review obligation.
 
 For r7, the bound metadata identifies 479 packages, 462 with compiler artifacts,
 and 472 package-level licence declarations. The seven undeclared manifests are

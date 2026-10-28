@@ -536,7 +536,7 @@ class ReleaseCandidateChecks(unittest.TestCase):
 
     def test_resume_cli_accepts_the_pinned_source_archive(self):
         receipt = "/absolute/release-receipt.json"
-        source_archive = "/absolute/xodus-cli-beta-39995796-source.tar"
+        source_archive = "/absolute/xodus-cli-9c9d85b2-source.tar"
         with patch("sys.argv", [
                 "release_candidate.py", "--resume-receipt", receipt,
                 "--producer-source-archive", source_archive,
