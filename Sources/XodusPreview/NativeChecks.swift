@@ -509,6 +509,33 @@ enum NativeChecks {
                           "REQ-166: Xbox diagnostics require the agreed authentication failure tuple")
                 }
             }
+            let passportSelectorReasons = [
+                "passportFault", "passportBodyShape", "passportResponseCount",
+                "passportUserDelegated", "passportUserTokenType", "passportUserEncrypted",
+                "passportUserProof", "passportUserTooLarge", "passportRefreshAmbiguous",
+                "passportRefreshProof", "passportRefreshType", "passportRefreshValidity",
+                "passportDuplicateAudience", "passportAudienceMismatch"
+            ]
+            for reason in passportSelectorReasons {
+                let message = "Native sign-in failed: xbox.passportTicket.\(reason)."
+                let snapshot = try LiveSession.SignInFailureSnapshot(observationFailure(message))
+                check(snapshot.observation == message,
+                      "REQ-49/166: The exact finite Passport selector rejection survives the snapshot")
+                for invalid in [message + " secret", message + "\n", " " + message] {
+                    check(try LiveSession.validatedNativeSignInObservation(observationFailure(invalid)) == nil,
+                          "REQ-49/166: Selector diagnostics reject extended and noncanonical provider wording")
+                }
+                for stage in xboxStages where stage != "passportTicket" {
+                    check(try LiveSession.validatedNativeSignInObservation(
+                        observationFailure("Native sign-in failed: xbox.\(stage).\(reason).")) == nil,
+                          "REQ-49/166: Selector reasons are admitted only for the Passport ticket stage")
+                }
+                check(try LiveSession.validatedNativeSignInObservation(
+                    observationFailure(message, code: "INTERNAL")) == nil
+                      && LiveSession.validatedNativeSignInObservation(
+                        observationFailure(message, reason: "unexpected")) == nil,
+                      "REQ-49/166: Selector diagnostics require the agreed authentication failure tuple")
+            }
             for message in ["Native sign-in failed: xbox.unknown.invalidResponse.",
                             "Native sign-in failed: xbox.userAuthentication.unknown.",
                             "Native sign-in failed: xbox.userAuthentication.httpUnauthorized",

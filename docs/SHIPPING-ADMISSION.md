@@ -41,6 +41,16 @@ patch `10c9a9348d8c4b88303408c71c2d27056698f679dce47fc96d2539d604cdb987`.
 This is a bounded hypothesis test, not an established root cause or a live
 sign-in result. A changed failure code alone does not accept REQ-49 or REQ-166.
 
+The human build 738 retry failed at `xbox.passportTicket.invalidResponse`,
+before Xbox user authentication. The historical probe's "raw" description
+means it added no prefix itself, not that the service output lacked a `d=`
+prefix. That result does not justify rejecting delegated compact tickets.
+The current candidate also rejects a binary token alongside an encrypted
+refresh token more strictly than the service does. Neither condition has been
+observed in the failing response. A bounded diagnostic follow-up admits only
+fixed selector-rejection labels under `xbox.passportTicket`; it changes no
+acceptance condition and logs no provider fields, tickets or account data.
+
 ## Exact dependency notices and complete component coverage
 
 Prepare producer notices locally before the final integrated build:

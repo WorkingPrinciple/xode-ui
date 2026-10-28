@@ -1053,7 +1053,17 @@ final class LiveSession: ObservableObject {
         let xboxObservations = xboxStages.flatMap { stage in
             xboxReasons.map { "Native sign-in failed: xbox.\(stage).\($0)." }
         }
-        return (reasons.map { "Native sign-in failed: \($0)." } + xboxObservations)
+        let passportSelectorReasons = [
+            "passportFault", "passportBodyShape", "passportResponseCount",
+            "passportUserDelegated", "passportUserTokenType", "passportUserEncrypted",
+            "passportUserProof", "passportUserTooLarge", "passportRefreshAmbiguous",
+            "passportRefreshProof", "passportRefreshType", "passportRefreshValidity",
+            "passportDuplicateAudience", "passportAudienceMismatch"
+        ]
+        let passportObservations = passportSelectorReasons.map {
+            "Native sign-in failed: xbox.passportTicket.\($0)."
+        }
+        return (reasons.map { "Native sign-in failed: \($0)." } + xboxObservations + passportObservations)
             .first { $0 == failure.message }
     }
 
