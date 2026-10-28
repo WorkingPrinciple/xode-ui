@@ -51,6 +51,23 @@ observed in the failing response. A bounded diagnostic follow-up admits only
 fixed selector-rejection labels under `xbox.passportTicket`; it changes no
 acceptance condition and logs no provider fields, tickets or account data.
 
+The owner-directed follow-up is producer
+`a2e65c834c1d80eb1fa816a21938d50ff733bdd3`,
+tree `bf06cc36b0356b81d40b80b0fd46b02d01348cf0`.
+It removes those two candidate-only restrictions to match the existing
+service selector: delegated compact tickets use the existing checked
+conversion, and an unused binary token does not invalidate an otherwise
+valid encrypted legacy refresh. Audience, count, expiry, ticket bounds,
+proof, legacy validity and downstream identity checks remain unchanged.
+Parity fixtures exercise the real conversion helper for both ticket types,
+both refresh shapes and both response orders, with malformed cases still
+rejected. Independent review `c1cec1bc-fc9c-408a-9c38-87abbd8665bf` passed
+frozen patch
+`a66aba3ff1ad2993afef9d4bbe895002dc76b420262d32332665ba5778630459`.
+The finite selector diagnostics are included in this same candidate;
+the diagnostic-only intermediate producer was not installed.
+An operational success would not establish the original regression's cause.
+
 ## Exact dependency notices and complete component coverage
 
 Prepare producer notices locally before the final integrated build:

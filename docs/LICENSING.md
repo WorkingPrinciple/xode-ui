@@ -138,6 +138,22 @@ The existing unresolved source-delivery and applicable licence/notice review
 obligation remains. This local candidate grants no distribution, legal,
 successful sign-in or gameplay clearance.
 
+The service-parity follow-up uses producer
+`a2e65c834c1d80eb1fa816a21938d50ff733bdd3`,
+tree `bf06cc36b0356b81d40b80b0fd46b02d01348cf0`.
+Its source archive `xodus-cli-a2e65c83-source.tar` is SHA-256
+`cfa618ad4992535e3cef060dcb320add604c6fdc88f8f8dacb826b9662d6a63e`
+(10,240,000 bytes). CLI SHA-256 is
+`5d5129c206b1ab1883cf63708a4e47b7f19a0580fad36f9c93a8453c9d9d68d1`
+(31,018,112 bytes); manifest SHA-256 is
+`92aa38e66def55d0947cf9eabeb13378be62b80f0c47f4075fb47da768fdf9ce`.
+Notice inventory SHA-256 is
+`06e66dec73008f9eb7142fb1487a384c14fdd1dc010e6a6b953e3cb4b9b21525`;
+supplemental evidence SHA-256 is
+`7582768b25ee5330a76f84d1f7746b2f78a69aa751e79dd2820a3133ee7d341d`.
+Dependencies and the helper are unchanged. Existing source-delivery and
+licence-review obligations remain; this is local testing, not distribution.
+
 For r7, the bound metadata identifies 479 packages, 462 with compiler artifacts,
 and 472 package-level licence declarations. The seven undeclared manifests are
 `eappx` and the six Xodus workspace crates; their repository licence texts are

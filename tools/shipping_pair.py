@@ -10,17 +10,17 @@ import re
 import stat
 import sys
 
-PRODUCER = "0c6044eb08148f397434a0cf0b564bffb8b3a3cb"
-PRODUCER_TREE = "0df22ab4aeed0cf6fca1d25689caee0e640ccc1e"
-CLI_SHA256 = "fc9a4147c9ac0edf19e9c45885f9f2a56f72751055a06c7044bc5963693a69fe"
-CLI_BYTES = 31_020_992
+PRODUCER = "a2e65c834c1d80eb1fa816a21938d50ff733bdd3"
+PRODUCER_TREE = "bf06cc36b0356b81d40b80b0fd46b02d01348cf0"
+CLI_SHA256 = "5d5129c206b1ab1883cf63708a4e47b7f19a0580fad36f9c93a8453c9d9d68d1"
+CLI_BYTES = 31_018_112
 WINDOWS_HELPER_SHA256 = "c205a45fcfa703296593034498a35c177ad7e9c80fdd1a4ddeec2fdb721bface"
 WINDOWS_HELPER_BYTES = 22_016
-PRODUCER_MANIFEST_SHA256 = "6ccfbffb63cc71cf34dfd1118a8f26b41f43032cd1c51db7d93fb72d944e5188"
+PRODUCER_MANIFEST_SHA256 = "92aa38e66def55d0947cf9eabeb13378be62b80f0c47f4075fb47da768fdf9ce"
 CARGO_LOCK_SHA256 = "b03657f83cbf14dbf1f4b2cc70fa51ffe75e14934b816b4e21ae103f29a36868"
-SOURCE_ARCHIVE_NAME = "xodus-cli-0c6044eb-source.tar"
-SOURCE_ARCHIVE_SHA256 = "7e9cd35ed9a5cee3926da9bffb7d10869f9872c22a14534bc5f252af4c95c69e"
-SOURCE_ARCHIVE_BYTES = 10_219_520
+SOURCE_ARCHIVE_NAME = "xodus-cli-a2e65c83-source.tar"
+SOURCE_ARCHIVE_SHA256 = "cfa618ad4992535e3cef060dcb320add604c6fdc88f8f8dacb826b9662d6a63e"
+SOURCE_ARCHIVE_BYTES = 10_240_000
 FEATURES = {"xodus": [], "xodus-cli": [], "xodus-management": ["live"],
             "apple-native-keyring-store": ["keychain", "security-framework"]}
 PROFILE = {"opt_level": "3", "debuginfo": 0, "debug_assertions": False,

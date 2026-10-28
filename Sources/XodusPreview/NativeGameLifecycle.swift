@@ -5,7 +5,7 @@ import OSLog
 import XodusManagement
 
 enum NativeLifecyclePins {
-    static let cliSHA256 = "fc9a4147c9ac0edf19e9c45885f9f2a56f72751055a06c7044bc5963693a69fe"
+    static let cliSHA256 = "5d5129c206b1ab1883cf63708a4e47b7f19a0580fad36f9c93a8453c9d9d68d1"
 }
 
 struct NativeWindowsVersion: Equatable, Sendable {
