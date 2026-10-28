@@ -38,19 +38,19 @@ manifest SHA-256
 handoff; its last Forza qualification/publication is still pending.
 
 The current backend producer is source commit
-`bcc11c98621cf9f90679e383f02ec4516df57ad5`, tree
-`617a861319c3d9812ab43801c21c0a9352cf40ea`. Its signed build manifest is
-`0492bf6cb71711adaf2b6f48c59b28a1a27524f7f0f4bdd206a811652a6d6431`; the
+`399957962f35eee6189b8fbcef9697f47e951581`, tree
+`6d9088562be95b466c4a6df5b102c3f24a72048c`. Its signed build manifest is
+`79bcfad5747ffbffed13542f7fadb805a509225197912ce16273ea38c9a8a84d`; the
 paired CLI and Windows helper hashes are
-`33820b8f4acd0395b1e0aa1811880f21b29c4ba7ce583be98378a5f455e5c973` and
+`f77208c9fce39993b12d2bb649ea4a0de3a592dfcbe0d2101dea712d6d13713f` and
 `c205a45fcfa703296593034498a35c177ad7e9c80fdd1a4ddeec2fdb721bface`.
 The regenerated producer-notice inventory is
-`e81effd6895ce8c41469b5fd701a8c9b30aa6b4be3e904a69ae5e4316b34bbb3`; its
+`11091d7be26134170229d86e552b643a1c746d9de2b835cd459063df0f615af7`; its
 source-bound supplemental evidence is
-`9214c87d9038930e76cdb388023de9a657cb240180dd36438bd9c4e66b943c1a`. The
+`4bee37c126578d537f4c37966aa24b0123ef40f0e2ff11a4234828546a43d726`. The
 corresponding-source archive is
-`374ee6e11cef6f9caf65ca7d55210dc2e176ca762b859a07b64f66877081b69a`
-(10,086,400 bytes, 549 regular files, from the exact commit). It excludes
+`23374465684a78bba2fb1c3e5264cfa21ee17d932612d0f4cec12a3c44e17663`
+(10,188,800 bytes, 558 regular files, from the exact commit). It excludes
 `docs/private-ai/` and `docs/private-checkpoints/`. The inventory covers 479
 packages and 462 compiler-artifact identities; its one unresolved obligation
 covers final corresponding-source delivery and applicable licence/notice
@@ -199,17 +199,17 @@ Existing r7 build/source receipts resolve its provenance rather than requiring
 reconstruction of older evidence. Outer app/DMG acceptance remains mandatory.
 
 The active Xodus shipping pair is producer commit
-`bcc11c98621cf9f90679e383f02ec4516df57ad5`, tree
-`617a861319c3d9812ab43801c21c0a9352cf40ea`, signed CLI
-`33820b8f4acd0395b1e0aa1811880f21b29c4ba7ce583be98378a5f455e5c973`
-(30,857,248 bytes), Windows helper
+`399957962f35eee6189b8fbcef9697f47e951581`, tree
+`6d9088562be95b466c4a6df5b102c3f24a72048c`, signed CLI
+`f77208c9fce39993b12d2bb649ea4a0de3a592dfcbe0d2101dea712d6d13713f`
+(30,935,088 bytes), Windows helper
 `c205a45fcfa703296593034498a35c177ad7e9c80fdd1a4ddeec2fdb721bface`
 (22,016 bytes), producer manifest
-`0492bf6cb71711adaf2b6f48c59b28a1a27524f7f0f4bdd206a811652a6d6431`, and
+`79bcfad5747ffbffed13542f7fadb805a509225197912ce16273ea38c9a8a84d`, and
 Cargo.lock `b03657f83cbf14dbf1f4b2cc70fa51ffe75e14934b816b4e21ae103f29a36868`.
 The pinned inventory checks these values and binds the corresponding-source
-archive `374ee6e11cef6f9caf65ca7d55210dc2e176ca762b859a07b64f66877081b69a`
-(10,086,400 bytes) to the same producer. Supplemental-provenance report
+archive `23374465684a78bba2fb1c3e5264cfa21ee17d932612d0f4cec12a3c44e17663`
+(10,188,800 bytes) to the same producer. Supplemental-provenance report
 metadata naming the prior producer is historical, not an active shipping pin.
 
 Known test-only build issue: release-mode
@@ -719,7 +719,7 @@ python3 tools/release_candidate.py \
   --identity 410914520BCC840C0125D3826CCF0F247F603321 \
   --candidate "$HOME/Library/Application Support/Ode to X/Service/candidates/a1aade5e959a5ad27e695f85c15ef50addf036d4ab857d70e041f57a95abe664" \
   --producer-source /absolute/frozen-xodus-macos-checkout \
-  --producer-source-archive /absolute/xodus-cli-beta-bcc11c98-source.tar \
+  --producer-source-archive /absolute/xodus-cli-beta-39995796-source.tar \
   --notary-profile notary \
   --dry-run
 ```
@@ -787,7 +787,7 @@ python3 tools/release_candidate.py \
   --resume-receipt /absolute/Ode-release-SESSION/release-receipt.json \
   --producer-notices-sha256 INDEPENDENTLY_APPROVED_SHA256 \
   --dmg-background /absolute/reviewed/dmg-background.tiff \
-  --producer-source-archive /absolute/xodus-cli-beta-bcc11c98-source.tar \
+  --producer-source-archive /absolute/xodus-cli-beta-39995796-source.tar \
   --notary-profile notary
 ```
 

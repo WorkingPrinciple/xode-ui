@@ -118,8 +118,13 @@ final class MicrosoftReadGate: ObservableObject {
         throttledUntil = nil
     }
 
+    /// Completed sign-ins seen per account (2bf5e681 m2); a store's rejection clears only after a newer one.
+    private var completedSignIns: [String: Int] = [:]
+    func signIns(for account: String) -> Int { completedSignIns[account] ?? 0 }
+
     func signedIn(account: String) {
         bind(account)
+        completedSignIns[account, default: 0] += 1
         signInRejected = false
     }
 

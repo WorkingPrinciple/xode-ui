@@ -88,6 +88,12 @@ final class InstalledProductAccess: ObservableObject {
     private(set) var inFlightID: String?
     /// The account a kept pause belongs to.
     private var pauseOwner: String?
+    /// The gate's completed sign-ins for this account when the store recorded its rejection (2bf5e681 m2).
+    private var rejectedAtSignIns = 0
+    /// Reads the gate's completed sign-in count for the current account; set when bound to a session.
+    private var signInsSeen: (() -> Int)?
+    /// Binds the sign-in count source without a session (sessionless stores and checks).
+    func bindSignInCount(_ source: @escaping () -> Int) { signInsSeen = source }
     private var expiryNotification: Task<Void, Never>?
     private var generation = UUID()
     private let logger = Logger(subsystem: "io.github.dragoshont.xodus", category: "product-access")
@@ -157,14 +163,13 @@ final class InstalledProductAccess: ObservableObject {
         return pausedEnd(now: now).map { "Couldn't confirm access right now. Try again after \($0)." } ?? Self.unavailableNotice
     }
 
-    /// bc33adf2 m3: Play's deadline passed; stop the read this store is running so it can't land later.
-    /// a36de2eb m3: the abandoned read gets a new epoch, so a reader that ignores cancellation can't record a late
-    /// answer or failure (error, pause, signInRejected), and a second Play's queued priority doesn't wait on it.
-    /// 63685916 Minor-A: the session's read gate shows a completed sign-in for this account (its rejection is
-    /// gone), so the store's own rejection, its pause and the failures it caused clear.
+    /// 63685916 Minor-A / 2bf5e681 m2: only a sign-in that completed for this account after the store's rejection
+    /// (the gate's sign-in count moved past the one seen at rejection) clears the store's rejection, its pause and
+    /// the failures it caused. A rebind by another account's answer, a sign-out or another account never does.
     func reconcileSignIn(gate: MicrosoftReadGate, account: String?) {
         guard signInRejected, let account, accountHash == account || pauseOwner == account,
-              gate.account == account, !gate.signInRejected else { return }
+              gate.account == account, !gate.signInRejected,
+              gate.signIns(for: account) > rejectedAtSignIns else { return }
         signInRejected = false
         pausedUntil = nil
         pauseFromThrottle = false
@@ -173,6 +178,9 @@ final class InstalledProductAccess: ObservableObject {
         errors = [:]
     }
 
+    /// bc33adf2 m3: Play's deadline passed; stop the read this store is running so it can't land later.
+    /// a36de2eb m3: the abandoned read gets a new epoch, so a reader that ignores cancellation can't record a late
+    /// answer or failure (error, pause, signInRejected), and a second Play's queued priority doesn't wait on it.
     /// d270a2c5 MAJOR-3: only Play's own product is abandoned; a priority another Play queued behind it is
     /// re-issued at once as a fresh check instead of being dropped.
     func cancelInFlight(_ productID: String? = nil) {
@@ -284,6 +292,7 @@ final class InstalledProductAccess: ObservableObject {
     /// `keepingPause`: losing the confirmed sign-in (a management restart) keeps the pause and the sign-in
     /// rejection for the same account (d270a2c5 MAJOR-1); sign-out and another account clear them.
     func retire(keepingPause: Bool = false) {
+        let keptRejectionMark = rejectedAtSignIns
         let keptPause = keepingPause ? (pausedUntil, pauseFromThrottle, signInRejected, globalFailures, accountHash ?? pauseOwner) : nil
         generation = UUID()
         priorityID = nil
@@ -310,11 +319,15 @@ final class InstalledProductAccess: ObservableObject {
         if let keptPause, let owner = keptPause.4 {
             (pausedUntil, pauseFromThrottle, signInRejected, globalFailures) = (keptPause.0, keptPause.1, keptPause.2, keptPause.3)
             pauseOwner = owner
+            rejectedAtSignIns = keptRejectionMark
+        } else {
+            rejectedAtSignIns = 0
         }
     }
 
     func refresh(session: LiveSession, installedIDs: [String], now: Date = Date(), force: Bool = false,
                  selectedProductID: String? = nil) async {
+        signInsSeen = { [weak session] in session.flatMap { s in s.accountHash.map { s.readGate.signIns(for: $0) } } ?? 0 }
         reconcileSignIn(gate: session.readGate, account: session.accountHash)
         let scope = session.accountCatalogScope
         if catalogScope != scope {
@@ -337,6 +350,7 @@ final class InstalledProductAccess: ObservableObject {
     }
 
     func prioritize(_ productID: String, session: LiveSession, installedIDs: [String]) async {
+        signInsSeen = { [weak session] in session.flatMap { s in s.accountHash.map { s.readGate.signIns(for: $0) } } ?? 0 }
         reconcileSignIn(gate: session.readGate, account: session.accountHash)
         guard session.accountCountryReady, catalogScope == nil || catalogScope == session.accountCatalogScope else { return }
         let account = session.hasConfirmedSignIn ? session.accountHash : nil
@@ -467,7 +481,10 @@ final class InstalledProductAccess: ObservableObject {
                     logger.error("Product access \(id, privacy: .public) failed: \(LiveSession.describe(error), privacy: .public)")
                     // A request that never left this Mac isn't Microsoft limiting us; it never starts the shared pause.
                     guard !Self.isLocalServiceFailure(error) else { localFailures.insert(id); continue }
-                    if case ManagementError.authenticatedReadFailed(.authExchangeFailed) = error { signInRejected = true }
+                    if case ManagementError.authenticatedReadFailed(.authExchangeFailed) = error {
+                        signInRejected = true
+                        rejectedAtSignIns = signInsSeen?() ?? 0
+                    }
                     pauseOwner = account
                     if case ManagementError.authenticatedReadThrottled = error { pauseFromThrottle = true } else { pauseFromThrottle = false }
                     localFailures.remove(id)

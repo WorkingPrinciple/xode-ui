@@ -30,11 +30,24 @@ enum EngineManagementChecks {
                   && existing.existingWindowsBuild == 19045
                   && NativeWindowsVersion(build: 19045, profile: nil).label == "Windows build 19045",
                   "REQ-156: producer profile receipt and existing-prefix reported build display only observed facts")
+            // 2bf5e681 m1: a build above its profile's floor, within the same family, is accepted and shown as is.
+            let aboveFloor = try NativeWindowsVersion.decode(Data(
+                #"{"status":"applied","profile":"win10","reportedBuild":19045}"#.utf8))
+            let win11Later = try NativeWindowsVersion.decode(Data(
+                #"{"status":"applied","profile":"win11","reportedBuild":22631}"#.utf8))
+            let win7SP1 = try NativeWindowsVersion.decode(Data(
+                #"{"status":"applied","profile":"win7","reportedBuild":7601}"#.utf8))
+            check(aboveFloor.label == "Windows 10 (build 19045)" && win11Later.label == "Windows 11 (build 22631)"
+                  && win7SP1.build == 7601 && NativeWindowsVersion.family(of: 10240) == "win10"
+                  && NativeWindowsVersion.family(of: 21999) == "win10" && NativeWindowsVersion.family(of: 26100) == "win11-24h2",
+                  "2bf5e681 m1: a receipt whose build is at or above its profile's floor within that family is accepted and shows the actual build (producer family semantics)")
             for invalid in [
                 #"{"status":"failed","profile":"win11-24h2","reportedBuild":26100}"#,
                 #"{"status":"applied","reportedBuild":0}"#,
                 #"{"status":"applied","reportedBuild":4294967296}"#,
                 #"{"status":"applied","profile":"win11-24h2","reportedBuild":19045}"#,
+                #"{"status":"applied","profile":"win11","reportedBuild":26100}"#,
+                #"{"status":"applied","profile":"win10","reportedBuild":9600}"#,
                 #"{"status":"applied","reportedBuild":26100,"reportedBuild":19045}"#
             ] {
                 do {

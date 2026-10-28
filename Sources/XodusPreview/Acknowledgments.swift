@@ -37,7 +37,7 @@ struct OpenSourceComponent: Identifiable, Hashable, Sendable {
 /// the installed Calimocho engine's notices and the app's own bundled notices.
 struct AcknowledgmentsInventory: Sendable {
     static let producerDirectoryName = "ProducerNotices"
-    static let pinnedProducerInventorySHA256 = "e81effd6895ce8c41469b5fd701a8c9b30aa6b4be3e904a69ae5e4316b34bbb3"
+    static let pinnedProducerInventorySHA256 = "11091d7be26134170229d86e552b643a1c746d9de2b835cd459063df0f615af7"
 
     var components: [OpenSourceComponent] = []
     /// Packages the producer inventory itself lists as lacking exact notice text.

@@ -138,8 +138,9 @@ final class PCGamesController: ObservableObject {
         }
     }
 
-    func recordThrottle(after error: Error, now: Date = Date()) {
-        readGate.record(error, account: gateAccount, now: now)
+    /// 2bf5e681 n2: `account` is the read's account; a late answer for a previous account is ignored.
+    func recordThrottle(after error: Error, account: String? = nil, now: Date = Date()) {
+        readGate.record(error, account: account ?? gateAccount, current: gateAccount, now: now)
     }
 
     /// bc33adf2 M-a: whether an automatic library read may start at `now` (none while the gate is held).
@@ -544,7 +545,7 @@ final class PCGamesController: ObservableObject {
                 } else {
                     self.error = "Your PC library couldn't load. \(LiveSession.describe(error))"
                 }
-                recordThrottle(after: error)
+                recordThrottle(after: error, account: account)
                 // Transient read failures also recover silently within the bounded budget; throttling and a
                 // rejected sign-in never retry automatically.
                 if Self.automaticRetryAllowed(after: error),

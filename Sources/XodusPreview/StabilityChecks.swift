@@ -148,7 +148,7 @@ import XodusManagement
         _ = await releaser.value
         let accessSource = (try? String(contentsOfFile: "Sources/XodusPreview/InstalledProductAccess.swift", encoding: .utf8)) ?? ""
         let prioritizeBody = accessSource.range(of: "func prioritize(_ productID: String, session: LiveSession").map {
-            String(accessSource[$0.lowerBound...].prefix(900)) } ?? ""
+            String(accessSource[$0.lowerBound...].prefix(1400)) } ?? ""
         check(startupReads == 1 && !readWhileBusy && prioritizeBody.contains("awaitAccountIdle"),
               "683 Play test: a deep-link Play during startup waits for accountBusy/yieldsToLibraryRead, then makes its single licence read")
         // f51e60fe B1: the real refusal a not-yet-ready session gives before anything leaves this Mac.

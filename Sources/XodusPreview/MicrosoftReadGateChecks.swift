@@ -12,8 +12,69 @@ enum MicrosoftReadGateChecks {
         for scenario in ["odegate", "odegaterejected"] {
             try await matrix(scenario: scenario, check: check)
         }
+        try await reconcileNegatives(check: check)
         try await playJoinsAutomaticOperation(check: check)
         try await provisionalCountryVersusPlay(check: check)
+    }
+
+    /// 2bf5e681 m2: what must NOT clear the licence store's sign-in rejection; then the one thing that does.
+    private static func reconcileNegatives(check: (Bool, String) -> Void) async throws {
+        let a = String(repeating: "a", count: 64), b = String(repeating: "b", count: 64)
+        let product = "9NREJECT0001"
+        func rejectedStore(_ gate: MicrosoftReadGate) async -> InstalledProductAccess {
+            let store = InstalledProductAccess()
+            await store.bindSignInCount { gate.signIns(for: a) }
+            await store.refresh(account: a, installedIDs: [product], force: true, selectedProductID: product) { _ in
+                gate.record(ManagementError.authenticatedReadFailed(.authExchangeFailed), account: a)
+                throw ManagementError.authenticatedReadFailed(.authExchangeFailed)
+            }
+            return store
+        }
+        var lines: [String] = []
+        var allHeld = true
+        func expectHeld(_ name: String, _ store: InstalledProductAccess) {
+            let held = store.signInRejected && store.pausedNotice() != nil
+            allHeld = allHeld && held
+            lines.append("\(name) \(held ? "held" : "CLEARED")")
+        }
+        do { // gate signed in for a different account
+            let gate = MicrosoftReadGate(); let store = await rejectedStore(gate)
+            gate.signedIn(account: b)
+            store.reconcileSignIn(gate: gate, account: a); store.reconcileSignIn(gate: gate, account: b)
+            expectHeld("different account", store)
+        }
+        do { // gate still rejected
+            let gate = MicrosoftReadGate(); let store = await rejectedStore(gate)
+            store.reconcileSignIn(gate: gate, account: a)
+            expectHeld("gate still rejected", store)
+        }
+        do { // gate signed out
+            let gate = MicrosoftReadGate(); let store = await rejectedStore(gate)
+            gate.signedOut()
+            store.reconcileSignIn(gate: gate, account: a)
+            expectHeld("gate signed out", store)
+        }
+        do { // gate rebound by throttle records (B, then A again): rejection gone from the gate, no sign-in
+            let gate = MicrosoftReadGate(); let store = await rejectedStore(gate)
+            gate.record(ManagementError.authenticatedReadThrottled(retryAfterSeconds: 90), account: b)
+            gate.record(ManagementError.authenticatedReadThrottled(retryAfterSeconds: 90), account: a)
+            let gateCleared = gate.account == a && !gate.signInRejected
+            store.reconcileSignIn(gate: gate, account: a)
+            expectHeld("gate rebound by throttle (gate rejection gone \(gateCleared))", store)
+        }
+        do { // a sign-in completed BEFORE the rejection doesn't count
+            let gate = MicrosoftReadGate(); gate.signedIn(account: a)
+            let store = await rejectedStore(gate)
+            gate.recordSuccess(account: a)
+            store.reconcileSignIn(gate: gate, account: a)
+            expectHeld("earlier sign-in only", store)
+        }
+        let gate = MicrosoftReadGate(); let store = await rejectedStore(gate)
+        gate.signedIn(account: a)
+        store.reconcileSignIn(gate: gate, account: a)
+        let clears = !store.signInRejected && store.pausedNotice() == nil
+        check(allHeld && clears,
+              "2bf5e681 m2: the store's sign-in rejection survives another account's sign-in, a still-rejected gate, a sign-out, a rebind by throttle records and an earlier sign-in; only a sign-in completed after the rejection for that account clears it (\(lines.joined(separator: ", ")); after sign-in \(clears ? "cleared" : "held"))")
     }
 
     /// c71aada6 minor-4: a Play that joins a running automatic licence operation reads as an explicit action, even

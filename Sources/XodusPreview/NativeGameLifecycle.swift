@@ -5,7 +5,7 @@ import OSLog
 import XodusManagement
 
 enum NativeLifecyclePins {
-    static let cliSHA256 = "33820b8f4acd0395b1e0aa1811880f21b29c4ba7ce583be98378a5f455e5c973"
+    static let cliSHA256 = "f77208c9fce39993b12d2bb649ea4a0de3a592dfcbe0d2101dea712d6d13713f"
 }
 
 struct NativeWindowsVersion: Equatable, Sendable {
@@ -31,12 +31,20 @@ struct NativeWindowsVersion: Equatable, Sendable {
             throw GameScriptError.invalidReceipt
         }
         let profile = value["profile"]?.string
-        let expected: [String: UInt32] = ["win7": 7601, "win8": 9200, "win81": 9600,
-                                        "win10": 19045, "win11": 22000, "win11-24h2": 26100]
-        if let profile, let expectedBuild = expected[profile], expectedBuild != build {
+        // 2bf5e681 m1 / REQ-165 m6: the producer's family semantics. A build belongs to the highest family whose
+        // first build it reaches, so a profile admits any build of its own family (at or above its floor).
+        if let profile, families.contains(where: { $0.profile == profile }), family(of: UInt32(build)) != profile {
             throw GameScriptError.invalidReceipt
         }
         return Self(build: UInt32(build), profile: profile)
+    }
+
+    /// Mirrors the producer's WINDOWS_PROFILE_FAMILIES (lifecycle.rs, 3999579).
+    static let families: [(profile: String, first: UInt32)] = [
+        ("win7", 7600), ("win8", 9200), ("win81", 9600), ("win10", 10240), ("win11", 22000), ("win11-24h2", 26100),
+    ]
+    static func family(of build: UInt32) -> String? {
+        families.last(where: { build >= $0.first })?.profile
     }
 
     static func read(result: NativeGameResult) throws -> Self? {

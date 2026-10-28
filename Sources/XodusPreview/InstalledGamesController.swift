@@ -1387,10 +1387,11 @@ final class InstalledGamesController: ObservableObject {
                             try NativeWindowsVersion.read(result: result)
                         }.value
                         windowsVersions[game.id] = version.map {
-                            "Last launch (\(Self.readableEngineName(launch.engine))): \($0.label)"
+                            // 2bf5e681 n3: kept in memory only, so it says "this session".
+                            "Last launch this session (\(Self.readableEngineName(launch.engine))): \($0.label)"
                         }
                     } catch {
-                        windowsVersions[game.id] = "Last launch: Windows version receipt unavailable"
+                        windowsVersions[game.id] = "Last launch this session: Windows version receipt unavailable"
                         Self.launchLog.error("Windows version receipt rejected for \(game.storeId, privacy: .public): \(error.localizedDescription, privacy: .public)")
                     }
                     if !result.success {
