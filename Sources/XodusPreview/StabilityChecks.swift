@@ -153,8 +153,8 @@ import XodusManagement
               "683 Play test: a deep-link Play during startup waits for accountBusy/yieldsToLibraryRead, then makes its single licence read")
         let local = InstalledProductAccess()
         await local.refresh(account: account, installedIDs: installed, now: start, force: true,
-                            selectedProductID: played) { _ in throw ManagementError.disconnected }
-        check(local.lastFailureWasLocal && local.pausedUntil == nil && local.pausedNotice(now: start) == nil,
+                            selectedProductID: played) { _ in throw ManagementError.backendUnavailable }
+        check(local.lastFailureWasLocal(played) && local.pausedUntil == nil && local.pausedNotice(now: start) == nil,
               "683 Play test: losing the local game service is retried, never treated as Microsoft throttling (no pause)")
         // 9015da43 M1: Play's access settle retries once only when the read never left this Mac.
         func playSettle(_ firstError: Error?) async -> (reads: Int, playable: Bool, paused: Bool) {
