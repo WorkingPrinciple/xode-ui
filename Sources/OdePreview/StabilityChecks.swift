@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+import OdeLegacyCompatibility
 import Darwin
 import Foundation
 import OdeManagement
@@ -577,6 +578,10 @@ import OdeManagement
               "REQ-135: only a verified game folder can be deleted; in-root saves, a nested prefix, an unknown layout, another product and a symlink an unreadable entry before Saves and a deep Unreal Saved all fail closed: \(verdicts)")
         check(snapshot(root) == before,
               "REQ-135: the safety check leaves every sentinel (in-root save, nested prefix, separate prefix) unchanged")
+        check(Ops.saveMarkers.isSuperset(of: LegacyCompatibility.privateSaveFolders)
+              && Ops.saveMarkers.isSuperset(of: ["saves", "savegames", "wgs", "connectedstorage"])
+              && LegacyCompatibility.privateSaveFolders.count == 6,
+              "REQ-150/COR-316: uninstall safety treats LocalSaves, ContainerSaves and CloudSnapshot under both name families as saves (widened from LocalSaves only)")
         check(InstalledGameActionCopy.uninstallExplanation.contains("Keep Files")
               && InstalledGameActionCopy.deleteGameFiles == "Delete Game Files",
               "REQ-135: Uninstall defaults to Remove (Keep Files); deleting is the explicit secondary action")
@@ -707,7 +712,7 @@ import OdeManagement
 
     private static func inventory(_ game: URL, product: String = "FIXTURE00140", identity: String = "verified",
                                   files: [(String, UInt64, Bool, String)], directories: [String],
-                                  records: [String] = [".ode-streaming.msixvc"], success: Bool = true,
+                                  records: [String] = [LegacyCompatibility.onDiskPackageMarker], success: Bool = true,
                                   errorCode: String? = nil) throws -> NativeInstallInventory {
         let entries = files.map { #"{"path":"\#($0.0)","bytes":\#($0.1),"encrypted_at_rest":\#($0.2),"disk_state":"\#($0.3)"}"# }
         let json = """
@@ -733,7 +738,8 @@ import OdeManagement
         try Data(count: 4_096).write(to: game.appendingPathComponent("Content/Paks/big.pak"))
         try write("changed!!", game.appendingPathComponent("Content/changed.pak"))
         try write("grown after the inventory", game.appendingPathComponent("Content/toctou.pak"))
-        try write("pkg", game.appendingPathComponent(".ode-streaming.msixvc"))
+        // The backend reports the on-disk marker name in package records (producer a8c1261 install_status.rs).
+        try write("pkg", game.appendingPathComponent(LegacyCompatibility.onDiskPackageMarker))
         // Sentinels: saves inside listed and unlisted folders, a prefix and a file beside the root.
         try write("inside", game.appendingPathComponent("Saved/SaveGames/0.sav"))
         try write("slot", game.appendingPathComponent("Content/Saves/slot.sav"))
@@ -761,7 +767,7 @@ import OdeManagement
         try listed.validate(product: "FIXTURE00140", gameDirectory: game)
         let outcome = try PackageInventoryRemoval.remove(listed, root: game)
         let exists = { (path: String) in FileManager.default.fileExists(atPath: game.appendingPathComponent(path).path) }
-        let gone = ["MicrosoftGame.config", "game.exe", "Content/data.pck", "Content/Paks/big.pak", ".ode-streaming.msixvc", "Content/Paks"]
+        let gone = ["MicrosoftGame.config", "game.exe", "Content/data.pck", "Content/Paks/big.pak", LegacyCompatibility.onDiskPackageMarker, "Content/Paks"]
         let kept = ["Content/changed.pak", "Content/toctou.pak", "Content/hard.pak", "Saved/SaveGames/0.sav", "Content/Saves/slot.sav"]
         check(gone.allSatisfy { !exists($0) } && kept.allSatisfy(exists)
               && Set(outcome.kept) == ["Content/changed.pak", "Content/toctou.pak", "Content/hard.pak", "Linked/file.bin"]
@@ -774,7 +780,8 @@ import OdeManagement
         try write("data", clean.appendingPathComponent("Content/data.pck"))
         try write("pkg", clean.appendingPathComponent(".ode-streaming.msixvc"))
         let all = try inventory(clean, files: [("MicrosoftGame.config", UInt64(config.utf8.count), false, "layout_matches"),
-                                               ("Content/data.pck", 4, false, "layout_matches")], directories: ["Content"])
+                                               ("Content/data.pck", 4, false, "layout_matches")], directories: ["Content"],
+                            records: [".ode-streaming.msixvc"])
         let cleanOutcome = try PackageInventoryRemoval.remove(all, root: clean)
         check(cleanOutcome.removedRoot && !FileManager.default.fileExists(atPath: clean.path),
               "REQ-135: a game folder holding only its package is removed completely")
@@ -790,7 +797,8 @@ import OdeManagement
             ("traversal", refusal { try inventory(game, files: [("../outside/file.bin", 7, false, "layout_matches")], directories: []) }),
             ("absolute", refusal { try inventory(game, files: [("/etc/hosts", 7, false, "layout_matches")], directories: []) }),
             ("duplicate", refusal { try inventory(game, files: [("a", 1, false, "missing"), ("a", 1, false, "missing")], directories: []) }),
-            ("record path", refusal { try inventory(game, files: [], directories: [], records: ["Saved/x"]) })
+            ("record path", refusal { try inventory(game, files: [], directories: [], records: ["Saved/x"]) }),
+            ("record name", refusal { try inventory(game, files: [], directories: [], records: [".other.msixvc"]) })
         ]
         check(refusals.allSatisfy { $0.1 != nil }
               && refusals[0].1 as? PackageInventoryRemoval.Refusal == .identityUnproven
@@ -876,9 +884,41 @@ import OdeManagement
         let held: Bool = { if case .held = afterRelease { true } else { false } }()
         let source = (try? String(contentsOfFile: "Sources/OdePreview/OdePreviewApp.swift", encoding: .utf8)) ?? ""
         check(whileHeld == .busy && held && secondCopy == .busy
-              && ConcurrentAppGuard.instanceLockFile.path.hasSuffix("Library/Application Support/Ode to X/State/app-instance.lock")
-              && source.contains("!ConcurrentAppGuard.holdInstanceLock()"),
+              && ConcurrentAppGuard.instanceLockFile().path.hasSuffix("Library/Application Support/Ode to X/State/app-instance.lock")
+              && source.contains("StartupGuards.evaluate(bundleID: Bundle.main.bundleIdentifier)"),
               "REQ-138: the shared instance flock refuses a second X Ode while another process or copy holds it, and is free after it exits")
+        try startupGuardOrderChecks(root: root.appendingPathComponent("startup"), check: check)
+    }
+
+    /// REQ-150 review 7c5179ae: the real startup sequence on an unmoved home refuses for the data move and creates
+    /// nothing under the new root, so it can't split the data itself; a moved home proceeds and takes the lock.
+    static func startupGuardOrderChecks(root: URL, check: (Bool, String) -> Void) throws {
+        let fileManager = FileManager.default
+        let bundleID = "com.workingprinciple.xode.development"
+        let home = root.appendingPathComponent("home")
+        let state = LegacyCompatibility.dataRoots[0]
+        let oldRoot = home.appendingPathComponent(state.legacy), newParent = home.appendingPathComponent("Library/Application Support/Ode to X")
+        try fileManager.createDirectory(at: oldRoot, withIntermediateDirectories: true)
+        defer { try? fileManager.removeItem(at: root) }
+        var lockRequests = 0
+        let realLock: (URL) -> Bool = { file in
+            lockRequests += 1
+            if case .held(let fd) = ConcurrentAppGuard.acquireInstanceLock(file) { flock(fd, LOCK_UN); close(fd); return true }
+            return false
+        }
+        let unmoved = StartupGuards.evaluate(bundleID: bundleID, home: home.path, holdLock: realLock)
+        check(unmoved == .dataMove(DataMoveGuard.message(.notMoved([state.legacy])) ?? "")
+              && LegacyCompatibility.dataMoveState(home: home.path) == .notMoved([state.legacy])
+              && !fileManager.fileExists(atPath: newParent.path) && lockRequests == 0,
+              "REQ-150: on an unmoved home the startup sequence refuses for the data move before the instance lock, and nothing is created under Ode to X")
+        try fileManager.createDirectory(at: home.appendingPathComponent(state.current), withIntermediateDirectories: true)
+        try fileManager.removeItem(at: oldRoot)
+        try fileManager.createSymbolicLink(at: oldRoot, withDestinationURL: home.appendingPathComponent(state.current))
+        let moved = StartupGuards.evaluate(bundleID: bundleID, home: home.path, holdLock: realLock)
+        check(moved == .proceed && lockRequests == 1
+              && fileManager.fileExists(atPath: ConcurrentAppGuard.instanceLockFile(home: home.path).path)
+              && StartupGuards.evaluate(bundleID: nil, home: home.path + "-absent", holdLock: { _ in false }) == .proceed,
+              "REQ-150: after the move the startup sequence takes the instance lock and opens; an unbundled run skips both guards")
     }
 
     // MARK: REQ-136 journal and registry

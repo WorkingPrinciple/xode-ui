@@ -31,7 +31,7 @@ let package = Package(
     targets: [
         .target(name: "OdeCore", exclude: shipping ? ["Fixtures.swift"] : [],
                 swiftSettings: shippingSettings),
-        .target(name: "OdeManagement", dependencies: ["OdeCore"],
+        .target(name: "OdeManagement", dependencies: ["OdeCore", "OdeLegacyCompatibility"],
                 exclude: ["QA/CompatibilityData/next-30-queue.json",
                           "QA/CompatibilityData/queue-inspection-v1.json",
                           "QA/LaunchRecipes/preflight-game-candidates.json",
@@ -43,9 +43,11 @@ let package = Package(
                             .copy("Resources/LaunchRecipes"),
                             .copy("Resources/CompatibilityData")]),
         .target(name: "OdeCredentials"),
+        .target(name: "OdeLegacyCompatibility"),
         .target(name: "OdeProcessIdentity"),
-        .executableTarget(name: "OdeCredentialBroker", dependencies: ["OdeCredentials"]),
-        .executableTarget(name: "OdePreview", dependencies: ["OdeCore", "OdeManagement", "OdeCredentials", "OdeProcessIdentity"],
+        .executableTarget(name: "OdeCredentialBroker", dependencies: ["OdeCredentials", "OdeLegacyCompatibility"]),
+        .executableTarget(name: "OdePreview", dependencies: ["OdeCore", "OdeManagement", "OdeCredentials", "OdeProcessIdentity",
+                                                                      "OdeLegacyCompatibility"],
                           exclude: shipping ? previewOnly : [],
                           resources: shipping ? [] : [.copy("Resources/Artwork")],
                           swiftSettings: shippingSettings),
@@ -57,7 +59,7 @@ let package = Package(
     ] : [
         .executableTarget(name: "OdeFixtureChecks", dependencies: ["OdeCore"],
                           path: "Tests/FixtureChecks"),
-        .executableTarget(name: "OdeManagementChecks", dependencies: ["OdeManagement"],
+        .executableTarget(name: "OdeManagementChecks", dependencies: ["OdeManagement", "OdeLegacyCompatibility"],
                           path: "Tests/ManagementChecks", resources: [.copy("Fixtures")]),
         .executableTarget(name: "OdeCredentialChecks", dependencies: ["OdeCredentials"])
     ])

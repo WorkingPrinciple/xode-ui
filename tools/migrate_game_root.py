@@ -9,6 +9,7 @@ from pathlib import Path
 import stat
 import tempfile
 
+from legacy_compatibility import LEGACY_GAME_FOLDER_EXPORT
 from shipping_pair import owned_bytes, require
 
 
@@ -51,7 +52,7 @@ def replacements(data, kind, old, new):
     require(kind == "launcher", "Unreviewed migration file kind")
     lines = data.decode().splitlines(keepends=True)
     for index, line in enumerate(lines):
-        prefix = "export ODE_GAME_FOLDER="
+        prefix = LEGACY_GAME_FOLDER_EXPORT
         if line.startswith(prefix):
             value = line[len(prefix):].rstrip("\r\n")
             require(value.startswith(old + "/") and not any(c in value for c in "'\"$`\\;"),

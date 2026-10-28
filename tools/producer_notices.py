@@ -13,6 +13,7 @@ import urllib.parse
 
 from shipping_pair import (SOURCE_ARCHIVE_BYTES, SOURCE_ARCHIVE_NAME, SOURCE_ARCHIVE_SHA256,
                            owned_bytes, require, unique_object)
+from legacy_compatibility import WORKSPACE_CRATES
 
 
 def digest(data):
@@ -460,9 +461,7 @@ def add_supplement(output, report_directory, report_sha256, evidence_directory,
         resolved.update(item.get("resolvesObligations", []))
     if workspace_packages:
         require(workspace_packages == {
-            "msixvc", "msixvc-common", "ode", "ode-cli",
-            "ode-management", "ode-service",
-        }, "Producer root-license evidence does not cover exactly the six local workspace crates")
+            *WORKSPACE_CRATES}, "Producer root-license evidence does not cover exactly the six local workspace crates")
         require(any(item["path"] == "LICENSE" for item in producer_files)
                 and any(item["path"] == "README.md" for item in producer_files),
                 "Producer root LICENSE and README source files are not hash-bound")

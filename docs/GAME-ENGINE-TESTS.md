@@ -464,7 +464,7 @@ its setup from conversation history.
 ## Historical Xbox launches: do not reset the baseline
 
 Owner clarification, 21 October 2026: **No Man's Sky and Hogwarts Legacy
-previously launched using our modified Ode fork, libraries and shims with
+previously launched using our modified backend fork, libraries and shims with
 CrossOver.** These are not merely standalone Windows control games.
 `PAUSE-HANDOFF.md` independently records historical NMS 7.6 in-world rendering.
 The equivalent Hogwarts run receipt has not yet been located in this review;
@@ -583,7 +583,7 @@ No Man's Sky and Abiotic Factor passed real local inventory/readiness checks.
 Their preserved CLI expects service `24e78d536c05c52e0e5e1e8f4373c68c41c079ef68a7891eff307baeb17edfba`;
 the service actually mapped by the running process is
 `a3cc1dd758e47be52700f84ff6874c240cca3238ffdcb9282d26ba19888286eb`.
-Both endpoint users are fixed to `/tmp/ode.sock`; the inspected macOS service
+Both endpoint users are fixed to the inherited service socket under `/tmp`; the inspected macOS service
 does not honor Linux's `XDG_RUNTIME_DIR` override. These are preflight failures,
 not Wine incompatibility findings. The other four candidate titles have public
 PC package records but no established current-account download access in the

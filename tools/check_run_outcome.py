@@ -7,6 +7,7 @@ import tempfile
 import unittest
 
 from extract_run_outcome import OutcomeError, extract
+from legacy_compatibility import LEGACY_OUTCOME_PREFIX
 
 
 def run_fixture(root, lines, product="9NR1R1XWLCNB"):
@@ -53,6 +54,21 @@ class RunOutcomeChecks(unittest.TestCase):
                 self.assertEqual(outcome["missing"], [])
                 self.assertFalse(outcome["pass"])
                 self.assertIn("fail", outcome["verdicts"].values())
+
+    def test_pre_rename_prefix_is_read_for_one_release(self):
+        good = ["1:01:warn:gdkc:f ode outcome: sign-in OK status 0.",
+                "1:01:warn:gdkc:f ode outcome: XUserAddResult status 0.",
+                "1:01:warn:gdkc:f ode outcome: game licence validated status 0.",
+                "1:01:warn:gdkc:f ode outcome: XStoreQueryGameLicenseResult status 0 isActive 1."]
+        legacy = [line.replace("ode outcome:", LEGACY_OUTCOME_PREFIX) for line in good]
+        with tempfile.TemporaryDirectory() as tmp:
+            outcome = extract(run_fixture(tmp, legacy))
+            self.assertEqual(outcome["missing"], [])
+            self.assertTrue(outcome["pass"])
+        failed = list(legacy)
+        failed[0] = failed[0].replace("sign-in OK status 0.", "sign-in FAILED status 0x89245115.")
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertFalse(extract(run_fixture(tmp, failed))["pass"])
 
     def test_per_title_expectations(self):
         sign_in = ["1:01:warn:gdkc:f ode outcome: sign-in OK status 0.",

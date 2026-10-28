@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import Foundation
+import OdeLegacyCompatibility
 import OSLog
 import Security
 import OdeManagement
@@ -62,15 +63,34 @@ extension PCGamesRefreshStore {
 }
 
 actor PCGamesKeychain: PCGamesRefreshStore {
-    private var identity: [String: Any] {
+    private static let service = "Ode Library"
+    private var identity: [String: Any] { Self.identity(Self.service) }
+
+    private static func identity(_ service: String) -> [String: Any] {
         [kSecClass as String: kSecClassGenericPassword,
-         kSecAttrService as String: "Ode Library",
+         kSecAttrService as String: service,
          kSecAttrAccount as String: "xbox-web",
          kSecAttrSynchronizable as String: false]
     }
 
+    /// The pre-rename service, until its item was copied forward or the user signed out.
+    private var renamedService: String? {
+        UserDefaults.standard.bool(forKey: LegacyCompatibility.keychainCopyForwardMarker(service: Self.service))
+            ? nil : LegacyCompatibility.legacyKeychainService(for: Self.service)
+    }
+
+    private func retireRenamedService() {
+        UserDefaults.standard.set(true, forKey: LegacyCompatibility.keychainCopyForwardMarker(service: Self.service))
+    }
+
     func contains() throws -> Bool {
         try Task.checkCancellation()
+        if try present(identity) { return true }
+        guard let renamedService else { return false }
+        return try present(Self.identity(renamedService))
+    }
+
+    private func present(_ identity: [String: Any]) throws -> Bool {
         var query = identity
         query[kSecReturnAttributes as String] = true
         query[kSecUseAuthenticationUI as String] = kSecUseAuthenticationUIFail
@@ -84,6 +104,19 @@ actor PCGamesKeychain: PCGamesRefreshStore {
 
     func read() throws -> String? {
         try Task.checkCancellation()
+        if let value = try stored(identity) { return value }
+        // Copy forward from the pre-rename service once; the old item stays for rollback (COR-310).
+        guard let renamedService else { return nil }
+        guard let value = try stored(Self.identity(renamedService)) else {
+            retireRenamedService()
+            return nil
+        }
+        try save(value)
+        retireRenamedService()
+        return value
+    }
+
+    private func stored(_ identity: [String: Any]) throws -> String? {
         var query = identity
         query[kSecReturnData as String] = true
         query[kSecMatchLimit as String] = kSecMatchLimitOne
@@ -120,6 +153,7 @@ actor PCGamesKeychain: PCGamesRefreshStore {
         guard status == errSecSuccess || status == errSecItemNotFound else {
             throw PCGamesError.keychain(status)
         }
+        retireRenamedService()
     }
 }
 

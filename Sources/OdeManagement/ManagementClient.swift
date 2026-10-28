@@ -2,6 +2,7 @@
 import Darwin
 import Foundation
 import OSLog
+import OdeLegacyCompatibility
 
 public struct BackendConfiguration: Sendable {
     public let executable: URL
@@ -347,7 +348,7 @@ public actor ManagementClient {
         guard !stopped else { return }
         for line in try framer.append(bytes) {
             let value: JSONValue
-            do { value = try JSONDecoder().decode(JSONValue.self, from: line) }
+            do { value = try JSONDecoder().decode(JSONValue.self, from: LegacyCompatibility.normalizingLegacySchemaIDs(line)) }
             catch { throw ManagementError.invalidFrame }
             try validator.validate(value)
             switch value["kind"]?.string {

@@ -28,7 +28,17 @@ from signing_identity import (command, preflight, sign, verify_developer_id_bund
                               verify_designated_requirement)
 from package_resources import copy_resources
 from distribution_manifest import distribution_blockers, write_manifest
+from legacy_compatibility import LEGACY_BUNDLED_CLI, PRODUCER_WINDOW_HELPER
+from shipping_pair import require_renamed_producer
 
+
+def installed_cli(installed):
+    current = installed / "Contents/Resources/OdeEngine/ode-cli"
+    return current if current.exists() or not (installed / LEGACY_BUNDLED_CLI).exists() else installed / LEGACY_BUNDLED_CLI
+
+
+def installed_helper(cli):
+    return cli.parent / ("ode-window-monitor.exe" if cli.name == "ode-cli" else PRODUCER_WINDOW_HELPER)
 
 
 def path_remap(source):
@@ -58,6 +68,7 @@ QUALIFICATION_BUNDLE_IDENTIFIER = "com.workingprinciple.xode.qualification"
 def refresh(installed, output_root, identity, selected_cli=None, producer_source=None, producer_commit=None,
             selected_helper=None, producer_notices=None, producer_notices_sha256=None,
             engine_notice=None):
+    require_renamed_producer()
     validate_host()
     preflight(identity)
     project = Path(__file__).resolve().parent.parent
@@ -89,12 +100,13 @@ def refresh(installed, output_root, identity, selected_cli=None, producer_source
                 "Selected producer Cargo.lock differs from the approved pin")
         contract = subprocess.check_output(
             ["git", "show", producer + ":docs/contracts/management-v1.schema.json"], cwd=producer_source)
+        require_renamed_producer(contract)
         require(contract == (project / "Sources/OdeManagement/Resources/management-v1.schema.json").read_bytes(),
                 "Selected CLI producer and app management contracts differ")
     if producer_notices is not None:
         validate_producer_inventory(Path(producer_notices) / "inventory.json", producer_notices_sha256)
-    old_cli = selected_cli.resolve(strict=True) if selected_cli else installed / "Contents/Resources/OdeEngine/ode-cli"
-    old_helper = selected_helper.resolve(strict=True) if selected_helper else old_cli.parent / "ode-window-monitor.exe"
+    old_cli = selected_cli.resolve(strict=True) if selected_cli else installed_cli(installed)
+    old_helper = selected_helper.resolve(strict=True) if selected_helper else installed_helper(old_cli)
     cli_record, windows_helper_record = validate_payload_pair(old_cli, old_helper, producer, producer_tree)
     producer_manifest = owned_bytes(old_cli.parent / "build-manifest.json", PRODUCER_MANIFEST_SHA256)[0] \
         if selected_cli is not None else None

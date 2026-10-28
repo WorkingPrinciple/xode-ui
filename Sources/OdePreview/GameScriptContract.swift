@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import Darwin
+import OdeLegacyCompatibility
 import CryptoKit
 import Foundation
 import OdeManagement
@@ -100,7 +101,7 @@ enum XboxAccountBinding {
     static func hash(xuid: String) -> String? {
         guard !xuid.isEmpty, xuid.utf8.count <= 32,
               xuid.utf8.allSatisfy({ (48...57).contains($0) }) else { return nil }
-        return SHA256.hash(data: Data(("ode-account-v1\u{0}" + xuid).utf8))
+        return SHA256.hash(data: Data((LegacyCompatibility.Contract.accountHashDomain + xuid).utf8))
             .map { String(format: "%02x", $0) }.joined()
     }
 }
@@ -289,8 +290,10 @@ struct GameScriptPaths: Sendable {
     }
 
     static func validRunID(_ value: String) -> Bool {
-        value.range(of: #"^ode-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}$"#, options: .regularExpression)
-            == value.startIndex..<value.endIndex
+        LegacyCompatibility.runIDPrefixes.contains { prefix in
+            value.hasPrefix(prefix) && value.dropFirst(prefix.count)
+                .range(of: #"^[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}$"#, options: .regularExpression) != nil
+        }
     }
 
     func receipt(_ runID: String, suffix: String) throws -> URL {

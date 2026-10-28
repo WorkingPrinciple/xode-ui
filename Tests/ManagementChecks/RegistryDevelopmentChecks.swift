@@ -6,9 +6,9 @@ import OdeManagement
 extension Checks {
     func registryDevelopmentChecks() throws {
         let artifacts: [(String, String, Int)] = [
-            ("registry-development.schema", "13354f71c32e558792a83c64a0920b4831128c455385309d3b036ae93efc4b94", 85408),
-            ("registry-development-positive", "af7c7338fb7cd98c1628bf68e0c1ee9deff2c6fe79e62125ce07b2e3723f4ba2", 49392),
-            ("registry-development-negative", "4382bc13721a5841ceddf0abe169505152074ba7cc8475fdc56bc3e628c4098f", 83675)
+            ("registry-development.schema", "998efc349425763851ba156a08d5cf7e49997543c3ea008b918ed284e7e21ec6", 85400),
+            ("registry-development-positive", "7c65d978dc698a726053e61abc7c6e7332af8eb94582992b4b5e63f28bb42e6f", 49388),
+            ("registry-development-negative", "a4fc335df5afe6de05ebee32c66ebf43d8fc7e2880845b7dc03320112e7ad42e", 83667)
         ]
         for (name, expectedHash, expectedBytes) in artifacts {
             guard let url = Bundle.module.url(forResource: name, withExtension: "json", subdirectory: "Fixtures") else {

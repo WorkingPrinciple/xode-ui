@@ -7,6 +7,8 @@ if [ "$#" -lt 9 ]; then
     printf '%s\n' 'Usage: build_app.sh engine unsignedSHA bytes provenanceSHA bytes approvedAppCommit approvedAppTree newOutputRoot (--signing-identity CERT_SHA1 | --local-ad-hoc) [--preserve-signed-cli path SHA256 bytes priorPackageReceipt receiptSHA256 receiptBytes] [--credential-broker path SHA256 bytes] [--launch-association-capsule path] [--python-runtime-archive path] [--producer-notices path --producer-notices-sha256 approvedSHA256] [--engine-notice path]' >&2
     exit 2
 fi
+# REQ-150: refuse to package this app with a producer built before the Ode rename.
+python3 -c 'import sys; sys.path.insert(0, "tools"); import shipping_pair; shipping_pair.require_renamed_producer()'
 engine=$1
 engine_hash=$2
 engine_bytes=$3

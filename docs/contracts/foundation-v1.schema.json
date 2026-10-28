@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:xodus:management:1.0",
-  "title": "Proposed Xodus launcher management protocol 1.0",
+  "$id": "urn:ode:management:1.0",
+  "title": "Proposed Ode launcher management protocol 1.0",
   "description": "Contract artifact, not an implemented backend. JSON/JSONL stdin requests and stdout results/events; secrets use a separate credential channel.",
   "oneOf": [
     {"$ref": "#/$defs/request"},

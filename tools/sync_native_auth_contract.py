@@ -5,8 +5,8 @@ import hashlib
 import pathlib
 import subprocess
 
-PIN = "bb6397033fc38497a73684a9ecdb2929caba1f63"
-SCHEMA_SHA256 = "c7ca7de8ee8a610b71e9e458f13469554467dd2632f88d35317a1ce2646af430"
+PIN = "a272b1d7f10ccf0aa32936e24551098b9c7cd02e"
+SCHEMA_SHA256 = "36d9d8969c941b45283f8ca4aa1fa4e73c8b23ce0afea2e4243f55ce366e889e"
 FIXTURE_SHA256 = "d864e96079dc5292f6c078fb2be37c870f1cf4be114edc6e68e0984a555d0d24"
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 FILES = (

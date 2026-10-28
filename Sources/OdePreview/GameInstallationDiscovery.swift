@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import Foundation
+import OdeLegacyCompatibility
 import OdeCore
 
 enum GameInstallationDiscoveryError: Error, LocalizedError {
@@ -17,8 +18,11 @@ enum GameInstallationDiscoveryError: Error, LocalizedError {
 }
 
 enum GameInstallationDiscovery {
+    /// Library folder names under ~/Games and at volume roots: the current one, then earlier builds'.
+    static let libraryFolders = ["Xode"] + LegacyCompatibility.legacyGameLibraryFolders
+
     static func defaultLibraryRoots(home: String = NSHomeDirectory()) -> [URL] {
-        ["Xode", "Ode"].map { URL(fileURLWithPath: home).appendingPathComponent("Games/\($0)") }
+        libraryFolders.map { URL(fileURLWithPath: home).appendingPathComponent("Games/\($0)") }
     }
 
     static func mountedLibraryRoots(_ volumes: [String]?, home: String = NSHomeDirectory()) -> [URL] {
@@ -29,7 +33,7 @@ enum GameInstallationDiscovery {
                     && !path.dropFirst(prefix.count).contains("/")
             } && URL(fileURLWithPath: path).standardizedFileURL.path == path
         })).sorted().flatMap { volume in
-            ["Xode", "Ode"].map { URL(fileURLWithPath: volume).appendingPathComponent($0) }
+            libraryFolders.map { URL(fileURLWithPath: volume).appendingPathComponent($0) }
         }
     }
 

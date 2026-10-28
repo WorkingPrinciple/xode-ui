@@ -708,6 +708,7 @@ actor Checks {
         try installLifecycleChecks()
         try await runtimePlanChecks()
         try packageTypeChecks()
+        legacyCompatibilityChecks()
         try engineRoutingChecks()
         try await hostBindingChecks()
         try await artworkChecks()

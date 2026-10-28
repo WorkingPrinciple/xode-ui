@@ -28,6 +28,7 @@ enum BrandUXChecks {
         libraryAccessPresentation(check: check)
         toolbarAccessibility(check: check)
         welcome(check: check)
+        dataMoveGuard(check: check)
         readiness(check: check)
         firstLoad(check: check)
         support(check: check)
@@ -74,7 +75,7 @@ enum BrandUXChecks {
         check(about[.applicationName] as? String == "X Ode"
               && about[.applicationVersion] as? String == "0.2.0 Beta" && about[.version] as? String == "412"
               && (about[.credits] as? NSAttributedString)?.string
-                == "Runs Windows games with Wine and is built on Ode. Thank you to both projects.\n© Working Principle"
+                == "Runs Windows games with Wine and is built on \(FeaturedCredits.upstream.name). Thank you to both projects.\n© Working Principle"
               && AppBrandPresentation.aboutPanelOptions(AppVersion(info: nil))[.applicationVersion] as? String
                 == "Development build",
               "COR186/COR198/L1: About shows X Ode, Version 0.2.0 Beta (412) and © Working Principle, without xode.win")
@@ -94,8 +95,8 @@ enum BrandUXChecks {
         }
         check(retired.isEmpty && session.accountLabel == "Connect X Ode"
               && LiveSession.signOutConfirmationMessage.contains("from X Ode on this Mac")
-              && AppLegalCopy.acknowledgment.contains("Ode"),
-              "COR186: User-visible copy names X Ode only, keeping the upstream Ode credit: \(retired)")
+              && AppLegalCopy.acknowledgment.contains(FeaturedCredits.upstream.name),
+              "COR186: User-visible copy names X Ode only, keeping the upstream credit: \(retired)")
     }
 
     // MARK: Navigation, Find and Refresh
@@ -588,9 +589,20 @@ enum BrandUXChecks {
 
     // MARK: Welcome, readiness and support
 
+    /// REQ-150: the app explains, in plain words, why it won't open before or during a half-done data move.
+    static func dataMoveGuard(check: (Bool, String) -> Void) {
+        let notMoved = DataMoveGuard.message(.notMoved(["old"])) ?? ""
+        let split = DataMoveGuard.message(.split(["old"])) ?? ""
+        check(DataMoveGuard.message(.ready) == nil
+              && notMoved.contains("previous location") && notMoved.contains("Nothing has been changed")
+              && split.contains("two places") && split.contains("roll back") && split.contains("Nothing has been changed")
+              && !split.contains("Library/") && !notMoved.contains("Library/"),
+              "REQ-150: Unmoved and split data each refuse with a plain message and no raw paths; a finished move opens")
+    }
+
     static func welcome(check: (Bool, String) -> Void) {
         check(WelcomeCopy.signIn == "Sign in with Microsoft"
-              && WelcomeCopy.technology == "X Ode runs Windows games with Wine and is built on Ode."
+              && WelcomeCopy.technology == "X Ode runs Windows games with Wine and is built on \(FeaturedCredits.upstream.name)."
               && "\(WelcomeCopy.acknowledgments) \(WelcomeCopy.credits)" == "Acknowledgments and licences are also in the X Ode menu."
               && WelcomeCopy.keychain.contains("Keychain") && XOdeLockup.accessibilityName == "X Ode",
               "COR186 M7: The login screen is the X Ode lockup, Sign in with Microsoft and the Wine/open-source line")
@@ -602,7 +614,7 @@ enum BrandUXChecks {
                                 name: "welcome-\(scheme == .dark ? "dark" : "light")")
             let joined = labels.joined(separator: " ")
             check(labels.contains("Ode") && joined.contains("Sign in with Microsoft")
-                  && joined.contains("Wine") && joined.contains("Acknowledgments") && joined.contains("Ode")
+                  && joined.contains("Wine") && joined.contains("Acknowledgments") && joined.contains(FeaturedCredits.upstream.name)
                   && joined.contains("menu") && joined.contains("licences")
                   && !joined.contains("Keychain") && !joined.contains("PC Game Pass") && !joined.contains("Beta")
                   && !joined.contains("Xbox Live") && !joined.contains("Xode") && !joined.contains("Welcome"),
@@ -681,9 +693,9 @@ enum BrandUXChecks {
             try good.write(to: producer.appendingPathComponent("texts/\(sha256(good)).txt"))
             let claimed = sha256(Data("original".utf8))
             try tampered.write(to: producer.appendingPathComponent("texts/\(claimed).txt"))
-            let inventory: [String: Any] = ["version": 1, "unresolved": ["ode@0.1.0: no package-level licence declaration"],
+            let inventory: [String: Any] = ["version": 1, "unresolved": ["\(FeaturedCredits.upstreamName.lowercased())@0.1.0: no package-level licence declaration"],
                 "packages": [
-                    ["name": "ode", "version": "0.1.0", "declaredLicense": NSNull(), "notices": []],
+                    ["name": FeaturedCredits.upstreamName.lowercased(), "version": "0.1.0", "declaredLicense": NSNull(), "notices": []],
                     ["name": "adler2", "version": "2.0.1", "declaredLicense": "MIT",
                      "notices": [["originalPath": "adler2-2.0.1/LICENSE-MIT", "path": "texts/\(sha256(good)).txt", "sha256": sha256(good)]]],
                     ["name": "tampered-crate", "version": "1.0.0", "declaredLicense": "MIT",
@@ -703,9 +715,9 @@ enum BrandUXChecks {
         }
         let loaded = AcknowledgmentsInventory.load(.init(producer: producer, engine: engine))
         let service = loaded.components.filter { $0.origin == .gameService }
-        check(service.map(\.name) == ["ode", "adler2", "tampered-crate"]
-              && ["ode", "adler2", "tampered-crate"].allSatisfy { name in loaded.filtered(name).contains { $0.name == name } }
-              && service.first { $0.name == "ode" }?.license == "No package-level licence declared"
+        check(service.map(\.name) == [FeaturedCredits.upstreamName.lowercased(), "adler2", "tampered-crate"]
+              && [FeaturedCredits.upstreamName.lowercased(), "adler2", "tampered-crate"].allSatisfy { name in loaded.filtered(name).contains { $0.name == name } }
+              && service.first { $0.name == FeaturedCredits.upstreamName.lowercased() }?.license == "No package-level licence declared"
               && loaded.unresolved.count == 1,
               "REQ-117: Every producer inventory package appears and is searchable, including ones without a declared licence")
         let tampered = service.first { $0.name == "tampered-crate" }
@@ -720,7 +732,7 @@ enum BrandUXChecks {
               && engineNames.contains("Apple D3DMetal (Game Porting Toolkit)")
               && loaded.components.first { $0.name == "Calimocho" }?.version
                 == EngineDisplayName.releaseVersion(CalimochoRelease.engineID)?.version
-              && projects == ["Ode", "Calimocho", "Wine, with CodeWeavers' Wine patches", "vkd3d", "MoltenVK"]
+              && projects == [FeaturedCredits.upstream.name, "Calimocho", "Wine, with CodeWeavers' Wine patches", "vkd3d", "MoltenVK"]
               && KeyOpenSourceProjects.separate(shipping: loaded.markers)?.license.contains("not open source") == true
               && !KeyOpenSourceProjects.catalog.contains { $0.project.name == "DXVK" },
               "REQ-117: Key projects list only what ships (\(projects)); D3DMetal is separate and proprietary; DXVK isn't claimed")
@@ -806,21 +818,21 @@ enum BrandUXChecks {
         }
     }
 
-    // MARK: Wine and Ode credits (REQ-122, COR-209)
+    // MARK: Wine and upstream credits (REQ-122, COR-209)
 
     static func credits(check: (Bool, String) -> Void) {
-        let wine = FeaturedCredits.wine, ode = FeaturedCredits.ode
-        check(FeaturedCredits.sectionTitle == "Built on Wine and Ode"
+        let wine = FeaturedCredits.wine, upstream = FeaturedCredits.upstream
+        check(FeaturedCredits.sectionTitle == "Built on Wine and \(FeaturedCredits.upstream.name)"
               && wine.url.absoluteString == "https://www.winehq.org" && wine.organisation == "WineHQ"
               && wine.license == "LGPL-2.1-or-later" && wine.role == "Runs Windows games on your Mac"
               && wine.thanks.contains("Wine authors") && wine.thanks.contains("CodeWeavers")
-              && xodus.url.absoluteString == "https://github.com/xodus-gaming/xodus" && xodus.license == "GPL-3.0"
-              && ode.role.contains("Xbox library and install engine") && ode.thanks.contains("Ode contributors"),
-              "REQ-122: Wine (WineHQ, LGPL-2.1-or-later) and Xodus (xodus-gaming, GPL-3.0) each have a role, a thank-you and a working link")
+              && upstream.url.absoluteString == "https://github.com/xodus-gaming/xodus" && upstream.license == "GPL-3.0"
+              && upstream.role.contains("Xbox library and install engine") && upstream.thanks.contains("\(FeaturedCredits.upstream.name) contributors"),
+              "REQ-122: Wine (WineHQ, LGPL-2.1-or-later) and the upstream project (xodus-gaming, GPL-3.0) each have a role, a thank-you and a working link")
         let about = (AppBrandPresentation.aboutPanelOptions()[.credits] as? NSAttributedString)?.string ?? ""
         check(about.components(separatedBy: "\n").first == FeaturedCredits.aboutLine
-              && FeaturedCredits.aboutLine.contains("Wine") && FeaturedCredits.aboutLine.contains("Ode"),
-              "REQ-122: About X Ode credits Wine and Ode in one line above the copyright")
+              && FeaturedCredits.aboutLine.contains("Wine") && FeaturedCredits.aboutLine.contains(FeaturedCredits.upstream.name),
+              "REQ-122: About X Ode credits Wine and the upstream project in one line above the copyright")
         let packaged = AppVersion(info: ["CFBundleShortVersionString": "0.2.0", "CFBundleVersion": "412",
                                          "XodeReleaseChannel": "Beta"])
         for scheme in [ColorScheme.light, .dark] {
@@ -828,21 +840,21 @@ enum BrandUXChecks {
             let aboutLabels = render(AboutPanelCreditSnapshot(version: packaged),
                                      size: CGSize(width: 340, height: 220), scheme: scheme,
                                      name: "req122-about-panel-credits-\(suffix)").joined(separator: " ")
-            check(aboutLabels.contains("Wine") && aboutLabels.contains("Ode"),
+            check(aboutLabels.contains("Wine") && aboutLabels.contains(FeaturedCredits.upstream.name),
                   "REQ-122 About panel credit snapshot (\(suffix)): \(aboutLabels)")
         }
         let line = WelcomeCopy.technology
-        check(line.hasPrefix("X Ode runs Windows games with Wine") && line.contains("Ode")
+        check(line.hasPrefix("X Ode runs Windows games with Wine") && line.contains(FeaturedCredits.upstream.name)
               && "\(WelcomeCopy.acknowledgments) \(WelcomeCopy.credits)".contains("X Ode menu") && line.count <= 70
               && "\(WelcomeCopy.acknowledgments) \(WelcomeCopy.credits)".count <= 70
-              && !FeaturedCredits.ode.role.lowercased().contains("backend is built on")
-              && FeaturedCredits.ode.role.components(separatedBy: "backend").count == 2,
-              "COR-209: The sign-in window names Wine first, then Ode, and says where credits and licences are, in two short lines")
+              && !FeaturedCredits.upstream.role.lowercased().contains("backend is built on")
+              && FeaturedCredits.upstream.role.components(separatedBy: "backend").count == 2,
+              "COR-209: The sign-in window names Wine first, then the upstream project, and says where credits and licences are, in two short lines")
         let readme = (try? String(contentsOfFile: "README.md", encoding: .utf8)) ?? ""
         check(readme.contains(FeaturedCredits.readmeLine)
               && readme.contains(FeaturedCredits.readmeExternalProvidersLine)
               && readme.contains(FeaturedCredits.helpMenu),
-              "REQ-122: README credits match the shared Wine, Ode and external-provider copy (fails if README.md is missing)")
+              "REQ-122: README credits match the shared Wine, upstream and external-provider copy (fails if README.md is missing)")
         let providers = FeaturedCredits.externalProviders
         check(providers.map(\.name) == ["Highball", "CrossOver"]
               && providers[0].url.absoluteString == "https://github.com/gauthierpiarrette/highball"
@@ -885,9 +897,9 @@ enum BrandUXChecks {
                                 size: CGSize(width: 860, height: 1100), scheme: scheme,
                                 name: "req122-acknowledgments-\(suffix)").joined(separator: " ")
             check(labels.contains(FeaturedCredits.sectionTitle) && labels.contains("winehq.org")
-                  // OCR can misread the small dark-mode link ("ode-aaming"); the exact URL is asserted above.
-                  && labels.contains("github.com/ode-") && labels.contains("All components and licences"),
-                  "REQ-122 render (\(suffix)): Built on Wine and Ode leads Acknowledgments with both links, offline and signed out: \(labels)")
+                  // OCR can misread the small dark-mode link's last word; the exact URL is asserted above.
+                  && labels.contains(String(FeaturedCredits.upstream.linkText.prefix(17))) && labels.contains("All components and licences"),
+                  "REQ-122 render (\(suffix)): Built on Wine and the upstream project leads Acknowledgments with both links, offline and signed out: \(labels)")
         }
     }
 

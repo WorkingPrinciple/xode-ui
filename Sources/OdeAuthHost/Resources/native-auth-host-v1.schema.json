@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:xodus:private-native-auth-host:1",
+  "$id": "urn:ode:private-native-auth-host:1",
   "title": "Private native Swift authentication host, version 1",
   "description": "Anonymous inherited FD only. Four-byte big-endian byte count plus one UTF-8 JSON object, 1..262144 total JSON bytes. Not a management protocol frame.",
   "oneOf": [

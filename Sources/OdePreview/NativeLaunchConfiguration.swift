@@ -895,8 +895,7 @@ struct NativeLaunchConfiguration {
         guard let selection = admittedSelection else { return nil }
         return try await Task.detached {
             try GameScriptFiles.checkPath(prefix, allowMissing: true)
-            let marker = prefix.deletingLastPathComponent()
-                .appendingPathComponent(".\(prefix.lastPathComponent).ode-engine-owner.json")
+            let marker = CalimochoPrefixContinuity.readableMarker(for: prefix)
             try GameScriptFiles.checkPath(marker, allowMissing: true)
             if FileManager.default.fileExists(atPath: marker.path) {
                 let bytes = try InstalledGameFiles.readRegular(marker, maximumBytes: 4_096)

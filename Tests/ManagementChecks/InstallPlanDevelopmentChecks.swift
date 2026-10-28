@@ -6,9 +6,9 @@ import OdeManagement
 extension Checks {
     func installPlanDevelopmentChecks() throws {
         for (name, expectedHash, expectedBytes) in [
-            ("install-plan-development.schema", "dbd7bada96bebb09ff17bbecca622e613bb94d661766f08c2e5bd61d235cddcd", 117855),
-            ("install-plan-development-positive", "06b16cea2534450acff719e590c4a155102346254cb0b4e5f4a140c2d50df7bb", 57372),
-            ("install-plan-development-negative", "48d9dac4f11157262ac70a7867d4900a86d88c9344f4d14e671a5f266c8bd37e", 124962)
+            ("install-plan-development.schema", "06afc66d0a2e46cc68b4d4fe93d4b50ecaf24dfa791aed83f97904c03e9d5a6d", 117847),
+            ("install-plan-development-positive", "8784b094a37c1a5171d7e15335d6158563c4dd97e1b13022ea0903189039c498", 57368),
+            ("install-plan-development-negative", "d5aa70a80b0e047bda8f3ad29f0aa51e133bac65d2209709360359250a8864b1", 124954)
         ] {
             guard let url = Bundle.module.url(forResource: name, withExtension: "json", subdirectory: "Fixtures") else {
                 throw ManagementError.invalidPayload

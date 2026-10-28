@@ -512,7 +512,7 @@ enum NativeUIChecks {
             }
         }
         check(AppLegalCopy.license.contains("GPL-3.0-only")
-              && AppLegalCopy.acknowledgment.contains("Ode")
+              && AppLegalCopy.acknowledgment.contains(FeaturedCredits.upstream.name)
               && AppLegalCopy.source.absoluteString == "https://github.com/WorkingPrinciple/xode-ui",
               "Legal destinations retain the app's exact license and existing upstream attribution without an invented organization")
         for appearance in [NSAppearance.Name.aqua, .darkAqua] {

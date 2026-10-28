@@ -3,6 +3,7 @@
 set -eu
 cd "$(dirname "$0")/.."
 python3 tools/sync_contract.py
+python3 tools/check_legacy_name.py
 python3 tools/check_contract_sync.py
 python3 tools/sync_runtime_provider_contract.py --check
 sh -n tools/build_app.sh

@@ -581,7 +581,7 @@ final class InstalledGamesController: ObservableObject {
             let volume = URL(fileURLWithPath: path, isDirectory: true).standardizedFileURL
             guard volume.path == path,
                   (path.hasPrefix(mountDirectory + "/") || path.hasPrefix("/Volumes/")),
-                  ["Xode", "Ode"].contains(volume.lastPathComponent) else { continue }
+                  GameInstallationDiscovery.libraryFolders.contains(volume.lastPathComponent) else { continue }
             roots.insert(path)
         }
         return roots.sorted().map { URL(fileURLWithPath: $0, isDirectory: true) }
@@ -696,8 +696,7 @@ final class InstalledGamesController: ObservableObject {
     }
 
     nonisolated static func sessionLog(runID: String, directory: URL) -> URL? {
-        guard runID.range(of: #"^ode-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}$"#,
-                          options: .regularExpression) == runID.startIndex..<runID.endIndex else { return nil }
+        guard GameScriptPaths.validRunID(runID) else { return nil }
         return directory.appendingPathComponent(runID + ".stderr.log")
     }
 

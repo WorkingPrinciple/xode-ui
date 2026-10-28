@@ -19,6 +19,8 @@ from shipping_pair import (CARGO_LOCK_SHA256, CLI_BYTES, CLI_SHA256, PRODUCER,
                            SOURCE_ARCHIVE_SHA256, WINDOWS_HELPER_BYTES,
                            WINDOWS_HELPER_SHA256, hex_value, owned_bytes, positive, require,
                            unique_object, validate_producer_inventory)
+from legacy_compatibility import CRATE_CLI, CRATE_CORE, CRATE_MANAGEMENT, CRATE_SERVICE
+from shipping_pair import require_renamed_producer
 from signing_identity import (IDENTIFIERS, verify_developer_id_bundle,
                               verify_developer_id_component)
 
@@ -63,8 +65,7 @@ Private-tester package only. Do not upload or redistribute publicly. The exact
 producer source is inside ZIP packages and paired with DMG packages as
 PRIVATE-TESTER-SOURCE.tar.
 
-The six local workspace crates (msixvc, msixvc-common, ode, ode-cli,
-ode-management, and ode-service) are governed by the GNU General Public License version 3, as provided in the producer repository's root LICENSE. No version-grant statement appears in that LICENSE or the producer README. The corresponding source archive includes that LICENSE.
+The six local workspace crates (@WORKSPACE_CRATES@) are governed by the GNU General Public License version 3, as provided in the producer repository's root LICENSE. No version-grant statement appears in that LICENSE or the producer README. The corresponding source archive includes that LICENSE.
 
 eappx is a separate external MIT-licensed dependency; its upstream README
 credits WalkingCat and dalion619.
@@ -74,7 +75,8 @@ On a Mac without that exact tested engine installed, X Ode reports that the engi
 is missing and does not substitute another engine.
 
 In-game voice chat and microphone input aren't supported in this beta.
-"""
+""".replace("@WORKSPACE_CRATES@", "msixvc, msixvc-common, {}, {},\n{}, and {}".format(
+    CRATE_CORE, CRATE_CLI, CRATE_MANAGEMENT, CRATE_SERVICE))
 PUBLIC_RELEASE_NOTES = """## X Ode 0.2.0 (Beta)
 
 X Ode lets you browse, install and play your Xbox PC games on a Mac. It's free
@@ -483,6 +485,7 @@ def identify_file(path):
 
 
 def main():
+    require_renamed_producer()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--app", type=Path, required=True)
     parser.add_argument("--source", type=Path, required=True,

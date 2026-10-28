@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import AppKit
+import OdeLegacyCompatibility
 import Combine
 import Foundation
 import OdeManagement
@@ -1383,9 +1384,9 @@ final class GameOperationsController: ObservableObject {
         case unsafe(String)
     }
 
-    nonisolated static let saveMarkers: Set<String> = ["saves", "save", "saved", "savegames", "savegame", "saved games",
+    nonisolated static let saveMarkers: Set<String> = Set(["saves", "save", "saved", "savegames", "savegame", "saved games",
                                            "savedgames", "save games", "savedata", "userdata", "profiles",
-                                           "odeprivatelocalsaves", "wgs", "connectedstorage"]
+                                           "wgs", "connectedstorage"]).union(LegacyCompatibility.privateSaveFolders)
     nonisolated static let prefixMarkers: Set<String> = ["drive_c", "dosdevices", "pfx", "prefix", "prefixes", "wineprefix",
                                              "system.reg", "user.reg", "userdef.reg"]
     nonisolated static let uninstallUnsafeMessage = "This folder may hold saves, a Wine prefix or files X Ode can't identify, so it won't be deleted. Use Remove from Library (Keep Files) instead."

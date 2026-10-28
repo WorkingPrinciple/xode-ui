@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
+import OdeLegacyCompatibility
 import Darwin
 import Foundation
 import OdeManagement
@@ -58,7 +59,9 @@ struct NativeInstallInventory: Decodable, Equatable, Sendable {
         for directory in directories { _ = try PackageInventoryRemoval.components(directory) }
         for record in packageRecords ?? [] {
             guard try PackageInventoryRemoval.components(record).count == 1,
-                  record.hasPrefix(".ode-streaming") else { throw GameScriptError.invalidReceipt }
+                  LegacyCompatibility.packageRecordPrefixes.contains(where: record.hasPrefix) else {
+                throw GameScriptError.invalidReceipt
+            }
         }
     }
 }

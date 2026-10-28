@@ -608,7 +608,7 @@ final class CalimochoReleaseInstallController: ObservableObject {
     static let lastUpdateCheckKey = "Ode.calimocho.lastUpdateCheck.v1"
     static let lastUpdateVersionKey = "Ode.calimocho.lastUpdateVersion.v1"
     static let pendingUpdateKey = "Ode.calimocho.pendingUpdate.v1"
-    static let pendingRemovalKey = "Ode.calimocho.pendingRemoval.v1"
+    static let pendingRemovalKey = "Ode.calimocho.pendingRemoval.v1" // gitleaks:allow (preference key name)
 
     init(service: CalimochoReleaseInstallService = CalimochoReleaseInstallService(),
          releaseCheck: CalimochoReleaseCheck = CalimochoReleaseCheck(),

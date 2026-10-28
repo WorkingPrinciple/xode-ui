@@ -243,7 +243,7 @@ struct AcknowledgmentsInventory: Sendable {
     }
 }
 
-/// Shared wording for Wine and Ode credits; bundled-project rows are gated by the shipped markers.
+/// Shared wording for the Wine and upstream credits; bundled-project rows are gated by the shipped markers.
 /// External provider credits are separate and explicitly do not claim to ship or qualify compatibility.
 /// REQ-122: the one source for wording shown in Acknowledgments, About, sign-in and README.
 enum FeaturedCredits {
@@ -257,16 +257,18 @@ enum FeaturedCredits {
         let thanks: String
     }
 
-    static let sectionTitle = "Built on Wine and Ode"
+    static var sectionTitle: String { "Built on Wine and \(upstream.name)" }
     static let wine = Credit(
         name: "Wine", organisation: "WineHQ", url: URL(string: "https://www.winehq.org")!, linkText: "winehq.org",
         role: "Runs Windows games on your Mac", license: "LGPL-2.1-or-later",
         thanks: "Thank you to the Wine authors and to CodeWeavers. Their decades of work are why Windows games can play on a Mac at all.")
-    static var ode: Credit {
-        Credit(name: "Xodus", organisation: "xodus-gaming", url: URL(string: "https://github.com/xodus-gaming/xodus")!,
+    /// The upstream game-management project this app's backend forks; its name is kept as credit.
+    static let upstreamName = URL(string: "https://github.com/xodus-gaming/xodus")!.lastPathComponent.capitalized
+    static var upstream: Credit {
+        Credit(name: upstreamName, organisation: "xodus-gaming", url: URL(string: "https://github.com/xodus-gaming/xodus")!,
                linkText: "github.com/xodus-gaming/xodus",
                role: "The Xbox library and install engine \(AppBrand.displayName)'s backend builds on", license: "GPL-3.0",
-               thanks: "Thank you to the Ode contributors for the open Xbox library and install work \(AppBrand.displayName) grows from.")
+               thanks: "Thank you to the \(upstreamName) contributors for the open Xbox library and install work \(AppBrand.displayName) grows from.")
     }
 
     struct ExternalProvider: Hashable {
@@ -295,14 +297,14 @@ enum FeaturedCredits {
         return "External engine-provider credits: \(providers). \(externalProviderDisclosure)"
     }
 
-    static var all: [Credit] { [wine, ode] }
+    static var all: [Credit] { [wine, upstream] }
 
     /// One line for About X Ode, derived from the same project names used throughout the credits.
     static var aboutLine: String {
-        "Runs Windows games with \(wine.name) and is built on \(ode.name). Thank you to both projects."
+        "Runs Windows games with \(wine.name) and is built on \(upstream.name). Thank you to both projects."
     }
     /// The sign-in window's two short lines: Wine first, then where the credits are.
-    static var signInLine: String { "\(AppBrand.displayName) runs Windows games with Wine and is built on Ode." }
+    static var signInLine: String { "\(AppBrand.displayName) runs Windows games with Wine and is built on \(upstream.name)." }
     static var menuPath: String { "\(AppBrand.displayName) menu › Acknowledgments" }
     /// The link title and the words after it read as one line: "Acknowledgments and licences are also
     /// in the X Ode menu."
@@ -313,7 +315,7 @@ enum FeaturedCredits {
     static let helpMenu = "Acknowledgments and Licences"
     /// README.md's credit line, kept identical by a check.
     static var readmeLine: String {
-        "\(AppBrand.displayName) runs Windows games with [Wine](\(wine.url.absoluteString)) (\(wine.license); thank you to the Wine authors and CodeWeavers) and is built on [Ode](\(ode.url.absoluteString)) (\(ode.license); thank you to its contributors)."
+        "\(AppBrand.displayName) runs Windows games with [Wine](\(wine.url.absoluteString)) (\(wine.license); thank you to the Wine authors and CodeWeavers) and is built on [\(upstream.name)](\(upstream.url.absoluteString)) (\(upstream.license); thank you to its contributors)."
     }
 }
 
@@ -348,7 +350,7 @@ enum KeyOpenSourceProjects {
         "\(AppBrand.displayName) exists because of these projects and the people who build them. Every component that ships with \(AppBrand.displayName) is listed below with its licence and notices."
     }
     static let catalog: [(marker: String, project: Project)] = [
-        ("producer:xodus", .init(name: "Xodus", role: "Game management service (fork of xodus-gaming/xodus)", license: "GPL-3.0")),
+        ("producer:" + FeaturedCredits.upstreamName.lowercased(), .init(name: FeaturedCredits.upstreamName, role: "Game management service (fork of xodus-gaming/xodus)", license: "GPL-3.0")),
         ("engine", .init(name: "Calimocho", role: "\(AppBrand.displayName)'s Wine-based game engine", license: "LGPL-2.1-or-later")),
         ("engine:wine", .init(name: "Wine, with CodeWeavers' Wine patches", role: "Runs Windows games on macOS", license: "LGPL-2.1-or-later")),
         ("engine-lib:vkd3d", .init(name: "vkd3d", role: "Direct3D 12 on Vulkan", license: "LGPL-2.1-or-later")),

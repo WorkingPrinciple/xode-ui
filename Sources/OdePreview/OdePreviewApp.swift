@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import AppKit
 import SwiftUI
+import OdeLegacyCompatibility
 import OdeCore
 import OdeManagement
 
@@ -181,12 +182,12 @@ struct OdePreviewApp: App {
                 selfPID: ProcessInfo.processInfo.processIdentifier) {
             ConcurrentAppGuard.refuse(peer: peer)
         }
-        // Two apps launched at the same moment can both miss each other in the process list; the shared
-        // lock admits exactly one of them.
-        if let bundleID = Bundle.main.bundleIdentifier, ConcurrentAppGuard.peers[bundleID] != nil,
-           !ConcurrentAppGuard.holdInstanceLock() {
-            ConcurrentAppGuard.refuse(peer: "Another X Ode app")
+        switch StartupGuards.evaluate(bundleID: Bundle.main.bundleIdentifier) {
+        case .proceed: break
+        case .dataMove(let message): DataMoveGuard.refuse(message)
+        case .anotherInstance: ConcurrentAppGuard.refuse(peer: "Another X Ode app")
         }
+        LegacyCompatibility.importLegacyPreferences()
         QualificationDiagnostics.importOrdinaryPreferences()
 #if ODE_SHIPPING
         if !CommandLine.arguments.dropFirst().isEmpty,
@@ -423,9 +424,53 @@ struct OdePreviewApp: App {
 
 /// REQ-138: the ordinary and Qualification apps share one game service, journal and registry, so only one
 /// may run at a time. The second one explains and quits before touching any state.
+/// The app keeps its data under "Ode to X". Starting before the one-time data move would write a second,
+/// empty set of data beside the user's real one, so the app explains and quits instead.
+/// The startup checks that can stop X Ode opening, in order. The data move comes first: the instance lock
+/// lives under the new State root and creating it before the move would itself split the user's data.
+enum StartupGuards {
+    enum Outcome: Equatable { case proceed, dataMove(String), anotherInstance }
+
+    static func evaluate(bundleID: String?, home: String = NSHomeDirectory(),
+                         holdLock: (URL) -> Bool = ConcurrentAppGuard.holdInstanceLock) -> Outcome {
+        guard let bundleID else { return .proceed }
+        if let message = DataMoveGuard.message(LegacyCompatibility.dataMoveState(home: home)) { return .dataMove(message) }
+        // Two apps launched at the same moment can both miss each other in the process list; the shared
+        // lock admits exactly one of them.
+        if ConcurrentAppGuard.peers[bundleID] != nil, !holdLock(ConcurrentAppGuard.instanceLockFile(home: home)) {
+            return .anotherInstance
+        }
+        return .proceed
+    }
+}
+
+enum DataMoveGuard {
+    /// Why X Ode can't open yet, or nil when the data move has finished.
+    static func message(_ state: LegacyCompatibility.DataMoveState) -> String? {
+        switch state {
+        case .ready: nil
+        case .notMoved: "Your games, sign-in and settings are still in the previous location. Quit, finish the data move, then open \(AppBrand.displayName) again. Nothing has been changed."
+        case .split: "Your games, sign-in and settings are in two places: the previous location and the new one. Quit, finish or roll back the data move so only one remains, then open \(AppBrand.displayName) again. Nothing has been changed."
+        }
+    }
+
+    @MainActor static func refuse(_ message: String) {
+        let alert = NSAlert()
+        alert.messageText = "\(AppBrand.displayName) can't open yet"
+        alert.informativeText = message
+        alert.addButton(withTitle: "Quit")
+        alert.runModal()
+        exit(0)
+    }
+}
+
 enum ConcurrentAppGuard {
-    static let peers = ["com.workingprinciple.xode.development": "X Ode",
-                        "com.workingprinciple.xode.qualification": "X Ode Qualification"]
+    static let current = ["com.workingprinciple.xode.development": "X Ode",
+                          "com.workingprinciple.xode.qualification": "X Ode Qualification"]
+    /// Current apps plus the same apps installed before the rename, which share the same games.
+    static let peers = current.reduce(into: current) { all, peer in
+        if let legacy = LegacyCompatibility.legacyBundleIdentifier(for: peer.key) { all[legacy] = peer.value }
+    }
 
     struct Running: Equatable { let bundleID: String; let pid: Int32 }
 
@@ -467,9 +512,8 @@ enum ConcurrentAppGuard {
     }
 
     /// REQ-138: one exclusive flock shared by the ordinary and Qualification apps, held for the process's life.
-    static var instanceLockFile: URL {
-        URL(fileURLWithPath: NSHomeDirectory())
-            .appendingPathComponent("Library/Application Support/Ode to X/State/app-instance.lock")
+    static func instanceLockFile(home: String = NSHomeDirectory()) -> URL {
+        URL(fileURLWithPath: home).appendingPathComponent("Library/Application Support/Ode to X/State/app-instance.lock")
     }
     nonisolated(unsafe) private static var heldInstanceLock: Int32 = -1
 
@@ -489,9 +533,9 @@ enum ConcurrentAppGuard {
         return .held(fd)
     }
 
-    static func holdInstanceLock() -> Bool {
+    static func holdInstanceLock(_ file: URL) -> Bool {
         guard heldInstanceLock < 0 else { return true }
-        switch acquireInstanceLock(instanceLockFile) {
+        switch acquireInstanceLock(file) {
         case .busy: return false
         case .held(let fd): heldInstanceLock = fd; return true
         case .unavailable: return true

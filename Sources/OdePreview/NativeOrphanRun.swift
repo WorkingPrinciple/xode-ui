@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import Darwin
+import OdeLegacyCompatibility
 import Foundation
 
 /// Detects a backend lifecycle run that outlived the app process that started it
@@ -22,7 +23,7 @@ enum NativeOrphanRun {
         let executable: String?
     }
 
-    /// The sibling lock the backend holds for the whole operation (`.<name>.ode-lifecycle.lock`).
+    /// The sibling lock the backend holds for the whole operation (`.<name>.ode-lifecycle.lock`; a pre-rename backend's lock name is also checked).
     static func lockURL(gameDirectory: URL) -> URL? {
         let name = gameDirectory.lastPathComponent
         guard !name.isEmpty, name != "/" else { return nil }
@@ -40,6 +41,10 @@ enum NativeOrphanRun {
 
     static func lockHeld(gameDirectory: URL) -> Bool {
         guard let url = lockURL(gameDirectory: gameDirectory) else { return false }
+        return held(url) || LegacyCompatibility.legacySidecar(for: url).map(held) == true
+    }
+
+    private static func held(_ url: URL) -> Bool {
         let descriptor = open(url.path, O_RDONLY | O_NOFOLLOW | O_CLOEXEC)
         guard descriptor >= 0 else { return false }
         defer { close(descriptor) }

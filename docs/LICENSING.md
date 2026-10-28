@@ -4,7 +4,7 @@ SPDX-License-Identifier: GPL-3.0-only
 
 The user explicitly selected **GNU General Public License version 3** for this public app. [LICENSE](../LICENSE) contains the verbatim GNU GPL v3 text, dated 29 June 2007. Original app source, tests, documentation, fixture data, original artwork and mockup/export tooling in this repository are provided under **GPL-3.0-only**, not GPL-3.0-or-later.
 
-The choice is user-directed and matches the reported GPL v3 license at the Ode fork root. A license template's illustrative "or later" wording does not itself change this app's explicit grant. Source files identify GPL-3.0-only; this document states the grant for original repository material, including generated SVG/PNG artifacts.
+The choice is user-directed and matches the reported GPL v3 license at the root of the upstream fork (xodus-gaming/xodus). A license template's illustrative "or later" wording does not itself change this app's explicit grant. Source files identify GPL-3.0-only; this document states the grant for original repository material, including generated SVG/PNG artifacts.
 
 The source repository does not bundle proprietary game packages, Microsoft/Apple artwork, paid design assets or fonts. Mockup/system typography uses fonts installed by the operating system. Built app candidates do include the separately built Ode CLI and Windows monitor; their exact source, dependency licences, notices and corresponding-source obligations must be reviewed independently of this repository's licence. A local signed candidate is not a cleared distribution.
 

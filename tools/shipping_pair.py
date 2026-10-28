@@ -9,6 +9,7 @@ from pathlib import Path
 import re
 import stat
 import sys
+from legacy_compatibility import CRATE_CLI, CRATE_CORE, CRATE_MANAGEMENT, LEGACY_SCHEMA_ID_PREFIX, PRODUCER_CLI
 
 PRODUCER = "399957962f35eee6189b8fbcef9697f47e951581"
 PRODUCER_TREE = "6d9088562be95b466c4a6df5b102c3f24a72048c"
@@ -21,18 +22,36 @@ CARGO_LOCK_SHA256 = "b03657f83cbf14dbf1f4b2cc70fa51ffe75e14934b816b4e21ae103f29a
 SOURCE_ARCHIVE_NAME = "xodus-cli-beta-39995796-source.tar"
 SOURCE_ARCHIVE_SHA256 = "23374465684a78bba2fb1c3e5264cfa21ee17d932612d0f4cec12a3c44e17663"
 SOURCE_ARCHIVE_BYTES = 10_188_800
-FEATURES = {"ode": [], "ode-cli": [], "ode-management": ["live"],
+FEATURES = {CRATE_CORE: [], CRATE_CLI: [], CRATE_MANAGEMENT: ["live"],
             "apple-native-keyring-store": ["keychain", "security-framework"]}
 PROFILE = {"opt_level": "3", "debuginfo": 0, "debug_assertions": False,
            "overflow_checks": False, "test": False}
 COMMAND = ["cargo", "build", "--release", "--offline", "--locked", "-q", "-p",
-           "ode-cli", "--bin", "ode-cli", "--target", "aarch64-apple-darwin",
+           CRATE_CLI, "--bin", PRODUCER_CLI, "--target", "aarch64-apple-darwin",
            "--no-default-features", "--message-format=json"]
 
 
 def require(condition, message):
     if not condition:
         raise ValueError(message)
+
+
+# REQ-150: this app uses Ode identities, so it pairs only with a reviewed producer built after the rename.
+# Set True only when the pins above name such a producer; until then every packaging path refuses.
+PRODUCER_RENAMED = False
+RENAMED_SCHEMA_ID = b'"urn:ode:management:1.0"'
+# Producers known to predate the rename. Setting the flag without moving the pins off these still refuses.
+PRE_RENAME_PRODUCERS = frozenset({"bcc11c98621cf9f90679e383f02ec4516df57ad5"})
+
+
+def require_renamed_producer(contract=None):
+    require(PRODUCER_RENAMED and PRODUCER not in PRE_RENAME_PRODUCERS,
+            "The pinned producer predates the Ode rename; pin a reviewed renamed producer "
+            "before packaging this app (REQ-150)")
+    if contract is not None:
+        require(LEGACY_SCHEMA_ID_PREFIX.encode() not in contract and RENAMED_SCHEMA_ID in contract,
+                "The producer contract still carries pre-rename schema IDs; this app pairs only with a "
+                "renamed producer (REQ-150)")
 
 
 def hex_value(value, length):

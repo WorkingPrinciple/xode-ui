@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:xodus:management:1.0",
-  "title": "Xodus management protocol 1.0 scoped backend",
+  "$id": "urn:ode:management:1.0",
+  "title": "Ode management protocol 1.0 scoped backend",
   "description": "Frozen strict envelope/evidence plus operation schemas. Unsupported operations only return typed errors. No credentials or arbitrary URLs in requests.",
   "oneOf": [
     {
@@ -2051,7 +2051,7 @@
           "$ref": "#/$defs/identifier"
         },
         "schema": {
-          "const": "urn:xodus:management:1.0"
+          "const": "urn:ode:management:1.0"
         },
         "catalogCorpus": {
           "type": "string",
@@ -3041,7 +3041,7 @@
       ],
       "properties": {
         "relativePath": {
-          "const": ".xodus-streaming.msixvc"
+          "const": ".ode-streaming.msixvc"
         },
         "bytes": {
           "type": "integer",

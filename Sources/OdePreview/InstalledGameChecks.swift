@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import AppKit
+import OdeLegacyCompatibility
 import Darwin
 import Foundation
 import ImageIO
@@ -400,7 +401,7 @@ enum InstalledGameChecks {
         let home = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
             .appendingPathComponent(".build/ExternalDiscovery-\(UUID().uuidString)")
         let volume = home.appendingPathComponent("Mounts/homelab")
-        let library = volume.appendingPathComponent("Ode")
+        let library = volume.appendingPathComponent(LegacyCompatibility.legacyGameLibraryFolders[0])
         let folder = library.appendingPathComponent("ForzaHorizon6-Xbox")
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         defer {
@@ -415,9 +416,10 @@ enum InstalledGameChecks {
             [volume.path, volume.path, "/", home.appendingPathComponent("Mounts/deep/nested").path],
             home: home.path)
         check(roots.map(\.path) == [volume.appendingPathComponent("Xode").path, library.path],
-              "COR180: Mounted discovery checks new Xode then legacy Ode, deduplicated/depth-one without guessed absent mounts")
+              "COR180: Mounted discovery checks new Xode then the legacy library folder, deduplicated/depth-one without guessed absent mounts")
         check(GameInstallationDiscovery.defaultLibraryRoots(home: home.path).map(\.path)
-                == [home.appendingPathComponent("Games/Xode").path, home.appendingPathComponent("Games/Xode").path],
+                == [home.appendingPathComponent("Games/Xode").path,
+                    home.appendingPathComponent("Games/" + LegacyCompatibility.legacyGameLibraryFolders[0]).path],
               "COR180: Default local discovery retains the legacy root without moving or recreating it")
         check(InstalledGamesController.retainingMountedCandidates([folder.path: "9NR1R1XWLCNB"],
               volumes: [], home: home.path).isEmpty,
@@ -1241,7 +1243,7 @@ enum InstalledGameChecks {
               "Actual bash invocation passes the safe runID, the routed engine arg and ODE_ENGINE, not shell interpolation")
         check(InstalledGamesController.launchEnvironment(["HOME": "/home", "USER": "fixture", "LANG": "en",
                     "PATH": "/wrong", "TOKEN": "secret"], engine: .crossover).keys.sorted()
-                == ["HOME", "LANG", "PATH", "USER", "ODE_ENGINE"],
+                == ["HOME", "LANG", "ODE_ENGINE", "PATH", "USER"],
               "Launch environment excludes unrelated secrets, overrides PATH and adds only the routed engine")
         let runtime = URL(fileURLWithPath: "/approved app/OdePython/bin/python3")
         let runtimeEnvironment = InstalledGamesController.launchEnvironment(

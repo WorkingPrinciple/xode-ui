@@ -69,8 +69,8 @@ Do not use `-03` descriptor/manifest pins or the earlier backend
 The package builder accepts only CFBundleVersion values above the installed
 0.2.0 build 2, so the beta installs as an update rather than a downgrade.
 
-The producer's `eappx`, `msixvc`, `msixvc-common`, `ode`, `ode-cli`,
-`ode-management`, and `ode-service` workspace crates are licensed GPL-3.0
+The producer's `eappx`, `msixvc` and `msixvc-common` crates, the core, CLI and service crates inherited
+from the upstream project, and the management crate are licensed GPL-3.0
 via the producer repository's root `LICENSE`; the corresponding source archive
 includes that file.
 

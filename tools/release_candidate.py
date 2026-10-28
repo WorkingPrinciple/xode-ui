@@ -28,6 +28,8 @@ from package_beta import (PRODUCER_NOTICES_EVIDENCE_SHA256, PRODUCER_NOTICES_SHA
                           PRODUCER_SOURCE_TREE, PUBLIC_RELEASE_NOTES,
                           RELEASE_INSTALL_NOTE, create_installer_dmg,
                           validate_dmg_background)
+from legacy_compatibility import PRODUCER_CLI, PRODUCER_WINDOW_HELPER
+from shipping_pair import require_renamed_producer
 
 PRODUCER_SOURCE_ARCHIVE_NAME = "xodus-cli-beta-39995796-source.tar"
 
@@ -63,7 +65,7 @@ def frozen_payloads(candidate, approved_unnotarized_cli=None):
             and manifest["helper_sha256"] == HELPER_SHA256
             and manifest["helper_embedded_bytes_verified"] is True,
             "Frozen payload receipts do not agree")
-    cli, helper = candidate / "ode-cli", candidate / "ode-window-monitor.exe"
+    cli, helper = candidate / PRODUCER_CLI, candidate / PRODUCER_WINDOW_HELPER
     cli_identity, cli_bytes = owned_bytes(cli, CLI_SHA256, CLI_SIZE, bounded=512 * 1024 * 1024)
     helper_identity, helper_bytes = owned_bytes(helper, HELPER_SHA256, HELPER_SIZE,
                                                 bounded=16 * 1024 * 1024)
@@ -462,6 +464,7 @@ def build(args):
 
 
 def main():
+    require_renamed_producer()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--app-commit")
     parser.add_argument("--installed-app", type=Path, help="Read-only icon and prior receipt source")

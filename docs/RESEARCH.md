@@ -12,7 +12,7 @@ Recorded 2026-10-03. This foundation consumes **supplied prior research**, not f
 | User explicitly rejected v0.1 flat mockups and requested modern rounded floating transparent menu, immersive images and closer Apple Games composition | User-directed correction | v0.2 uses actual macOS 26+ Glass, full-bleed feature/detail art, separate circular profile, compact Library entries alongside featured/Continue Playing. Earlier imports are superseded, not approvals. |
 | Apple published Landmarks sample demonstrates Mac Liquid Glass and edge-to-edge imagery; SwiftUI/AppKit Glass APIs available on macOS 26+ | Supplied official-documentation review; actual SDK27 app build verification | No UIKit rewrite necessary. No Apple Games source/asset copied. Static SVG/native NSView exports cannot prove compositor refraction. |
 | Ode CLI provides auth, package download/extract/stream, Unix run and product-ID metadata lookup | Supplied prior private source review | Useful foundation, not proof of complete search, owned enumeration, stable machine protocol or safe install lifecycle. No private source included. |
-| Backend Keychain abstraction exists in `crates/ode/src/tokens/backend/keychain.rs`; `secrets.rs` selects `apple_native_keyring_store::keychain` normally on macOS; optional `key-chain-file` persists `.ode-keyring.ron` | Parent's supplied direct current source verification | Reuse one existing credential owner; forbid file-backed feature in shipping app. No private implementation copied. |
+| Backend Keychain abstraction exists in the inherited core crate's `src/tokens/backend/keychain.rs`; `secrets.rs` selects `apple_native_keyring_store::keychain` normally on macOS; optional `key-chain-file` persists `.ode-keyring.ron` | Parent's supplied direct current source verification | Reuse one existing credential owner; forbid file-backed feature in shipping app. No private implementation copied. |
 | `displaycatalog.rs` offers only `find_products_by_id`, GET `displaycatalog.mp.microsoft.com/v7.0/products/{product}?market=...&languages=...`, propagating HTTP errors | Parent's supplied direct current source verification | This function establishes ID lookup, not full-text search. The separate Store Edge search evidence is recorded below. |
 | `start_new_session` uses Xbox Live flow/scopes and `get_xsts_token` accepts a relying party | Parent's supplied direct current source verification | Existing machinery does not prove inventory authorization; record audience separately per capability. |
 | Interactive package prompts; inner streaming failure may yield outer success; login may report success without tokens | Supplied prior source review | Adapter requires structured results/credential proof/terminal registry evidence; never trust exit alone. |
@@ -56,7 +56,7 @@ nonsense is not reliable proof of an empty upstream source. No guessed-term
 loop or filtering-away-cards is used.
 
 Original synthetic marker layout reference:
-[public producer smoke helper at e3129](https://github.com/dragoshont/ode-macos/blob/e3129cee422305657b945d35daf2f780ffe98e2b/tools/smoke_management.py).
+[public producer smoke helper at e3129](https://github.com/WorkingPrinciple/xodus-macos/blob/e3129cee422305657b945d35daf2f780ffe98e2b/tools/smoke_management.py).
 The client creates only its own sanitized 4096-byte test header and checks
 unchanged bytes; it does not copy a real container or invoke a legacy parser.
 

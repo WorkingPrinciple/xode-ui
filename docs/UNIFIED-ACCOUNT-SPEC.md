@@ -343,9 +343,9 @@ the approved sealed shipping input.
 ## Decision and repository boundary
 
 Changes are required in **both repositories**. Ode to X is the native product in
-`ode-macos-app`; its forked Ode Rust producer is the authentication/runtime
+`xode-ui`; its forked Rust producer is the authentication/runtime
 implementation. Authentication unification belongs primarily in that fork, not
-in Swift views, and does not require changing upstream Ode itself.
+in Swift views, and does not require changing the upstream project itself.
 
 The proposed smallest durable architecture extends the existing management
 credential owner and authenticated-read pattern through isolated Ode to X
@@ -399,10 +399,10 @@ part of this work.
 
 | Owner | Required changes | Existing seams |
 | --- | --- | --- |
-| Forked Ode, `crates/ode` | Account-session authority, audience-specific authorization, refresh, account/generation fencing and service credential access | `tokens/manager.rs`, `tokens/backend/keychain.rs`, `auth.rs`, `api/xbox` |
-| Forked Ode, `crates/ode-management` | Negotiated account/capability snapshot, operation authorization, explicit recovery and coordinated logout contract | `adapter.rs`, `wire.rs`, `auth_verify.rs` |
-| Forked Ode, `crates/ode-cli` | Library/profile/achievement adapters using that authority; retain existing native issuance and lifecycle controls | `management_auth.rs`, `provider_credentials.rs`, `recent_library.rs`, `commands/login.rs` |
-| Forked Ode runtime/service and private-script producer | Consume scoped authorization for the selected account; report unavailable/expired/transport failures distinctly; retire independent interactive login in the paired route | Current `ode-service` IPC and `private-ode-manage.py`; exact producer module for installed social helper remains to be located |
+| Backend, inherited core crate | Account-session authority, audience-specific authorization, refresh, account/generation fencing and service credential access | `tokens/manager.rs`, `tokens/backend/keychain.rs`, `auth.rs`, `api/xbox` |
+| Backend, management crate | Negotiated account/capability snapshot, operation authorization, explicit recovery and coordinated logout contract | `adapter.rs`, `wire.rs`, `auth_verify.rs` |
+| Backend, inherited CLI crate | Library/profile/achievement adapters using that authority; retain existing native issuance and lifecycle controls | `management_auth.rs`, `provider_credentials.rs`, `recent_library.rs`, `commands/login.rs` |
+| Backend runtime/service and private-script producer | Consume scoped authorization for the selected account; report unavailable/expired/transport failures distinctly; retire independent interactive login in the paired route | Current `ode-service` IPC and `private-ode-manage.py`; exact producer module for installed social helper remains to be located |
 | Ode to X, `Sources/OdeManagement` and contracts | Typed consumer of the new negotiated contract, no credentials | `WireModels.swift`, `ManagementClient.swift`, `ContractValidator.swift`, canonical schema/resources |
 | Ode to X, `Sources/OdePreview` | One account coordinator, capability-based access, honest partial states, accessible layout and branding | `AppState`, `LiveSession`, `LiveRootView`, `PCGamesController`, `GameOperationsController`, `XboxCompanionController`, Account/Welcome views |
 | Ode to X packaging | New exact producer pairing, component identities and admission evidence | `tools/build_app.sh`, shipping pins, helper/broker manifests, shipping documentation |

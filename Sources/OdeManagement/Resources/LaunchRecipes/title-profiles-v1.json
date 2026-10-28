@@ -226,8 +226,8 @@
       "timeoutSeconds": 600,
       "noAutoDismiss": true,
       "environment": {
-        "WINEDEBUG": "-all,warn+gdkc,warn+ode_user,err+all",
-        "ODE_WINE_DEBUG": "-all,warn+gdkc,warn+ode_user,err+all"
+        "WINEDEBUG": "-all,warn+gdkc,warn+ode_user,warn+xodus_user,err+all",
+        "ODE_WINE_DEBUG": "-all,warn+gdkc,warn+ode_user,warn+xodus_user,err+all"
       },
       "runtime": {
         "primaryPath": "${HOME}/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll",

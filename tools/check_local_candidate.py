@@ -12,18 +12,19 @@ from unittest.mock import patch
 from build_local_candidate import (build_evidence, copy_engine_notice, copy_release_notices, source_build_number,
                                    source_identity, validate_host)
 from shipping_pair import FEATURES, PROFILE, PRODUCER, PRODUCER_TREE, swift_pins
+from legacy_compatibility import CRATE_CLI, PRODUCER_CLI
 
 
 class LocalCandidateChecks(unittest.TestCase):
     def test_actual_build_features_and_profile(self):
         frames = [{"reason": "compiler-artifact", "target": {"name": name},
                    "profile": PROFILE, "features": features,
-                   **({"executable": "/neutral/target/ode-cli"} if name == "ode-cli" else {})}
+                   **({"executable": "/neutral/target/" + PRODUCER_CLI} if name == CRATE_CLI else {})}
                   for name, features in FEATURES.items()]
         def encode(items):
             return b"neutral Cargo diagnostic\n" + b"\n".join(json.dumps(item).encode() for item in items)
         artifact, features = build_evidence(encode(frames))
-        self.assertEqual(artifact["executable"], "/neutral/target/ode-cli")
+        self.assertEqual(artifact["executable"], "/neutral/target/" + PRODUCER_CLI)
         self.assertEqual(features, FEATURES)
         changed = copy.deepcopy(frames)
         changed[0]["features"].append("plaintext")

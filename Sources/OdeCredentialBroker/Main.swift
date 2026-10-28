@@ -4,6 +4,7 @@ import Foundation
 import Security
 import LocalAuthentication
 import OdeCredentials
+import OdeLegacyCompatibility
 
 private struct CredentialStore {
     private struct Entry {
@@ -34,17 +35,40 @@ private struct CredentialStore {
         #endif
     }
 
-    private func identity(_ account: String) -> [String: Any] {
+    /// The pre-rename service, until its item has been copied forward or the user signed out.
+    private var renamedService: String? {
+        #if ODE_CREDENTIAL_SYNTHETIC
+        return nil
+        #else
+        return UserDefaults.standard.bool(forKey: LegacyCompatibility.keychainCopyForwardMarker(service: service))
+            ? nil : LegacyCompatibility.legacyKeychainService(for: service)
+        #endif
+    }
+
+    private func retireRenamedService() {
+        UserDefaults.standard.set(true, forKey: LegacyCompatibility.keychainCopyForwardMarker(service: service))
+    }
+
+    /// The pre-rename item to copy forward, newest account first. Never changed or deleted here.
+    private func renamedSource() throws -> (service: String, account: String)? {
+        guard let renamedService else { return nil }
+        for account in [owned, legacy] {
+            if try presence(account, service: renamedService) { return (renamedService, account) }
+        }
+        return nil
+    }
+
+    private func identity(_ account: String, service: String? = nil) -> [String: Any] {
         var value: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service, kSecAttrAccount as String: account,
+            kSecAttrService as String: service ?? self.service, kSecAttrAccount as String: account,
             kSecAttrSynchronizable as String: false]
         if let keychain { value[kSecMatchSearchList as String] = [keychain] }
         return value
     }
 
-    private func presence(_ account: String) throws -> Bool {
-        var query = identity(account)
+    private func presence(_ account: String, service: String? = nil) throws -> Bool {
+        var query = identity(account, service: service)
         query[kSecReturnAttributes as String] = true
         query[kSecUseAuthenticationUI as String] = kSecUseAuthenticationUIFail
         query[kSecMatchLimit as String] = kSecMatchLimitOne
@@ -55,8 +79,8 @@ private struct CredentialStore {
         return true
     }
 
-    private func read(_ account: String, approval: Bool = false) throws -> Entry? {
-        var query = identity(account)
+    private func read(_ account: String, approval: Bool = false, service: String? = nil) throws -> Entry? {
+        var query = identity(account, service: service)
         query[kSecReturnData as String] = true
         query[kSecReturnRef as String] = true
         query[kSecMatchLimit as String] = kSecMatchLimitOne
@@ -118,12 +142,13 @@ private struct CredentialStore {
         case .read:
             let hasOwned = try presence(owned)
             let hasLegacy = try presence(legacy)
+            let hasRenamed = try !hasOwned && renamedSource() != nil
             if request.presenceOnly {
-                return CredentialResponse(id: request.id, present: hasOwned || hasLegacy,
-                                          migrationRequired: !hasOwned && hasLegacy,
+                return CredentialResponse(id: request.id, present: hasOwned || hasLegacy || hasRenamed,
+                                          migrationRequired: !hasOwned && (hasLegacy || hasRenamed),
                                           legacyRetained: hasOwned && hasLegacy)
             }
-            if !hasOwned && hasLegacy { return CredentialResponse(id: request.id, present: true, migrationRequired: true) }
+            if !hasOwned && (hasLegacy || hasRenamed) { return CredentialResponse(id: request.id, present: true, migrationRequired: true) }
             let entry = try read(owned)
             return CredentialResponse(id: request.id, present: entry != nil,
                                       legacyRetained: entry != nil && hasLegacy,
@@ -131,7 +156,7 @@ private struct CredentialStore {
         case .write:
             guard let value = request.value else { throw CredentialFailure.invalid }
             let hasLegacy = try presence(legacy)
-            if try !presence(owned) && hasLegacy {
+            if try !presence(owned) && (hasLegacy || renamedSource() != nil) {
                 return CredentialResponse(id: request.id, present: true, migrationRequired: true)
             }
             #if ODE_CREDENTIAL_SYNTHETIC
@@ -145,12 +170,22 @@ private struct CredentialStore {
         case .delete:
             try delete(legacy)
             try delete(owned)
+            retireRenamedService()
             return CredentialResponse(id: request.id)
         case .migrate:
             // Keep the old item until the broker-owned copy is durably readable without UI.
             if try presence(owned) {
                 _ = try read(owned, approval: true)
                 return CredentialResponse(id: request.id, present: true, legacyRetained: try presence(legacy))
+            }
+            if let source = try renamedSource() {
+                // Copy forward from the pre-rename service; the old item stays for rollback (COR-310).
+                guard let existing = try read(source.account, approval: true, service: source.service) else {
+                    return CredentialResponse(id: request.id, present: try presence(owned))
+                }
+                try save(existing.data, account: owned)
+                retireRenamedService()
+                return CredentialResponse(id: request.id, present: true)
             }
             if let existing = try read(legacy, approval: true) {
                 try save(existing.data, account: owned)

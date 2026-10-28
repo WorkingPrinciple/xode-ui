@@ -17,6 +17,7 @@ from shipping_pair import (CARGO_LOCK_SHA256, CLI_BYTES, CLI_SHA256, COMMAND, FE
                            WINDOWS_HELPER_SHA256, require,
                            main as generate_pair, swift_pins, swift_producer_pins,
                            validate_producer_inventory, verify_input)
+from legacy_compatibility import CRATE_CORE
 from verify_shipping_package import main as verify_package
 from launch_association_capsule import BROKER_SHA256, stage_capsule, verify_capsule
 from python_runtime import approved_pin, inventory
@@ -207,7 +208,7 @@ with tempfile.TemporaryDirectory(prefix="ode-pair-portable-") as temporary:
         bad.append(item)
     for key in ("nativeResolvedFeatures", "postBuildNativeResolvedFeatures"):
         item = copy.deepcopy(base)
-        item[key]["ode"].append("plaintext")
+        item[key][CRATE_CORE].append("plaintext")
         bad.append(item)
     item = copy.deepcopy(base)
     item["buildProfile"]["opt_level"] = "0"
@@ -514,4 +515,49 @@ with tempfile.TemporaryDirectory(prefix="ode-pair-portable-") as temporary:
         raise AssertionError("Unstaged interpreter tree accepted")
     except ValueError:
         count += 1
+# REQ-150: the renamed app never packages with a producer built before the rename.
+import importlib
+import subprocess
+import shipping_pair
+from legacy_compatibility import LEGACY_SCHEMA_ID_PREFIX
+try:
+    shipping_pair.require_renamed_producer()
+    raise AssertionError("Pre-rename producer pin accepted for packaging")
+except ValueError:
+    count += 1
+renamed = shipping_pair.PRODUCER_RENAMED
+shipping_pair.PRODUCER_RENAMED = True
+try:
+    try:
+        shipping_pair.require_renamed_producer(b'{"$id": "' + LEGACY_SCHEMA_ID_PREFIX.encode() + b'management:1.0"}')
+        raise AssertionError("Pre-rename producer contract accepted")
+    except ValueError:
+        count += 1
+    try:
+        shipping_pair.require_renamed_producer()
+        raise AssertionError("Flag set without moving the pins off a pre-rename producer accepted")
+    except ValueError:
+        count += 1
+    pinned = shipping_pair.PRODUCER
+    shipping_pair.PRODUCER = "0" * 40
+    try:
+        shipping_pair.require_renamed_producer(b'{"$id": "urn:ode:management:1.0"}')
+        count += 1
+    finally:
+        shipping_pair.PRODUCER = pinned
+finally:
+    shipping_pair.PRODUCER_RENAMED = renamed
+for module, call in (("release_candidate", lambda m: m.main()), ("package_beta", lambda m: m.main()),
+                     ("refresh_local_candidate", lambda m: m.refresh(Path("/nonexistent"), Path("/nonexistent"), "x")),
+                     ("build_local_candidate", lambda m: m.build(Path("/nonexistent"), Path("/nonexistent"), "x"))):
+    try:
+        call(importlib.import_module(module))
+        raise AssertionError(module + " packaged with a pre-rename producer")
+    except ValueError as error:
+        assert "REQ-150" in str(error), error
+        count += 1
+refused = subprocess.run(["sh", str(Path(__file__).resolve().parent / "build_app.sh")] + ["x"] * 9,
+                         capture_output=True, text=True)
+assert refused.returncode != 0 and "REQ-150" in refused.stderr, refused.stderr
+count += 1
 print(f"{count} portable packaging admission checks, 0 failures. Neutral bytes only.")

@@ -29,9 +29,10 @@ Authentication reuses the backend's existing macOS Keychain token abstraction as
 
 This is not a public management-protocol extension. The immutable private-host
 contract is producer
-[`bb6397033fc38497a73684a9ecdb2929caba1f63`](https://github.com/dragoshont/ode-macos/blob/bb6397033fc38497a73684a9ecdb2929caba1f63/docs/NATIVE-AUTH-HOST.md);
-its exact schema LF SHA256 is
-`c7ca7de8ee8a610b71e9e458f13469554467dd2632f88d35317a1ce2646af430`.
+[`bb6397033fc38497a73684a9ecdb2929caba1f63`](https://github.com/WorkingPrinciple/xodus-macos/blob/bb6397033fc38497a73684a9ecdb2929caba1f63/docs/NATIVE-AUTH-HOST.md);
+its schema was later renamed to `urn:ode:private-native-auth-host:1` in private
+producer `a272b1d7f10ccf0aa32936e24551098b9c7cd02e` (REQ-150), whose exact schema LF SHA256 is
+`36d9d8969c941b45283f8ca4aa1fa4e73c8b23ce0afea2e4243f55ce366e889e`.
 Public sanitized schema/fixtures are copied into `OdeAuthHost/Resources`,
 not private source or a credential cache.
 

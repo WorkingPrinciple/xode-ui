@@ -45,9 +45,9 @@ cost. If the difference is under measurement noise, record the hypothesis as ope
 
 ## REQ-19 VoiceOver and contrast on the actual app
 
-1. Start VoiceOver (Command-F5). With VO-Right, walk: sign-in screen (Sign in with Microsoft, the Wine and Ode
+1. Start VoiceOver (Command-F5). With VO-Right, walk: sign-in screen (Sign in with Microsoft, the Wine and upstream
    line and the Acknowledgments link), toolbar, Home, a Library card, game detail, Settings ▸ General ▸
-   Permissions, Acknowledgments (featured Wine and Ode links), and the Account popup. Each control is announced
+   Permissions, Acknowledgments (featured Wine and upstream links), and the Account popup. Each control is announced
    with a name and role; no control is announced only as "button" or "group".
 2. Open Accessibility Inspector ▸ Audit on each window and save the report.
 3. Take lossless screenshots in light and dark appearance and measure text against its backing with the Digital

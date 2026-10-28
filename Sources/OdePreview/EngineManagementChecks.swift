@@ -1393,7 +1393,7 @@ enum EngineManagementChecks {
               "COR134: Clearing a different override returns to Settings default without changing that default")
         let nms = InstalledGame(id: UUID(), title: "No Man's Sky", identityName: "HelloGames.NoMansSky",
             version: "7.6.0.0", storeId: "BQVQTL3PCH05", folder: root.path, launcher: "", importedAt: Date())
-        for folder in ["Xode", "Ode"] {
+        for folder in GameInstallationDiscovery.libraryFolders {
             let located = InstalledGame(id: nms.id, title: nms.title, identityName: nms.identityName,
                 version: nms.version, storeId: nms.storeId,
                 folder: root.appendingPathComponent("Games/\(folder)/NoMansSky-Xbox").path,

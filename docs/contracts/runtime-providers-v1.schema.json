@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:xodus:runtime-provider-configuration:1",
+  "$id": "urn:ode:runtime-provider-configuration:1",
   "title": "Runtime provider configuration and generation plan, version 1",
   "description": "Source-only nonsecret configuration/planning contract. Not a management C95 endpoint, observed installation, device/game verification, license grant or launch authorization. Configuration inputs are 1..16384 UTF-8 bytes.",
   "oneOf": [{"$ref": "#/$defs/configuration"}, {"$ref": "#/$defs/plan"}],

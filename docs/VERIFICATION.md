@@ -752,7 +752,7 @@ candidate; no new provider attempt or successful login is claimed here.
 
 The initial correction `519e29db71ef184d325c40114f8f033f28ca1dc8`, tree
 `5c71c4dc9ca16783400c5f06032c5eb820d979da`, passed exact normal-push
-[run37353741110](https://github.com/dragoshont/ode-macos-app/actions/runs/37353741110):
+[run37353741110](https://github.com/WorkingPrinciple/xode-ui/actions/runs/37353741110):
 15 core / 358 management / 61 presentation / 237 native session / 115 private host /
 27 shipping / 29 POSIX packaging, zero failures, all steps including SVG
 reproduction. The tightly coupled popup follow-up additionally enables ordinary
@@ -764,7 +764,7 @@ its own fresh CI, not promotion of the initial run.
 
 The popup follow-up `c232e7409fa416fb8165d41773a81933487b2da4`, tree
 `d0885c2da92fd40a749d4e13a067bb1e37f79fd4`, passed exact normal-push
-[run37354611053](https://github.com/dragoshont/ode-macos-app/actions/runs/37354611053):
+[run37354611053](https://github.com/WorkingPrinciple/xode-ui/actions/runs/37354611053):
 the same suites with 119 private-host checks, zero failures, all steps and SVG.
 Actual neutral blank/fragment popup routing and subsequent seven-string DA handoff
 passed. This is functional source evidence, not a successful provider login.
@@ -783,7 +783,7 @@ remain unchanged.
 ## Shipping hardening candidate
 
 Hardening ancestor `00ba51fd5e48f6298d27a56e75f491f6f697696f` passed its
-own normal-push [run37314629896](https://github.com/dragoshont/ode-macos-app/actions/runs/37314629896):
+own normal-push [run37314629896](https://github.com/WorkingPrinciple/xode-ui/actions/runs/37314629896):
 15 core/358 management/61 presentation/176 native session/87 private host,
 23 shipping admission and22 portable packaging checks, zero failures, shipping
 release compilation/argument/resource checks and SVG reproduction.
@@ -817,7 +817,7 @@ a deployed app, license, successful human sign-in or playable game.
 
 CrossOver source `95af7c0e07d84ef85672d3d1ea184955f97536bf`, tree
 `a407e75dc6b9ad7cb411d6ece87f3095518b1e1c`, passed exact normal-push
-[run37318275541](https://github.com/dragoshont/ode-macos-app/actions/runs/37318275541):
+[run37318275541](https://github.com/WorkingPrinciple/xode-ui/actions/runs/37318275541):
 15 core/358 management/61 presentation/215 native session/87 private host,
 27 shipping and22 portable packaging checks, zero failures, shipping release
 compilation/argument/resource checks and SVG reproduction. Hosted Compute Agent,
@@ -903,7 +903,7 @@ No helper/engine fixture is executed by the new preflight checks.
 
 Exact source `6a2103cfd0e2d263918039122990ac9492ec17f3`,
 tree `797e111744d180b345542380229d6fb9367e7e6b`, passed its own normal-push
-[run37226882643](https://github.com/dragoshont/ode-macos-app/actions/runs/37226882643):
+[run37226882643](https://github.com/WorkingPrinciple/xode-ui/actions/runs/37226882643):
 Xcode27.0/27A266a, SDK27.0/macOS27.0, **674 checks**, zero failures
 (15 core +358 management +60 presentation +154 mock session +87 private host)
 and SVG reproducibility. Parent independently verified that evidence and SAME
@@ -973,10 +973,10 @@ passed658; that was before the new Quit correction and cannot qualify it.
 Both earlier stages are preserved.
 
 Exact f6 normal-push
-[run37211014588](https://github.com/dragoshont/ode-macos-app/actions/runs/37211014588)
+[run37211014588](https://github.com/WorkingPrinciple/xode-ui/actions/runs/37211014588)
 passed actual Xcode27.0 build27A266a, SDK27.0, macOS27.0 and658/0 plus SVG
 reproducibility. Exact747
-[run37211343959](https://github.com/dragoshont/ode-macos-app/actions/runs/37211343959)
+[run37211343959](https://github.com/WorkingPrinciple/xode-ui/actions/runs/37211343959)
 also passed the same SDK/runtime and658/0/SVG, independently verified by the
 parent from metadata and the public log. Neither hosted result qualifies the
 subsequent Quit correction; its normal-push run needs separate qualification.
@@ -1119,7 +1119,7 @@ No signing, packaging, deployment, GUI action, credential/Keychain/provider
 operation or authentication-success claim is included. Retained SAME review
 turn10 closed both surgical corrections against unchanged auth producer943,
 with no significant new source regression. The exact619 normal-push hosted
-[run37208819522](https://github.com/dragoshont/ode-macos-app/actions/runs/37208819522)
+[run37208819522](https://github.com/WorkingPrinciple/xode-ui/actions/runs/37208819522)
 also succeeded on actual Xcode27.0 build27A266a, SDK27.0 and macOS27.0:
 14+267+50+144+87=562, zero failures, plus SVG reproducibility. The parent
 independently retrieved metadata and the full public log. These are source/
@@ -1243,7 +1243,7 @@ The same continuity reviewer closed producer
 `da0adc0` -> `5ae30fd4bd4e17cb235857e5c41fba1627c317f7` with no significant
 issues. Producer native evidence recorded 54 passing checks. Exact consumer
 source independently passed **398 checks** plus SVG verification in
-[hosted run 37193138334](https://github.com/dragoshont/ode-macos-app/actions/runs/37193138334).
+[hosted run 37193138334](https://github.com/WorkingPrinciple/xode-ui/actions/runs/37193138334).
 
 The immutable arm64 CLI is `ode-cli-xml-proof-v1-8a4b8d56aad18841`,
 79,399,592 bytes, mode 0500, SHA256
@@ -1318,7 +1318,7 @@ The same continuity review closed app
 `da0adc00d337ba27c914f5e47ce3c2b11b8000de` against `360e8bf` and producer
 `bace09c1be95ff35864b8c8593b974b2aeee934f` against `e60481f`, with no significant
 issues. Exact app source independently passed
-[hosted run 37191128180](https://github.com/dragoshont/ode-macos-app/actions/runs/37191128180):
+[hosted run 37191128180](https://github.com/WorkingPrinciple/xode-ui/actions/runs/37191128180):
 **14 core + 233 management + 27 presentation + 79 native = 353 checks**,
 zero failures, plus SVG verification. This clears the source-validation hold
 described below; it does not erase the earlier incomplete local run.
@@ -1369,7 +1369,7 @@ and producer `232a4a82` -> `e60481fc918b4cc2cc599a5db2aba17a04738872`
 with no significant issues. Historical R01-R19 closures are preserved.
 The cancelled original reviewer provided no report 40/41 approval.
 Final `360e8bf` passed **333 full checks** and hosted run
-[37189001182](https://github.com/dragoshont/ode-macos-app/actions/runs/37189001182).
+[37189001182](https://github.com/WorkingPrinciple/xode-ui/actions/runs/37189001182).
 
 The e604 immutable CLI is 79,687,480 bytes, mode 0500, SHA256
 `47fab28009f9c6c52294095e5684bfce3f86f45e50ddc98655d2b22150f02c8d`.
@@ -1511,10 +1511,10 @@ The held running app 79003 / child 79007 and signed7a6e engine were checked
 unchanged afterward; this source is not deployed and the previous real failure
 still has no observed diagnostic code/stage.
 Published diagnostic source `34e396a5a1036a8ed073ec45c0f5678424d4d603`
-independently [passed hosted CI](https://github.com/dragoshont/ode-macos-app/actions/runs/37188370651),
+independently [passed hosted CI](https://github.com/WorkingPrinciple/xode-ui/actions/runs/37188370651),
 including the native suite and SVG regeneration. The earlier deployed AX entry
 source `f289eafc4352bede7e152916c68b902124739e44` separately
-[passed its hosted run](https://github.com/dragoshont/ode-macos-app/actions/runs/37187823776).
+[passed its hosted run](https://github.com/WorkingPrinciple/xode-ui/actions/runs/37187823776).
 Neither hosted result is successful live authentication or retained-review closure.
 A tightly coupled follow-up also routes request-level `auth.begin` backend errors
 through the same sign-in-specific local code/unavailable-stage mapping. The older
@@ -1544,13 +1544,13 @@ One full Mac `sh tools/check.sh` invocation passed **14 core + 189 management +
 24 presentation + 51 native session = 278 checks**, zero failures. The earlier
 `6750219` milestone independently passed 259 checks. The preceding
 212-check `fb66a2d` app revision separately
-[passed hosted CI](https://github.com/dragoshont/ode-macos-app/actions/runs/37162534769);
+[passed hosted CI](https://github.com/WorkingPrinciple/xode-ui/actions/runs/37162534769);
 that success is not attributed to the newer delta. Earlier native source
 `6750219cf547b693d29ee162d796b9b39c37ca70` independently
-[passed hosted CI](https://github.com/dragoshont/ode-macos-app/actions/runs/37165029761).
+[passed hosted CI](https://github.com/WorkingPrinciple/xode-ui/actions/runs/37165029761).
 Current R10/diagnostic-summary native source
 `f967f5c09a91f60bd82c91db6ab342de2a95d585` independently
-[passed hosted CI](https://github.com/dragoshont/ode-macos-app/actions/runs/37167088810),
+[passed hosted CI](https://github.com/WorkingPrinciple/xode-ui/actions/runs/37167088810),
 including all 278 native/core/management/presentation checks and SVG regeneration.
 
 The same retained reviewer closed app R01-R04 at `fb66a2d` and backend R05-R07.
@@ -1718,7 +1718,7 @@ not fabricated from an arbitrary query. App R01-R04 later closed at `fb66a2d`;
 no new reviewer was spawned.
 
 Hosted startup-fix revision `44f24407ad9562e90a305426771423e3f46864dc`
-[passed its own GitHub Actions run](https://github.com/dragoshont/ode-macos-app/actions/runs/37159377257).
+[passed its own GitHub Actions run](https://github.com/WorkingPrinciple/xode-ui/actions/runs/37159377257).
 That success is not attributed to these newer changes.
 
 ## Bounded discovery and default application startup
@@ -1846,7 +1846,7 @@ Apple Silicon arm64; macOS 27.0.1 build 26A434; Swift 6.4 (`swiftlang-6.4.0.34.1
 | v0.2 SVG upload budget | All nine self-contained data-URI screens <= 0.90 MB each, below 10 MB cap; editable text/vector layout with original JPEG derivatives |
 | Figma revision | Nine v0.2 editable imports succeeded; Library/Discover official renders inspected by coordinator. Some gradient/rounded-image fidelity flattened; no compositor proof. Earlier unapproved v0.1 superseded |
 | GNU GPL v3 | Verbatim 35,149-byte GNU license text retrieved from `https://www.gnu.org/licenses/gpl-3.0.txt`; app grant is explicitly GPL-3.0-only |
-| Hosted GitHub Actions, code commit `4e9c963` | [Fixture foundation checks succeeded](https://github.com/dragoshont/ode-macos-app/actions/runs/37151989754): native build/check sequence and SVG regeneration |
+| Hosted GitHub Actions, code commit `4e9c963` | [Fixture foundation checks succeeded](https://github.com/WorkingPrinciple/xode-ui/actions/runs/37151989754): native build/check sequence and SVG regeneration |
 
 The check executables cover six image resources plus independent access/package/compatibility gates, subscription expiry, stale/offline/partial inventory, mismatched runtime/architecture, exact disk-space threshold, cancelled/completed job non-regression, pause/retry, identity/JSON round trip, scoped search/category/access filter, duplicate enqueue, completed-only installation, disconnected action denial and fixture reset.
 

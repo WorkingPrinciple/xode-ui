@@ -7,11 +7,12 @@ import unittest
 from unittest.mock import patch
 
 import migrate_game_root as migration
+from legacy_compatibility import LEGACY_GAME_FOLDER_EXPORT, LEGACY_GAME_LIBRARY_FOLDER
 
 
 class MigrationChecks(unittest.TestCase):
     def fixture(self, root):
-        old, new = root / "Ode", root / "Xode"
+        old, new = root / LEGACY_GAME_LIBRARY_FOLDER, root / "Xode"
         old.mkdir()
         game = old / "Witcher"
         game.mkdir()
@@ -26,7 +27,7 @@ class MigrationChecks(unittest.TestCase):
         journal.write_text(json.dumps({"neutral": {"destination": str(game), "id": "stable",
                                                  "nativeAccountHash": "neutral-fixture"}}))
         launcher = root / "launcher.sh"
-        launcher.write_text("#!/bin/sh\nexport ODE_GAME_FOLDER=" + str(game) + "\nexec /bin/true\n")
+        launcher.write_text("#!/bin/sh\n" + LEGACY_GAME_FOLDER_EXPORT + str(game) + "\nexec /bin/true\n")
         launcher.chmod(0o750)
         files = [(registry, "registry"), (journal, "resumable"), (launcher, "launcher")]
         return old, new, partial, files, root / "evidence"

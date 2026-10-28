@@ -12,6 +12,7 @@ from shipping_pair import FEATURES, PROFILE, PRODUCER, PRODUCER_TREE
 from signing_identity import (COMPARISON_RESULT, IDENTIFIERS, compare, preflight, reuse_cli, sign,
                               PACKAGE_RECEIPT_LIMIT, package_receipt, verify_developer_id_bundle,
                               verify_developer_id_component, verify_designated_requirement)
+from legacy_compatibility import CRATE_CLI
 
 fingerprint = "A" * 40
 calls = []
@@ -219,7 +220,7 @@ with tempfile.TemporaryDirectory(prefix="ode-signing-neutral-") as temporary:
         ("externalProvenance", {"sha256": "e" * 64, "bytes": 200}),
         ("externalUnsignedCLI", {"sha256": "b" * 64, "bytes": 100.0}),
         ("profile", {**PROFILE, "debug_assertions": 0}),
-        ("features", {**FEATURES, "ode-cli": ["plaintext"]}),
+        ("features", {**FEATURES, CRATE_CLI: ["plaintext"]}),
         ("signedBundledCLI", {"sha256": "f" * 64, "bytes": signed["bytes"]}),
         ("signedBundledCLI", {**signed, "bytes": float(signed["bytes"])}),
         ("signedBundledCLI", {**signed, "bytes": signed["bytes"] + 1}),

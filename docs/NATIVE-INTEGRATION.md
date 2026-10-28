@@ -58,12 +58,12 @@ This is implementation work beyond the immutable foundation at `44d7338`. It is 
 
 The user approved C3's native regular-glass Library direction. Source
 `a080225966a9519acad54540a19ee90041e297c2` is pushed and passed
-[exact-source CI](https://github.com/dragoshont/ode-macos-app/actions/runs/37811471091).
+[exact-source CI](https://github.com/WorkingPrinciple/xode-ui/actions/runs/37811471091).
 Its separate signed reviewer is not installed and never refreshes Xbox stats.
 The shipping app remains independently admitted at `2d420d1`.
 
 Follow-up source `6485592cc99294ca206c0c07a2e3f7efbe10c815` is pushed and passed
-[exact-source CI](https://github.com/dragoshont/ode-macos-app/actions/runs/37816907637),
+[exact-source CI](https://github.com/WorkingPrinciple/xode-ui/actions/runs/37816907637),
 110 presentation/888 synthetic native checks and shipping compilation. It is
 still pending live frontend acceptance and shipping admission. It extends the fixed private
 script protocol with `private-ode-manage.py game-stats <generatedRunId>`:
@@ -133,7 +133,7 @@ browse, populated search and empty states and confirmed every job finished
 normally. The user approved the direction with the consumer-copy batch above
 required before freeze. That correction is now frozen at
 `d2be5943943363afe9cfc4708719ef6bf057c56f`, with
-[exact-source CI](https://github.com/dragoshont/ode-macos-app/actions/runs/37822024468)
+[exact-source CI](https://github.com/WorkingPrinciple/xode-ui/actions/runs/37822024468)
 green. The earlier signed/captured D2 bundle remains unchanged; it does not
 contain the final copy correction. Final shipping admission remains pending.
 
@@ -203,7 +203,7 @@ HLS playback or shipping admission. Root owns capture and final admission.
 
 Frozen source is `fee7f5f186d402d2c08ca76dc9a50e638ba5c5e2`, tree
 `4363d81f0363e25982590f5fc23d6b64237d750a`.
-[Exact-source CI](https://github.com/dragoshont/ode-macos-app/actions/runs/37676485849)
+[Exact-source CI](https://github.com/WorkingPrinciple/xode-ui/actions/runs/37676485849)
 passed. After independent source review, the one-use signed package retained
 the previously admitted C8 byte-for-byte. The owner independently verified
 the receipt, all 21 files and strict signatures, then freshly confirmed no
@@ -228,7 +228,7 @@ Remaining shelf/Install/Play/Stop outcomes are not inferred from deployment.
 
 The independently admitted `208939cb3b52e99a15f24f6c6303cb0ed0700aad`
 package passed exact CI
-[37688479927](https://github.com/dragoshont/ode-macos-app/actions/runs/37688479927).
+[37688479927](https://github.com/WorkingPrinciple/xode-ui/actions/runs/37688479927).
 The owner freshly authorized normal Quit/replacement after confirming game-ended.
 The full prior `fee7f5f` app, untouched profile and identical private installed
 list were preserved through one Library reopen. All admitted files/signatures
@@ -530,7 +530,7 @@ single-check fencing and cancellation. Mac network-denied qualification passed
 removed-cache regression passed in the 104-check focused operation suite with
 another successful shipping-debug build. These are synthetic checks only.
 Root source review was GREEN at `7c3c1f0` / tree `459a6012`.
-[Exact-source CI 37668302715](https://github.com/dragoshont/ode-macos-app/actions/runs/37668302715)
+[Exact-source CI 37668302715](https://github.com/WorkingPrinciple/xode-ui/actions/runs/37668302715)
 completed successfully at the full frozen head. Signed package `UcVKTf` contains
 21 files, verifies strict signatures and actual fixed-certificate leaf
 requirements, and preserves admitted C8 byte-for-byte. Its private receipt is
@@ -566,7 +566,7 @@ replacement remain separate owner gates.
 ### S3/S5/S6 game operations (admitted, installed and live-accepted)
 
 This app-only batch implements the approved
-[remaining-work spec at bda88fe](https://github.com/dragoshont/ode-macos/blob/bda88fe/docs/ode/remaining-work-plan.md).
+[remaining-work spec at bda88fe](https://github.com/WorkingPrinciple/xodus-macos/blob/bda88fe/docs/ode/remaining-work-plan.md).
 The owner confirmed four existing private script entrypoints under
 `~/src/xode-macos-private-ai/scripts/macos`: `private-ode-service-status.sh`,
 `private-ode-service-signin.sh`, `private-ode-install.sh`, and
@@ -630,7 +630,7 @@ operation suite passed 77 checks and shipping-debug compilation.
 
 The admitted runtime is `1463cdb5260356a536f29d8f39d90d4e69b06689`, tree
 `fa3eac5f6d78e534c10e3816f615511003a5d22d`.
-[Exact-source CI 37640727574 passed](https://github.com/dragoshont/ode-macos-app/actions/runs/37640727574).
+[Exact-source CI 37640727574 passed](https://github.com/WorkingPrinciple/xode-ui/actions/runs/37640727574).
 The owner independently admitted package `uybU6j`, receipt
 `a929185184862f9af0a095625cc7344da6130053cbd730fd4c78ad3b89c1e73f`
 (15,035 bytes, 21 files). Launcher SHA-256 is
@@ -697,7 +697,7 @@ and general gameplay certification are not established by this slice.
 ### S4 owned PC Library (admitted, installed and live-accepted)
 
 This slice implements AC4.1–AC4.5 of the
-[remaining-work spec at fbf849d](https://github.com/dragoshont/ode-macos/blob/fbf849d/docs/ode/remaining-work-plan.md).
+[remaining-work spec at fbf849d](https://github.com/WorkingPrinciple/xodus-macos/blob/fbf849d/docs/ode/remaining-work-plan.md).
 Root supplied observed protocol evidence after one user-approved device-code
 sign-in: a complete two-page collection, 136 items including 69 Game entries.
 That producer-side probe is not evidence of this app's installed Library or
@@ -753,7 +753,7 @@ The signed C8, profile, contracts/pins and frozen support packets are unchanged.
 Frozen corrected source `7ec1daaf1c5f3985c29eec01ed7eb90c151f001f`, tree
 `997d3970bfc43cd1ae0f2ef18c900253808327e9`, passed the same 607 native checks
 from its exact Git-LF archive. Exact-source
-[CI 37617059339](https://github.com/dragoshont/ode-macos-app/actions/runs/37617059339)
+[CI 37617059339](https://github.com/WorkingPrinciple/xode-ui/actions/runs/37617059339)
 completed successfully, including Release ShippingChecks and resource exclusion.
 Root's bounded source review correction is included: only candidate games
 contribute to the hidden count, incomplete third-party items cannot fail a valid
@@ -799,7 +799,7 @@ remain unchanged.
 ### S1 artwork and Continue Playing (admitted, installed and live-accepted)
 
 This slice implements AC1.1–AC1.6 of the
-[published remaining-work spec](https://github.com/dragoshont/ode-macos/blob/dragoshont-heroic-xbox-integration/docs/ode/remaining-work-plan.md).
+[published remaining-work spec](https://github.com/WorkingPrinciple/xodus-macos/blob/dragoshont-heroic-xbox-integration/docs/ode/remaining-work-plan.md).
 Tile preference is ShellVisuals Square480x480Logo, Square150x150Logo, StoreLogo;
 hero preference is SplashScreenImage then the same tile order. Windows
 backslashes are parsed as relative separators. Component-by-component `openat`
@@ -846,7 +846,7 @@ Frozen source `e4014647328654c4c8688ca5954b5b3f5dfd162e` (tree
 `78d5b8b0cea272ce0fdaaba21d899c9c6aefd853`) passed 558 native session,
 75 presentation and 29 portable checks on the user's Mac with outbound
 networking denied, plus a shipping Debug build. Exact-source
-[CI 37610002150](https://github.com/dragoshont/ode-macos-app/actions/runs/37610002150)
+[CI 37610002150](https://github.com/WorkingPrinciple/xode-ui/actions/runs/37610002150)
 also passed, including Release ShippingChecks and shipping resource exclusions.
 These are neutral/source evidence, not real game-art/session evidence.
 
@@ -923,7 +923,7 @@ The frozen UI-only implementation is consumer
 presentation checks and 29 portable packaging checks passed. Native checks ran
 with outbound networking denied; a separate shipping Debug composition built.
 Exact-source CI
-[37603065132](https://github.com/dragoshont/ode-macos-app/actions/runs/37603065132)
+[37603065132](https://github.com/WorkingPrinciple/xode-ui/actions/runs/37603065132)
 completed successfully, including Release ShippingChecks and exclusion of
 private fixture resources. Fake scripts and neutral bytes are not live
 Hogwarts gameplay or compositor/accessibility certification.
@@ -1032,7 +1032,7 @@ Consumer `2d741a745217f52330ad79208eb2e8374a708a0d`, tree
 `8f529988df80d2005371216cabf940453106cefc`, passed 481 native session and 75
 presentation checks with outbound networking denied, plus 28 portable checks.
 Exact-source CI
-[37522058333](https://github.com/dragoshont/ode-macos-app/actions/runs/37522058333)
+[37522058333](https://github.com/WorkingPrinciple/xode-ui/actions/runs/37522058333)
 completed successfully, including shipping checks. Root independently reviewed
 the semantic change and admitted all 21 package files, fixed app/CLI/helper
 signatures and sealed producer bindings. Receipt SHA256 is
@@ -1081,7 +1081,7 @@ counts on stderr expose no URLs, assets, account identifiers or query values;
 they are not management responses and remain discarded in production.
 The controlled 113be57/c1073100 pair was Release-qualified, independently admitted
 and installed after exact consumer CI
-[37502060591](https://github.com/dragoshont/ode-macos-app/actions/runs/37502060591)
+[37502060591](https://github.com/WorkingPrinciple/xode-ui/actions/runs/37502060591)
 passed. It is not a distribution release.
 
 Actual artwork confirmation on 2026-10-06 used consumer
@@ -1138,7 +1138,7 @@ profile are unchanged.
 Actual shipping confirmation on 2026-10-06 used consumer
 `7aa9eb9de094c5f96233a6e99fb08b48c61fc92a`, tree
 `bc23e93f4e0de2a870616bf2a18ba325666bc0ce`, after exact CI
-[37509107895](https://github.com/dragoshont/ode-macos-app/actions/runs/37509107895)
+[37509107895](https://github.com/WorkingPrinciple/xode-ui/actions/runs/37509107895)
 succeeded and independent source/package admission passed. Receipt SHA256 is
 `b36305e73a4b0aa4fd779582089f716d3f368e86049582d0d06975626bc61035`.
 The signed c107 CLI remains byte-for-byte
@@ -1177,7 +1177,7 @@ Artwork sizing, tokens and the current native composition are unchanged.
 The action's routing and explicit candidate selection were qualified with
 425 native neutral session checks, unchanged portable pair gates, direct source
 review and exact successful CI
-[37512166260](https://github.com/dragoshont/ode-macos-app/actions/runs/37512166260).
+[37512166260](https://github.com/WorkingPrinciple/xode-ui/actions/runs/37512166260).
 Genuine empty/error responses stay distinct, and these tests confirm no
 additional saved-status or personal-history read during title-name navigation.
 

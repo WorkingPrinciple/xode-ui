@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import Darwin
+import OdeLegacyCompatibility
 import Foundation
 import OdeManagement
 
@@ -77,7 +78,7 @@ enum CalimochoPrefixContinuity {
             guard info.st_mode & S_IFMT == S_IFDIR, info.st_uid == getuid() else {
                 throw NativeLaunchError.prefixConflict
             }
-            let bytes = try InstalledGameFiles.readRegular(marker(for: prefix), maximumBytes: 4_096)
+            let bytes = try InstalledGameFiles.readRegular(readableMarker(for: prefix), maximumBytes: 4_096)
             guard try markerMatches(bytes, pin: pin) else { throw NativeLaunchError.prefixConflict }
             try writeMarker(prefix: prefix, pin: pin)
             return
@@ -103,7 +104,7 @@ enum CalimochoPrefixContinuity {
         guard sources.count <= 1 else { throw NativeLaunchError.prefixConflict }
         if let (source, old) = sources.first {
             try GameScriptFiles.checkPath(source)
-            let oldMarker = marker(for: source)
+            let oldMarker = readableMarker(for: source)
             if lstat(oldMarker.path, &info) == 0 {
                 let bytes = try InstalledGameFiles.readRegular(oldMarker, maximumBytes: 4_096)
                 let value = try JSONValue.decodeUnique(bytes, maximumBytes: 4_096)
@@ -145,5 +146,15 @@ enum CalimochoPrefixContinuity {
 
     static func marker(for prefix: URL) -> URL {
         prefix.deletingLastPathComponent().appendingPathComponent(".\(prefix.lastPathComponent).ode-engine-owner.json")
+    }
+
+    /// The marker to read: the canonical one, else one a pre-rename backend wrote. New markers are
+    /// always written under the canonical name.
+    static func readableMarker(for prefix: URL) -> URL {
+        let current = marker(for: prefix)
+        guard !FileManager.default.fileExists(atPath: current.path),
+              let legacy = LegacyCompatibility.legacySidecar(for: current),
+              FileManager.default.fileExists(atPath: legacy.path) else { return current }
+        return legacy
     }
 }

@@ -95,7 +95,7 @@ enum PrivacyPermission: String, CaseIterable, Identifiable {
         }
     }
 
-    /// The shipped bundle ID (unchanged across releases); used when running unbundled.
+    /// The shipped bundle ID; used when running unbundled.
     static let bundleIdentifier = "com.workingprinciple.xode.development"
     static let installNotesTitle = "What X Ode may ask permission for, and why"
     static let notificationsDeniedKey = "Ode.permission.notificationsDenied"

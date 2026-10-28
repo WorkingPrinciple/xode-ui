@@ -13,9 +13,9 @@ licensed by the GPL; see TRADEMARKS.md.
 Credits and third-party notices
 -------------------------------
 
-Ode
-  X Ode manages games through a fork of the Ode game-management project
-  (xodus-gaming/xodus), licensed under GPL-3.0. Thank you to its contributors.
+Upstream game-management project (xodus-gaming/xodus)
+  X Ode manages games through a fork of this project, licensed under GPL-3.0.
+  Thank you to its contributors.
 
 Wine and Calimocho
   Calimocho is a Wine-based game engine distributed separately from this app.

@@ -96,9 +96,9 @@ enum AccessibilityAuditChecks {
         let acknowledgments = (try? String(contentsOfFile: "Sources/OdePreview/Acknowledgments.swift", encoding: .utf8)) ?? ""
         let welcome = (try? String(contentsOfFile: "Sources/OdePreview/LiveWelcomeView.swift", encoding: .utf8)) ?? ""
         check(acknowledgments.contains(".accessibilityLabel(\"\\(credit.name) website, \\(credit.linkText)\")")
-              && FeaturedCredits.all.map(\.name) == ["Wine", "Ode"]
+              && FeaturedCredits.all.map(\.name) == ["Wine", FeaturedCredits.upstream.name]
               && welcome.contains(".accessibilityLabel(WelcomeCopy.acknowledgmentsAccessibility)"),
-              "REQ-19/122: VoiceOver names the featured Wine and Ode links by project, and the sign-in Acknowledgments link by purpose")
+              "REQ-19/122: VoiceOver names the featured Wine and upstream links by project, and the sign-in Acknowledgments link by purpose")
     }
 
     // MARK: REQ-19/20 rendered contrast

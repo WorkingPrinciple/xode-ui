@@ -15,6 +15,7 @@ import package_beta
 import release_candidate as release
 import refresh_local_candidate as refresh_tool
 import shipping_pair as pins
+from legacy_compatibility import PRODUCER_CLI, PRODUCER_WINDOW_HELPER
 
 PRODUCER_NOTICES_SHA256 = "a" * 64
 PRODUCER_NOTICES_EVIDENCE_SHA256 = "b" * 64
@@ -49,8 +50,8 @@ class ReleaseCandidateChecks(unittest.TestCase):
     def fixture(self, root):
         helper = b"Neutral Windows helper. Never executed."
         cli = b"Neutral CLI containing " + helper
-        (root / "ode-cli").write_bytes(cli)
-        (root / "ode-window-monitor.exe").write_bytes(helper)
+        (root / PRODUCER_CLI).write_bytes(cli)
+        (root / PRODUCER_WINDOW_HELPER).write_bytes(helper)
         release.CLI_SIZE = refresh_tool.CLI_BYTES = len(cli)
         release.HELPER_SIZE = refresh_tool.WINDOWS_HELPER_BYTES = len(helper)
         notarization = root / "notarization"
@@ -95,7 +96,7 @@ class ReleaseCandidateChecks(unittest.TestCase):
                 self.assertFalse(receipt["standaloneNotarized"])
                 self.assertIsNone(receipt["combinedAppleSubmission"])
                 self.assertTrue(receipt["outerAppNotarizationRequired"])
-                (root / "ode-cli").write_bytes(b"Unknown or altered binary")
+                (root / PRODUCER_CLI).write_bytes(b"Unknown or altered binary")
                 with self.assertRaises(ValueError):
                     release.frozen_payloads(root, cli_hash)
 
@@ -176,7 +177,7 @@ class ReleaseCandidateChecks(unittest.TestCase):
                     release.frozen_payloads(root, cli_hash)
 
     def test_altered_producer_receipt_or_helper_is_rejected(self):
-        for target in ("build-manifest.json", "ode-window-monitor.exe"):
+        for target in ("build-manifest.json", PRODUCER_WINDOW_HELPER):
             with self.subTest(target=target), tempfile.TemporaryDirectory() as temporary:
                 root = Path(temporary).resolve()
                 cli_hash, helper_hash, manifest_hash = self.unnotarized_fixture(root)
@@ -241,7 +242,7 @@ class ReleaseCandidateChecks(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary).resolve()
             cli_hash, helper_hash = self.fixture(root)
-            cli, helper = root / "ode-cli", root / "ode-window-monitor.exe"
+            cli, helper = root / PRODUCER_CLI, root / PRODUCER_WINDOW_HELPER
             with patch.object(refresh_tool, "CLI_SHA256", cli_hash), \
                     patch.object(refresh_tool, "WINDOWS_HELPER_SHA256", helper_hash):
                 refresh_tool.validate_payload_pair(cli, helper, pins.PRODUCER, pins.PRODUCER_TREE)
@@ -364,7 +365,7 @@ class ReleaseCandidateChecks(unittest.TestCase):
             cli_hash, helper_hash = self.fixture(root)
             with patch.object(release, "CLI_SHA256", cli_hash), patch.object(release, "HELPER_SHA256", helper_hash):
                 release.frozen_payloads(root)
-                helper = root / "ode-window-monitor.exe"
+                helper = root / PRODUCER_WINDOW_HELPER
                 original = helper.read_bytes()
                 helper.write_bytes(b"Changed helper")
                 with self.assertRaises(ValueError):
@@ -542,7 +543,8 @@ class ReleaseCandidateChecks(unittest.TestCase):
                 "--producer-source-archive", source_archive,
                 "--producer-notices-sha256", PRODUCER_NOTICES_SHA256,
                 "--dmg-background", "/absolute/background.tiff",
-        ]), patch.object(release, "resume") as resume:
+        ]), patch.object(release, "resume") as resume, patch.object(pins, "PRODUCER_RENAMED", True), \
+                patch.object(pins, "PRE_RENAME_PRODUCERS", frozenset()):
             release.main()
         resume.assert_called_once_with(
             Path(receipt), "notary", None, PRODUCER_NOTICES_SHA256,

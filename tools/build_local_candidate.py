@@ -16,6 +16,8 @@ import tempfile
 from shipping_pair import (CARGO_LOCK_SHA256, FEATURES, PRODUCER, PRODUCER_TREE, PROFILE,
                            hex_value, owned_bytes, require, swift_pins, swift_producer_pins)
 from signing_identity import preflight, sign, verify_designated_requirement
+from legacy_compatibility import CRATE_CLI, PRODUCER_CLI
+from shipping_pair import require_renamed_producer
 
 
 
@@ -97,7 +99,7 @@ def build_evidence(messages):
             require(frame.get("profile") == PROFILE, "Unexpected native release build profile: " + name)
             require(name not in native_features, "Duplicate native build artifact: " + name)
             native_features[name] = frame.get("features")
-        if name == "ode-cli" and frame.get("executable"):
+        if name == CRATE_CLI and frame.get("executable"):
             artifacts.append(frame)
     require(len(artifacts) == 1, "Expected one actual CLI build artifact")
     require(native_features == FEATURES, "Missing or incompatible native release features")
@@ -105,6 +107,7 @@ def build_evidence(messages):
 
 
 def build(engine_root, output_root, identity, engine_notice=None):
+    require_renamed_producer()
     validate_host()
     project = Path(__file__).resolve().parent.parent
     engine_root = engine_root.resolve(strict=True)
@@ -120,6 +123,7 @@ def build(engine_root, output_root, identity, engine_notice=None):
     cargo_lock = owned_bytes(engine_root / "Cargo.lock", CARGO_LOCK_SHA256)[0]
     contract = engine_root / "docs/contracts/management-v1.schema.json"
     consumer = project / "Sources/OdeManagement/Resources/management-v1.schema.json"
+    require_renamed_producer(contract.read_bytes())
     require(contract.read_bytes() == consumer.read_bytes(),
             "Engine and app management contracts differ; update the actual contract before packaging")
     stage = Path(tempfile.mkdtemp(prefix="Ode-local-", dir=output_root))
@@ -136,8 +140,8 @@ def build(engine_root, output_root, identity, engine_notice=None):
     environment = os.environ.copy()
     environment.update(CARGO_TARGET_DIR=str(stage / "engine-target"), CARGO_INCREMENTAL="0",
                        CARGO_BUILD_JOBS="1")
-    command = ["cargo", "build", "--release", "--offline", "--locked", "-p", "ode-cli",
-               "--bin", "ode-cli", "--target", "aarch64-apple-darwin",
+    command = ["cargo", "build", "--release", "--offline", "--locked", "-p", CRATE_CLI,
+               "--bin", PRODUCER_CLI, "--target", "aarch64-apple-darwin",
                "--no-default-features", "--message-format=json"]
     messages = run(command, engine_root, log, environment)
     artifact, native_features = build_evidence(messages)
