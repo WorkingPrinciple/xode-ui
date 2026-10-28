@@ -376,6 +376,8 @@ import XodusManagement
         let library = PCGamesController()
         let throttleAt = Date()
         library.recordThrottle(after: ManagementError.authenticatedReadThrottled(retryAfterSeconds: 90), now: throttleAt)
+        // The gate forgets an expired throttle when next asked, so read the window before the clock passes it.
+        let recordedWindow = library.throttledUntil.map { $0.timeIntervalSince(throttleAt) }
         var scheduledDuring = 0
         for second in stride(from: 0.0, to: 90.0, by: 5.0) {
             library.scheduleDetailRetry(account: account, now: throttleAt.addingTimeInterval(second))
@@ -395,7 +397,7 @@ import XodusManagement
               && !PCGamesController.automaticRetryAllowed(after: ManagementError.authenticatedReadFailed(.authExchangeFailed))
               && PCGamesController.automaticRetryAllowed(after: ManagementError.authenticatedReadFailed(.transportFailed))
               && PCGamesController.throttlePause(after: ManagementError.authenticatedReadThrottled(retryAfterSeconds: nil)) == 600
-              && library.throttledUntil.map { $0.timeIntervalSince(throttleAt) == 90 } == true,
+              && recordedWindow == 90,
               "bc33adf2 M-a: library detail retries honour Microsoft's throttle delay and never retry a rejected sign-in")
         let productSource = (try? String(contentsOfFile: "Sources/XodusPreview/LiveProductView.swift", encoding: .utf8)) ?? ""
         let appSource = (try? String(contentsOfFile: "Sources/XodusPreview/XodusPreviewApp.swift", encoding: .utf8)) ?? ""
