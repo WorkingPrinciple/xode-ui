@@ -33,6 +33,8 @@ final class InstalledProductAccess: ObservableObject {
     /// L15 #12: Microsoft rejected the saved sign-in; no licence read is retried until the account signs in again
     /// (a new account binding retires this store).
     private(set) var signInRejected = false
+    /// bc33adf2 m1: the current pause came from Microsoft throttling this Mac.
+    private var pauseFromThrottle = false
     /// 683 Play test / 9015da43 m1: products whose latest read failed before leaving this Mac.
     private var localFailures = Set<String>()
     func lastFailureWasLocal(_ productID: String) -> Bool { localFailures.contains(productID) }
@@ -135,11 +137,20 @@ final class InstalledProductAccess: ObservableObject {
     /// 4ea60eb3 F2: a failed read's error and Retry state also say when checks resume.
     func unavailableNotice(now: Date = Date()) -> String {
         if signInRejected { return LiveSession.signInRejectedMessage }
+        if pauseFromThrottle, let pausedUntil, now < pausedUntil {
+            return LiveSession.throttledMessage(retryAfterSeconds: Int(pausedUntil.timeIntervalSince(now).rounded(.up)))
+        }
         return pausedEnd(now: now).map { "Couldn't confirm access right now. Try again after \($0)." } ?? Self.unavailableNotice
+    }
+
+    /// bc33adf2 m3: Play's deadline passed; stop the read this store is running so it can't land later.
+    func cancelInFlight() {
+        operation?.cancel()
     }
 
     /// The Try Again title, carrying the pause's end time while Retry can't read.
     func tryAgainTitle(now: Date = Date()) -> String {
+        if signInRejected { return "Sign in again in Account" }
         pausedEnd(now: now).map { "Try Again after \($0)" } ?? Self.tryAgainTitle
     }
 
@@ -231,6 +242,7 @@ final class InstalledProductAccess: ObservableObject {
         failures = [:]
         globalFailures = 0
         signInRejected = false
+        pauseFromThrottle = false
         localFailures = []
         pagedOrder = []
         installedGames = []
@@ -383,6 +395,7 @@ final class InstalledProductAccess: ObservableObject {
                     // A request that never left this Mac isn't Microsoft limiting us; it never starts the shared pause.
                     guard !Self.isLocalServiceFailure(error) else { localFailures.insert(id); continue }
                     if case ManagementError.authenticatedReadFailed(.authExchangeFailed) = error { signInRejected = true }
+                    if case ManagementError.authenticatedReadThrottled = error { pauseFromThrottle = true } else { pauseFromThrottle = false }
                     localFailures.remove(id)
                     failures[id] = (failures[id] ?? 0) + 1
                     globalFailures += 1

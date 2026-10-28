@@ -788,15 +788,18 @@ final class InstalledGamesController: ObservableObject {
     /// inside the same timeout. A Microsoft failure is never retried here (the pause governs it).
     static func settleAccessForPlay(timeout: Duration, canPlay: @escaping () -> Bool, settled: @escaping () -> Bool,
                                     failedLocally: @escaping () -> Bool,
-                                    retry: @escaping () async -> Void) async -> Bool {
+                                    retry: @escaping () async -> Void,
+                                    cancelRead: (() -> Void)? = nil) async -> Bool {
         let deadline = ContinuousClock.now.advanced(by: timeout)
         let first = await waitUntil(timeout: timeout) { settled() }
+        if !first { cancelRead?() }
         guard first, !canPlay(), failedLocally() else { return first }
         var retried = false
         let attempt = Task { @MainActor in await retry(); retried = true }
         let remaining = ContinuousClock.now.duration(to: deadline)
         let second = remaining > .zero ? await waitUntil(timeout: remaining) { retried && settled() } : false
         attempt.cancel()
+        if !second { cancelRead?() }
         return second
     }
 
@@ -823,7 +826,7 @@ final class InstalledGamesController: ObservableObject {
                 guard !Task.isCancelled else { return }
                 await self.productAccess.prioritize(game.storeId, session: session,
                                                     installedIDs: self.games.map(\.storeId))
-            })
+            }, cancelRead: { self.productAccess.cancelInFlight() })
         guard canRequestPlay(game.storeId) else {
             return settled ? (productAccessNotice(for: game) ?? "Access to this game hasn't been confirmed for your Xbox account.")
                 : "Access to this game wasn't confirmed within \(timeout.components.seconds) seconds. Open the game and try again."

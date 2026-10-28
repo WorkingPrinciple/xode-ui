@@ -1876,15 +1876,18 @@ enum MockBackend {
                         if command == "auth.logout" { loggedOut = true }
                         if command == "library.recent" {
                             recentReads += 1
-                            if (recentReads > 1 && ["recentstale", "recentprofilechanged"].contains(scenario))
+                            if (recentReads > 1 && ["recentstale", "recentprofilechanged", "recentthrottled"].contains(scenario))
                                 || (recentReads == 1 && scenario == "recentbootstraptransport") {
-                                let stage: RecentLibraryFailure = scenario == "recentprofilechanged" ? .profileChanged : .transportFailed
+                                let stage: RecentLibraryFailure = scenario == "recentprofilechanged" ? .profileChanged
+                                    : scenario == "recentthrottled" ? .throttled : .transportFailed
+                                var details = stage.details.object ?? [:]
+                                if stage == .throttled { details["retryAfterSeconds"] = .integer(90) }
                                 var response = result(request, data: .null)
                                 response["ok"] = .bool(false)
                                 response.removeValue(forKey: "data")
                                 response["error"] = .object([
                                     "code": .string(stage.code), "message": .string(stage.message),
-                                    "retryable": .bool(stage.retryable), "details": stage.details
+                                    "retryable": .bool(stage.retryable), "details": .object(details)
                                 ])
                                 try emit(.object(response))
                             } else {

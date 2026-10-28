@@ -56,9 +56,12 @@ public struct RecentLibrarySnapshot: Codable, Equatable, Sendable {
 public enum RecentLibraryFailure: String, CaseIterable, Equatable, Sendable {
     case credentialUnavailable, profileChanged, authExchangeFailed, authRejected
     case transportFailed, responseInvalid
+    /// bc33adf2 B-new (REQ-160): Microsoft is rate-limiting this device; retryable, with an optional delay.
+    case throttled
 
     public var code: String {
         switch self {
+        case .throttled: "NETWORK_UNAVAILABLE"
         case .credentialUnavailable, .profileChanged, .authExchangeFailed: "AUTH_INVALID"
         case .authRejected: "ACCESS_REVOKED"
         case .transportFailed: "NETWORK_UNAVAILABLE"
@@ -66,7 +69,7 @@ public enum RecentLibraryFailure: String, CaseIterable, Equatable, Sendable {
         }
     }
 
-    public var retryable: Bool { self == .authExchangeFailed || self == .transportFailed }
+    public var retryable: Bool { self == .authExchangeFailed || self == .transportFailed || self == .throttled }
     public var message: String { "Recent library read failed: \(rawValue)." }
     public var details: JSONValue {
         .object(["category": .string("recentLibraryFailure"), "stage": .string(rawValue)])
@@ -74,11 +77,28 @@ public enum RecentLibraryFailure: String, CaseIterable, Equatable, Sendable {
 
     public init?(error: JSONValue) {
         guard let object = error.object, Set(object.keys) == ["code", "message", "retryable", "details"],
-              let details = object["details"]?.object, Set(details.keys) == ["category", "stage"],
+              let details = object["details"]?.object,
+              Set(details.keys) == ["category", "stage"]
+                || (Set(details.keys) == ["category", "stage", "retryAfterSeconds"]
+                    && details["stage"]?.string == "throttled" && Self.retryAfter(details) != nil),
               details["category"]?.string == "recentLibraryFailure",
               let stage = details["stage"]?.string, let failure = Self(rawValue: stage),
               object["code"]?.string == failure.code, object["message"]?.string == failure.message,
               object["retryable"]?.boolean == failure.retryable else { return nil }
         self = failure
+    }
+
+    private static func retryAfter(_ details: [String: JSONValue]) -> Int? {
+        switch details["retryAfterSeconds"] {
+        case .integer(let value)? where (0...86_400).contains(value): return Int(value)
+        case .unsigned(let value)? where value <= 86_400: return Int(value)
+        default: return nil
+        }
+    }
+
+    /// The delay Microsoft asked for on a throttled recent-history read, when it sent one.
+    public static func retryAfterSeconds(error: JSONValue) -> Int? {
+        guard let details = error.object?["details"]?.object, details["stage"]?.string == "throttled" else { return nil }
+        return retryAfter(details)
     }
 }

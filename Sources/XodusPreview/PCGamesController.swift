@@ -116,7 +116,29 @@ final class PCGamesController: ObservableObject {
     static func surfacedError(_ error: String?, retryPending: Bool) -> String? { retryPending ? nil : error }
 
     /// Re-reads the library after a backoff while some details failed; bounded, cancelled by sign-out.
+    /// bc33adf2 M-a: Microsoft throttling (with its delay) and a rejected sign-in stop automatic library retries.
+    private(set) var throttledUntil: Date?
+    nonisolated static func automaticRetryAllowed(after error: Error) -> Bool {
+        switch error as? ManagementError {
+        case .authenticatedReadThrottled?, .recentLibraryThrottled?, .authenticatedReadFailed(.authExchangeFailed)?:
+            return false
+        default: return true
+        }
+    }
+    nonisolated static func throttlePause(after error: Error) -> TimeInterval? {
+        switch error as? ManagementError {
+        case .authenticatedReadThrottled(let seconds)?, .recentLibraryThrottled(let seconds)?:
+            return TimeInterval(seconds ?? 600)
+        default: return nil
+        }
+    }
+
+    func recordThrottle(after error: Error, now: Date = Date()) {
+        if let pause = Self.throttlePause(after: error) { throttledUntil = now.addingTimeInterval(pause) }
+    }
+
     func scheduleDetailRetry(account: String) {
+        if let throttledUntil, Date() < throttledUntil { return }
         cancelDetailRetry()
         let attempt = Self.detailRetryDelays.count - detailRetriesLeft
         guard attempt >= 0, attempt < Self.detailRetryDelays.count else { return }
@@ -502,8 +524,11 @@ final class PCGamesController: ObservableObject {
                 } else {
                     self.error = "Your PC library couldn't load. \(LiveSession.describe(error))"
                 }
-                // Transient read failures also recover silently within the bounded budget.
-                if session.hasConfirmedSignIn, session.accountHash == account, detailRetriesLeft > 0 {
+                recordThrottle(after: error)
+                // Transient read failures also recover silently within the bounded budget; throttling and a
+                // rejected sign-in never retry automatically.
+                if Self.automaticRetryAllowed(after: error),
+                   session.hasConfirmedSignIn, session.accountHash == account, detailRetriesLeft > 0 {
                     scheduleDetailRetry(account: account)
                 }
             }

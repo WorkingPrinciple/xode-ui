@@ -412,7 +412,9 @@ public actor ManagementClient {
                 guard let stage = RecentLibraryFailure(error: error) else {
                     throw ManagementError.invalidPayload
                 }
-                failure = .recentLibraryFailed(stage)
+                failure = stage == .throttled
+                    ? .recentLibraryThrottled(retryAfterSeconds: RecentLibraryFailure.retryAfterSeconds(error: error))
+                    : .recentLibraryFailed(stage)
             } else if waiter.command == .discover, code == "PACKAGE_UNAVAILABLE", let details = error["details"] {
                 try validator.validate(details, definition: "failedDiscoveryData")
                 failure = .discoveryFailed(try details.decode(CatalogDiscovery.self))

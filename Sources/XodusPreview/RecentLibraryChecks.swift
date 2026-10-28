@@ -357,6 +357,18 @@ enum RecentLibraryChecks {
             }
             check(await value.disconnect(), "Neutral failure/empty history owner closes")
         }
+        // bc33adf2 B-new: a producer-shaped throttled history failure (with retryAfterSeconds) keeps the connection.
+        let throttled = LiveSession(configuration: configuration("recentthrottled"))
+        await throttled.connect()
+        await throttled.refreshAccount()
+        await throttled.refreshRecentLibrary()
+        await throttled.refreshRecentLibrary()
+        let survived = throttled.isReady
+        await throttled.refreshAccount()
+        check(throttled.recentLibraryError == LiveSession.throttledMessage(retryAfterSeconds: 90)
+              && survived && throttled.isReady && throttled.recentLibrary?.titles.count == 1,
+              "bc33adf2 B-new: a throttled recent-history read keeps the game-service connection and says when to try again (\(throttled.recentLibraryError ?? "nil"))")
+        check(await throttled.disconnect(), "Throttled history owner closes")
         let retired = LiveSession(configuration: configuration("recentslow"))
         await retired.connect()
         await retired.refreshAccount()

@@ -89,6 +89,8 @@ public enum ManagementError: Error, Equatable, Sendable, LocalizedError {
     /// REQ-160: a throttled authenticated read and the delay Microsoft asked for, if any.
     case authenticatedReadThrottled(retryAfterSeconds: Int?)
     case recentLibraryFailed(RecentLibraryFailure)
+    /// bc33adf2 B-new: a throttled recent-history read and Microsoft's delay, if any.
+    case recentLibraryThrottled(retryAfterSeconds: Int?)
 
     public var errorDescription: String? {
         switch self {
@@ -124,6 +126,7 @@ public enum ManagementError: Error, Equatable, Sendable, LocalizedError {
         case .authenticatedReadFailed(let failure): failure.message
         case .authenticatedReadThrottled: AuthenticatedReadFailure.throttled.message
         case .recentLibraryFailed(let failure): failure.message
+        case .recentLibraryThrottled: RecentLibraryFailure.throttled.message
         case .invalidEvent: "The activity stream is inconsistent. Reload the authoritative snapshot."
         }
     }

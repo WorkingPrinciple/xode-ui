@@ -746,7 +746,12 @@ final class LiveSession: ObservableObject {
                     recentLibraryError = "Recent activity couldn't connect. Try again."
                 case .responseInvalid:
                     recentLibraryError = "Microsoft's recent activity couldn't be read safely. No empty result was assumed."
+                case .throttled:
+                    recentLibraryError = Self.throttledMessage(retryAfterSeconds: nil)
                 }
+            } else if case let ManagementError.recentLibraryThrottled(seconds) = error {
+                // bc33adf2 B-new: rate-limited history keeps the connection and says when to try again.
+                recentLibraryError = Self.throttledMessage(retryAfterSeconds: seconds)
             } else { recentLibraryError = Self.describe(error) }
         }
     }

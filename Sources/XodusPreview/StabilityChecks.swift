@@ -189,6 +189,24 @@ import XodusManagement
               && InstalledProductAccess.isLocalServiceFailure(ManagementError.startFailed)
               && !InstalledProductAccess.isLocalServiceFailure(ManagementError.disconnected),
               "9015da43 M1/m2: Play retries exactly once when the read never left this Mac, never after a Microsoft failure, and reads once when it works")
+        // bc33adf2 m3: at Play's deadline the store's read is cancelled; a late answer never lands.
+        let slow = InstalledProductAccess()
+        let slowProduct = installed[23]
+        var lateLanded = false
+        let slowRead = Task { @MainActor in
+            await slow.prioritize(slowProduct, account: account, installedIDs: installed) { id in
+                try await Task.sleep(for: .seconds(2)); lateLanded = true; return try await reader(id)
+            }
+        }
+        try await Task.sleep(for: .milliseconds(50))
+        let settledInTime = await InstalledGamesController.settleAccessForPlay(timeout: .milliseconds(300),
+            canPlay: { slow.permits(slowProduct, account: account, now: start) },
+            settled: { !slow.checking && (slow.facts[slowProduct] != nil || slow.errors[slowProduct] != nil) },
+            failedLocally: { false }, retry: {}, cancelRead: { slow.cancelInFlight() })
+        try await Task.sleep(for: .seconds(2.5))
+        _ = await slowRead.value
+        check(!settledInTime && !lateLanded && slow.facts[slowProduct] == nil,
+              "bc33adf2 m3: when Play's access wait times out, the in-flight read is cancelled and no late answer lands")
         // 9015da43 m3: 101 installed games exceed the bound even with page products; 100 plus 20 pages read normally.
         let bounded = InstalledProductAccess()
         var boundedReads = 0
@@ -270,6 +288,23 @@ import XodusManagement
               && rejected.pausedNotice(now: start.addingTimeInterval(9_000)) == LiveSession.signInRejectedMessage
               && LiveSession.describe(ManagementError.authenticatedReadFailed(.authExchangeFailed)) == LiveSession.signInRejectedMessage,
               "L15 #12: Microsoft rejecting the saved sign-in says to sign in again and stops licence reads until then")
+        check(rejected.tryAgainTitle(now: start) == "Sign in again in Account",
+              "bc33adf2 m4: after a rejected sign-in, Try Again tells you to sign in again instead of retrying")
+        check(throttledStore.unavailableNotice(now: start.addingTimeInterval(1)).hasPrefix("Microsoft is limiting requests from this Mac.")
+              && throttledStore.reviewNotice(for: played, account: account, now: start.addingTimeInterval(1))?
+                .hasPrefix("Microsoft is limiting requests from this Mac.") == true,
+              "bc33adf2 m1: a throttled game's page says Microsoft is limiting requests and for how long")
+        // bc33adf2 M-a: library detail retries stop while Microsoft throttles or rejects the saved sign-in.
+        let library = PCGamesController()
+        library.recordThrottle(after: ManagementError.authenticatedReadThrottled(retryAfterSeconds: 90))
+        library.scheduleDetailRetry(account: account)
+        check(!PCGamesController.automaticRetryAllowed(after: ManagementError.authenticatedReadThrottled(retryAfterSeconds: nil))
+              && !PCGamesController.automaticRetryAllowed(after: ManagementError.recentLibraryThrottled(retryAfterSeconds: 30))
+              && !PCGamesController.automaticRetryAllowed(after: ManagementError.authenticatedReadFailed(.authExchangeFailed))
+              && PCGamesController.automaticRetryAllowed(after: ManagementError.authenticatedReadFailed(.transportFailed))
+              && PCGamesController.throttlePause(after: ManagementError.authenticatedReadThrottled(retryAfterSeconds: nil)) == 600
+              && library.throttledUntil.map { $0.timeIntervalSinceNow > 80 } == true && !library.detailRetryPending,
+              "bc33adf2 M-a: library detail retries honour Microsoft's throttle delay and never retry a rejected sign-in")
         let productSource = (try? String(contentsOfFile: "Sources/XodusPreview/LiveProductView.swift", encoding: .utf8)) ?? ""
         let appSource = (try? String(contentsOfFile: "Sources/XodusPreview/XodusPreviewApp.swift", encoding: .utf8)) ?? ""
         check(m2Reads == 1 && m2Permits
