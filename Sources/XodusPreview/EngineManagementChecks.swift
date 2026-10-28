@@ -930,6 +930,15 @@ enum EngineManagementChecks {
                 check(false, "REQ80 rejects \(mutation) contract fields")
             } catch { check(true, "REQ80 rejects \(mutation) contract fields") }
         }
+        for (scope, accepted) in [(["C261457LCNMJ", "BQVQTL3PCH05"], true), ([], true),
+                                  (["C261457LCNMJ", "C261457LCNMJ"], false), (["../x"], false)] {
+            var object = try JSONSerialization.jsonObject(with: inspectionBytes) as! [String: Any]
+            object["productScope"] = scope
+            let decoded = try? EngineInspection.decode(JSONSerialization.data(withJSONObject: object),
+                engine: "candidate", registryDigest: digest, exitCode: 0)
+            check((decoded?.productScope == scope) == accepted,
+                  "REQ80 optional backend productScope \(scope) is \(accepted ? "accepted" : "rejected")")
+        }
         let unadmitted = EngineInspection(schemaVersion: 1, capability: "engineAdmissionV1",
             registrySha256: digest, engineName: "candidate", declaredProvider: "calimocho",
             admittedProvider: nil, admission: "unadmitted", ready: false, qualified: false,

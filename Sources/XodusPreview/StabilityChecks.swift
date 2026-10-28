@@ -505,12 +505,13 @@ import XodusManagement
         let witcher = (try? NativeTitleLaunchProfile.bundledProfiles())?.first { $0.productID == "C261457LCNMJ" }
         var withArguments = witcher
         withArguments?.gameArguments = ["-usebundles", "-splitcook", "-dlcinstall", "-goty"]
-        check(witcher?.runtime == nil && witcher?.gameArguments == nil
+        check(witcher?.runtime?.primarySHA256 == "165da019717825ad1930be77ca673d83929632ff720647245934dec79ae47f85"
+              && witcher?.engine == "calimocho-11.20-4.0b3-07-w11" && witcher?.gameArguments == nil
               && witcher?.playArguments.contains("--game-arg") == false
               && witcher?.playArguments.starts(with: ["--exe", "bin/Gaming.Desktop.x64/witcher3.exe"]) == true
               && Array(withArguments?.playArguments.suffix(8) ?? []) == ["--game-arg", "-usebundles", "--game-arg", "-splitcook",
                                                                          "--game-arg", "-dlcinstall", "--game-arg", "-goty"],
-              "REQ-140/COR-320: the Witcher 3 baseline passes no arguments on the app-default runtime; a profile's gameArguments each become one --game-arg")
+              "REQ-140/COR-320: the Witcher 3 baseline passes no arguments on -07-w11 with runtime 165da019; a profile's gameArguments each become one --game-arg")
     }
 
     // MARK: REQ-135 Uninstall

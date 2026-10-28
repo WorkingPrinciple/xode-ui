@@ -862,7 +862,8 @@ enum NativeLifecycleChecks {
               && profile.runtime?.legacySHA256 == QualificationDiagnostics.pinnedLegacySHA256,
               "REQ125/32/30: FH6 binds L12 runtime be7ad79 (signed gamer-picture request over e63bc66; efcbf2a run 4efdf51d 331 s, exit 0)")
         let otherProfiles = try NativeTitleLaunchProfile.bundledProfiles().filter {
-            ![NativeFH6Recipe.productID, "9P8DL6W0JBB8", "9PDC8J1BSV8B"].contains($0.productID) && $0.runtime != nil
+            ![NativeFH6Recipe.productID, "9P8DL6W0JBB8", "9PDC8J1BSV8B", "C261457LCNMJ"].contains($0.productID)
+                && $0.runtime != nil
         }
         let hades = try NativeTitleLaunchProfile.bundledProfiles().first { $0.productID == "9P8DL6W0JBB8" }
         check(hades?.runtime?.primarySHA256 == QualificationDiagnostics.pinnedPrimarySHA256 && hades?.runtime?.legacySHA256 == QualificationDiagnostics.pinnedLegacySHA256
@@ -873,10 +874,15 @@ enum NativeLifecycleChecks {
               && edc?.runtime?.legacySHA256 == hades?.runtime?.legacySHA256
               && edc?.executable == "EasyDeliveryCo.exe" && edc?.gameRecipe == nil && edc?.engine == hades?.engine,
               "REQ130: Easy Delivery Co. binds runtime be7ad79 on release Calimocho with its own run (edc-07)")
+        let witcher = try NativeTitleLaunchProfile.bundledProfiles().first { $0.productID == "C261457LCNMJ" }
+        check(witcher?.engine == "calimocho-11.20-4.0b3-07-w11"
+              && witcher?.runtime?.primarySHA256 == "165da019717825ad1930be77ca673d83929632ff720647245934dec79ae47f85"
+              && witcher?.runtime?.legacySHA256 == "0d1f4fbfa314af5317e825c04c3e768b95afa5da0bf44fffeee3e0b4dbf9158f",
+              "REQ125: Witcher uses the owner-tested -07-w11 engine and stable runtime pair")
         check(!otherProfiles.isEmpty && otherProfiles.allSatisfy {
             $0.runtime?.primarySHA256 == "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8"
                 && $0.runtime?.legacySHA256 == "cfe7e5f837fabc51b8066809ca69c2ee0a7852512afbb1979190ec495b0b8b96"
-        }, "REQ125: no title other than FH6, Hades and Easy Delivery Co. inherits the be7ad79 pair without its own run")
+        }, "REQ125: titles without a verified runtime-specific run inherit the app default runtime")
         var oldRuntime = profile
         oldRuntime.runtime = try JSONDecoder().decode(NativeLocalRuntime.self, from: Data("""
         {"primaryPath":"/synthetic/xgameruntime.dll",

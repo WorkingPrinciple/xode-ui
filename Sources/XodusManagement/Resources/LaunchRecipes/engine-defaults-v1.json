@@ -26,6 +26,14 @@
       "developerLocal": true
     },
     {
+      "registryPath": "${HOME}/Library/Application Support/Xode/Engines/registries/calimocho-11.20-4.0b3-07-w11.json",
+      "registrySha256": "babe07977d518b80124c2c28de10681f0b9abe96725907087bfb60f08d242e45",
+      "engineName": "calimocho-11.20-4.0b3-07-w11",
+      "wineSha256": "5d4dea64666c95e8dee941a68d31439559d4886353a5bda606440d739a22e13f",
+      "wineserverSha256": "171e717adeb82a510b05e28eb506b69611051644a5d8869e8612fede942c187b",
+      "developerLocal": true
+    },
+    {
       "engineName": "crossover-26.3-mvk142",
       "provider": "crossover",
       "registryPath": "${HOME}/Library/Application Support/XodusCLI/renderers/moltenvk-1.4.2-private-api-x86_64-cor224/crossover-26.3-mvk142.registry.json",

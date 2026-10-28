@@ -36,11 +36,15 @@ struct EngineInspection: Codable, Equatable, Sendable {
     let wineSha256: String?
     let wineserverSha256: String?
     let error: Failure?
+    /// Optional backend list of titles the engine is admitted for; launch admission is still checked by the backend.
+    var productScope: [String]? = nil
 
     enum CodingKeys: String, CodingKey, CaseIterable {
         case schemaVersion, capability, registrySha256, engineName, declaredProvider, admittedProvider
-        case admission, ready, qualified, wineSha256, wineserverSha256, error
+        case admission, ready, qualified, wineSha256, wineserverSha256, error, productScope
     }
+
+    static let optionalKeys: Set<String> = [CodingKeys.productScope.rawValue]
 
     func encode(to encoder: Encoder) throws {
         var values = encoder.container(keyedBy: CodingKeys.self)
@@ -56,16 +60,22 @@ struct EngineInspection: Codable, Equatable, Sendable {
         try values.encode(wineSha256, forKey: .wineSha256)
         try values.encode(wineserverSha256, forKey: .wineserverSha256)
         try values.encode(error, forKey: .error)
+        try values.encodeIfPresent(productScope, forKey: .productScope)
     }
 
     static func decode(_ bytes: Data, engine: String, registryDigest: String?, exitCode: Int32) throws -> Self {
         let json = try JSONValue.decodeUnique(bytes, maximumBytes: 32_768)
+        let all = Set(CodingKeys.allCases.map(\.rawValue))
         guard case .object(let fields) = json,
-              Set(fields.keys) == Set(CodingKeys.allCases.map(\.rawValue)) else {
+              all.subtracting(optionalKeys).isSubset(of: fields.keys), Set(fields.keys).isSubset(of: all) else {
             throw EngineInspectionError.invalidResponse
         }
         let value = try json.decode(Self.self)
-        guard value.schemaVersion == 1, value.capability == "engineAdmissionV1", !value.qualified,
+        guard value.productScope.map({ scope in
+                  scope.count <= 64 && Set(scope).count == scope.count
+                      && scope.allSatisfy(PCGamesClient.validProductID)
+              }) ?? true,
+              value.schemaVersion == 1, value.capability == "engineAdmissionV1", !value.qualified,
               value.admission.map({ ["genericWine", "admitted", "unadmitted"].contains($0) }) ?? true,
               value.declaredProvider.map({ !$0.isEmpty && $0.utf8.count <= 64 }) ?? true,
               [value.registrySha256, value.wineSha256, value.wineserverSha256].allSatisfy({
