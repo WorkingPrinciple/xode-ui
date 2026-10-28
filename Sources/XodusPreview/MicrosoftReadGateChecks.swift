@@ -141,6 +141,18 @@ enum MicrosoftReadGateChecks {
         check(refusedAutomatic && explicitPassed && explicitTask && gate.refusedAutomaticReads == 1
               && LiveSession.describe(MicrosoftReadsPaused(message: gate.pauseMessage() ?? "")).hasPrefix("Microsoft is limiting requests"),
               "d270a2c5: the boundary refuses an automatic read while held and shows the pause copy; an explicit action passes")
+        // 63685916 Nit-B: after A→B, a late answer for A (throttled or success) leaves B's gate untouched.
+        let switched = MicrosoftReadGate()
+        switched.clock = { now }
+        switched.record(ManagementError.authenticatedReadFailed(.authExchangeFailed), account: a, current: a)
+        switched.record(ManagementError.authenticatedReadThrottled(retryAfterSeconds: 90), account: b, current: b)
+        let bUntil = switched.throttledUntil
+        switched.record(ManagementError.authenticatedReadThrottled(retryAfterSeconds: 900), account: a, current: b)
+        switched.record(ManagementError.authenticatedReadFailed(.authExchangeFailed), account: a, current: b)
+        switched.recordSuccess(account: a, current: b)
+        check(switched.account == b && switched.throttledUntil == bUntil && bUntil != nil && !switched.signInRejected
+              && !switched.allowsAutomaticRead(account: b) && switched.allowsAutomaticRead(account: a),
+              "63685916 Nit-B: after switching A→B, a late throttle, rejection or success for A leaves B's gate untouched (LiveSession feeds the gate through record(_:account:current:))")
         check(!PCGamesController.automaticRetryAllowed(after: MicrosoftReadsPaused(message: ""))
               && InstalledProductAccess.isLocalServiceFailure(MicrosoftReadsPaused(message: "")),
               "d270a2c5: a read refused by the gate never left this Mac: no Microsoft pause, no automatic retry")
@@ -311,6 +323,15 @@ enum MicrosoftReadGateChecks {
         let storePauseKept = storePausedBefore && access.pausedNotice() != nil && access.signInRejected == rejected
         check(storePauseKept,
               "c71aada6 minor-2 \(scenario): the licence store's pause\(rejected ? " and sign-in rejection" : "") survive the scope changes of a lost and regained confirmation")
+        if rejected {
+            // 63685916 Minor-A: once the session reports a completed sign-in for this account, the store's own
+            // rejection and its pause clear at its next use; Play no longer shows "sign in again".
+            session.readGate.signedIn(account: account)
+            await access.refresh(session: session, installedIDs: [])
+            check(!access.signInRejected && access.pausedNotice() == nil && access.tryAgainTitle() != "Sign in again in Account",
+                  "63685916 Minor-A: a completed sign-in for the same account clears the licence store's sign-in rejection and pause (rejected \(access.signInRejected), notice \(access.pausedNotice() ?? "nil"))")
+            session.readGate.record(ManagementError.authenticatedReadFailed(.authExchangeFailed), account: account)
+        }
         let restartBaseline = outbound()
         await session.loadRecentLibraryOnEntry()
         await library.loadOnAppear()

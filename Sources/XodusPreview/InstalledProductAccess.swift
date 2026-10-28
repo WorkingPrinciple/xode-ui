@@ -160,6 +160,19 @@ final class InstalledProductAccess: ObservableObject {
     /// bc33adf2 m3: Play's deadline passed; stop the read this store is running so it can't land later.
     /// a36de2eb m3: the abandoned read gets a new epoch, so a reader that ignores cancellation can't record a late
     /// answer or failure (error, pause, signInRejected), and a second Play's queued priority doesn't wait on it.
+    /// 63685916 Minor-A: the session's read gate shows a completed sign-in for this account (its rejection is
+    /// gone), so the store's own rejection, its pause and the failures it caused clear.
+    func reconcileSignIn(gate: MicrosoftReadGate, account: String?) {
+        guard signInRejected, let account, accountHash == account || pauseOwner == account,
+              gate.account == account, !gate.signInRejected else { return }
+        signInRejected = false
+        pausedUntil = nil
+        pauseFromThrottle = false
+        globalFailures = 0
+        failures = [:]
+        errors = [:]
+    }
+
     /// d270a2c5 MAJOR-3: only Play's own product is abandoned; a priority another Play queued behind it is
     /// re-issued at once as a fresh check instead of being dropped.
     func cancelInFlight(_ productID: String? = nil) {
@@ -302,6 +315,7 @@ final class InstalledProductAccess: ObservableObject {
 
     func refresh(session: LiveSession, installedIDs: [String], now: Date = Date(), force: Bool = false,
                  selectedProductID: String? = nil) async {
+        reconcileSignIn(gate: session.readGate, account: session.accountHash)
         let scope = session.accountCatalogScope
         if catalogScope != scope {
             // d270a2c5 minor-2: a scope change (including a temporarily lost confirmation) keeps the pause,
@@ -323,6 +337,7 @@ final class InstalledProductAccess: ObservableObject {
     }
 
     func prioritize(_ productID: String, session: LiveSession, installedIDs: [String]) async {
+        reconcileSignIn(gate: session.readGate, account: session.accountHash)
         guard session.accountCountryReady, catalogScope == nil || catalogScope == session.accountCatalogScope else { return }
         let account = session.hasConfirmedSignIn ? session.accountHash : nil
         guard account != nil, session.nativeLifecycleConfiguration != nil else { return }

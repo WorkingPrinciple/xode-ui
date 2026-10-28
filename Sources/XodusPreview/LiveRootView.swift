@@ -565,6 +565,9 @@ struct LiveRootView: View {
                 firstLoadDoneFor = nil
                 readinessAfterFirstLoad = false
             }
+            if confirmed {
+                state.installedGames.productAccess.reconcileSignIn(gate: session.readGate, account: session.accountHash)
+            }
             if confirmed, state.consumeUnifiedSignInRequest() {
                 if !unifiedAccountMode { Task { await state.refreshGameServiceStatusAfterSignIn() } }
             } else if !confirmed {

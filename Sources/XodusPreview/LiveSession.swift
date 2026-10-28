@@ -747,9 +747,9 @@ final class LiveSession: ObservableObject {
             do {
                 result = try await client.request(.libraryRecent, params: ["limit": .integer(20)])
                     .decode(RecentLibrarySnapshot.self)
-                if let gateAccount, accountHash == gateAccount { readGate.recordSuccess(account: gateAccount) }
+                if let gateAccount { readGate.recordSuccess(account: gateAccount, current: accountHash) }
             } catch {
-                if let gateAccount, accountHash == gateAccount { readGate.record(error, account: gateAccount) }
+                if let gateAccount { readGate.record(error, account: gateAccount, current: accountHash) }
                 throw error
             }
             guard token == generation, authToken == authenticationGeneration,
@@ -1175,10 +1175,10 @@ final class LiveSession: ObservableObject {
         let result: OdeAccountRead
         do {
             result = try await client.request(command, params: params).decode(OdeAccountRead.self)
-            if accountHash == account { readGate.recordSuccess(account: account) }
+            readGate.recordSuccess(account: account, current: accountHash)
         } catch {
             // d270a2c5 minor-3: an answer feeds the gate only for the account that is still current.
-            if accountHash == account { readGate.record(error, account: account) }
+            readGate.record(error, account: account, current: accountHash)
             throw error
         }
         try Task.checkCancellation()

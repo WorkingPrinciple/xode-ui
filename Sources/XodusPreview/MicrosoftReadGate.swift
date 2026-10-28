@@ -103,6 +103,16 @@ final class MicrosoftReadGate: ObservableObject {
         if rejected { signInRejected = true }
     }
 
+    /// d270a2c5 minor-3 / 63685916 Nit-B: a late answer for an account that is no longer current is ignored.
+    func record(_ error: Error, account: String, current: String?, now: Date? = nil) {
+        guard current == account else { return }
+        record(error, account: account, now: now)
+    }
+    func recordSuccess(account: String, current: String?) {
+        guard current == account else { return }
+        recordSuccess(account: account)
+    }
+
     func recordSuccess(account: String) {
         guard self.account == account else { return }
         throttledUntil = nil

@@ -744,6 +744,7 @@ final class InstalledGamesController: ObservableObject {
 
     func playRequested(_ game: InstalledGame) async {
         if let refusal = Self.newerBuildRefusal() { playErrors[game.id] = refusal; return }
+        if let session = unifiedSession { productAccess.reconcileSignIn(gate: session.readGate, account: session.accountHash) }
         if !canRequestPlay(game.storeId), let paused = productAccess.pausedNotice() {
             playErrors[game.id] = paused
             return
@@ -811,6 +812,7 @@ final class InstalledGamesController: ObservableObject {
             return await MicrosoftReadContext.explicit { await launchRequestOutcome(game, engine: engine, timeout: timeout) }
         }
         if let refusal = Self.newerBuildRefusal() { return refusal }
+        if let session = unifiedSession { productAccess.reconcileSignIn(gate: session.readGate, account: session.accountHash) }
         // 4ea60eb3 F2: a deep-link Play during a pause reports it instead of waiting out the timeout.
         if !canRequestPlay(game.storeId), let paused = productAccess.pausedNotice() { return paused }
         if !canRequestPlay(game.storeId), let session = unifiedSession {
