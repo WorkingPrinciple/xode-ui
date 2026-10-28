@@ -433,7 +433,7 @@ struct LiveRootView: View {
             guard startupAllowed, unifiedAccountMode else { return }
             state.librarySelection.projection.clear(to: .empty)
             state.discoverSelection.clear()
-            await state.pcGames.retireUnifiedAccount()
+            await state.pcGames.retireUnifiedAccount(keepingThrottle: true)
             guard !Task.isCancelled, session.accountCountryReady else { return }
             await state.pcGames.refreshInBackground()
             if session.nativeLifecycleConfiguration == nil { await session.prepareUnifiedRuntime() }

@@ -304,7 +304,9 @@ final class PCGamesController: ObservableObject {
         detailRetriesLeft = Self.detailRetryDelays.count
     }
 
+    /// Automatic (foreground, appear, account-scope) refresh; a36de2eb M-a: never inside Microsoft's throttle window.
     func refreshInBackground(now: Date = Date()) async {
+        guard detailRetryAllowed(now: now) else { return }
         guard usesUnifiedAccount, !busy, !accountDisconnecting, !terminating,
               let session = unifiedSession, session.hasConfirmedSignIn,
               let account = session.accountHash else { return }
@@ -508,6 +510,7 @@ final class PCGamesController: ObservableObject {
                                             language: language, savedAt: Date()) {
                     savedLibrary?.save(saved)
                 }
+                throttledUntil = nil
                 FirstLoadTimeline.mark("libraryResolved", "games=\(result.games.count)")
                 logger.notice("Account PC resolution: \(result.games.count) games, \(result.excludedCount) excluded, \(result.unresolvedCount) unresolved")
                 if result.detailFailureCount > 0, detailRetriesLeft > 0 {
@@ -542,7 +545,8 @@ final class PCGamesController: ObservableObject {
 
     func waitForLoad() async { await operation?.value }
 
-    func retireUnifiedAccount() async {
+    /// `keepingThrottle`: an account-scope change on this Mac keeps Microsoft's throttle window (a36de2eb M-a).
+    func retireUnifiedAccount(keepingThrottle: Bool = false) async {
         guard usesUnifiedAccount else { return }
         let token = UUID()
         generation = token
@@ -554,6 +558,7 @@ final class PCGamesController: ObservableObject {
         lastAutomaticAttempt = nil
         cancelDetailRetry()
         detailRetriesLeft = Self.detailRetryDelays.count
+        if !keepingThrottle { throttledUntil = nil }
         hasSavedSignIn = false
         restored = false
         attemptedAutomaticLoad = false

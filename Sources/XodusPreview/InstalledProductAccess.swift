@@ -144,8 +144,15 @@ final class InstalledProductAccess: ObservableObject {
     }
 
     /// bc33adf2 m3: Play's deadline passed; stop the read this store is running so it can't land later.
+    /// a36de2eb m3: the abandoned read gets a new epoch, so a reader that ignores cancellation can't record a late
+    /// answer or failure (error, pause, signInRejected), and a second Play's queued priority doesn't wait on it.
     func cancelInFlight() {
+        guard operation != nil || priorityID != nil else { return }
+        generation = UUID()
         operation?.cancel()
+        operation = nil
+        priorityID = nil
+        checking = false
     }
 
     /// The Try Again title, carrying the pause's end time while Retry can't read.
@@ -389,7 +396,7 @@ final class InstalledProductAccess: ObservableObject {
                     logger.notice("Product access \(id, privacy: .public): \(value.access.rawValue, privacy: .public)")
                 } catch is CancellationError { return }
                 catch {
-                    guard generation == epoch, accountHash == account else { return }
+                    guard !Task.isCancelled, generation == epoch, accountHash == account else { return }
                     errors[id] = LiveSession.describe(error)
                     logger.error("Product access \(id, privacy: .public) failed: \(LiveSession.describe(error), privacy: .public)")
                     // A request that never left this Mac isn't Microsoft limiting us; it never starts the shared pause.

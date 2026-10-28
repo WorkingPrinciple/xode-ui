@@ -207,6 +207,39 @@ import XodusManagement
         _ = await slowRead.value
         check(!settledInTime && !lateLanded && slow.facts[slowProduct] == nil,
               "bc33adf2 m3: when Play's access wait times out, the in-flight read is cancelled and no late answer lands")
+        // a36de2eb m3: a reader that ignores cancellation fails late with Microsoft rejecting the sign-in; nothing
+        // is recorded, and a second Play queued behind it reads at once instead of waiting on the abandoned read.
+        let stubborn = InstalledProductAccess()
+        let stuckProduct = installed[20], secondProduct = installed[21]
+        var stubbornReads: [String] = []
+        let stubbornRead: @MainActor (String) async throws -> OdeAccountRead = { id in
+            stubbornReads.append(id)
+            if id == stuckProduct {
+                await withCheckedContinuation { (done: CheckedContinuation<Void, Never>) in
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { done.resume() }
+                }
+                throw ManagementError.authenticatedReadFailed(.authExchangeFailed)
+            }
+            return try await reader(id)
+        }
+        let firstPlay = Task { @MainActor in
+            await stubborn.prioritize(stuckProduct, account: account, installedIDs: installed, read: stubbornRead)
+        }
+        try await Task.sleep(for: .milliseconds(50))
+        await stubborn.prioritize(secondProduct, account: account, installedIDs: installed, read: stubbornRead)
+        let firstTimedOut = await InstalledGamesController.settleAccessForPlay(timeout: .milliseconds(150),
+            canPlay: { stubborn.permits(stuckProduct, account: account, now: start) },
+            settled: { !stubborn.checking && stubborn.errors[stuckProduct] != nil },
+            failedLocally: { false }, retry: {}, cancelRead: { stubborn.cancelInFlight() })
+        let secondStarted = Date()
+        await stubborn.prioritize(secondProduct, account: account, installedIDs: installed, read: stubbornRead)
+        let secondPrompt = Date().timeIntervalSince(secondStarted) < 0.5 && stubborn.facts[secondProduct] != nil
+        try await Task.sleep(for: .seconds(1))
+        _ = await firstPlay.value
+        check(!firstTimedOut && secondPrompt && stubborn.errors[stuckProduct] == nil && !stubborn.signInRejected
+              && stubborn.pausedNotice(now: Date()) == nil && stubborn.facts[stuckProduct] == nil
+              && stubbornReads == [stuckProduct, secondProduct],
+              "a36de2eb m3: an abandoned read that ignores cancellation and later fails records no error, pause or sign-in rejection, and a second Play's queued check runs at once (reads \(stubbornReads))")
         // 9015da43 m3: 101 installed games exceed the bound even with page products; 100 plus 20 pages read normally.
         let bounded = InstalledProductAccess()
         var boundedReads = 0
@@ -301,7 +334,7 @@ import XodusManagement
                                    force: true, selectedProductID: played) { id in rejectedWireReads += 1; return try await reader(id) }
         check(authStage == .authExchangeFailed && authStage?.retryable == true && rejectedWireReads == 1
               && rejectedWire.signInRejected,
-              "Producer #12: a retryable:true AUTH_INVALID/authExchangeFailed (user.auth 400/401, collection 404) prompts sign-in and is never retried")
+              "Producer #12: a retryable:true AUTH_INVALID/authExchangeFailed (user.auth 400/401) prompts sign-in and is never retried")
         check(rejected.tryAgainTitle(now: start) == "Sign in again in Account",
               "bc33adf2 m4: after a rejected sign-in, Try Again tells you to sign in again instead of retrying")
         check(throttledStore.unavailableNotice(now: start.addingTimeInterval(1)).hasPrefix("Microsoft is limiting requests from this Mac.")
@@ -395,6 +428,14 @@ import XodusManagement
         check(monitorRun.success && monitorRun.launchFailureMessage(stoppedByUser: false) == nil
               && monitorRun.warnings?.map(\.code) == ["POPUP_MONITOR_DEGRADED"],
               "Producer #12: a launch with a degraded popup monitor (popup_monitor object, POPUP_MONITOR_DEGRADED) is a normal successful receipt")
+        // Producer #13: a missing coverage summary is `lost` with POPUP_MONITOR_FAILED, still not a game failure.
+        let lost = monitored.replacingOccurrences(of: "\"POPUP_MONITOR_DEGRADED\",\"message\":\"Popup monitoring was degraded.\"",
+                with: "\"POPUP_MONITOR_FAILED\",\"message\":\"Popup monitor coverage summary missing\"")
+            .replacingOccurrences(of: "{\"status\":\"degraded\"}", with: "{\"status\":\"lost\"}")
+        let lostRun = try JSONDecoder().decode(NativeGameResult.self, from: Data(lost.utf8))
+        check(lost != monitored && lostRun.success && lostRun.launchFailureMessage(stoppedByUser: false) == nil
+              && lostRun.warnings?.map(\.code) == ["POPUP_MONITOR_FAILED"],
+              "Producer #13: lost popup monitoring (no coverage summary, POPUP_MONITOR_FAILED) is a normal successful receipt")
         let recipe = try producerResult("launch", "TITLE_RECIPE_REJECTED")
         check(recipe.installVerdict == nil && recipe.launchFailureMessage(stoppedByUser: false) == InstalledGameActionCopy.launchUnavailable,
               "fc2f17d1 H1: TITLE_RECIPE_REJECTED is a valid launch receipt, not a broken one")

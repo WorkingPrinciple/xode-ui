@@ -381,6 +381,38 @@ enum PCGamesChecks {
                 check(library.representedGames.count == 1 && library.error == nil && library.accessIsCurrent,
                       "Successful automatic refresh restores current exact-product access")
             }
+            if scenario == "odelibrarywarm" {
+                // a36de2eb M-a: on a clock, a foreground/appear refresh inside Microsoft's throttle window reads
+                // nothing; after it ends at most one read runs; an explicit refresh still reads and success clears it.
+                await transport.append([catalog, catalog, catalog])
+                func libraryReads() throws -> Int {
+                    try String(contentsOf: traceURL, encoding: .utf8).split(separator: "\n")
+                        .filter { $0.hasPrefix("library:") }.count
+                }
+                let before = try libraryReads()
+                library.recordThrottle(after: ManagementError.authenticatedReadThrottled(retryAfterSeconds: 90), now: next)
+                for second in [61.0, 70, 80, 89] {
+                    await library.refreshInBackground(now: next.addingTimeInterval(second))
+                    await library.loadOnAppear()
+                }
+                let during = try libraryReads() - before
+                await library.refreshInBackground(now: next.addingTimeInterval(91))
+                await library.refreshInBackground(now: next.addingTimeInterval(92))
+                let after = try libraryReads() - before - during
+                let clearedOnSuccess = library.throttledUntil == nil && library.error == nil
+                library.recordThrottle(after: ManagementError.authenticatedReadThrottled(retryAfterSeconds: 90), now: Date())
+                library.refresh()
+                await library.waitForLoad()
+                let explicit = try libraryReads() - before - during - after
+                check(during == 0 && after == 1 && clearedOnSuccess && explicit == 1 && library.throttledUntil == nil,
+                      "a36de2eb M-a: a foreground or appear refresh during the throttle window makes 0 library reads, at most 1 after it ends; an explicit refresh still reads and success clears the window (during \(during), after \(after), explicit \(explicit))")
+                library.recordThrottle(after: ManagementError.authenticatedReadThrottled(retryAfterSeconds: 90), now: Date())
+                await library.retireUnifiedAccount(keepingThrottle: true)
+                let keptOnScopeChange = library.throttledUntil != nil
+                await library.retireUnifiedAccount()
+                check(keptOnScopeChange && library.throttledUntil == nil,
+                      "a36de2eb #3: an account-scope change keeps Microsoft's throttle window; account retirement clears it")
+            }
             check(await session.disconnect(), "Warm Library fixture joins its management child")
             check(library.representedGames.isEmpty && !library.accessIsCurrent,
                   "An unconfirmed account cannot expose another session's retained Library")
