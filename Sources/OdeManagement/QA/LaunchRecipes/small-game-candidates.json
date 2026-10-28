@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "scope": "Explicit candidate-only bindings for completed small-title installs; no engine default or frozen profile changes.",
-  "installation_evidence": "/Users/dragoshont/src/copilot-worktrees/ode-macos-app/dragoshont-verbose-dollop/Sources/OdeManagement/Resources/CompatibilityData/small-game-staging-v1.json",
+  "installation_evidence": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/small-game-staging-v1.json",
   "registry": "engines/registry.json",
   "runtime_candidate": "7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b",
   "known_profile_gaps": {
@@ -24,7 +24,7 @@
     {
       "title": "Vampire Survivors",
       "store_id": "9PD5BM2Z8C4L",
-      "game_dir": "/Users/dragoshont/Games/Xode/VampireSurvivors-Xbox",
+      "game_dir": "/Users/dragoshont/Games/Xodus/VampireSurvivors-Xbox",
       "manifest_executable": "VampireSurvivors.exe",
       "manifest_sha256": "f0521ca96f2792a2da4dcc575d479866b5605c064f2249c7d2f3666ff25b2ec4",
       "install_status_run_id": "5235639f-d052-4ca0-816f-1d734446efe5",
@@ -42,7 +42,7 @@
     {
       "title": "Halls of Torment",
       "store_id": "9NMNMS626R59",
-      "game_dir": "/Users/dragoshont/Games/Xode/HallsOfTorment-Xbox",
+      "game_dir": "/Users/dragoshont/Games/Xodus/HallsOfTorment-Xbox",
       "manifest_executable": "Halls of Torment.exe",
       "manifest_sha256": "76ebd7eac803daa375812e2e9d14e2b0b7e0322345b86dd1a10044e45be6b504",
       "install_status_run_id": "0d0ed6ec-4852-44ab-9c20-b25c7b73b107",
@@ -86,7 +86,7 @@
     {
       "title": "Inscryption",
       "store_id": "9P8NSTDMZ11P",
-      "game_dir": "/Users/dragoshont/Games/Xode/Inscryption-Xbox",
+      "game_dir": "/Users/dragoshont/Games/Xodus/Inscryption-Xbox",
       "manifest_executable": "Inscryption.exe",
       "manifest_sha256": "487021aeef1da423f8d2bdc446f9fbfca3cbe3d7742b8c759282f61e2018254d",
       "install_status_run_id": "d2b5b8d7-72c1-49b7-a10c-ced0182058a6",
@@ -104,7 +104,7 @@
     {
       "title": "DREDGE",
       "store_id": "9MSVVM5NS9L6",
-      "game_dir": "/Users/dragoshont/Games/Xode/Dredge-Xbox",
+      "game_dir": "/Users/dragoshont/Games/Xodus/Dredge-Xbox",
       "manifest_executable": "DREDGE.exe",
       "manifest_sha256": "4a579c6d5be39f0456d076982c8453b2c232c093a2f2a6ce87474b25d4e8b5d8",
       "install_status_run_id": "c97f0297-5662-455e-b8e6-493b1e811bd8",
@@ -122,7 +122,7 @@
     {
       "title": "Monster Sanctuary",
       "store_id": "9PBWWQGXVMKC",
-      "game_dir": "/Users/dragoshont/Games/Xode/MonsterSanctuary-Xbox",
+      "game_dir": "/Users/dragoshont/Games/Xodus/MonsterSanctuary-Xbox",
       "manifest_executable": "Monster Sanctuary.exe",
       "manifest_sha256": "a27f8573233ad60b84343d3d121ef69f2bec7af3bace27f602a1bcae14d79c98",
       "install_status_run_id": "254cea03-56cb-44ad-ad43-01335b5ef1d6",
@@ -140,7 +140,7 @@
     {
       "title": "TUNIC",
       "store_id": "9NLRT31Z4RWM",
-      "game_dir": "/Users/dragoshont/Games/Xode/Tunic-Xbox",
+      "game_dir": "/Users/dragoshont/Games/Xodus/Tunic-Xbox",
       "manifest_executable": "Secret Legend.exe",
       "manifest_sha256": "8c641f76dc2406a82dc5ade18f8f1be0af1cf1f9a14e06ee490d78d003137a53",
       "install_status_run_id": "2003560c-c242-4e1d-85fe-8224343b9818",

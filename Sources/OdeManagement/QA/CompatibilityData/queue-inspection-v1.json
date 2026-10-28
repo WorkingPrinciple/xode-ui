@@ -490,7 +490,7 @@
         },
         "metadataReference": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive",
         "rendererFiles": [],
-        "root": "~/Games/Xode/HogwartsLegacy-Xbox",
+        "root": "~/Games/Xodus/HogwartsLegacy-Xbox",
         "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false."
       },
       "steam": {
@@ -653,7 +653,7 @@
         },
         "metadataReference": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive",
         "rendererFiles": [],
-        "root": "~/Games/Xode/StardewValley-Xbox",
+        "root": "~/Games/Xodus/StardewValley-Xbox",
         "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false."
       },
       "steam": {
@@ -1655,7 +1655,7 @@
           "DiggingGame/Binaries/WinGDK/D3D12/d3d12SDKLayers.dll",
           "Engine/Content/Renderer/TessellationTable.bin"
         ],
-        "root": "~/Games/Xode/AGameAboutDiggingAHole-Xbox",
+        "root": "~/Games/Xodus/AGameAboutDiggingAHole-Xbox",
         "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false."
       },
       "steam": {
@@ -1823,7 +1823,7 @@
           "NewMoon/Binaries/WinGDK/D3D12/x64/D3D12Core.dll",
           "NewMoon/Binaries/WinGDK/D3D12/x64/d3d12SDKLayers.dll"
         ],
-        "root": "~/Games/Xode/Mixtape-Xbox",
+        "root": "~/Games/Xodus/Mixtape-Xbox",
         "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false."
       },
       "steam": {
@@ -2327,7 +2327,7 @@
         "rendererFiles": [
           "D3D12/D3D12Core.dll"
         ],
-        "root": "~/Games/Xode/REPLACED-Xbox",
+        "root": "~/Games/Xodus/REPLACED-Xbox",
         "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false."
       },
       "steam": {
@@ -2584,7 +2584,7 @@
         },
         "metadataReference": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive",
         "rendererFiles": [],
-        "root": "~/Games/Xode/SkyrimSE-Xbox",
+        "root": "~/Games/Xodus/SkyrimSE-Xbox",
         "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false."
       },
       "steam": {
@@ -2807,7 +2807,7 @@
         "metadata": {},
         "metadataReference": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive",
         "rendererFiles": [],
-        "root": "~/Games/Xode/OblivionGOTY2009-Xbox",
+        "root": "~/Games/Xodus/OblivionGOTY2009-Xbox",
         "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false."
       },
       "steam": {
@@ -2969,7 +2969,7 @@
         },
         "metadataReference": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive",
         "rendererFiles": [],
-        "root": "~/Games/Xode/KingdomComeDeliverance-Xbox",
+        "root": "~/Games/Xodus/KingdomComeDeliverance-Xbox",
         "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false."
       },
       "steam": {
@@ -3318,7 +3318,7 @@
         },
         "metadataReference": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive",
         "rendererFiles": [],
-        "root": "~/Games/Xode/MinecraftJavaEdition-Xbox",
+        "root": "~/Games/Xodus/MinecraftJavaEdition-Xbox",
         "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false."
       },
       "steam": {
@@ -3492,7 +3492,7 @@
           "Subnautica2/Binaries/WinGDK/D3D12/x64/D3D12Core.dll",
           "Subnautica2/Binaries/WinGDK/D3D12/x64/d3d12SDKLayers.dll"
         ],
-        "root": "~/Games/Xode/Subnautica2-Xbox",
+        "root": "~/Games/Xodus/Subnautica2-Xbox",
         "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false."
       },
       "steam": {
@@ -3679,7 +3679,7 @@
         },
         "metadataReference": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive",
         "rendererFiles": [],
-        "root": "~/Games/Xode/Balatro-Xbox",
+        "root": "~/Games/Xodus/Balatro-Xbox",
         "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false."
       },
       "steam": {
@@ -3860,7 +3860,7 @@
         },
         "metadataReference": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive",
         "rendererFiles": [],
-        "root": "~/Games/Xode/WellDweller-Xbox",
+        "root": "~/Games/Xodus/WellDweller-Xbox",
         "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false."
       },
       "steam": {
@@ -4103,7 +4103,7 @@
         },
         "metadataReference": "https://learn.microsoft.com/en-us/gaming/gdk/docs/reference/system/microsoftgameconfig/elements/microsoftgameconfig-element-requiresxboxlive",
         "rendererFiles": [],
-        "root": "~/Games/Xode/LIMBO-Xbox",
+        "root": "~/Games/Xodus/LIMBO-Xbox",
         "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false."
       },
       "steam": {
@@ -4468,7 +4468,7 @@
         "rendererFiles": [
           "Binaries/vulkan-1.dll"
         ],
-        "root": "~/Games/Xode/NoMansSky-Xbox",
+        "root": "~/Games/Xodus/NoMansSky-Xbox",
         "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false."
       },
       "steam": {
@@ -4723,7 +4723,7 @@
         "rendererFiles": [
           "GFSDK_SSAO_D3D11.win64.dll"
         ],
-        "root": "~/Games/Xode/Fallout4-Xbox",
+        "root": "~/Games/Xodus/Fallout4-Xbox",
         "signInInterpretation": "RequiresXboxLive applies to Console devices only. TitleId, XblGameTitle and MSAAppId identify Xbox integration, not mandatory Windows sign-in. Do not infer signInNeeded=false from a missing element or console false."
       },
       "steam": {

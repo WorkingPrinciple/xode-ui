@@ -16,6 +16,12 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from legacy_compatibility import LEGACY_GAME_LIBRARY_FOLDER  # noqa: E402
+
+# Install roots in queue evidence: the current library folder, or the one recorded before the rename.
+INSTALL_ROOT_PREFIXES = ("~/Games/Xode/", "~/Games/" + LEGACY_GAME_LIBRARY_FOLDER + "/")
+
 
 ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = ROOT / "Sources/OdeManagement/Resources/CompatibilityData"
@@ -769,7 +775,7 @@ def validate_next30_queue(database: dict[str, Any]) -> None:
                 installed
                 and (
                     not isinstance(item.get("installRoot"), str)
-                    or not item["installRoot"].startswith("~/Games/Xode/")
+                    or not item["installRoot"].startswith(INSTALL_ROOT_PREFIXES)
                 )
             )
             or (

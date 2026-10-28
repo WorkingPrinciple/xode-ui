@@ -332,7 +332,7 @@
     }
   ],
   "fieldNotes": {
-    "alreadyInstalled": "True means a local Ode package root with a matching MicrosoftGame.config StoreId was found; install completeness is separate.",
+    "alreadyInstalled": "True means a local Xodus package root with a matching MicrosoftGame.config StoreId was found; install completeness is separate.",
     "antiCheat": "Copied from the evidence-backed compatibility catalogue; unknown is not a no-anti-cheat claim.",
     "api": "Sourced testing API; apiBasis distinguishes requirements, engine/layout inference and renderer-library imports. Not an observed active renderer. DX9/DX10/OpenGL are preserved rather than relabeled DX11.",
     "downloadSizeBytes": "Always numeric. Windows MSIXVC catalog maximum download bytes, not Steam disk requirement. 0 plus downloadSizeKnown=false means unknown.",
@@ -372,7 +372,7 @@
       "entitlementStatus": "account-download-reported",
       "inspectionEvidence": "queue-inspection-v1.json#/products/9MT5NJ5W7B8Z",
       "installNote": "Matching installed StoreId root found; this flag does not claim full resident-file completeness.",
-      "installRoot": "~/Games/Xode/HogwartsLegacy-Xbox",
+      "installRoot": "~/Games/Xodus/HogwartsLegacy-Xbox",
       "packageFormat": "MSIXVC",
       "popularityEvidence": {
         "checkedAt": "2026-10-21",
@@ -442,7 +442,7 @@
       "entitlementStatus": "account-install-reported",
       "inspectionEvidence": "queue-inspection-v1.json#/products/BQVQTL3PCH05",
       "installNote": "Matching installed StoreId root found; this flag does not claim full resident-file completeness.",
-      "installRoot": "~/Games/Xode/NoMansSky-Xbox",
+      "installRoot": "~/Games/Xodus/NoMansSky-Xbox",
       "packageFormat": "MSIXVC",
       "popularityEvidence": {
         "checkedAt": "2026-10-21",
@@ -511,7 +511,7 @@
       "entitlementStatus": "account-install-reported",
       "inspectionEvidence": "queue-inspection-v1.json#/products/9NGLST31DG26",
       "installNote": "Matching installed StoreId root found; this flag does not claim full resident-file completeness.",
-      "installRoot": "~/Games/Xode/AGameAboutDiggingAHole-Xbox",
+      "installRoot": "~/Games/Xodus/AGameAboutDiggingAHole-Xbox",
       "packageFormat": "MSIXVC",
       "popularityEvidence": {
         "checkedAt": "2026-10-21",
@@ -583,7 +583,7 @@
       "entitlementStatus": "account-install-reported",
       "inspectionEvidence": "queue-inspection-v1.json#/products/9PLH7R84GJWP",
       "installNote": "Matching installed StoreId root found; this flag does not claim full resident-file completeness.",
-      "installRoot": "~/Games/Xode/WellDweller-Xbox",
+      "installRoot": "~/Games/Xodus/WellDweller-Xbox",
       "packageFormat": "MSIXVC",
       "popularityEvidence": {
         "checkedAt": "2026-10-21",
@@ -654,7 +654,7 @@
       "entitlementStatus": "unverified",
       "inspectionEvidence": "queue-inspection-v1.json#/products/9PK087LNGJC5",
       "installNote": "Matching installed StoreId root found; this flag does not claim full resident-file completeness.",
-      "installRoot": "~/Games/Xode/Balatro-Xbox",
+      "installRoot": "~/Games/Xodus/Balatro-Xbox",
       "nativeMacEvidenceURL": "https://www.applegamingwiki.com/wiki/Balatro",
       "nativeMacStatus": "native Mac version exists",
       "packageFormat": "MSIXVC",
@@ -725,7 +725,7 @@
       "entitlementStatus": "unverified",
       "inspectionEvidence": "queue-inspection-v1.json#/products/9PNG83MDD6SH",
       "installNote": "Matching installed StoreId root found; this flag does not claim full resident-file completeness.",
-      "installRoot": "~/Games/Xode/LIMBO-Xbox",
+      "installRoot": "~/Games/Xodus/LIMBO-Xbox",
       "nativeMacEvidenceURL": "https://www.applegamingwiki.com/wiki/Limbo",
       "nativeMacStatus": "native Mac version exists",
       "packageFormat": "MSIXVC",
@@ -798,7 +798,7 @@
       "entitlementStatus": "unverified",
       "inspectionEvidence": "queue-inspection-v1.json#/products/9MWR1NC6VQ6L",
       "installNote": "Matching installed StoreId root found; this flag does not claim full resident-file completeness.",
-      "installRoot": "~/Games/Xode/StardewValley-Xbox",
+      "installRoot": "~/Games/Xodus/StardewValley-Xbox",
       "nativeMacEvidenceURL": "https://www.applegamingwiki.com/wiki/Stardew_Valley",
       "nativeMacStatus": "native Mac version exists",
       "packageFormat": "MSIXVC",
@@ -875,7 +875,7 @@
       "entitlementStatus": "account-install-reported",
       "inspectionEvidence": "queue-inspection-v1.json#/products/9NV3L234VGXD",
       "installNote": "Matching installed StoreId root found; this flag does not claim full resident-file completeness.",
-      "installRoot": "~/Games/Xode/REPLACED-Xbox",
+      "installRoot": "~/Games/Xodus/REPLACED-Xbox",
       "packageFormat": "MSIXVC",
       "popularityEvidence": {
         "checkedAt": "2026-10-21",
@@ -946,7 +946,7 @@
       "entitlementStatus": "provisional-game-pass-candidate",
       "inspectionEvidence": "queue-inspection-v1.json#/products/9NH0MSG29X6L",
       "installNote": "Matching installed StoreId root found; this flag does not claim full resident-file completeness.",
-      "installRoot": "~/Games/Xode/Mixtape-Xbox",
+      "installRoot": "~/Games/Xodus/Mixtape-Xbox",
       "packageFormat": "MSIXVC",
       "popularityEvidence": {
         "checkedAt": "2026-10-21",
@@ -1020,7 +1020,7 @@
       "entitlementStatus": "provisional-game-pass-candidate",
       "inspectionEvidence": "queue-inspection-v1.json#/products/9PJPCB188SVG",
       "installNote": "Matching installed StoreId root found; this flag does not claim full resident-file completeness.",
-      "installRoot": "~/Games/Xode/Subnautica2-Xbox",
+      "installRoot": "~/Games/Xodus/Subnautica2-Xbox",
       "packageFormat": "MSIXVC",
       "popularityEvidence": {
         "checkedAt": "2026-10-21",
@@ -1094,7 +1094,7 @@
       "entitlementStatus": "account-download-reported",
       "inspectionEvidence": "queue-inspection-v1.json#/products/9P2J5D12GJL5",
       "installNote": "Matching installed StoreId root found; this flag does not claim full resident-file completeness.",
-      "installRoot": "~/Games/Xode/OblivionGOTY2009-Xbox",
+      "installRoot": "~/Games/Xodus/OblivionGOTY2009-Xbox",
       "packageFormat": "MSIXVC",
       "popularityEvidence": {
         "checkedAt": "2026-10-21",
@@ -1157,7 +1157,7 @@
       "entitlementStatus": "account-install-reported",
       "inspectionEvidence": "queue-inspection-v1.json#/products/9PJ8266BHFWN",
       "installNote": "Matching installed StoreId root found; this flag does not claim full resident-file completeness.",
-      "installRoot": "~/Games/Xode/MinecraftJavaEdition-Xbox",
+      "installRoot": "~/Games/Xodus/MinecraftJavaEdition-Xbox",
       "packageFormat": "MSIXVC",
       "rank": 12,
       "releaseStatus": "unverified",
@@ -1218,7 +1218,7 @@
       "entitlementStatus": "account-download-reported",
       "inspectionEvidence": "queue-inspection-v1.json#/products/9P3T7HVKM6D0",
       "installNote": "Matching installed StoreId root found; this flag does not claim full resident-file completeness.",
-      "installRoot": "~/Games/Xode/KingdomComeDeliverance-Xbox",
+      "installRoot": "~/Games/Xodus/KingdomComeDeliverance-Xbox",
       "packageFormat": "MSIXVC",
       "popularityEvidence": {
         "checkedAt": "2026-10-21",
@@ -1286,7 +1286,7 @@
       "entitlementStatus": "account-download-reported",
       "inspectionEvidence": "queue-inspection-v1.json#/products/9P03JGQ4S1GC",
       "installNote": "SkyrimSELauncher.exe.manifest is missing from the installed root.",
-      "installRoot": "~/Games/Xode/SkyrimSE-Xbox",
+      "installRoot": "~/Games/Xodus/SkyrimSE-Xbox",
       "packageFormat": "MSIXVC",
       "popularityEvidence": {
         "checkedAt": "2026-10-21",
@@ -1357,7 +1357,7 @@
       "entitlementStatus": "account-download-reported",
       "inspectionEvidence": "queue-inspection-v1.json#/products/C3KLDKZBHNCZ",
       "installNote": "COCInfo.dat is missing from the installed root.",
-      "installRoot": "~/Games/Xode/Fallout4-Xbox",
+      "installRoot": "~/Games/Xodus/Fallout4-Xbox",
       "packageFormat": "MSIXVC",
       "popularityEvidence": {
         "checkedAt": "2026-10-21",
@@ -1424,7 +1424,7 @@
       "engine": [],
       "entitlementStatus": "entitlement-unverified",
       "inspectionEvidence": "queue-inspection-v1.json#/products/9N8C07SS8C9D",
-      "installNote": "No matching installed StoreId root found in ~/Games/Xode.",
+      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
       "installRoot": null,
       "packageFormat": "MSIXVC",
       "popularityEvidence": {
@@ -1486,7 +1486,7 @@
       "engine": [],
       "entitlementStatus": "entitlement-unverified",
       "inspectionEvidence": "queue-inspection-v1.json#/products/9NGH1FK0RJGL",
-      "installNote": "No matching installed StoreId root found in ~/Games/Xode.",
+      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
       "installRoot": null,
       "packageFormat": "MSIXVC",
       "popularityEvidence": {
@@ -1548,7 +1548,7 @@
       "engine": [],
       "entitlementStatus": "entitlement-unverified",
       "inspectionEvidence": "queue-inspection-v1.json#/products/9P1N07XDL1D4",
-      "installNote": "No matching installed StoreId root found in ~/Games/Xode.",
+      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
       "installRoot": null,
       "packageFormat": "MSIXVC",
       "popularityEvidence": {
@@ -1610,7 +1610,7 @@
       "engine": [],
       "entitlementStatus": "provisional-game-pass-candidate",
       "inspectionEvidence": "queue-inspection-v1.json#/products/9NFB47H2SDRX",
-      "installNote": "No matching installed StoreId root found in ~/Games/Xode.",
+      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
       "installRoot": null,
       "packageFormat": "MSIXVC",
       "popularityEvidence": {
@@ -1672,7 +1672,7 @@
       "engine": [],
       "entitlementStatus": "entitlement-unverified",
       "inspectionEvidence": "queue-inspection-v1.json#/products/9P5Z4530318L",
-      "installNote": "No matching installed StoreId root found in ~/Games/Xode.",
+      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
       "installRoot": null,
       "packageFormat": "MSIXVC",
       "popularityEvidence": {
@@ -1734,7 +1734,7 @@
       "engine": [],
       "entitlementStatus": "provisional-game-pass-candidate",
       "inspectionEvidence": "queue-inspection-v1.json#/products/9NXWSWBM4H6T",
-      "installNote": "No matching installed StoreId root found in ~/Games/Xode.",
+      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
       "installRoot": null,
       "packageFormat": "MSIXVC",
       "popularityEvidence": {
@@ -1796,7 +1796,7 @@
       "engine": [],
       "entitlementStatus": "entitlement-unverified",
       "inspectionEvidence": "queue-inspection-v1.json#/products/9NCJWHHMVHR0",
-      "installNote": "No matching installed StoreId root found in ~/Games/Xode.",
+      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
       "installRoot": null,
       "packageFormat": "MSIXVC",
       "popularityEvidence": {
@@ -1858,7 +1858,7 @@
       "engine": [],
       "entitlementStatus": "entitlement-unverified",
       "inspectionEvidence": "queue-inspection-v1.json#/products/9NQVHHW88XW9",
-      "installNote": "No matching installed StoreId root found in ~/Games/Xode.",
+      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
       "installRoot": null,
       "packageFormat": "MSIXVC",
       "popularityEvidence": {
@@ -1920,7 +1920,7 @@
       "engine": [],
       "entitlementStatus": "provisional-game-pass-candidate",
       "inspectionEvidence": "queue-inspection-v1.json#/products/9P861V1542BL",
-      "installNote": "No matching installed StoreId root found in ~/Games/Xode.",
+      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
       "installRoot": null,
       "packageFormat": "MSIXVC",
       "popularityEvidence": {
@@ -1982,7 +1982,7 @@
       "engine": [],
       "entitlementStatus": "entitlement-unverified",
       "inspectionEvidence": "queue-inspection-v1.json#/products/9NJCVGS6T30K",
-      "installNote": "No matching installed StoreId root found in ~/Games/Xode.",
+      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
       "installRoot": null,
       "packageFormat": "MSIXVC",
       "popularityEvidence": {
@@ -2044,7 +2044,7 @@
       "engine": [],
       "entitlementStatus": "provisional-game-pass-candidate",
       "inspectionEvidence": "queue-inspection-v1.json#/products/9N94NCGM1Q2N",
-      "installNote": "No matching installed StoreId root found in ~/Games/Xode.",
+      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
       "installRoot": null,
       "packageFormat": "MSIXVC",
       "popularityEvidence": {
@@ -2106,7 +2106,7 @@
       "engine": [],
       "entitlementStatus": "provisional-game-pass-candidate",
       "inspectionEvidence": "queue-inspection-v1.json#/products/9PPBNCXP0096",
-      "installNote": "No matching installed StoreId root found in ~/Games/Xode.",
+      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
       "installRoot": null,
       "packageFormat": "MSIXVC",
       "popularityEvidence": {
@@ -2168,7 +2168,7 @@
       "engine": [],
       "entitlementStatus": "entitlement-unverified",
       "inspectionEvidence": "queue-inspection-v1.json#/products/9NF6XPSBTTGB",
-      "installNote": "No matching installed StoreId root found in ~/Games/Xode.",
+      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
       "installRoot": null,
       "packageFormat": "MSIXVC",
       "popularityEvidence": {
@@ -2230,7 +2230,7 @@
       "engine": [],
       "entitlementStatus": "provisional-game-pass-candidate",
       "inspectionEvidence": "queue-inspection-v1.json#/products/9N4W31HSMVVD",
-      "installNote": "No matching installed StoreId root found in ~/Games/Xode.",
+      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
       "installRoot": null,
       "packageFormat": "MSIXVC",
       "popularityEvidence": {
@@ -2293,7 +2293,7 @@
       "engine": [],
       "entitlementStatus": "provisional-game-pass-candidate",
       "inspectionEvidence": "queue-inspection-v1.json#/products/9PMN4DGRT1LN",
-      "installNote": "No matching installed StoreId root found in ~/Games/Xode.",
+      "installNote": "No matching installed StoreId root found in ~/Games/Xodus.",
       "installRoot": null,
       "packageFormat": "MSIXVC",
       "popularityEvidence": {

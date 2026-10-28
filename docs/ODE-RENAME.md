@@ -42,7 +42,7 @@ Categories are assigned first-match in the order listed.
 | Generated run IDs `xodus-<UTC>-<hex>` | `ode-<UTC>-<hex>` (old IDs still read) |
 | Data roots `Xodus`, `XodusCLI`, `XodusEdgeCDP`, `XodusRemote` under Application Support | `Ode to X/State`, `Ode to X/CLI`, `Ode to X/EdgeCDP`, `Ode to X/Remote` |
 | `Library/Logs/XodusRemote`, `Library/Caches/Xodus` | `Library/Logs/Ode to X/Remote`, `Library/Caches/Ode to X` |
-| Game library folder `~/Games/Xodus` (old evidence paths) | `~/Games/Xode` |
+| Game library folder `~/Games/Xodus` | `~/Games/Xode` (old folder still discovered; recorded evidence keeps its paths) |
 | Keychain service `Xodus Library` | `Ode Library` (COR-310) |
 | Private repos `xodus-macos-private-ai`, `xodus-winrt-shims`, `xodus-provenance` | `xode-macos-private-ai`, `xode-winrt-shims`, `xode-provenance` |
 
@@ -60,7 +60,7 @@ They hold:
 - **One stable protocol value, kept for good:** the v1 account-hash domain (COR-314). Changing it would change existing account identities.
 - **Read-only names from before the rename, removed after the next release:** a management schema ID normalised to the canonical one before validation; the old lifecycle-lock and engine-owner sidecar names; old run IDs; the old preference domain and keys (imported once; existing values win; the old domain is never changed); the old `Library` Keychain service (copied forward on first use by the broker or the direct store, never changed or deleted this release, and ignored after sign-out); the old bundle IDs (so an old copy still running blocks a new one); and the CLI location inside an app installed before the rename.
 - **Persistent data identity, kept until an explicit owner decision, never on a timer:** both in-prefix save-folder families (`LocalSaves`, `ContainerSaves`, `CloudSnapshot`), never moved or merged (COR-316), the old game library folder name under `~/Games` and at volume roots, and the package marker file installed games keep on disk (`.xodus-streaming.msixvc`), which the backend reports in install-inventory package records.
-- **Python only:** inherited upstream crate and binary names the packaging tools build, and the pinned producer #7 artefact names (`xodus-window-monitor.exe`), until a renamed producer replaces the pin.
+- **Python only:** inherited upstream crate and binary names the packaging tools build (`xodus`, `xodus-cli`, `xodus-service`), the Windows helper file name the producer still emits (`xodus-window-monitor.exe`, also from the renamed producer `285696f9`; the app bundle renames it on copy), and the signing identifiers of an installed pre-rename app, which only the read-only check of that app accepts.
 
 The app does not read data from the old roots. If an old State or CLI root is still a real folder and its new root is missing, the data move has not run. If an old root is still a real folder and its new root exists too, the data is in two places, a state the move contract does not define. In both cases the app shows an alert and quits without changing anything. An old root that is the move's alias (a symbolic link) counts as moved. Moving to a new bundle ID resets macOS privacy (TCC) grants; the app asks again on first use.
 
@@ -71,18 +71,19 @@ The app does not read data from the old roots. If an old State or CLI root is st
 1. The two adapters above.
 2. The gate itself, this record, and `.gitleaksignore` (fingerprints of historical commits).
 3. Backend contract schema copies (now carrying canonical IDs; listed so a future resync cannot silently reintroduce old names elsewhere).
-4. Immutable archives under `design/archive/`.
-5. Whole lines crediting the upstream project (`xodus-gaming/xodus`) or linking the inherited public fork `WorkingPrinciple/xodus-macos`.
+4. Immutable archives under `design/archive/`, and historical evidence that hash-locked receipts refer to: the tested-games ledger (`docs/GAME-TEST-LEDGER.md`, `docs/game-test-ledger-state.json`), the compatibility catalogue `game-compatibility-v1.json` (SHA-256 `d3ff0ff0…`) and the QA queue evidence it was built from.
+5. Whole lines crediting the upstream project (`xodus-gaming/xodus`), linking the inherited public fork `WorkingPrinciple/xodus-macos`, or linking a file at a pinned commit.
 6. Tokens anywhere: pinned producer archive names `xodus-cli-<…>-source.tar`, and the inherited upstream Wine name `XODUS_XBL_ONLINE`.
 7. In launch recipes only: the runtime-pin-pending environment names above, and the runtime's pre-rename debug channels `+xodus_user` and `+xodus_package`, passed beside `+ode_user`/`+ode_package` for one release so either runtime version traces (COR-337).
 
-Code inherited from upstream forks is not in this repository. Historical evidence documents keep their entries; paths and names in them use the new names, and the originals remain in Git history.
+Code inherited from upstream forks is not in this repository. The tested-games ledger, its run IDs and the catalogue evidence keep their recorded names. Other historical documents use the new names; the originals remain in Git history.
 
 ## Rollout
 
 - Install the renamed apps only after the data move has run, with every X Ode app quit.
 - Remove or replace the pre-rename app bundles (bundle IDs `io.github.dragoshont.xodus*`) when installing the renamed ones. A renamed app refuses to open while an old copy is running, but an old copy left installed keeps writing to the old roots, which become aliases after the move.
-- Packaging refuses until a reviewed renamed producer is pinned: `tools/shipping_pair.py` sets `PRODUCER_RENAMED = False`, and every packaging path (`build_app.sh`, `build_local_candidate.py`, `refresh_local_candidate.py`, `release_candidate.py`, `package_beta.py`) calls `require_renamed_producer()`. It also refuses while the pins still name a pre-rename producer (`PRE_RENAME_PRODUCERS`, even with the flag set), and rejects a producer contract carrying pre-rename schema IDs wherever the contract is read (local candidate build, refresh, and release through refresh).
+- Packaging pairs only with a reviewed renamed producer. `tools/shipping_pair.py` sets `PRODUCER_RENAMED = True` since the renamed producer `285696f9` was pinned (review bf205a75), and every packaging path (`build_app.sh`, `build_local_candidate.py`, `refresh_local_candidate.py`, `release_candidate.py`, `package_beta.py`) calls `require_renamed_producer()`. It also refuses while the pins still name a pre-rename producer (`PRE_RENAME_PRODUCERS`, even with the flag set), and rejects a producer contract carrying pre-rename schema IDs wherever the contract is read (local candidate build, refresh, and release through refresh).
+- The renamed apps sign with new identifiers (`com.workingprinciple.xode*` instead of `io.github.dragoshont.xodus*`; Team ID unchanged). Pre-rename Keychain items whose access lists name the old identifier therefore ask once, when the app or credential broker first copies them forward. Together with the privacy (TCC) prompts, this needs the owner's acknowledgement before install.
 - At startup the data-move check runs before the instance lock, because the lock lives under the new State root and creating it first would split unmoved data.
 
 ## Pairing
@@ -97,3 +98,7 @@ Two kinds of environment name keep the old spelling, and both live only in the S
 ## Follow-ups
 
 - Before a public release, the data move must run inside the app or its installer, not only as a coordinator-run step. Until then the app refuses to start while an old State or CLI root is still a real folder (accepted by coordinator 2 for the coordinated migration only).
+
+## Commits
+
+The reviewed rename on top of integration 692 is `9182a89c` (mechanical pass) and `ec3c1414` (compatibility file, contract alignment and fixes), followed by the producer pairing `001bd284`.

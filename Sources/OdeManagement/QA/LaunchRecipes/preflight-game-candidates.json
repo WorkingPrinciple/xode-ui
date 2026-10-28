@@ -2,7 +2,7 @@
   "schema_version": 1,
   "scope": "Read-only preflight-v1 candidate rows; no launch permission or game qualification.",
   "registry": "engines/registry.json",
-  "installation_evidence": "/Users/dragoshont/src/copilot-worktrees/ode-macos-app/dragoshont-verbose-dollop/Sources/OdeManagement/Resources/CompatibilityData/s3-preflight-v1.json",
+  "installation_evidence": "/Users/dragoshont/src/copilot-worktrees/xodus-macos-app/dragoshont-verbose-dollop/Sources/XodusManagement/Resources/CompatibilityData/s3-preflight-v1.json",
   "module_evidence": "engines/queue-profiles.json",
   "prefix_policy": "Fresh dedicated title prefixes at S3 admission only; never copy prepared smoke templates.",
   "com_policy": "Default COM for all six titles. Engine family alone is not evidence for STA; no title-specific apartment failure established.",
@@ -12,7 +12,7 @@
       "title": "Skyrim Special Edition / Anniversary Edition",
       "store_id": "9P03JGQ4S1GC",
       "edition_scope": "Installed Special Edition package only; no separate Anniversary Edition executable or entitlement inferred.",
-      "game_dir": "/Users/dragoshont/Games/Xode/SkyrimSE-Xbox",
+      "game_dir": "/Users/dragoshont/Games/Xodus/SkyrimSE-Xbox",
       "manifest_executable": "SkyrimSELauncher.exe",
       "manifest_sha256": "5eea776f506977896230f080175253ebbd50c4fd65fa641bb902b0d2a767dbf8",
       "install_status_run_id": "cd87c38f-9a91-40d3-8f0c-7c2d1bf45003",
@@ -31,7 +31,7 @@
     {
       "title": "Dishonored Definitive Edition",
       "store_id": "9P1N07XDL1D4",
-      "game_dir": "/Users/dragoshont/Games/Xode/DishonoredDefinitive-Xbox",
+      "game_dir": "/Users/dragoshont/Games/Xodus/DishonoredDefinitive-Xbox",
       "manifest_executable": "Binaries/Win64/Dishonored.exe",
       "manifest_sha256": "653200f8c71fc7ffe50984337601e6dbe7ccd1f03f4ab09349af41754266655d",
       "install_status_run_id": "a73ca5f2-faa4-4efe-b1aa-0120ab1ee9b3",
@@ -49,7 +49,7 @@
     {
       "title": "Stardew Valley",
       "store_id": "9MWR1NC6VQ6L",
-      "game_dir": "/Users/dragoshont/Games/Xode/StardewValley-Xbox",
+      "game_dir": "/Users/dragoshont/Games/Xodus/StardewValley-Xbox",
       "manifest_executable": "Stardew Valley.exe",
       "manifest_sha256": "7220b14e4c23def9675cbd3ab64f9f3fedf3b42fc9d9fa553e0e3afb45b85804",
       "install_status_run_id": "eb2a955b-3370-483c-833d-66459c8aee1c",
@@ -67,7 +67,7 @@
     {
       "title": "LIMBO",
       "store_id": "9PNG83MDD6SH",
-      "game_dir": "/Users/dragoshont/Games/Xode/LIMBO-Xbox",
+      "game_dir": "/Users/dragoshont/Games/Xodus/LIMBO-Xbox",
       "manifest_executable": "Limbo.exe",
       "manifest_sha256": "aa248d3faf3824ceed8afc86bcf738e1747c58d0c28d08746435d1080a8d8877",
       "install_status_run_id": "6e7dcef0-f524-45fe-b2e4-4b860dfa9829",
@@ -85,7 +85,7 @@
     {
       "title": "Kingdom Come: Deliverance",
       "store_id": "9P3T7HVKM6D0",
-      "game_dir": "/Users/dragoshont/Games/Xode/KingdomComeDeliverance-Xbox",
+      "game_dir": "/Users/dragoshont/Games/Xodus/KingdomComeDeliverance-Xbox",
       "manifest_executable": "KingdomCome.exe",
       "manifest_sha256": "3a990547523273da6980ad990bf9649a5b7d796069eaf987dad83af1d3289ceb",
       "install_status_run_id": "56d80d3d-c039-44af-9b2b-671bbe604507",
@@ -103,7 +103,7 @@
     {
       "title": "FINAL FANTASY IV",
       "store_id": "9N8C07SS8C9D",
-      "game_dir": "/Users/dragoshont/Games/Xode/FinalFantasyIV-Xbox",
+      "game_dir": "/Users/dragoshont/Games/Xodus/FinalFantasyIV-Xbox",
       "manifest_executable": "FINAL FANTASY IV.exe",
       "manifest_sha256": "175083f95cb11ee2ab24533b96da0c04442ba06c0206895cba647a85409597e3",
       "install_status_run_id": "2b3c6be7-f548-415d-8f42-40d174164d1d",

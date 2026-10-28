@@ -182,7 +182,7 @@
             "version": "1.0.16.0"
           },
           "result": "no-known-signature",
-          "root": "~/Games/Xode/HogwartsLegacy-Xbox",
+          "root": "~/Games/Xodus/HogwartsLegacy-Xbox",
           "signatureSet": "anti-cheat-signatures-v1.json",
           "signatureVersion": 1,
           "symlinkCount": 0
@@ -634,7 +634,7 @@
             "version": "1.5.12620.0"
           },
           "result": "no-known-signature",
-          "root": "~/Games/Xode/HollowKnightVoidheart-Xbox",
+          "root": "~/Games/Xodus/HollowKnightVoidheart-Xbox",
           "signatureSet": "anti-cheat-signatures-v1.json",
           "signatureVersion": 1,
           "symlinkCount": 0
@@ -772,7 +772,7 @@
             "version": "1.6.60015.0"
           },
           "result": "no-known-signature",
-          "root": "~/Games/Xode/StardewValley-Xbox",
+          "root": "~/Games/Xodus/StardewValley-Xbox",
           "scope": "Available filesystem paths only; not proof of full extraction",
           "signatureSet": "anti-cheat-signatures-v1.json",
           "signatureVersion": 1,
@@ -1282,7 +1282,7 @@
       "antiCheat": "Warden",
       "antiCheatEvidence": {
         "checkedAt": "2026-10-21",
-        "method": "Exact normalized title in the pinned AWACY dataset explicitly lists Warden. Its Linux status is not a macOS/Ode runtime acceptance result.",
+        "method": "Exact normalized title in the pinned AWACY dataset explicitly lists Warden. Its Linux status is not a macOS/Xodus runtime acceptance result.",
         "mode": "named-technology",
         "source": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
         "sourceType": "awacy",
@@ -5221,7 +5221,7 @@
             "version": "1.2.1.0"
           },
           "result": "no-known-signature",
-          "root": "~/Games/Xode/AGameAboutDiggingAHole-Xbox",
+          "root": "~/Games/Xodus/AGameAboutDiggingAHole-Xbox",
           "signatureSet": "anti-cheat-signatures-v1.json",
           "signatureVersion": 1,
           "symlinkCount": 0
@@ -5312,7 +5312,7 @@
             "version": "1.1.65148.0"
           },
           "result": "no-known-signature",
-          "root": "~/Games/Xode/Mixtape-Xbox",
+          "root": "~/Games/Xodus/Mixtape-Xbox",
           "scope": "Available filesystem paths only; not proof of full extraction",
           "signatureSet": "anti-cheat-signatures-v1.json",
           "signatureVersion": 1,
@@ -7783,7 +7783,7 @@
       "antiCheat": "Easy Anti-Cheat",
       "antiCheatEvidence": {
         "checkedAt": "2026-10-21",
-        "method": "Exact normalized title in the pinned AWACY dataset explicitly lists Easy Anti-Cheat. Its Linux status is not a macOS/Ode runtime acceptance result.",
+        "method": "Exact normalized title in the pinned AWACY dataset explicitly lists Easy Anti-Cheat. Its Linux status is not a macOS/Xodus runtime acceptance result.",
         "mode": "named-technology",
         "source": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
         "sourceType": "awacy",
@@ -7931,7 +7931,7 @@
             "version": "1.1.3.0"
           },
           "result": "no-known-signature",
-          "root": "~/Games/Xode/REPLACED-Xbox",
+          "root": "~/Games/Xodus/REPLACED-Xbox",
           "scope": "Available filesystem paths only; not proof of full extraction",
           "signatureSet": "anti-cheat-signatures-v1.json",
           "signatureVersion": 1,
@@ -9480,7 +9480,7 @@
             "version": "1.0.0.0"
           },
           "result": "no-known-signature",
-          "root": "~/Games/Xode/OblivionGOTY2009-Xbox",
+          "root": "~/Games/Xodus/OblivionGOTY2009-Xbox",
           "scope": "Available filesystem paths only; not proof of full extraction",
           "signatureSet": "anti-cheat-signatures-v1.json",
           "signatureVersion": 1,
@@ -9574,7 +9574,7 @@
       "antiCheat": "Easy Anti-Cheat",
       "antiCheatEvidence": {
         "checkedAt": "2026-10-21",
-        "method": "Exact normalized title in the pinned AWACY dataset explicitly lists Easy Anti-Cheat. Its Linux status is not a macOS/Ode runtime acceptance result.",
+        "method": "Exact normalized title in the pinned AWACY dataset explicitly lists Easy Anti-Cheat. Its Linux status is not a macOS/Xodus runtime acceptance result.",
         "mode": "named-technology",
         "source": "https://raw.githubusercontent.com/AreWeAntiCheatYet/AreWeAntiCheatYet/d876c32d21c69067406e3db44a12ae6633fb5fa7/games.json",
         "sourceType": "awacy",
@@ -9902,7 +9902,7 @@
             "version": "1.9.7.0"
           },
           "result": "no-known-signature",
-          "root": "~/Games/Xode/KingdomComeDeliverance-Xbox",
+          "root": "~/Games/Xodus/KingdomComeDeliverance-Xbox",
           "scope": "Available filesystem paths only; not proof of full extraction",
           "signatureSet": "anti-cheat-signatures-v1.json",
           "signatureVersion": 1,
@@ -10220,7 +10220,7 @@
             "version": "1.4.28206.0"
           },
           "result": "no-known-signature",
-          "root": "~/Games/Xode/AbioticFactor-Xbox",
+          "root": "~/Games/Xodus/AbioticFactor-Xbox",
           "signatureSet": "anti-cheat-signatures-v1.json",
           "signatureVersion": 1,
           "symlinkCount": 0
@@ -12120,7 +12120,7 @@
             "version": "1.14.296.0"
           },
           "result": "no-known-signature",
-          "root": "~/Games/Xode/HadesII-Xbox",
+          "root": "~/Games/Xodus/HadesII-Xbox",
           "signatureSet": "anti-cheat-signatures-v1.json",
           "signatureVersion": 1,
           "symlinkCount": 0
@@ -12851,7 +12851,7 @@
             "version": "2.6.2.0"
           },
           "result": "no-known-signature",
-          "root": "~/Games/Xode/MinecraftLauncher-Xbox",
+          "root": "~/Games/Xodus/MinecraftLauncher-Xbox",
           "signatureSet": "anti-cheat-signatures-v1.json",
           "signatureVersion": 1,
           "symlinkCount": 0
@@ -13207,7 +13207,7 @@
             "version": "1.0.5.0"
           },
           "result": "no-known-signature",
-          "root": "~/Games/Xode/MinecraftJavaEdition-Xbox",
+          "root": "~/Games/Xodus/MinecraftJavaEdition-Xbox",
           "scope": "Available filesystem paths only; not proof of full extraction; Minecraft Windows entitlement stub, not Java runtime",
           "signatureSet": "anti-cheat-signatures-v1.json",
           "signatureVersion": 1,
@@ -13376,7 +13376,7 @@
             "version": "0.13.1439.0"
           },
           "result": "no-known-signature",
-          "root": "~/Games/Xode/Subnautica2-Xbox",
+          "root": "~/Games/Xodus/Subnautica2-Xbox",
           "scope": "Available filesystem paths only; not proof of full extraction",
           "signatureSet": "anti-cheat-signatures-v1.json",
           "signatureVersion": 1,
@@ -13507,7 +13507,7 @@
             "version": "1.0.5.0"
           },
           "result": "no-known-signature",
-          "root": "~/Games/Xode/Balatro-Xbox",
+          "root": "~/Games/Xodus/Balatro-Xbox",
           "scope": "Available filesystem paths only; not proof of full extraction",
           "signatureSet": "anti-cheat-signatures-v1.json",
           "signatureVersion": 1,
@@ -13946,7 +13946,7 @@
             "version": "1.0.4.0"
           },
           "result": "no-known-signature",
-          "root": "~/Games/Xode/WellDweller-Xbox",
+          "root": "~/Games/Xodus/WellDweller-Xbox",
           "signatureSet": "anti-cheat-signatures-v1.json",
           "signatureVersion": 1,
           "symlinkCount": 0
@@ -14395,7 +14395,7 @@
             "version": "1.0.27.0"
           },
           "result": "no-known-signature",
-          "root": "~/Games/Xode/LIMBO-Xbox",
+          "root": "~/Games/Xodus/LIMBO-Xbox",
           "scope": "Available filesystem paths only; not proof of full extraction",
           "signatureSet": "anti-cheat-signatures-v1.json",
           "signatureVersion": 1,
@@ -14815,7 +14815,7 @@
             "version": "7.6.0.0"
           },
           "result": "no-known-signature",
-          "root": "~/Games/Xode/NoMansSky-Xbox",
+          "root": "~/Games/Xodus/NoMansSky-Xbox",
           "signatureSet": "anti-cheat-signatures-v1.json",
           "signatureVersion": 1,
           "symlinkCount": 0

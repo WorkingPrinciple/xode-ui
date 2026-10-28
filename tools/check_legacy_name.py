@@ -34,8 +34,19 @@ FILES = {
 }
 # Immutable archives.
 PREFIXES = ("design/archive/",)
+# The tested-games ledger and its state: historical evidence whose run IDs, paths and names must match
+# hash-locked receipts; never rewritten (REQ-150 review b2530f59 m2).
+FILES |= {"docs/GAME-TEST-LEDGER.md", "docs/game-test-ledger-state.json",
+          # The hash-locked compatibility catalogue and QA evidence it was built from (install roots as observed).
+          "Sources/OdeManagement/Resources/CompatibilityData/game-compatibility-v1.json",
+          "Sources/OdeManagement/QA/CompatibilityData/next-30-queue.json",
+          "Sources/OdeManagement/QA/CompatibilityData/queue-inspection-v1.json",
+          "Sources/OdeManagement/QA/LaunchRecipes/preflight-game-candidates.json",
+          "Sources/OdeManagement/QA/LaunchRecipes/small-game-candidates.json"}
 # Whole lines allowed anywhere: credit to the upstream project and links to the inherited public fork.
-ATTRIBUTION = re.compile(r"xodus-gaming|WorkingPrinciple/xodus-macos(?![-\w])")
+ATTRIBUTION = re.compile(r"xodus-gaming|WorkingPrinciple/xodus-macos(?![-\w])"
+                         # Links to a file at a pinned commit, which keep that commit's paths.
+                         r"|github\.com/[\w.-]+/[\w.-]+/blob/[0-9a-f]{40}/")
 # Tokens allowed anywhere: the pinned producer source archive name, until producer #7 is replaced.
 # Also the upstream Wine environment name XODUS_XBL_ONLINE (inherited; never renamed).
 LINES = re.compile(r"xodus-cli-(?:beta-)?[0-9a-f]{7,40}-source\.tar|\bXODUS_XBL_ONLINE\b")

@@ -52,15 +52,15 @@ flowchart LR
 
 **Historical fixture mockup, not a current app or game screenshot.** The image
 uses fictional titles and original illustrations; its access labels are invented.
-It retains the earlier Ode name. It was inspected for account names, emails and
+It retains the earlier product name. It was inspected for account names, emails and
 tokens; none were visible. No live account capture or copyrighted game art is
-republished. [Artwork provenance](https://github.com/WorkingPrinciple/xode-ui/blob/fac58d6f501c356a0e763d397263e5a0a30b3477/Sources/OdePreview/Resources/Artwork/PROVENANCE.json).
+republished. [Artwork provenance](https://github.com/WorkingPrinciple/xode-ui/blob/fac58d6f501c356a0e763d397263e5a0a30b3477/Sources/XodusPreview/Resources/Artwork/PROVENANCE.json).
 
 ## Before you try it
 
 New game installations default to `~/Games/Xode`. Saved custom installation
 roots and partial-install destinations are retained; this source change does not
-move existing games. Discovery also recognizes the legacy `Ode` library roots.
+move existing games. Discovery also recognizes the library roots earlier builds used.
 
 Use an Apple Silicon Mac. The package and app manifests declare macOS 14 minimum;
 that is not fresh-Mac certification across supported operating systems.
@@ -141,7 +141,7 @@ External engine-provider credits: [Highball](https://github.com/gauthierpiarrett
 In the app, the credits and every component's licence are in X Ode menu › Acknowledgments
 (or Open-Source Licences…, and Help › Acknowledgments and Licences). They work signed out and offline.
 
-X Ode's backend is the [macOS backend fork](https://github.com/WorkingPrinciple/xodus-macos) of Ode.
+X Ode's backend is the [macOS backend fork](https://github.com/WorkingPrinciple/xodus-macos) of Xodus.
 Original app source, documentation and mockups are GPL-3.0-only; preserve
 [the source license](LICENSE), [NOTICE](NOTICE), [licensing boundaries](docs/LICENSING.md),
 upstream notices and corresponding-source obligations when distributing. The
@@ -154,7 +154,7 @@ This is an independent project, not affiliated with or endorsed by Microsoft,
 Xbox, Apple, CodeWeavers or game publishers. X Ode is the product name shown in
 the app (one source: `AppBrand` in `Sources/OdeCore/AppBrand.swift`); bundle
 identifiers, executables, module names, preference keys, Keychain identities,
-signer requirements and existing Ode paths are unchanged.
+signer requirements and data paths use the Ode names ([rename record](docs/ODE-RENAME.md)).
 
-Backend scope and launch boundaries: [coordinator regrouping notes](https://github.com/WorkingPrinciple/xodus-macos/blob/dragoshont-heroic-xbox-integration/docs/ode/regrouping.md)
-and [publication precautions](https://github.com/WorkingPrinciple/xodus-macos/blob/dragoshont-heroic-xbox-integration/docs/ode/publication.md).
+Backend scope and launch boundaries: [coordinator regrouping notes](https://github.com/WorkingPrinciple/xodus-macos/blob/dragoshont-heroic-xbox-integration/docs/xodus/regrouping.md)
+and [publication precautions](https://github.com/WorkingPrinciple/xodus-macos/blob/dragoshont-heroic-xbox-integration/docs/xodus/publication.md).
