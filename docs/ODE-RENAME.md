@@ -37,7 +37,7 @@ Categories are assigned first-match in the order listed.
 | Executable and icon `Xodus` | `Ode` (user-visible `.app` names unchanged) |
 | CLI in the bundle `Contents/Resources/XodusEngine/xodus-cli` | `Contents/Resources/OdeEngine/ode-cli` (helper `ode-window-monitor.exe`) |
 | Accessibility IDs `xodus.*` | `ode.*` |
-| Preference keys `Xodus.*` / `xodus.*` | `Ode.*` / `ode.*` (one-time import of old values) |
+| Preference keys `Xodus.*` / `xodus.*` | `Ode.*` / `ode.*` (one-time import of old values; `windowsProfileUnverifiedPrefixes.v1` merged) |
 | Environment and compile flags `XODUS_*` | `ODE_*` (suffix unchanged; the app emits only new names) |
 | Generated run IDs `xodus-<UTC>-<hex>` | `ode-<UTC>-<hex>` (old IDs still read) |
 | Data roots `Xodus`, `XodusCLI`, `XodusEdgeCDP`, `XodusRemote` under Application Support | `Ode to X/State`, `Ode to X/CLI`, `Ode to X/EdgeCDP`, `Ode to X/Remote` |
@@ -58,7 +58,7 @@ Legacy names live in one file per language:
 They hold:
 
 - **One stable protocol value, kept for good:** the v1 account-hash domain (COR-314). Changing it would change existing account identities.
-- **Read-only names from before the rename, removed after the next release:** a management schema ID normalised to the canonical one before validation; the old lifecycle-lock and engine-owner sidecar names; old run IDs; the old preference domain and keys (imported once; existing values win; the old domain is never changed); the old `Library` Keychain service (copied forward on first use by the broker or the direct store, never changed or deleted this release, and ignored after sign-out); the old bundle IDs (so an old copy still running blocks a new one); and the CLI location inside an app installed before the rename.
+- **Read-only names from before the rename, removed after the next release:** a management schema ID normalised to the canonical one before validation; the old lifecycle-lock and engine-owner sidecar names; old run IDs; the old preference domain and keys (imported once; existing values win, except that the Play-hold marks `Xodus.windowsProfileUnverifiedPrefixes.v1` (added in 694) are merged into `Ode.windowsProfileUnverifiedPrefixes.v1` so no marked prefix can play; prefix paths under an old data root are rewritten to the new root; the old domain is never changed); the old `Library` Keychain service (copied forward on first use by the broker or the direct store, never changed or deleted this release, and ignored after sign-out); the old bundle IDs (so an old copy still running blocks a new one); and the CLI location inside an app installed before the rename.
 - **Persistent data identity, kept until an explicit owner decision, never on a timer:** both in-prefix save-folder families (`LocalSaves`, `ContainerSaves`, `CloudSnapshot`), never moved or merged (COR-316), the old game library folder name under `~/Games` and at volume roots, and the package marker file installed games keep on disk (`.xodus-streaming.msixvc`), which the backend reports in install-inventory package records.
 - **Python only:** inherited upstream crate and binary names the packaging tools build (`xodus`, `xodus-cli`, `xodus-service`), the Windows helper file name the producer still emits (`xodus-window-monitor.exe`, also from the renamed producer `285696f9`; the app bundle renames it on copy), and the signing identifiers of an installed pre-rename app, which only the read-only check of that app accepts.
 
@@ -71,8 +71,8 @@ The app does not read data from the old roots. If an old State or CLI root is st
 1. The two adapters above.
 2. The gate itself, this record, and `.gitleaksignore` (fingerprints of historical commits).
 3. Backend contract schema copies (now carrying canonical IDs; listed so a future resync cannot silently reintroduce old names elsewhere).
-4. Immutable archives under `design/archive/`, and historical evidence that hash-locked receipts refer to: the tested-games ledger (`docs/GAME-TEST-LEDGER.md`, `docs/game-test-ledger-state.json`), the compatibility catalogue `game-compatibility-v1.json` (SHA-256 `d3ff0ff0…`) and the QA queue evidence it was built from.
-5. Whole lines crediting the upstream project (`xodus-gaming/xodus`), linking the inherited public fork `WorkingPrinciple/xodus-macos`, or linking a file at a pinned commit.
+4. Immutable archives under `design/archive/`, and historical evidence that hash-locked receipts refer to: the tested-games ledger (`docs/GAME-TEST-LEDGER.md`, `docs/game-test-ledger-state.json`), the compatibility catalogue `game-compatibility-v1.json` (SHA-256 `d3ff0ff0…`) and the four QA queue evidence files it was built from. The gate pins those four by Git blob SHA-1 (identical to 692 and 694), so any edit to them fails it.
+5. Spans, not whole lines: the upstream repository `xodus-gaming/xodus`, the inherited public fork `WorkingPrinciple/xodus-macos` and links into it, and links to a file at a pinned commit in a WorkingPrinciple or dragoshont repository. Only the span is removed; the rest of the line is still checked. On a line with such a span, the upstream project's own name `Xodus` (the bare word) is also allowed. The gate runs a self-test of lines that must fail, including a pinned link followed by another legacy name (708fb8ae n1).
 6. Tokens anywhere: pinned producer archive names `xodus-cli-<…>-source.tar`, and the inherited upstream Wine name `XODUS_XBL_ONLINE`.
 7. In launch recipes only: the runtime-pin-pending environment names above, and the runtime's pre-rename debug channels `+xodus_user` and `+xodus_package`, passed beside `+ode_user`/`+ode_package` for one release so either runtime version traces (COR-337).
 

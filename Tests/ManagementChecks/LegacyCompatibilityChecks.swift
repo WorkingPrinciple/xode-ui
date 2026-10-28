@@ -44,6 +44,28 @@ extension Checks {
               "REQ-150: An unbundled run imports nothing")
         UserDefaults(suiteName: suite + ".unbundled")?.removePersistentDomain(forName: suite + ".unbundled")
 
+        // 694 Play-hold marks: merged, never skipped, and moved to the new data root.
+        let marksSuite = suite + ".marks"
+        if let marks = UserDefaults(suiteName: marksSuite) {
+            defer { marks.removePersistentDomain(forName: marksSuite) }
+            let home = "/Users/fixture"
+            let cli = LegacyCompatibility.dataRoots[1]
+            let oldPrefix = home + "/" + cli.legacy + "/prefixes/held"
+            let newPrefix = home + "/" + cli.current + "/prefixes/held"
+            let key = "Ode.windowsProfileUnverifiedPrefixes.v1"
+            marks.set([home + "/" + cli.current + "/prefixes/already"], forKey: key)
+            let merged = LegacyCompatibility.importLegacyPreferences(into: marks, bundleIdentifier: current,
+                legacyDomain: [LegacyCompatibility.legacyKeyPrefixes[0].0 + "windowsProfileUnverifiedPrefixes.v1": [oldPrefix],
+                               oldPrefix: "unrelated key is copied as is"], home: home)
+            check(LegacyCompatibility.mergedPreferenceKeys.contains(key) && merged == 2
+                  && marks.stringArray(forKey: key) == [home + "/" + cli.current + "/prefixes/already", newPrefix].sorted()
+                  && LegacyCompatibility.rewritingLegacyDataPath(home + "/" + cli.legacy + "X/y", home: home)
+                    == home + "/" + cli.legacy + "X/y",
+                  "REQ-150/694: Play-hold marks under the old key merge into existing marks and move to the new data root; nothing is dropped")
+        } else {
+            check(false, "REQ-150: Marks suite opens")
+        }
+
         check(LegacyCompatibility.legacyKeychainService(for: "Ode Library") != nil
               && LegacyCompatibility.legacyKeychainService(for: "Ode B6 synthetic qualification") == nil,
               "REQ-150/COR-310: Only the renamed Library Keychain service has a read-only old source")

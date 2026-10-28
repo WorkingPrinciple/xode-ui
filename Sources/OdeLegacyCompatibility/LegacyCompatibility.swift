@@ -107,23 +107,54 @@ public enum LegacyCompatibility {
         return key
     }
 
-    /// Copies preferences from the pre-rename domain once. Values already set win; the old domain
-    /// is only read and stays in place for rollback. Returns the number of keys copied.
+    /// Preference keys holding sets of marks that must never be lost: imported values are merged into
+    /// any existing set rather than skipped. Play-hold marks keyed by prefix path (694): dropping one
+    /// would let a prefix with a partly changed Windows profile play.
+    public static let mergedPreferenceKeys: Set<String> = ["Ode.windowsProfileUnverifiedPrefixes.v1"]
+
+    /// Copies preferences from the pre-rename domain once. Values already set win, except for
+    /// `mergedPreferenceKeys`, whose string sets are merged. Paths under a renamed data root are rewritten
+    /// to the new root, so nothing persists an old absolute path. The old domain is only read and stays
+    /// in place for rollback. Returns the number of keys copied or merged.
     @discardableResult
     public static func importLegacyPreferences(into defaults: UserDefaults = .standard,
                                                bundleIdentifier: String? = Bundle.main.bundleIdentifier,
-                                               legacyDomain: [String: Any]? = nil) -> Int {
+                                               legacyDomain: [String: Any]? = nil,
+                                               home: String = NSHomeDirectory()) -> Int {
         guard !defaults.bool(forKey: importMarker),
               let legacy = legacyBundleIdentifier(for: bundleIdentifier) else { return 0 }
         var copied = 0
         for (key, value) in legacyDomain ?? defaults.persistentDomain(forName: legacy) ?? [:] {
             let renamed = renamedPreferenceKey(key)
+            let value = rewritingLegacyDataPaths(value, home: home)
+            if mergedPreferenceKeys.contains(renamed), let incoming = value as? [String] {
+                let existing = defaults.stringArray(forKey: renamed) ?? []
+                defaults.set(Array(Set(existing).union(incoming)).sorted(), forKey: renamed)
+                copied += 1
+                continue
+            }
             guard defaults.object(forKey: renamed) == nil else { continue }
             defaults.set(value, forKey: renamed)
             copied += 1
         }
         defaults.set(true, forKey: importMarker)
         return copied
+    }
+
+    /// A string, or strings in an array, with a leading path under a renamed data root moved to its new root.
+    static func rewritingLegacyDataPaths(_ value: Any, home: String) -> Any {
+        if let string = value as? String { return rewritingLegacyDataPath(string, home: home) }
+        if let strings = value as? [String] { return strings.map { rewritingLegacyDataPath($0, home: home) } }
+        return value
+    }
+
+    public static func rewritingLegacyDataPath(_ path: String, home: String = NSHomeDirectory()) -> String {
+        for root in dataRoots {
+            let legacy = (home as NSString).appendingPathComponent(root.legacy)
+            guard path == legacy || path.hasPrefix(legacy + "/") else { continue }
+            return (home as NSString).appendingPathComponent(root.current) + String(path.dropFirst(legacy.count))
+        }
+        return path
     }
 
     // MARK: Keychain. REMOVE AFTER NEXT RELEASE.

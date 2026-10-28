@@ -578,6 +578,8 @@ import OdeManagement
               "REQ-135: only a verified game folder can be deleted; in-root saves, a nested prefix, an unknown layout, another product and a symlink an unreadable entry before Saves and a deep Unreal Saved all fail closed: \(verdicts)")
         check(snapshot(root) == before,
               "REQ-135: the safety check leaves every sentinel (in-root save, nested prefix, separate prefix) unchanged")
+        check(LegacyCompatibility.mergedPreferenceKeys.contains(WindowsProfileUnverifiedMarks.key),
+              "REQ-150/694: the Play-hold marks key is carried forward from the pre-rename preferences by merging")
         check(Ops.saveMarkers.isSuperset(of: LegacyCompatibility.privateSaveFolders)
               && Ops.saveMarkers.isSuperset(of: ["saves", "savegames", "wgs", "connectedstorage"])
               && LegacyCompatibility.privateSaveFolders.count == 6,
