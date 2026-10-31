@@ -44,7 +44,9 @@ final class NativeAuthBrowser: NSObject, WKNavigationDelegate, WKUIDelegate, WKS
     }
 
     func load(_ request: URLRequest, userAgent: String?) throws {
+        authHostLog("NativeAuthBrowser load request url=\(String(describing: request.url))")
         guard !terminal, let url = request.url, trust.navigation(url) else {
+            authHostLog("NativeAuthBrowser load failed guard: terminal=\(terminal), url=\(String(describing: request.url)), allowed=\(request.url.map(trust.navigation) ?? false)")
             throw HostFailure.navigationFailed
         }
         if let navigation = activeNavigation { try supersede(navigation) }
@@ -93,6 +95,7 @@ final class NativeAuthBrowser: NSObject, WKNavigationDelegate, WKUIDelegate, WKS
     }
 
     private func fail(_ failure: HostFailure) {
+        authHostLog("NativeAuthBrowser fail: \(failure), terminal was \(terminal)")
         guard !terminal else { return }
         close()
         failed(failure)
@@ -115,8 +118,15 @@ final class NativeAuthBrowser: NSObject, WKNavigationDelegate, WKUIDelegate, WKS
 
     func userContentController(_ userContentController: WKUserContentController,
                                didReceive message: WKScriptMessage) {
-        guard !terminal, acceptsMessages else { return }
-        guard trustedMessage(message) else { return }
+        authHostLog("userContentController didReceive message name=\(message.name), body=\(message.body)")
+        guard !terminal, acceptsMessages else {
+            authHostLog("userContentController ignored: terminal=\(terminal), acceptsMessages=\(acceptsMessages)")
+            return
+        }
+        guard trustedMessage(message) else {
+            authHostLog("userContentController ignored: trustedMessage was false! frame.url=\(String(describing: message.frameInfo.request.url)), view.url=\(String(describing: view.url))")
+            return
+        }
         do {
             guard let text = message.body as? String else { throw HostFailure.bridgeInvalid }
             let wrapper = try PrivateJSON.parse(Data(text.utf8)).object(keys: ["navigation", "document", "message"])
@@ -176,12 +186,22 @@ final class NativeAuthBrowser: NSObject, WKNavigationDelegate, WKUIDelegate, WKS
     }
 
     func navigationPolicy(for request: URLRequest, isMainFrame: Bool?) -> WKNavigationActionPolicy {
-        guard !terminal else { return .cancel }
-        if isMainFrame == false { return .allow }
-        if isMainFrame == nil {
-            return popupDisposition(for: request) == .blocked ? .cancel : .allow
+        guard !terminal else {
+            authHostLog("navigationPolicy: terminal, cancelling url=\(String(describing: request.url))")
+            return .cancel
         }
-        return request.url.map(trust.navigation) == true ? .allow : .cancel
+        if isMainFrame == false {
+            authHostLog("navigationPolicy: subframe allow url=\(String(describing: request.url))")
+            return .allow
+        }
+        if isMainFrame == nil {
+            let disp = popupDisposition(for: request)
+            authHostLog("navigationPolicy: popup disposition=\(disp) url=\(String(describing: request.url))")
+            return disp == .blocked ? .cancel : .allow
+        }
+        let allowed = request.url.map(trust.navigation) == true
+        authHostLog("navigationPolicy: mainFrame url=\(String(describing: request.url)) allowed=\(allowed)")
+        return allowed ? .allow : .cancel
     }
 
     func popupDisposition(for request: URLRequest) -> NativePopupDisposition {
@@ -191,6 +211,7 @@ final class NativeAuthBrowser: NSObject, WKNavigationDelegate, WKUIDelegate, WKS
     }
 
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        authHostLog("didStartProvisionalNavigation: url=\(String(describing: webView.url))")
         guard !terminal, let navigation else { return }
         if let activeNavigation, activeNavigation !== navigation {
             do { try supersede(activeNavigation) }
@@ -203,32 +224,47 @@ final class NativeAuthBrowser: NSObject, WKNavigationDelegate, WKUIDelegate, WKS
     }
 
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        authHostLog("didCommit: url=\(String(describing: webView.url))")
         guard !terminal, let navigation, navigation === activeNavigation else { return }
         acceptsMessages = true
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        authHostLog("didFinish: url=\(String(describing: webView.url))")
         guard !terminal, let navigation else { return }
         superseded.removeValue(forKey: ObjectIdentifier(navigation))
-        guard navigation === activeNavigation, let url = view.url, trust.navigation(url) else { return }
+        guard navigation === activeNavigation, let url = view.url, trust.navigation(url) else {
+            authHostLog("didFinish ignored: navMatches=\(navigation === activeNavigation), url=\(String(describing: view.url)), allowed=\(view.url.map(trust.navigation) ?? false)")
+            return
+        }
         let expectedGeneration = generation
         Task { @MainActor [weak self] in
             guard let self else { return }
             do {
                 let verified = try await self.view.callAsyncJavaScript(LegacyBridge.verifyBridge,
                     arguments: [:], in: nil, contentWorld: .page)
-                guard !self.terminal, self.generation == expectedGeneration else { return }
-                guard verified as? Bool == true else { throw HostFailure.javaScriptFailed }
+                authHostLog("didFinish Task: verifyBridge returned: \(String(describing: verified)) for url: \(url)")
+                guard !self.terminal, self.generation == expectedGeneration else {
+                    authHostLog("didFinish Task: terminal or generation mismatch (\(self.generation) vs \(expectedGeneration))")
+                    return
+                }
+                guard verified as? Bool == true else {
+                    authHostLog("didFinish Task: verified != true! throwing javaScriptFailed")
+                    throw HostFailure.javaScriptFailed
+                }
+                authHostLog("didFinish Task: bridge verified successfully. trust.finish=\(self.trust.finish(url))")
                 guard self.trust.finish(url), !self.delivered, !self.validatingDA else { return }
                 self.validatingDA = true
                 let value = try await self.view.callAsyncJavaScript(LegacyBridge.extract,
                     arguments: [:], in: nil, contentWorld: .page)
+                authHostLog("didFinish Task: extract returned: \(String(describing: value))")
                 guard !self.terminal, self.generation == expectedGeneration else { return }
                 self.validatingDA = false
                 guard let json = value as? String, let current = self.view.url,
                       self.trust.finish(current) else { throw HostFailure.javaScriptFailed }
                 self.deliver(try LegacyDA(PrivateJSON.parse(Data(json.utf8))))
             } catch {
+                authHostLog("didFinish Task caught error: \(error)")
                 guard !self.terminal, self.generation == expectedGeneration else { return }
                 self.fail(.javaScriptFailed)
             }
@@ -236,10 +272,18 @@ final class NativeAuthBrowser: NSObject, WKNavigationDelegate, WKUIDelegate, WKS
     }
 
     private func navigationFailure(_ navigation: WKNavigation?, _ error: Error, provisional: Bool) {
+        authHostLog("navigationFailure: provisional=\(provisional), error=\(error)")
         if let navigation { superseded.removeValue(forKey: ObjectIdentifier(navigation)) }
         let error = error as NSError
-        if error.domain == NSURLErrorDomain && error.code == NSURLErrorCancelled { return }
-        if provisional && error.domain == "WebKitErrorDomain" && error.code == 102 { return }
+        if error.domain == NSURLErrorDomain && error.code == NSURLErrorCancelled {
+            authHostLog("navigationFailure: NSURLErrorCancelled, ignored")
+            return
+        }
+        if provisional && error.domain == "WebKitErrorDomain" && error.code == 102 {
+            authHostLog("navigationFailure: WebKitErrorDomain 102, ignored")
+            return
+        }
+        authHostLog("navigationFailure: failing with .navigationFailed")
         fail(.navigationFailed)
     }
 
