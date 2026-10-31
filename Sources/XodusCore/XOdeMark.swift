@@ -1,39 +1,62 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import CoreGraphics
 
-/// The original standalone X, shared by native views and the packaged icon renderer.
+/// The Ode crossed-swords mark: downward-pointing crossed blades with a compact crossguard
+/// and a negative-space knockout gap at the crossing point.
 public enum XOdeMark {
     public static func path(in rect: CGRect) -> CGPath {
-        let mark = CGMutablePath()
-        mark.move(to: CGPoint(x: 7, y: 7))
-        mark.addCurve(to: CGPoint(x: 106, y: 65), control1: CGPoint(x: 0, y: -4),
-                      control2: CGPoint(x: 80, y: 20))
-        mark.addCurve(to: CGPoint(x: 150, y: 100), control1: CGPoint(x: 117, y: 85),
-                      control2: CGPoint(x: 131, y: 93))
-        mark.addLine(to: CGPoint(x: 211, y: 189))
-        mark.addQuadCurve(to: CGPoint(x: 199, y: 197), control: CGPoint(x: 222, y: 207))
-        mark.addLine(to: CGPoint(x: 109, y: 130))
-        mark.addLine(to: CGPoint(x: 18, y: 196))
-        mark.addQuadCurve(to: CGPoint(x: 9, y: 190), control: CGPoint(x: 0, y: 208))
-        mark.addLine(to: CGPoint(x: 61, y: 111))
-        mark.addCurve(to: CGPoint(x: 59, y: 77), control1: CGPoint(x: 76, y: 91),
-                      control2: CGPoint(x: 64, y: 88))
-        mark.addLine(to: CGPoint(x: 7, y: 7))
-        mark.closeSubpath()
-        mark.move(to: CGPoint(x: 114, y: 52))
-        mark.addCurve(to: CGPoint(x: 201, y: 8), control1: CGPoint(x: 139, y: 31),
-                      control2: CGPoint(x: 171, y: 13))
-        mark.addQuadCurve(to: CGPoint(x: 210, y: 15), control: CGPoint(x: 217, y: 2))
-        mark.addLine(to: CGPoint(x: 152, y: 92))
-        mark.addCurve(to: CGPoint(x: 114, y: 52), control1: CGPoint(x: 132, y: 86),
-                      control2: CGPoint(x: 120, y: 71))
-        mark.closeSubpath()
-        let scale = min(rect.width / 220, rect.height / 210)
-        let transform = CGAffineTransform(scaleX: scale, y: scale)
-            .concatenating(CGAffineTransform(translationX: rect.midX - 110 * scale,
-                                           y: rect.midY - 105 * scale))
         let result = CGMutablePath()
-        result.addPath(mark, transform: transform)
+
+        // Single sword components in local coordinates centered around crossing origin (0, 0)
+        let hilt = CGMutablePath()
+        hilt.addEllipse(in: CGRect(x: -4.5, y: -50.5, width: 9, height: 9))
+        hilt.addRoundedRect(in: CGRect(x: -2.5, y: -41.5, width: 5, height: 13), cornerWidth: 1.5, cornerHeight: 1.5)
+        hilt.addRoundedRect(in: CGRect(x: -10.5, y: -28.5, width: 21, height: 4.5), cornerWidth: 2, cornerHeight: 2)
+
+        let fgBlade = CGMutablePath()
+        fgBlade.move(to: CGPoint(x: -4.5, y: -24))
+        fgBlade.addLine(to: CGPoint(x: 4.5, y: -24))
+        fgBlade.addLine(to: CGPoint(x: 4.5, y: 38))
+        fgBlade.addLine(to: CGPoint(x: 0, y: 53))
+        fgBlade.addLine(to: CGPoint(x: -4.5, y: 38))
+        fgBlade.closeSubpath()
+
+        let bgUpper = CGMutablePath()
+        bgUpper.move(to: CGPoint(x: -4.5, y: -24))
+        bgUpper.addLine(to: CGPoint(x: 4.5, y: -24))
+        bgUpper.addLine(to: CGPoint(x: 4.5, y: -8.5))
+        bgUpper.addLine(to: CGPoint(x: -4.5, y: -8.5))
+        bgUpper.closeSubpath()
+
+        let bgLower = CGMutablePath()
+        bgLower.move(to: CGPoint(x: -4.5, y: 8.5))
+        bgLower.addLine(to: CGPoint(x: 4.5, y: 8.5))
+        bgLower.addLine(to: CGPoint(x: 4.5, y: 38))
+        bgLower.addLine(to: CGPoint(x: 0, y: 53))
+        bgLower.addLine(to: CGPoint(x: -4.5, y: 38))
+        bgLower.closeSubpath()
+
+        // Combined model
+        let model = CGMutablePath()
+        let rotRight = CGAffineTransform(rotationAngle: .pi / 4)
+        let rotLeft = CGAffineTransform(rotationAngle: -.pi / 4)
+
+        // Background sword (tilted left, with gap at the crossing)
+        model.addPath(hilt, transform: rotLeft)
+        model.addPath(bgUpper, transform: rotLeft)
+        model.addPath(bgLower, transform: rotLeft)
+
+        // Foreground sword (tilted right, uninterrupted)
+        model.addPath(hilt, transform: rotRight)
+        model.addPath(fgBlade, transform: rotRight)
+
+        let box = model.boundingBoxOfPath
+        let scale = min(rect.width / box.width, rect.height / box.height) * 0.95
+        let transform = CGAffineTransform(translationX: -box.midX, y: -box.midY)
+            .concatenating(CGAffineTransform(scaleX: scale, y: scale))
+            .concatenating(CGAffineTransform(translationX: rect.midX, y: rect.midY))
+
+        result.addPath(model, transform: transform)
         return result
     }
 }

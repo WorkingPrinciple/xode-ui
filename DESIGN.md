@@ -15,12 +15,13 @@ direction; neither screenshots nor source checks establish a latency target.
 
 **19 October naming/layout correction:** App-owned display name and wordmark
 are **Ode to X**. Retain the existing native vector X and system typography.
-**27 October mark (W1):** the original `XOdeMark` vector X, unchanged in shape,
-is filled burgundy #7A1E3A on a white rounded tile, in both Light and Dark and in
-the app icon (`tools/RenderAppIcon.swift`, sRGB) and in-app mark (`OdeMarkTile`).
-No Xbox green (#107C10/#52B043) remains anywhere in the brand or its control
-accent: `OdeBrand.accent` is #7A1E3A in Light and #C2485A in Dark. No Xbox logos,
-and no ® on X Ode, Ode or Calimocho.
+**31 October mark (Ochre on Wine):** the mark is the downward-pointing crossed swords
+in warm ochre #F4C77A with compact crossguards and negative-space knockout overlap,
+set on a wine rounded tile (#7A1E3A / gradient) in both the packaged app icon
+(`tools/RenderAppIcon.swift`, sRGB) and in-app mark (`OdeMarkTile`). This completely
+replaces the earlier Xbox-curved X silhouette. No Xbox green (#107C10/#52B043) remains
+anywhere in the brand: `OdeBrand.ochre` is #F4C77A, `OdeBrand.mark` is ochre, and control
+accent is #7A1E3A in Light and #C2485A in Dark. No Xbox logos, and no ® on X Ode, Ode or Calimocho.
 Welcome uses the app mark; signed-in Account uses only the user's gamer picture
 and identity, with no additional app logo or wordmark above it. Technical runtime
 details belong in Settings, not Account. Library loads automatically after
@@ -538,7 +539,7 @@ SDK import.
 The live development shell inherits this world without copying fixture game names or covers. It uses a labelled original landscape, a separate native account sheet and centered unavailable/empty states. The same scoped `NSSearchField` supplies toolbar search in live and fixture views: system bezel, search/cancel controls, semantic appearance and the existing field editor/focus binding. Empty unfocused search occupies 32 pt; editing, Command-F or nonempty text expands it to 220 pt. Downloads retains disabled search, and live Library eligibility rules remain unchanged. There is no duplicate hero search, wrapper icon, forced dark scheme or custom capsule. Fixture/development notices remain inside content rather than an opaque strip above the hero. Checked products use real BoxArt/poster references, with SF-symbol fallbacks only
 for actual missing/rejected/unqueried or failed images. Product detail uses an
 actual hero-role image when supplied, plus its real cover. TitleHub tile art
-keeps its own aspect rather than being relabelled as SuperHeroArt. Four-facet detail does not turn catalog presence or saved sign-in into ownership. The W1 app icon (original X in burgundy #7A1E3A on white) is reproducible with `tools/RenderAppIcon.swift`.
+keeps its own aspect rather than being relabelled as SuperHeroArt. Four-facet detail does not turn catalog presence or saved sign-in into ownership. The app icon (downward crossed swords in ochre #F4C77A on a wine tile) is reproducible with `tools/RenderAppIcon.swift`.
 
 Account uses a bounded width/height range, a scrollable explanation/status body
 and a separate adaptive native-action footer. Decoration contracts first at

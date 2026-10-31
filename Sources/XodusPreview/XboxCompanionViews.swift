@@ -18,10 +18,13 @@ enum XboxCompanionCopy {
     static let connectionsTitle = "Friends and following"
 }
 
-/// Ode's own burgundy identity; no Xbox green is used anywhere in the brand.
+/// Ode's own burgundy & ochre identity; no Xbox green is used anywhere in the brand.
 enum OdeBrand {
-    /// The mark colour, #7A1E3A, always drawn on a white tile.
-    static let mark = Color(red: 122 / 255, green: 30 / 255, blue: 58 / 255)
+    /// The mark colour, Ochre #F4C77A, drawn on the Wine tile.
+    static let ochre = Color(red: 244 / 255, green: 199 / 255, blue: 122 / 255)
+    /// The wine brand colour, #7A1E3A.
+    static let wine = Color(red: 122 / 255, green: 30 / 255, blue: 58 / 255)
+    static let mark = ochre
     /// Control accent: #7A1E3A in Light, #C2485A in Dark for legibility.
     static let accent = Color(nsColor: NSColor(name: nil) { appearance in
         appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
@@ -29,24 +32,25 @@ enum OdeBrand {
             : NSColor(srgbRed: 122 / 255, green: 30 / 255, blue: 58 / 255, alpha: 1)
     })
     static let gradient = LinearGradient(
-        colors: [Color(red: 158 / 255, green: 42 / 255, blue: 74 / 255), mark],
+        colors: [Color(red: 133 / 255, green: 34 / 255, blue: 62 / 255),
+                 Color(red: 74 / 255, green: 16 / 255, blue: 34 / 255)],
         startPoint: .topLeading, endPoint: .bottomTrailing)
 }
 
-/// The W1 mark: the original X in burgundy on a white rounded tile in both appearances,
+/// The downward crossed-swords mark in warm ochre on a wine rounded tile,
 /// using the packaged app icon's tile and mark proportions.
 struct OdeMarkTile: View {
     var body: some View {
         GeometryReader { geometry in
             let side = min(geometry.size.width, geometry.size.height)
             let unit = side / 836
-            ZStack(alignment: .topLeading) {
-                RoundedRectangle(cornerRadius: 184 * unit, style: .continuous).fill(Color.white)
+            ZStack {
+                RoundedRectangle(cornerRadius: 184 * unit, style: .continuous)
+                    .fill(OdeBrand.gradient)
                     .overlay(RoundedRectangle(cornerRadius: 184 * unit, style: .continuous)
-                        .strokeBorder(Color.black.opacity(0.14), lineWidth: max(0.5, 4 * unit)))
-                XOdeLogo().fill(OdeBrand.mark)
-                    .frame(width: 584 * unit, height: 560 * unit)
-                    .offset(x: 126 * unit, y: 138 * unit)
+                        .strokeBorder(Color.white.opacity(0.14), lineWidth: max(0.5, 4 * unit)))
+                XOdeLogo().fill(OdeBrand.ochre)
+                    .frame(width: 592 * unit, height: 592 * unit)
             }
             .frame(width: side, height: side)
         }
