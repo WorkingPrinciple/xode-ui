@@ -5,6 +5,7 @@ import XodusCore
 
 struct RuntimeInstallationPicker: View {
     @ObservedObject var settings: RuntimeProviderSettings
+    @EnvironmentObject private var state: AppState
     var backendPath = ""
     @AppStorage(EngineDefaults.defaultEngineKey) private var defaultProvider = ""
     @AppStorage("Xodus.lifecycle.engine.standaloneWine") private var wineRecord = ""
@@ -64,6 +65,9 @@ struct RuntimeInstallationPicker: View {
                     crossOver = nil
                     Task { await settings.refreshCrossOverDependency() }
                 }
+            }
+            DisclosureGroup("Apple Game Porting Toolkit (D3DMetal)") {
+                GPTKOnboardingView(controller: state.gptkOnboarding, showsHeader: false)
             }
             DisclosureGroup("Wine, GPTK and existing bottles") {
                 VStack(alignment: .leading, spacing: 16) {

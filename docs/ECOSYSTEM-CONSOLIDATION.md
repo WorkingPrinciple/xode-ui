@@ -106,11 +106,14 @@ Rather than shipping multi-gigabyte pre-configured bottles, XOde uses declarativ
 
 ---
 
-## 6. Handoff to Next Session: Apple Game Porting Toolkit 4
+## 6. Apple Game Porting Toolkit: Zero-Breach Onboarding Flow
 
-Because Apple's SLA requires users to download GPTK directly with an Apple ID:
-1. **Challenge to solve**: Design the smoothest possible user onboarding flow for acquiring and verifying `Game_Porting_Toolkit_4.dmg`.
-2. **Key goals**:
-   * Minimum clicks for the user.
-   * Clear, automated DMG mount, checksum validation, and `D3DMetal.framework` extraction into the XOde engine directory.
-   * Robust error handling if a user provides an incorrect or corrupted DMG.
+Because Apple's SLA requires users to download GPTK directly with an Apple ID and strictly prohibits scraping Apple servers or redistributing proprietary binaries:
+1. **The Compliance Boundary**:
+   * **Prohibited**: Headless Apple ID authentication or scraping (Apple Developer Agreement §12); redistributing DMG extracts on GitHub Releases or third-party CDNs.
+   * **Permitted Safe Harbor**: Assisting the user in launching Apple's official portal via browser, detecting arrival of `Game_Porting_Toolkit_*.dmg` in `~/Downloads`, displaying Apple's evaluation `License.rtf` in-app for user agreement, and automating headless local disk mounting (`hdiutil attach -nobrowse -readonly`), extraction (`D3DMetal.framework`, `libd3dshared.dylib`), quarantine stripping (`xattr -dr com.apple.quarantine`), and clean detaching (`hdiutil detach`).
+2. **Implementation Status (Complete)**:
+   * **`XodusManagement.GPTKPayloadExtractor`**: Headlessly mounts DMGs, parses plist mount points, verifies required redistributables (`D3DMetal.framework`, `libd3dshared.dylib`, `License.rtf`), extracts to `~/Library/Application Support/XOde/Components/D3DMetal-4.0`, computes SHA-256 receipts, strips Gatekeeper quarantine, and cleanly unmounts.
+   * **`XodusPreview.GPTKOnboardingController`**: Watches `~/Downloads` via `DispatchSourceFileSystemObject` for incoming DMGs, supports drag-and-drop or manual file selection, coordinates license review, and manages engine symlinks.
+   * **`XodusPreview.GPTKOnboardingView`**: Native SwiftUI view presenting the 2-step setup workflow, drag-and-drop target, and `AppleLicenseReviewSheet` rendering formatted RTF terms before installation.
+   * **Test Suite**: Fully verified in `ManagementChecks.gptkPayloadChecks()` covering error taxonomy, missing files, corrupted DMGs, mock mount point parsing, automated detachment, and quarantine stripping.

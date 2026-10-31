@@ -711,6 +711,7 @@ actor Checks {
         try engineRoutingChecks()
         try await hostBindingChecks()
         try await artworkChecks()
+        try await gptkPayloadChecks()
         let validator = try ContractValidator()
         let positive = try fixture("positive").array ?? []
         check(positive.count == 102, "Pinned producer corpus contains 102 positive frames")
