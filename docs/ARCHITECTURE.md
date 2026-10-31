@@ -14,14 +14,15 @@ flowchart TD
         subgraph Backend["xode-backend (Engine Repository)"]
             CLI["xode-cli / xodus-cli\n(Process Supervisor & Lifecycle Engine)"]
             CONTROL["crates/xode-control\n(Control Plane: Staging, Catalog & Protocol)"]
-            DATAPLANE["crates/xode-dataplane\n(Guest Data Plane: In-Game Licensing Daemon)"]
+            DATAPLANE["crates/xode-dataplane\n(Host Data Plane: In-Game Licensing Daemon)"]
+            GUEST_DP["guest-dataplane/\n(Guest Data Plane: C/C++ GDK & Wine Shim DLLs)"]
             RECIPES["recipes/*.json\n(27 Declarative Title Recipes & Generation Ledger)"]
         end
     end
 
     subgraph Guest["Wine Execution"]
         GAME["Windows PC Game\n(e.g., The Witcher 3, Hogwarts Legacy)"]
-        SHIM["XGameRuntime.dll Shims\n(Translates GDK calls to Unix Sockets)"]
+        SHIM["guest-dataplane DLLs\n(Translates GDK calls to Unix Sockets)"]
     end
 
     OG -->|"MSIXVC / XVD container math"| CLI
@@ -30,6 +31,7 @@ flowchart TD
     CONTROL --> CLI
     CLI --> RECIPES
     CLI -. "Launches & Supervises" .-> GAME
+    GUEST_DP -. "Built into bottle" .-> SHIM
     GAME --> SHIM
     SHIM <-- "AF_UNIX Socket (Binary/XML)" --> DATAPLANE
 ```

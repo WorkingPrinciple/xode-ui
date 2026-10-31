@@ -22,14 +22,15 @@ flowchart TD
         subgraph Backend["xode-backend (Engine Repository)"]
             CLI["xode-cli / xodus-cli\n(Process Supervisor & Lifecycle Engine)"]
             CONTROL["crates/xode-control\n(Control Plane: Staging, Catalog & Protocol)"]
-            DATAPLANE["crates/xode-dataplane\n(Guest Data Plane: In-Game Licensing Daemon)"]
+            DATAPLANE["crates/xode-dataplane\n(Host Data Plane: In-Game Licensing Daemon)"]
+            GUEST_DP["guest-dataplane/\n(Guest Data Plane: C/C++ GDK & Wine Shim DLLs)"]
             RECIPES["recipes/*.json\n(27 Declarative Title Recipes & Generation Ledger)"]
         end
     end
 
     subgraph Guest["Wine Execution"]
         GAME["Windows PC Game\n(e.g., The Witcher 3, Hogwarts Legacy)"]
-        SHIM["XGameRuntime.dll Shims"]
+        SHIM["guest-dataplane DLLs\n(XGameRuntime.dll Shims)"]
     end
 
     OG -->|"MSIXVC / XVD container math"| CLI
@@ -38,6 +39,7 @@ flowchart TD
     CONTROL --> CLI
     CLI --> RECIPES
     CLI -. "Launches & Supervises" .-> GAME
+    GUEST_DP -. "Built into bottle" .-> SHIM
     GAME --> SHIM
     SHIM <-- "AF_UNIX Socket (Binary/XML)" --> DATAPLANE
 ```
@@ -45,9 +47,10 @@ flowchart TD
 ### The Roles of the Components:
 1. **`xode-app` (This App)**: The native SwiftUI front-end. It drives user onboarding, library discovery, installation progress, and game launch triggers. It never interacts directly with raw Wine processes or secrets; instead, it speaks JSONL to `xode-control`.
 2. **`xode-control` (Control Plane)**: The host control plane inside `xode-backend`. It executes store searches anonymously, verifies account credentials in macOS Keychain, and stages downloads transactionally.
-3. **`xode-dataplane` (Guest Data Plane)**: The in-game guest data plane inside `xode-backend`. When games run in Wine, Wine's `XGameRuntime.dll` shims query this background daemon to exchange live Xbox tickets so games don't terminate.
-4. **Declarative Title Recipes**: 27 verified game profiles with Store IDs, graphics backends, generation counters, and automatic user save snapshot protection.
-5. **`calimocho`**: The spiritual predecessor experiment that proved Wine 11 and Apple D3DMetal on Apple Silicon for Subnautica 2 before being archived.
+3. **`xode-dataplane` (Host Data Plane)**: The host data plane daemon inside `xode-backend`. Communicates with Wine shims over a Unix Domain Socket to exchange live Xbox tickets so games don't terminate.
+4. **`guest-dataplane` (Guest Data Plane)**: The Windows GDK and Wine shim DLLs (`XGameRuntime.dll`) running inside the Wine bottle alongside the game binary, intercepting game API calls.
+5. **Declarative Title Recipes**: 27 verified game profiles with Store IDs, graphics backends, generation counters, and automatic user save snapshot protection.
+6. **`calimocho`**: The spiritual predecessor experiment that proved Wine 11 and Apple D3DMetal on Apple Silicon for Subnautica 2 before being archived.
 
 ---
 
