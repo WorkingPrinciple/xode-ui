@@ -1,12 +1,48 @@
 # Architecture
 
-## Boundary
+## Platform Ecosystem Architecture
+
+```mermaid
+flowchart TD
+    subgraph Roots["Origins & Foundations"]
+        OG["xodus-gaming/xodus\n(Linux CLI & MSIXVC crypto math)"]
+        CALI["calimocho\n(Apple Silicon Wine 11 & D3DMetal proof of concept)\n[Archived, SN2 Recipe]"]
+    end
+
+    subgraph XOde["XOde Platform"]
+        APP["xode-app\n(SwiftUI Desktop Interface)"]
+        subgraph Backend["xode-backend (Engine Repository)"]
+            CLI["xode-cli / xodus-cli\n(Process Supervisor & Lifecycle Engine)"]
+            CONTROL["crates/xode-control\n(Control Plane: Staging, Catalog & Protocol)"]
+            DATAPLANE["crates/xode-dataplane\n(Guest Data Plane: In-Game Licensing Daemon)"]
+            RECIPES["recipes/*.json\n(27 Declarative Title Recipes & Generation Ledger)"]
+        end
+    end
+
+    subgraph Guest["Wine Execution"]
+        GAME["Windows PC Game\n(e.g., The Witcher 3, Hogwarts Legacy)"]
+        SHIM["XGameRuntime.dll Shims\n(Translates GDK calls to Unix Sockets)"]
+    end
+
+    OG -->|"MSIXVC / XVD container math"| CLI
+    CALI -.->|"Wine 11 + D3DMetal runtime lessons"| CLI
+    APP <-->|"JSONL Management Protocol (stdin/stdout)"| CONTROL
+    CONTROL --> CLI
+    CLI --> RECIPES
+    CLI -. "Launches & Supervises" .-> GAME
+    GAME --> SHIM
+    SHIM <-- "AF_UNIX Socket (Binary/XML)" --> DATAPLANE
+```
+
+---
+
+## App Boundary & Internal Data Flow
 
 ```mermaid
 flowchart LR
   UI[SwiftUI views + AppKit window lifecycle] --> State[MainActor application state]
   State --> Models[Typed evidence and action policy]
-  State --> Adapter[Bounded management client]
+  State --> Adapter[Bounded xode-control client]
   Adapter --> CLI[Versioned Rust CLI JSON / JSONL]
   CLI --> Registry[Durable jobs + installed registry]
   CLI --> Runtime[Signed exactly paired Xbox-capable runtime]
