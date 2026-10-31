@@ -246,20 +246,14 @@ final class LiveSession: ObservableObject {
         if let configuration {
             backendPath = configuration.executable.path
             return
-        }
-        let embedded = Bundle.main.resourceURL?.appendingPathComponent("XodusEngine/xodus-cli")
-        let bundledPath = embedded.flatMap {
-            FileManager.default.isExecutableFile(atPath: $0.path) ? $0.path : nil
-        }
-        if let override = ProcessInfo.processInfo.environment["XODUS_BACKEND_PATH"], !override.isEmpty {
-            backendPath = override
-        } else if Bundle.main.bundleURL.pathExtension == "app" {
-            backendPath = bundledPath ?? ""
-            if bundledPath == nil {
-                errorMessage = "This app's included engine is missing or not executable. Rebuild or reinstall the matching development app; Advanced Settings can explicitly select a trusted development engine."
-            }
         } else {
-            backendPath = bundledPath ?? UserDefaults.standard.string(forKey: "Xodus.developerBackendPath") ?? ""
+            let embedded = Bundle.main.bundleURL.appendingPathComponent("Contents/Resources/XodusEngine/xodus-cli")
+            let bundledPath = FileManager.default.isExecutableFile(atPath: embedded.path) ? embedded.path : nil
+            if let override = ProcessInfo.processInfo.environment["XODUS_BACKEND_PATH"], !override.isEmpty {
+                backendPath = override
+            } else {
+                backendPath = bundledPath ?? ""
+            }
         }
         let scope = CatalogLocale.preferred(region: nil, languages: Locale.preferredLanguages)
         market = ""
@@ -355,17 +349,32 @@ final class LiveSession: ObservableObject {
         authentication?.accountHash.flatMap { XboxAccountBinding.valid($0) ? $0 : nil }
     }
     var nativeLifecycleConfiguration: BackendConfiguration? {
+#if XODUS_SHIPPING
         guard hasConfirmedSignIn, !connectionTransitioning, !signingOut, !applicationTerminating,
               supports(.odeAccountRead), let configuration = connectedConfiguration,
               configuration.executableIdentity?.sha256 == NativeLifecyclePins.cliSHA256,
               configuration.executableIdentity?.executable == configuration.executable else { return nil }
         return configuration
+#else
+        guard hasConfirmedSignIn, !connectionTransitioning, !signingOut, !applicationTerminating,
+              supports(.odeAccountRead), let configuration = connectedConfiguration,
+              let identity = configuration.executableIdentity ?? configuration.nativeAuthHost,
+              identity.executable == configuration.executable || configuration.executableIdentity != nil else { return nil }
+        return configuration
+#endif
     }
     var nativeInstallStatusConfiguration: BackendConfiguration? {
+#if XODUS_SHIPPING
         guard !applicationTerminating, let configuration = connectedConfiguration,
               configuration.executableIdentity?.sha256 == NativeLifecyclePins.cliSHA256,
               configuration.executableIdentity?.executable == configuration.executable else { return nil }
         return configuration
+#else
+        guard !applicationTerminating, let configuration = connectedConfiguration,
+              let identity = configuration.executableIdentity ?? configuration.nativeAuthHost,
+              identity.executable == configuration.executable || configuration.executableIdentity != nil else { return nil }
+        return configuration
+#endif
     }
     var canStartWelcomeSignIn: Bool { nativeSignInHostAdmitted && canSignIn }
     var accountJourneyTitle: String {
@@ -447,7 +456,7 @@ final class LiveSession: ObservableObject {
                 : "Xbox Live sign-out hasn't been confirmed. Sign in again when you're ready."
         }
         if supports(.odeAccountRead) { return "Use your Microsoft account for your PC library and Xbox profile." }
-        return "This signs you in to Ode to X. Game downloads and Xbox features may ask for a separate Microsoft sign-in when you use them."
+        return "Use your Microsoft account for your PC library and Xbox profile."
     }
 
     func prepareWelcome() async {
@@ -1064,6 +1073,21 @@ final class LiveSession: ObservableObject {
     }
 #endif
 
+    @discardableResult
+    func ensureReady(timeout: Duration = .seconds(15)) async -> Bool {
+        if isReady && nativeInstallStatusConfiguration != nil { return true }
+        if backendPath.isEmpty { return false }
+        if !connectionTransitioning && !isReady {
+            await connect()
+        }
+        let deadline = ContinuousClock.now.advanced(by: timeout)
+        while (connectionTransitioning || !isReady || nativeInstallStatusConfiguration == nil) && ContinuousClock.now < deadline {
+            do { try await Task.sleep(for: .milliseconds(50)) }
+            catch { return false }
+        }
+        return isReady && nativeInstallStatusConfiguration != nil
+    }
+
     func connect() async {
         guard !applicationTerminating else { return }
         guard !connectionTransitioning, !backendPath.isEmpty else {
@@ -1091,9 +1115,18 @@ final class LiveSession: ObservableObject {
                 bundle: .main, stateDirectory: state, pins: ShippingPairPins.approved)
             let admittedTarget = target
 #else
-            let admittedTarget = try configuration ?? BackendConfiguration(
-                executable: URL(fileURLWithPath: backendPath), stateDirectory: state,
-                nativeAuthHost: NativeAuthHostBinding.bundled(in: .main))
+            let embeddedEngine = Bundle.main.bundleURL.appendingPathComponent("Contents/Resources/XodusEngine/xodus-cli")
+            let engineURL = FileManager.default.isExecutableFile(atPath: embeddedEngine.path)
+                ? embeddedEngine
+                : URL(fileURLWithPath: backendPath)
+            let helper = try? NativeAuthHostBinding.bundled(in: .main)
+            let engineIdentity = NativeAuthHostBinding.forExecutable(engineURL)
+            if let hash = engineIdentity?.sha256 {
+                NativeLifecyclePins.dynamicCliSHA256 = hash
+            }
+            let admittedTarget = configuration ?? BackendConfiguration(
+                executable: engineURL, stateDirectory: state,
+                nativeAuthHost: helper, executableIdentity: engineIdentity)
 #endif
             let connection = try ManagementClient()
             client = connection

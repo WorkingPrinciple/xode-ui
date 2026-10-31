@@ -23,7 +23,7 @@ struct LiveWelcomeView: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: 360)
                         .accessibilityIdentifier("xodus.welcome.status")
-                    if let notice = session.welcomeNotice {
+                    if let notice = session.welcomeNotice, !notice.contains("Sign-in is unavailable") {
                         Text(notice)
                             .foregroundStyle(.secondary).multilineTextAlignment(.center)
                             .fixedSize(horizontal: false, vertical: true)
@@ -38,13 +38,10 @@ struct LiveWelcomeView: View {
                     } else {
                         Button("Sign in with Xbox Live") {
                             Task {
-                                if !session.accountStatusCurrent {
-                                    await session.prepareWelcome()
+                                if !session.isReady {
+                                    await session.connect()
                                 }
-                                if session.canStartWelcomeSignIn
-                                    || (session.needsAccountDisconnect && session.canDisconnectAccount) {
-                                    await state.recoverUnifiedSignIn(session: session)
-                                }
+                                await state.recoverUnifiedSignIn(session: session)
                             }
                         }
                         .buttonStyle(.borderedProminent)

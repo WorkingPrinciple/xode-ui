@@ -59,6 +59,9 @@ final class PreviewDelegate: NSObject, NSApplicationDelegate {
     var gameOperations: GameOperationsController?
     let termination = ApplicationTerminationCoordinator()
     func applicationDidFinishLaunching(_ notification: Notification) {
+#if !XODUS_SHIPPING
+        XodusPreviewApp.setupDiagnosticLogging()
+#endif
         NSApp.setActivationPolicy(.regular)
     }
 
@@ -101,7 +104,35 @@ struct XodusPreviewApp: App {
 #endif
     }
 
+    public static func setupDiagnosticLogging() {
+        let args = CommandLine.arguments.dropFirst()
+        let isCheckMode = args.contains { $0.hasSuffix("-check") || $0.hasPrefix("--export-") }
+        guard !isCheckMode else { return }
+
+        let fileManager = FileManager.default
+        let logDir = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library/Logs/OdeToX")
+        try? fileManager.createDirectory(at: logDir, withIntermediateDirectories: true)
+        let logFile = logDir.appendingPathComponent("ode-app.log")
+        let tmpLog = URL(fileURLWithPath: "/tmp/ode-app.log")
+
+        if let logHandle = freopen(logFile.path, "a", stderr) {
+            setlinebuf(logHandle)
+        }
+        if let outHandle = freopen(logFile.path, "a", stdout) {
+            setlinebuf(outHandle)
+        }
+        try? fileManager.removeItem(at: tmpLog)
+        try? fileManager.createSymbolicLink(at: tmpLog, withDestinationURL: logFile)
+
+        let timestamp = ISO8601DateFormatter().string(from: Date())
+        fputs("[\(timestamp)] [ODE_APP_INIT] pid=\(ProcessInfo.processInfo.processIdentifier) args=\(CommandLine.arguments)\n", stderr)
+        fflush(stderr)
+    }
+
     init() {
+#if !XODUS_SHIPPING
+        Self.setupDiagnosticLogging()
+#endif
         ProcessInfo.processInfo.processName = "Ode to X"
 #if XODUS_SHIPPING
         if !CommandLine.arguments.dropFirst().isEmpty,

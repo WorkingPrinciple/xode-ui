@@ -88,6 +88,7 @@ final class InstalledGamesController: ObservableObject {
     private var runToken: UUID?
     private var stopToken: UUID?
     private var inspectionGeneration = UUID()
+    private var lastEngineOverrideInspection: ContinuousClock.Instant?
     private var refreshingReadiness = false
     private var readinessRefreshRequested = false
     private var stopConfirmed = false
@@ -202,6 +203,7 @@ final class InstalledGamesController: ObservableObject {
     func discoverNativeInstallations(root: URL? = nil) async {
         guard usesUnifiedAccount, loaded, !editing, !choosing, !mutationActive,
               !accountDisconnecting, !applicationTerminating else { return }
+        _ = await unifiedSession?.ensureReady()
         editing = true
         defer { editing = false }
         let entries = games
@@ -287,6 +289,7 @@ final class InstalledGamesController: ObservableObject {
                     if let discoveryCompleteness {
                         complete = try await discoveryCompleteness(candidate.config.storeId, candidate.folder)
                     } else {
+                        _ = await unifiedSession?.ensureReady()
                         guard let configuration = unifiedSession?.nativeInstallStatusConfiguration else {
                             throw GameInstallationDiscoveryError.serviceUnavailable
                         }
@@ -686,6 +689,7 @@ final class InstalledGamesController: ObservableObject {
                 return nil
             }
         }
+        _ = await unifiedSession?.ensureReady()
         guard let configuration = unifiedSession?.nativeInstallStatusConfiguration else {
             installationErrors[game.id] = "The verified local service isn't connected. Reconnect Ode to X and check again."
             return nil
@@ -1005,9 +1009,13 @@ final class InstalledGamesController: ObservableObject {
     }
 
     func refreshEngineOverrides(force: Bool = true, retryFailed: Bool = false) async {
+        if !force, let last = lastEngineOverrideInspection, ContinuousClock.now - last < .seconds(10) {
+            return
+        }
         guard loaded, !checkingEngineOverrides, !applicationTerminating,
               force || !engineOverridesChecked || (retryFailed && !failedEngineOverrides.isEmpty),
               let configuration = unifiedSession?.nativeLifecycleConfiguration else { return }
+        lastEngineOverrideInspection = .now
         checkingEngineOverrides = true
         defer { checkingEngineOverrides = false }
         do {

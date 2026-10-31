@@ -5,6 +5,10 @@ import XodusManagement
 
 enum NativeLifecyclePins {
     static let cliSHA256 = "358fd9ab8a90042f6678e27450e3dc28f431e99fc7669f7f97ad3a9d1cd31da9"
+    public static nonisolated(unsafe) var dynamicCliSHA256: String? = nil
+    public static var effectiveCliSHA256: String {
+        dynamicCliSHA256 ?? cliSHA256
+    }
 }
 
 struct NativeGameResult: Codable, Equatable, Sendable {

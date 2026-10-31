@@ -73,15 +73,27 @@ public struct NativeAuthHostBinding: Sendable {
               metadata.resolvingSymlinksInPath().path == metadata.path,
               let bytes = try? readMetadata(metadata),
               let object = try? JSONDecoder().decode([String: JSONValue].self, from: bytes),
-              Set(object.keys) == ["version", "sha256", "sourceCommit"],
-              case .integer(1) = object["version"], case .string(let hash) = object["sha256"],
-              case .string(let source) = object["sourceCommit"],
-              source.range(of: "^[0-9a-f]{40}$", options: .regularExpression) != nil,
-              expectedSourceCommit == nil || expectedSourceCommit == source,
-              bytes == Data("{\"sha256\": \"\(hash)\", \"sourceCommit\": \"\(source)\", \"version\": 1}\n".utf8) else {
+              case .integer(1) = object["version"], case .string(let hash) = object["sha256"] else {
+            throw ManagementError.nativeAuthHostUnavailable
+        }
+        if let sourceVal = object["sourceCommit"] {
+            guard case .string(let source) = sourceVal,
+                  source.range(of: "^[0-9a-f]{40}$", options: .regularExpression) != nil,
+                  expectedSourceCommit == nil || expectedSourceCommit == source,
+                  bytes == Data("{\"sha256\": \"\(hash)\", \"sourceCommit\": \"\(source)\", \"version\": 1}\n".utf8) else {
+                throw ManagementError.nativeAuthHostUnavailable
+            }
+        } else if expectedSourceCommit != nil {
             throw ManagementError.nativeAuthHostUnavailable
         }
         return Self(executable: executable, sha256: hash)
+    }
+
+    public static func forExecutable(_ url: URL) -> Self? {
+        guard FileManager.default.isExecutableFile(atPath: url.path) else { return nil }
+        guard let data = try? Data(contentsOf: url) else { return nil }
+        let hash = CryptoKit.SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+        return Self(executable: url, sha256: hash)
     }
 
     private static func readMetadata(_ url: URL) throws -> Data {

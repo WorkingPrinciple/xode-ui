@@ -75,14 +75,29 @@ final class AppState: ObservableObject {
     @Published var showingAccount = false
     @Published var accountDestination: AccountDestination = .account
     @Published var showingSetup = false
+    @Published var readinessSetupCompleted: Bool {
+        didSet {
+            UserDefaults.standard.set(readinessSetupCompleted, forKey: "Xodus.readinessSetupCompleted")
+        }
+    }
     @Published var destination: Destination = .library
     @Published var query = ""
     @Published private(set) var unifiedSignInRequested = false
     private var destinationQueries: [Destination: String] = [:]
     @Published private(set) var liveLibraryScope: LiveLibraryScope = .games
 
+    var needsReadinessSetup: Bool {
+        !readinessSetupCompleted
+    }
+
+    func completeReadinessSetup() {
+        readinessSetupCompleted = true
+        showingSetup = false
+    }
+
     init(installedGames: InstalledGamesController = InstalledGamesController(),
          pcGames: PCGamesController = PCGamesController(), gameScriptPaths: GameScriptPaths = .production) {
+        self.readinessSetupCompleted = UserDefaults.standard.bool(forKey: "Xodus.readinessSetupCompleted")
         self.installedGames = installedGames
         self.pcGames = pcGames
         self.gameScriptPaths = gameScriptPaths

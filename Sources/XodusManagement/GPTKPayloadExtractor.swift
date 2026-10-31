@@ -73,6 +73,7 @@ public struct GPTKInspection: Equatable, Sendable {
     public let licenseURL: URL
     public let licenseRTFData: Data
     public let requiresUnmount: Bool
+    public let secondaryMountPoint: URL?
 
     public init(
         dmgURL: URL?,
@@ -82,7 +83,8 @@ public struct GPTKInspection: Equatable, Sendable {
         d3dsharedURL: URL,
         licenseURL: URL,
         licenseRTFData: Data,
-        requiresUnmount: Bool
+        requiresUnmount: Bool,
+        secondaryMountPoint: URL? = nil
     ) {
         self.dmgURL = dmgURL
         self.mountPoint = mountPoint
@@ -92,6 +94,7 @@ public struct GPTKInspection: Equatable, Sendable {
         self.licenseURL = licenseURL
         self.licenseRTFData = licenseRTFData
         self.requiresUnmount = requiresUnmount
+        self.secondaryMountPoint = secondaryMountPoint
     }
 }
 
@@ -177,6 +180,57 @@ public final class GPTKPayloadExtractor: Sendable {
         }
 
         let mountURL = URL(fileURLWithPath: mountPoint, isDirectory: true)
+
+        if canInspectDirectory(mountURL) {
+            do {
+                return try inspectDirectory(mountURL, dmgURL: url, requiresUnmount: true)
+            } catch {
+                _ = try? await detach(mountPoint: mountURL)
+                throw error
+            }
+        }
+
+        if let nestedDMG = findNestedDMG(in: mountURL) {
+            do {
+                let innerResult = try await processRunner.run(
+                    executable: URL(fileURLWithPath: "/usr/bin/hdiutil"),
+                    arguments: ["attach", "-nobrowse", "-readonly", "-plist", nestedDMG.path]
+                )
+                guard innerResult.status == 0 else {
+                    let err = String(decoding: innerResult.stderr, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
+                    throw GPTKError.mountFailed(err.isEmpty ? "Failed to attach nested disk image." : err)
+                }
+
+                guard let innerPlist = try? PropertyListSerialization.propertyList(from: innerResult.stdout, format: nil) as? [String: Any],
+                      let innerEntities = innerPlist["system-entities"] as? [[String: Any]] else {
+                    throw GPTKError.mountFailed("Could not parse nested hdiutil plist output.")
+                }
+
+                var innerMountPoint: String?
+                for entity in innerEntities {
+                    if let m = entity["mount-point"] as? String {
+                        innerMountPoint = m
+                        break
+                    }
+                }
+
+                guard let innerMountPoint, fileManager.fileExists(atPath: innerMountPoint) else {
+                    throw GPTKError.mountFailed("Nested mount point entity not found.")
+                }
+
+                let innerMountURL = URL(fileURLWithPath: innerMountPoint, isDirectory: true)
+                return try inspectDirectory(
+                    innerMountURL,
+                    dmgURL: url,
+                    requiresUnmount: true,
+                    secondaryMountPoint: mountURL
+                )
+            } catch {
+                _ = try? await detach(mountPoint: mountURL)
+                throw error
+            }
+        }
+
         do {
             return try inspectDirectory(mountURL, dmgURL: url, requiresUnmount: true)
         } catch {
@@ -185,7 +239,30 @@ public final class GPTKPayloadExtractor: Sendable {
         }
     }
 
-    private func inspectDirectory(_ dir: URL, dmgURL: URL?, requiresUnmount: Bool) throws -> GPTKInspection {
+    private func canInspectDirectory(_ dir: URL) -> Bool {
+        let frameworkCandidates = [
+            dir.appendingPathComponent("redist/lib/external/D3DMetal.framework"),
+            dir.appendingPathComponent("redist/external/D3DMetal.framework"),
+            dir.appendingPathComponent("redist/D3DMetal.framework"),
+            dir.appendingPathComponent("lib/external/D3DMetal.framework")
+        ]
+        return frameworkCandidates.contains(where: { fileManager.fileExists(atPath: $0.path) })
+    }
+
+    private func findNestedDMG(in dir: URL) -> URL? {
+        guard let items = try? fileManager.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil) else { return nil }
+        return items.first { url in
+            let name = url.lastPathComponent.lowercased()
+            return url.pathExtension.lowercased() == "dmg" && (name.contains("evaluation") || name.contains("windows"))
+        } ?? items.first { $0.pathExtension.lowercased() == "dmg" }
+    }
+
+    private func inspectDirectory(
+        _ dir: URL,
+        dmgURL: URL?,
+        requiresUnmount: Bool,
+        secondaryMountPoint: URL? = nil
+    ) throws -> GPTKInspection {
         let frameworkCandidates = [
             dir.appendingPathComponent("redist/lib/external/D3DMetal.framework"),
             dir.appendingPathComponent("redist/external/D3DMetal.framework"),
@@ -235,26 +312,63 @@ public final class GPTKPayloadExtractor: Sendable {
             d3dsharedURL: d3dsharedURL,
             licenseURL: licenseURL,
             licenseRTFData: licenseData,
-            requiresUnmount: requiresUnmount
+            requiresUnmount: requiresUnmount,
+            secondaryMountPoint: secondaryMountPoint
         )
     }
 
-    /// Detaches the mounted disk image cleanly.
+    public func detach(inspection: GPTKInspection) async throws {
+        // Inner mount point must be detached before outer mount point
+        if fileManager.fileExists(atPath: inspection.mountPoint.path) {
+            _ = try? await detach(mountPoint: inspection.mountPoint)
+        }
+        if let sec = inspection.secondaryMountPoint, fileManager.fileExists(atPath: sec.path) {
+            _ = try? await detach(mountPoint: sec)
+        }
+    }
+
+    /// Detaches the mounted disk image cleanly using hdiutil / diskutil.
     public func detach(mountPoint: URL) async throws {
+        guard fileManager.fileExists(atPath: mountPoint.path) else {
+            return
+        }
+
+        // 1. Try hdiutil detach (standard DMG unmount)
         let result = try await processRunner.run(
             executable: URL(fileURLWithPath: "/usr/bin/hdiutil"),
             arguments: ["detach", mountPoint.path]
         )
-        if result.status != 0 {
-            let forceResult = try await processRunner.run(
-                executable: URL(fileURLWithPath: "/usr/bin/hdiutil"),
-                arguments: ["detach", "-force", mountPoint.path]
-            )
-            if forceResult.status != 0 {
-                let err = String(decoding: forceResult.stderr, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
-                throw GPTKError.unmountFailed(err)
-            }
+        if result.status == 0 || !fileManager.fileExists(atPath: mountPoint.path) {
+            return
         }
+
+        // 2. Try diskutil eject (modern macOS diskutil)
+        let diskutilResult = try await processRunner.run(
+            executable: URL(fileURLWithPath: "/usr/sbin/diskutil"),
+            arguments: ["eject", mountPoint.path]
+        )
+        if diskutilResult.status == 0 || !fileManager.fileExists(atPath: mountPoint.path) {
+            return
+        }
+
+        // 3. Try diskutil eject force
+        let forceResult = try await processRunner.run(
+            executable: URL(fileURLWithPath: "/usr/sbin/diskutil"),
+            arguments: ["eject", "force", mountPoint.path]
+        )
+        if forceResult.status == 0 || !fileManager.fileExists(atPath: mountPoint.path) {
+            return
+        }
+
+        let err = String(decoding: forceResult.stderr, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
+        if !fileManager.fileExists(atPath: mountPoint.path) ||
+            err.contains("No such file or directory") ||
+            err.contains("not mounted") ||
+            err.contains("not currently mounted") {
+            return
+        }
+
+        throw GPTKError.unmountFailed(err.isEmpty ? "Failed to eject \(mountPoint.path)" : err)
     }
 
     /// Extracts verified GPTK assets to target destination and cleans up.
@@ -294,7 +408,7 @@ public final class GPTKPayloadExtractor: Sendable {
             }
 
             if inspection.requiresUnmount {
-                try await detach(mountPoint: inspection.mountPoint)
+                _ = try? await detach(inspection: inspection)
             }
 
             return GPTKExtractionReceipt(
@@ -308,7 +422,7 @@ public final class GPTKPayloadExtractor: Sendable {
             )
         } catch {
             if inspection.requiresUnmount {
-                _ = try? await detach(mountPoint: inspection.mountPoint)
+                _ = try? await detach(inspection: inspection)
             }
             throw GPTKError.extractionFailed(error.localizedDescription)
         }

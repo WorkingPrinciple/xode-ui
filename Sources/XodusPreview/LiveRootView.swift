@@ -75,8 +75,11 @@ struct LiveRootView: View {
                       state.gameOperations.serviceStatus?.accountHash].compactMap { $0 }
         return values.count >= 2 && Set(values).count > 1
     }
-    private var requiresAccountGate: Bool { unifiedAccountMode ? requiresSignIn : !unifiedAccountVerified }
-    private var accountContentAllowed: Bool { startupAllowed && (unifiedAccountMode ? !requiresSignIn : unifiedAccountVerified) }
+    private var requiresAccountGate: Bool {
+        if requiresSignIn { return true }
+        return unifiedAccountMode ? false : !unifiedAccountVerified
+    }
+    private var accountContentAllowed: Bool { startupAllowed && (unifiedAccountMode ? (!requiresSignIn && !state.needsReadinessSetup) : unifiedAccountVerified) }
     private var heroAnimationAllowed: Bool {
         startupAllowed && !state.showingAccount && session.selectedProduct == nil
             && !session.signInPending && state.gameOperations.installConsent == nil
@@ -94,7 +97,7 @@ struct LiveRootView: View {
 #endif
     }
     private var searchEnabled: Bool {
-        !requiresAccountGate
+        !requiresAccountGate && !state.needsReadinessSetup && !state.showingSetup
     }
     private var libraryArtworkAllowed: Bool {
 #if XODUS_SHIPPING
@@ -121,6 +124,18 @@ struct LiveRootView: View {
             if requiresAccountGate {
                 OdeStartupBackdrop()
                     .accessibilityIdentifier("xodus.welcome.background")
+            } else if state.needsReadinessSetup || state.showingSetup {
+                OdeReadinessSetupView(
+                    session: session,
+                    state: state,
+                    runtime: state.runtimeSettings,
+                    operations: state.gameOperations,
+                    installed: state.installedGames,
+                    gptk: state.gptkOnboarding,
+                    onComplete: {
+                        state.completeReadinessSetup()
+                    }
+                )
             } else if session.hasConfirmedSignIn, !session.accountCountryReady,
                       state.destination == .discover {
                 Form {
@@ -181,6 +196,9 @@ struct LiveRootView: View {
                     companion.useUnifiedAccount(session)
                     state.gameOperations.useUnifiedAccount(session)
                     state.installedGames.useUnifiedAccount(session)
+                }
+                if !session.isReady {
+                    await session.connect()
                 }
                 await state.installedGames.load()
                 async let collectionLoad: Void = state.pcGames.loadOnAppear()
@@ -338,7 +356,6 @@ struct LiveRootView: View {
         }
         .sheet(isPresented: Binding(get: { requiresAccountGate || state.showingAccount },
                                     set: { state.showingAccount = !requiresAccountGate && $0 }), onDismiss: {
-            state.showingSetup = false
             state.accountDestination = .account
         }) {
             if requiresSignIn {
@@ -390,7 +407,7 @@ struct LiveRootView: View {
 
     @ToolbarContentBuilder
     private var rootToolbar: some ToolbarContent {
-        if !requiresAccountGate {
+        if !requiresAccountGate && !state.needsReadinessSetup && !state.showingSetup {
             XodusToolbar(selection: state.navigationSelection, searchText: $state.query,
                          searchFocused: Binding(get: { searchFocused }, set: { searchFocused = $0 }),
                          searchPlaceholder: searchPlaceholder, searchEnabled: searchEnabled,

@@ -130,6 +130,7 @@ final class GPTKOnboardingController: ObservableObject {
             )
             self.receipt = r
             self.step = .completed(r)
+            self.errorMessage = nil
             return
         }
 
@@ -442,7 +443,7 @@ final class GPTKOnboardingController: ObservableObject {
         }
         if inspection.requiresUnmount {
             Task {
-                try? await extractor.detach(mountPoint: inspection.mountPoint)
+                try? await extractor.detach(inspection: inspection)
             }
         }
         self.activeInspection = nil

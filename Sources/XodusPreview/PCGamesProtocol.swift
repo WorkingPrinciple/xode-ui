@@ -674,6 +674,7 @@ struct PCGamesClient: Sendable {
         guard let claim = xboxIdentity.DisplayClaims.xui.first,
               claim.uhs == storeIdentity.DisplayClaims.xui.first?.uhs,
               claim.uhs == user.DisplayClaims.xui.first?.uhs else { throw PCGamesError.identityMismatch }
+        let storeUhs = storeIdentity.DisplayClaims.xui.first?.uhs ?? claim.uhs
         guard let xid = claim.xid, !xid.isEmpty, xid.utf8.count <= 32,
               xid.utf8.allSatisfy({ (48...57).contains($0) }) else { throw PCGamesError.invalidResponse }
         guard expectedAccountID == nil || expectedAccountID == xid else { throw PCGamesError.identityMismatch }
@@ -688,7 +689,7 @@ struct PCGamesClient: Sendable {
             do {
                 let result = try await response(post("https://collections.mp.microsoft.com/v7.0/collections/query",
                     json: body, headers: [
-                        "Authorization": "XBL3.0 x=\(claim.uhs);\(storeIdentity.Token)",
+                        "Authorization": "XBL3.0 x=\(storeUhs);\(storeIdentity.Token)",
                         "x-xbl-contract-version": "2", "Accept-Language": "en-US",
                         "MS-CV": UUID().uuidString.replacingOccurrences(of: "-", with: "").lowercased() + ".0"]))
                 guard result.status == 200 else { throw PCGamesError.http(result.status) }

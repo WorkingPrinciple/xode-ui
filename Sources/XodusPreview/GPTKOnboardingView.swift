@@ -10,7 +10,7 @@ struct GPTKOnboardingView: View {
     @State private var isTargetedForDrop = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: showsHeader ? 16 : 8) {
             if showsHeader {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Apple Game Porting Toolkit Setup")
@@ -36,7 +36,7 @@ struct GPTKOnboardingView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .padding(20)
+        .padding(showsHeader ? 20 : 0)
         .sheet(isPresented: Binding(
             get: { controller.activeInspection != nil },
             set: { if !$0 { controller.cancelLicenseReview() } }
@@ -53,39 +53,34 @@ struct GPTKOnboardingView: View {
 
     @ViewBuilder
     private func installedView(receipt: GPTKExtractionReceipt) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 10) {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(.green)
-                    .font(.title2)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Apple D3DMetal Installed")
-                        .font(.headline)
-                    Text("Version \(receipt.version) staged and verified for DirectX 12 translation.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .padding(12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.green.opacity(0.1))
-            .cornerRadius(8)
+        HStack(spacing: 12) {
+            AppleGPTKAssets.iconImage
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 24, height: 24)
+                .cornerRadius(5)
 
-            LabeledContent("Location", value: receipt.destinationURL.path)
-                .font(.caption)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Game Porting Toolkit 4.0 Installed")
+                    .font(.body.weight(.medium))
+                Text("D3DMetal staged and verified for DirectX 12 translation.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            Text("Installed")
+                .font(.callout)
                 .foregroundStyle(.secondary)
-
-            Button("Update or Reinstall Toolkit…") {
-                controller.openAppleDeveloperPortal()
-            }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
         }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(Color(NSColor.controlBackgroundColor))
+        .cornerRadius(6)
     }
 
     @ViewBuilder
     private var setupWorkflowView: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 8) {
             // Case 1: Download currently in progress (Active ETA & Speed Monitoring)
             if case .downloading(let info) = controller.step {
                 downloadingCard(info: info)
@@ -94,15 +89,10 @@ struct GPTKOnboardingView: View {
             else if let detected = controller.detectedDMG {
                 detectedLocallyCard(url: detected)
             }
-            // Case 3: Waiting to download or initial prompt
+            // Case 3: Initial setup prompt (One more remaining step)
             else {
-                step1DownloadCard
+                oneRemainingStepCard
             }
-
-            Divider()
-
-            // Ingestion Box (Drag & Drop or Manual Selection)
-            dropTargetSection
 
             // Active operations
             switch controller.step {
@@ -110,16 +100,18 @@ struct GPTKOnboardingView: View {
                 HStack(spacing: 10) {
                     ProgressView().controlSize(.small)
                     Text("Mounting and inspecting disk image…")
-                        .font(.callout)
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+                .padding(.horizontal, 4)
             case .extracting(_, let msg):
                 HStack(spacing: 10) {
                     ProgressView().controlSize(.small)
                     Text(msg)
-                        .font(.callout)
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+                .padding(.horizontal, 4)
             default:
                 EmptyView()
             }
@@ -127,21 +119,60 @@ struct GPTKOnboardingView: View {
     }
 
     @ViewBuilder
-    private var step1DownloadCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Step 1: Download from Apple Developer")
-                .font(.headline)
-            Text("Apple terms require downloading Game Porting Toolkit directly with your personal Apple ID.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+    private var oneRemainingStepCard: some View {
+        HStack(alignment: .center, spacing: 12) {
+            AppleGPTKAssets.iconImage
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 28, height: 28)
+                .cornerRadius(6)
 
-            Button {
-                controller.openAppleDeveloperPortal()
-            } label: {
-                Label("Download from Apple Developer", systemImage: "arrow.up.right.square")
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Game Porting Toolkit 4.0 beta 3")
+                    .font(.body.weight(.medium))
+                Text("Free download from Apple Developer, or drop here")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
-            .buttonStyle(.borderedProminent)
+
+            Spacer()
+
+            HStack(spacing: 8) {
+                Button {
+                    controller.openAppleDeveloperPortal()
+                } label: {
+                    Label("Free Download", systemImage: "arrow.up.right")
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+
+                Button("Choose file…") {
+                    controller.chooseFile()
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(isTargetedForDrop ? Color.accentColor.opacity(0.12) : Color(NSColor.controlBackgroundColor))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 6)
+                .stroke(isTargetedForDrop ? Color.accentColor : Color.secondary.opacity(0.15), lineWidth: 1)
+        )
+        .frame(maxWidth: .infinity)
+        .onDrop(of: [.fileURL], isTargeted: $isTargetedForDrop) { providers in
+            guard let provider = providers.first else { return false }
+            _ = provider.loadObject(ofClass: URL.self) { url, _ in
+                guard let url else { return }
+                Task { @MainActor in
+                    controller.handleDrop(urls: [url])
+                }
+            }
+            return true
         }
     }
 
@@ -188,74 +219,37 @@ struct GPTKOnboardingView: View {
 
     @ViewBuilder
     private func detectedLocallyCard(url: URL) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(url.path.hasPrefix("/Volumes") ? "Volume Mounted on Mac" : "Found on Your Mac")
-                        .font(.caption.bold())
-                        .foregroundStyle(.green)
-                    Text(url.lastPathComponent)
-                        .font(.headline)
-                }
-                Spacer()
-                Button("Inspect & Install") {
-                    controller.handleSelectedURL(url)
-                }
-                .buttonStyle(.borderedProminent)
+        HStack(alignment: .center, spacing: 12) {
+            AppleGPTKAssets.iconImage
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 28, height: 28)
+                .cornerRadius(6)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(url.lastPathComponent)
+                    .font(.body.weight(.medium))
+                Text("Found in Downloads. Ready to extract Apple D3DMetal.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
-            Text("Found at: \(url.deletingLastPathComponent().path)")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .truncationMode(.middle)
+            Spacer()
+
+            Button("Inspect & Install") {
+                controller.handleSelectedURL(url)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.small)
         }
-        .padding(14)
-        .background(Color.green.opacity(0.08))
-        .cornerRadius(8)
-    }
-
-    @ViewBuilder
-    private var dropTargetSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Alternative: Drag & Drop or Choose File")
-                .font(.subheadline.weight(.semibold))
-
-            ZStack {
-                RoundedRectangle(cornerRadius: 10)
-                    .strokeBorder(
-                        isTargetedForDrop ? Color.accentColor : Color.secondary.opacity(0.3),
-                        style: StrokeStyle(lineWidth: 2, dash: [6])
-                    )
-                    .background(isTargetedForDrop ? Color.accentColor.opacity(0.05) : Color.clear)
-
-                VStack(spacing: 8) {
-                    Image(systemName: "arrow.down.doc")
-                        .font(.system(size: 28))
-                        .foregroundStyle(isTargetedForDrop ? Color.accentColor : Color.secondary)
-                    Text("Drag and drop Game_Porting_Toolkit_*.dmg here")
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                    Button("Or choose file…") {
-                        controller.chooseFile()
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-                }
-                .padding(20)
-            }
-            .frame(maxWidth: .infinity, minHeight: 110)
-            .onDrop(of: [.fileURL], isTargeted: $isTargetedForDrop) { providers in
-                guard let provider = providers.first else { return false }
-                _ = provider.loadObject(ofClass: URL.self) { url, _ in
-                    guard let url else { return }
-                    Task { @MainActor in
-                        controller.handleDrop(urls: [url])
-                    }
-                }
-                return true
-            }
-        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(Color(NSColor.controlBackgroundColor))
+        .cornerRadius(6)
+        .overlay(
+            RoundedRectangle(cornerRadius: 6)
+                .stroke(Color.secondary.opacity(0.15), lineWidth: 1)
+        )
     }
 }
 
