@@ -1,12 +1,55 @@
-# X Ode
+# XOde App (`xode-app`)
 
-A native macOS interface for legitimately entitled Xbox PC games, powered by
-the Xodus backend and separately installed runtimes.
+A native macOS SwiftUI desktop interface for legitimately entitled PC Game Pass and Xbox-PC games, powered by the **XOde Backend** engine ([`xode-backend`](../xode-backend)).
 
-**Experimental; not a public release.** Catalog visibility, account access,
-package support and successful Mac gameplay are separate facts. A verified app
-signature or an installed game folder does not establish entitlement or
-compatibility.
+**Experimental; not a public release.** Catalog visibility, account access, package support, and successful Mac gameplay are separate facts. A verified app signature or an installed game folder does not establish entitlement or compatibility.
+
+---
+
+## Ecosystem Lineage & Architecture
+
+This application is the desktop frontend in the XOde ecosystem. To understand how the components fit together:
+
+```mermaid
+flowchart TD
+    subgraph Roots["Origins & Foundations"]
+        OG["xodus-gaming/xodus\n(Linux CLI & MSIXVC crypto math)"]
+        CALI["calimocho\n(Apple Silicon Wine 11 & D3DMetal proof of concept)\n[Archived, SN2 Recipe]"]
+    end
+
+    subgraph XOde["XOde Platform"]
+        APP["xode-app\n(SwiftUI Desktop Interface)"]
+        subgraph Backend["xode-backend (Engine Repository)"]
+            CLI["xode-cli / xodus-cli\n(Process Supervisor & Lifecycle Engine)"]
+            CONTROL["crates/xode-control\n(Control Plane: Staging, Catalog & Protocol)"]
+            DATAPLANE["crates/xode-dataplane\n(Guest Data Plane: In-Game Licensing Daemon)"]
+            RECIPES["recipes/*.json\n(27 Declarative Title Recipes & Generation Ledger)"]
+        end
+    end
+
+    subgraph Guest["Wine Execution"]
+        GAME["Windows PC Game\n(e.g., The Witcher 3, Hogwarts Legacy)"]
+        SHIM["XGameRuntime.dll Shims"]
+    end
+
+    OG -->|"MSIXVC / XVD container math"| CLI
+    CALI -.->|"Wine 11 + D3DMetal runtime lessons"| CLI
+    APP <-->|"JSONL Management Protocol (stdin/stdout)"| CONTROL
+    CONTROL --> CLI
+    CLI --> RECIPES
+    CLI -. "Launches & Supervises" .-> GAME
+    GAME --> SHIM
+    SHIM <-- "AF_UNIX Socket (Binary/XML)" --> DATAPLANE
+```
+
+### The Roles of the Components:
+1. **`xode-app` (This App)**: The native SwiftUI front-end. It drives user onboarding, library discovery, installation progress, and game launch triggers. It never interacts directly with raw Wine processes or secrets; instead, it speaks JSONL to `xode-control`.
+2. **`xode-control` (Control Plane)**: The host control plane inside `xode-backend`. It executes store searches anonymously, verifies account credentials in macOS Keychain, and stages downloads transactionally.
+3. **`xode-dataplane` (Guest Data Plane)**: The in-game guest data plane inside `xode-backend`. When games run in Wine, Wine's `XGameRuntime.dll` shims query this background daemon to exchange live Xbox tickets so games don't terminate.
+4. **Declarative Title Recipes**: 27 verified game profiles with Store IDs, graphics backends, generation counters, and automatic user save snapshot protection.
+5. **`calimocho`**: The spiritual predecessor experiment that proved Wine 11 and Apple D3DMetal on Apple Silicon for Subnautica 2 before being archived.
+
+---
 
 ## What the UI can do
 
