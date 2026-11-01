@@ -372,7 +372,7 @@ final class PCGamesController: ObservableObject {
             } catch is CancellationError { }
             catch {
                 guard generation == token, !terminating else { return }
-                if accountHash != session.accountHash || !session.hasConfirmedSignIn { snapshot = nil }
+                if accountHash != session?.accountHash || session?.hasConfirmedSignIn != true { snapshot = nil }
                 if error as? PCGamesError == .libraryReadBusy {
                     self.error = PCGamesError.libraryReadBusy.localizedDescription
                 } else if error as? ManagementError == .authenticatedReadFailed(.responseInvalid) {

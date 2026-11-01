@@ -105,7 +105,7 @@ final class DownloadQueueController: ObservableObject {
                     onProgress: { [weak self] activity, progress in
                         await self?.report(job.id, runID: runID, activity: activity, progress: progress)
                     })
-                await self.finish(job.id, runID: runID, terminal: terminal)
+                self.finish(job.id, runID: runID, terminal: terminal)
             }
         }
     }
