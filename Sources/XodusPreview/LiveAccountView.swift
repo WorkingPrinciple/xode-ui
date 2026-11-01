@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import SwiftUI
+import XodusCore
 import XodusManagement
 
 @MainActor
@@ -97,7 +98,6 @@ struct LiveAccountView: View {
                         }
                     }
                     .keyboardShortcut(.cancelAction)
-                    .modifier(XboxProminentButton(enabled: session.hasConfirmedSignIn))
                     .disabled(session.signInPending && session.accountBusy)
                     .accessibilityLabel(session.signInPending ? "Cancel sign-in" : "Close account")
                     .accessibilityIdentifier(session.signInPending ? "xodus.account.cancelSignIn" : "xodus.account.close")
@@ -226,7 +226,8 @@ struct LiveSettingsView: View {
                 }
                 .tag(SettingsTab.advanced)
         }
-        .frame(minWidth: 580, idealWidth: 640, minHeight: 480, idealHeight: 560)
+        .frame(width: 540, height: 450)
+        .navigationTitle(selectedTab.rawValue)
         .task {
             await state.runtimeSettings.refreshCrossOverDependency()
         }
@@ -239,40 +240,70 @@ struct GeneralSettingsTab: View {
     let openWindow: OpenWindowAction
 
     var body: some View {
-        Form {
-            Section("Game storage") {
-                GameInstallLocationSettings()
-            }
-            Section("Interface & Artwork") {
-                Toggle("Animate featured game artwork", isOn: $heroAnimationsEnabled)
-                Text("Trailers start when you point at the featured artwork and keep playing while it's visible. Use the speaker button to unmute. Reduce Motion and Low Power Mode use the poster instead.")
-                    .foregroundStyle(.secondary)
-                Button("Clear downloaded artwork") {
-                    artwork.clearingArtwork = true
-                    artwork.artworkNotice = nil
-                    artwork.artworkError = nil
-                    TrailerCache.shared.clear()
-                    Task {
-                        do {
-                            try await CatalogArtworkStore.shared.clearCache()
-                            artwork.artworkNotice = "Downloaded artwork cleared."
-                        } catch {
-                            artwork.artworkError = "Artwork couldn't be cleared. Try again."
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                // Game Storage
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Game Storage")
+                        .font(.headline)
+                    GameInstallLocationSettings()
+                }
+
+                Divider()
+
+                // Interface & Artwork
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Interface & Artwork")
+                        .font(.headline)
+                    Toggle("Animate featured game artwork", isOn: $heroAnimationsEnabled)
+                    Text("Trailers start when you point at the featured artwork and keep playing while it's visible. Reduce Motion uses the poster instead.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    HStack(spacing: 12) {
+                        Button("Clear Downloaded Artwork") {
+                            artwork.clearingArtwork = true
+                            artwork.artworkNotice = nil
+                            artwork.artworkError = nil
+                            TrailerCache.shared.clear()
+                            Task {
+                                do {
+                                    try await CatalogArtworkStore.shared.clearCache()
+                                    artwork.artworkNotice = "Downloaded artwork cleared."
+                                } catch {
+                                    artwork.artworkError = "Artwork couldn't be cleared. Try again."
+                                }
+                                artwork.clearingArtwork = false
+                            }
                         }
-                        artwork.clearingArtwork = false
+                        .disabled(artwork.clearingArtwork)
+                        if artwork.clearingArtwork { ProgressView().controlSize(.small) }
+                        if let notice = artwork.artworkNotice { Text(notice).font(.caption).foregroundStyle(.secondary) }
+                        if let error = artwork.artworkError { Text(error).font(.caption).foregroundStyle(.red) }
                     }
                 }
-                .disabled(artwork.clearingArtwork)
-                if artwork.clearingArtwork { ProgressView("Clearing downloaded artwork") }
-                if let notice = artwork.artworkNotice { Text(notice).foregroundStyle(.secondary) }
-                if let error = artwork.artworkError { Text(error).foregroundStyle(.secondary) }
+
+                Divider()
+
+                // About Ode to X
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("About Ode to X")
+                        .font(.headline)
+                    HStack(spacing: 12) {
+                        Text("Version 0.2.0 (Build 745)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Button("Licenses") { openWindow(id: "licenses") }
+                            .controlSize(.small)
+                        Button("Acknowledgments") { openWindow(id: "acknowledgments") }
+                            .controlSize(.small)
+                    }
+                }
             }
-            Section("About Ode to X") {
-                Button("Licenses") { openWindow(id: "licenses") }
-                Button("Acknowledgments") { openWindow(id: "acknowledgments") }
-            }
+            .padding(.horizontal, 28)
+            .padding(.vertical, 20)
         }
-        .formStyle(.grouped)
     }
 }
 
@@ -281,26 +312,187 @@ struct EnginesSettingsTab: View {
     @ObservedObject var session: LiveSession
     let dismiss: () -> Void
 
+    @AppStorage(EngineDefaults.defaultEngineKey) private var defaultProvider = ""
+    @AppStorage("Xodus.lifecycle.engine.calimocho") private var calimochoRecord = ""
+
     var body: some View {
-        Form {
-            Section("Windows Execution Engines") {
-                RuntimeInstallationPicker(settings: state.runtimeSettings, backendPath: session.backendPath)
-            }
-            Section("Readiness Checklist") {
-                Text("Review readiness criteria and setup status on the first-run checklist.")
-                    .foregroundStyle(.secondary)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                // 1. Default Execution Engine
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Default Execution Engine")
+                        .font(.headline)
+                    Text("Select which engine runs Windows games by default. You can also override this per-game from each title's menu.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    HStack(spacing: 12) {
+                        Picker("Default Engine:", selection: Binding(
+                            get: { RuntimeProviderKind(rawValue: defaultProvider) },
+                            set: { defaultProvider = $0?.rawValue ?? "" })) {
+                            Text("Calimocho (Wine 11) — Free / Open-source").tag(Optional(RuntimeProviderKind.calimocho))
+                            if state.runtimeSettings.crossOverDependency.isVerified {
+                                Text("CrossOver — Detected").tag(Optional(RuntimeProviderKind.crossover))
+                            }
+                            Text("No default (Prompt on launch)").tag(Optional<RuntimeProviderKind>.none)
+                        }
+                        .labelsHidden()
+                        .pickerStyle(.menu)
+                        .frame(width: 320)
+
+                        Button("Refresh") {
+                            Task { await state.runtimeSettings.refreshCrossOverDependency() }
+                        }
+                        .controlSize(.small)
+                    }
+                }
+
+                Divider()
+
+                // 2. Installed Engines Overview
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Available Engines")
+                        .font(.headline)
+
+                    // Calimocho Row
+                    HStack(alignment: .center, spacing: 12) {
+                        Image(systemName: "cpu")
+                            .font(.title2)
+                            .foregroundStyle(Color.accentColor)
+                            .frame(width: 28)
+                        VStack(alignment: .leading, spacing: 2) {
+                            HStack {
+                                Text("Calimocho 0.6 (Wine 11.20)")
+                                    .font(.body.bold())
+                                Spacer()
+                                Text(state.gptkOnboarding.isInstalled ? "Ready" : "Installed")
+                                    .font(.caption.bold())
+                                    .foregroundStyle(Color.accentColor)
+                            }
+                            Text("Free, open-source Windows translation layer built from LGPL source.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .padding(10)
+                    .background(Color.primary.opacity(0.04))
+                    .cornerRadius(8)
+
+                    // CrossOver Row
+                    HStack(alignment: .center, spacing: 12) {
+                        Image(systemName: "app.badge.checkmark")
+                            .font(.title2)
+                            .foregroundStyle(Color.blue)
+                            .frame(width: 28)
+                        VStack(alignment: .leading, spacing: 2) {
+                            HStack {
+                                Text("CrossOver")
+                                    .font(.body.bold())
+                                if case .installed(let app) = state.runtimeSettings.crossOverDependency {
+                                    Text("v\(app.version)")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                Text(state.runtimeSettings.crossOverDependency.isVerified ? "Detected" : "Not Found")
+                                    .font(.caption.bold())
+                                    .foregroundStyle(state.runtimeSettings.crossOverDependency.isVerified ? .green : .secondary)
+                            }
+                            HStack {
+                                Text(crossOverDescription)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                                Spacer()
+                                Button("Locate…") {
+                                    chooseCrossOver()
+                                }
+                                .controlSize(.small)
+                                if EngineDefaults.crossOverApplication() != nil {
+                                    Button("Reset") {
+                                        EngineDefaults.setCrossOverApplication(nil)
+                                        Task { await state.runtimeSettings.refreshCrossOverDependency() }
+                                    }
+                                    .controlSize(.small)
+                                }
+                            }
+                        }
+                    }
+                    .padding(10)
+                    .background(Color.primary.opacity(0.04))
+                    .cornerRadius(8)
+
+                    // Apple Game Porting Toolkit (D3DMetal) Row
+                    HStack(alignment: .center, spacing: 12) {
+                        Image(systemName: "gamecontroller")
+                            .font(.title2)
+                            .foregroundStyle(Color.orange)
+                            .frame(width: 28)
+                        VStack(alignment: .leading, spacing: 2) {
+                            HStack {
+                                Text("Apple Game Porting Toolkit (D3DMetal)")
+                                    .font(.body.bold())
+                                Spacer()
+                                Text(state.gptkOnboarding.isInstalled ? "Ready" : "Setup Required")
+                                    .font(.caption.bold())
+                                    .foregroundStyle(state.gptkOnboarding.isInstalled ? .green : .secondary)
+                            }
+                            HStack {
+                                Text("Apple's Direct3D 12 Metal translation library.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                                Button(state.gptkOnboarding.isInstalled ? "Reinstall…" : "Setup…") {
+                                    state.gptkOnboarding.isPresented = true
+                                }
+                                .controlSize(.small)
+                            }
+                        }
+                    }
+                    .padding(10)
+                    .background(Color.primary.opacity(0.04))
+                    .cornerRadius(8)
+                }
+
+                Divider()
+
+                // 3. Engine Management Actions
                 HStack(spacing: 12) {
-                    Button("Open Readiness Checklist") {
+                    Button("Readiness Checklist…") {
                         dismiss()
                         state.showingSetup = true
                     }
-                    Button("Open Engines Window") {
+                    Spacer()
+                    Button("Advanced Registry…") {
                         state.openAccount(.engines)
                     }
                 }
             }
+            .padding(.horizontal, 28)
+            .padding(.vertical, 20)
         }
-        .formStyle(.grouped)
+    }
+
+    private var crossOverDescription: String {
+        if case .installed(let app) = state.runtimeSettings.crossOverDependency {
+            return app.location.path
+        }
+        return "Supported commercial engine by CodeWeavers (optional)."
+    }
+
+    private func chooseCrossOver() {
+        let panel = NSOpenPanel()
+        panel.title = "Locate CrossOver"
+        panel.prompt = "Select CrossOver.app"
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.allowsMultipleSelection = false
+        if panel.runModal() == .OK, let url = panel.url {
+            EngineDefaults.setCrossOverApplication(url.path)
+            Task {
+                await state.runtimeSettings.refreshCrossOverDependency()
+            }
+        }
     }
 }
 
@@ -309,42 +501,82 @@ struct AccountSettingsTab: View {
     @ObservedObject var session: LiveSession
 
     var body: some View {
-        Form {
-            Section("Account status") {
-                LabeledContent("Status", value: session.accountJourneyTitle)
-                if session.hasConfirmedSignIn { AccountCountrySettings() }
-                Button("Open account window") { state.openAccount() }
-                if session.hasConfirmedSignIn { AccountHubDestinations() }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                if !session.hasConfirmedSignIn {
+                    VStack(spacing: 14) {
+                        Spacer(minLength: 24)
+                        Image(systemName: "person.crop.circle.badge.questionmark")
+                            .font(.system(size: 48))
+                            .foregroundStyle(.secondary)
+
+                        VStack(spacing: 4) {
+                            Text("Not Signed In")
+                                .font(.title3.bold())
+                            Text("Sign in with your Xbox or Microsoft account from the main window to browse your Game Pass library and sync game progress.")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                                .frame(maxWidth: 380)
+                        }
+
+                        Button("Sign In with Xbox Live…") {
+                            NSApp.activate(ignoringOtherApps: true)
+                            state.openAccount()
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.regular)
+                        .padding(.top, 4)
+
+                        Spacer(minLength: 24)
+                    }
+                    .frame(maxWidth: .infinity)
+                } else {
+                    // Signed In Account Section
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Xbox Live Account")
+                            .font(.headline)
+                        HStack {
+                            Image(systemName: "person.crop.circle.fill")
+                                .font(.title)
+                                .foregroundStyle(Color.accentColor)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(session.accountJourneyTitle)
+                                    .font(.body.bold())
+                                Text("Signed In • Connected")
+                                    .font(.caption)
+                                    .foregroundStyle(.green)
+                            }
+                            Spacer()
+                            Button("Sign Out") {
+                                Task { await state.signOut(session: session) }
+                            }
+                            .controlSize(.small)
+                        }
+                    }
+
+                    Divider()
+
+                    // Country / Region
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Store Country & Region")
+                            .font(.headline)
+                        AccountCountrySettings()
+                    }
+
+                    Divider()
+
+                    // Subscriptions & Library
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Subscriptions & Library")
+                            .font(.headline)
+                        GameServiceAccountView(operations: state.gameOperations, library: state.pcGames)
+                    }
+                }
             }
-            Section("Game access") {
-                GameServiceAccountView(operations: state.gameOperations, library: state.pcGames)
-            }
-            Section("Sign-in support") {
-                Text(session.accountMessage).foregroundStyle(.secondary)
-                if let error = session.accountError {
-                    Text(error).textSelection(.enabled)
-                        .accessibilityIdentifier("xodus.account.error")
-                }
-                if let summary = session.accountFailureSummary {
-                    Text(summary).textSelection(.enabled)
-                        .accessibilityIdentifier("xodus.account.failureSummary")
-                }
-                if let details = session.accountFailureDetails {
-                    Text(details).textSelection(.enabled)
-                        .accessibilityIdentifier("xodus.account.failureDetails")
-                }
-                if let observation = session.accountFailureObservation {
-                    Text(observation).textSelection(.enabled)
-                        .accessibilityIdentifier("xodus.account.failureObservation")
-                }
-                Text(session.accountExplanation).foregroundStyle(.secondary)
-                Text("If macOS asks for permission to read a saved sign-in, respond in that window. Checking a saved sign-in doesn't start a new Microsoft login.")
-                    .foregroundStyle(.secondary)
-                Button("Check status") { Task { await session.prepareWelcome() } }
-                    .disabled(session.connectionTransitioning || session.accountBusy)
-            }
+            .padding(.horizontal, 28)
+            .padding(.vertical, 20)
         }
-        .formStyle(.grouped)
     }
 }
 
@@ -353,116 +585,134 @@ struct AdvancedSettingsTab: View {
     @EnvironmentObject private var state: AppState
 
     var body: some View {
-        Form {
-            Section("App connection") {
-#if XODUS_SHIPPING
-                Text("Only this app's approved bundled engine and sign-in helper can be used. Gameplay runtime certification is separate.")
-                    .foregroundStyle(.secondary)
-#else
-                Text("Development integration. Only choose a management engine you trust; signed runtime distribution is not implemented yet.")
-                    .foregroundStyle(.secondary)
-#endif
-                LabeledContent("Build", value: session.backendPath.isEmpty ? "Not selected" : URL(fileURLWithPath: session.backendPath).lastPathComponent)
-                HStack {
-#if !XODUS_SHIPPING
-                    Button("Choose app engine") { session.chooseBackend() }.disabled(session.connectionTransitioning)
-#endif
-                    Spacer()
-                    Button(session.isReady ? "Reconnect" : "Connect") { Task { await session.connect() } }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                // App Connection Section
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Backend Engine Connection")
+                        .font(.headline)
+                    HStack {
+                        Text("CLI Executable:")
+                            .foregroundStyle(.secondary)
+                        Text(session.backendPath.isEmpty ? "Bundled / Default" : URL(fileURLWithPath: session.backendPath).lastPathComponent)
+                            .font(.callout.monospaced())
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                        Spacer()
+                        Button(session.isReady ? "Reconnect" : "Connect") {
+                            Task { await session.connect() }
+                        }
                         .disabled(session.backendPath.isEmpty || session.connectionTransitioning)
-                    if session.isReady {
-                        Button("Disconnect") { Task { await session.disconnect() } }
+                        .controlSize(.small)
+                        if session.isReady {
+                            Button("Disconnect") {
+                                Task { await session.disconnect() }
+                            }
                             .disabled(session.connectionTransitioning)
+                            .controlSize(.small)
+                        }
+                    }
+                    if let hello = session.hello {
+                        HStack {
+                            Text("Engine: \(hello.backendVersion)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            Text("Protocol: v1.0")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    if let error = session.errorMessage {
+                        Label(error, systemImage: "exclamationmark.circle")
+                            .font(.caption)
+                            .foregroundStyle(.red)
                     }
                 }
-                if let hello = session.hello {
-                    LabeledContent("Management", value: "1.0")
-                    LabeledContent("Backend", value: hello.backendVersion)
-                    LabeledContent("Runtime", value: "Not certified for gameplay")
-                }
-                if let error = session.errorMessage {
-                    Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
-                }
-            }
-            Section("Installation tools") {
-                Button("Inspect a game folder") { session.chooseInstallationFolder() }
-                    .disabled(!session.isReady || !session.supports(.inspectInstallation) || session.inspectionBusy)
-                if session.inspectionBusy { ProgressView("Inspecting installation").controlSize(.small) }
-                if let inspection = session.inspection {
-                    LabeledContent("Selected folder",
-                        value: URL(fileURLWithPath: inspection.directory).lastPathComponent)
-                    Text("An installation marker was found. This inspection does not verify ownership, full file integrity or compatibility, and does not import or launch the game.")
-                        .font(.callout).foregroundStyle(.secondary)
-                }
-                if let error = session.inspectionError {
-                    Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
-                }
-            }
-            Section("Advanced public catalog") {
-                Text(session.supports(.query)
-                     ? "Discover browses PC Game Pass titles or searches the public Microsoft Store. Neither source is an owned library."
-                     : "Discover checks a bounded public PC Game Pass page. This engine searches checked products only, not the whole Store or an owned library.")
-                    .foregroundStyle(.secondary)
-                if session.hasConfirmedSignIn {
-                    LabeledContent("Market", value: session.accountCountryLabel)
-                } else {
-                    TextField("Market (for example US)", text: $session.market)
-                }
-                TextField("Language (for example en-US)", text: $session.language)
-                Button("Refresh catalog scope") { Task { await session.refreshCatalog(state.query) } }
-                    .disabled(!session.isReady || session.searching)
-                TextField("Public Store product ID", text: $session.lookupID)
-                    .onSubmit { Task { await session.lookupProduct() } }
-                HStack {
-                    Button("Check public product") { Task { await session.lookupProduct() } }
-                        .disabled(!session.supports(.enqueue) || session.lookupBusy)
-                    if session.lookupBusy {
-                        ProgressView().controlSize(.small).accessibilityLabel("Looking up game details")
+
+                Divider()
+
+                // Installation & Diagnostics
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Installation & Game Inspection")
+                        .font(.headline)
+                    HStack {
+                        Button("Inspect Game Folder…") {
+                            session.chooseInstallationFolder()
+                        }
+                        .disabled(!session.isReady || !session.supports(.inspectInstallation) || session.inspectionBusy)
+                        if session.inspectionBusy {
+                            ProgressView().controlSize(.small)
+                        }
+                    }
+                    if let inspection = session.inspection {
+                        Text("Selected: \(URL(fileURLWithPath: inspection.directory).lastPathComponent)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                 }
-                Text("Checks public metadata only. It does not buy, authorize, download or install a game.")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-            Section("Diagnostics") {
-                DisclosureGroup("Sign-in and game connection") {
-                    LabeledContent("Xbox Live", value: session.hasConfirmedSignIn ? "Signed in" : "Not signed in")
-                    LabeledContent("Game connection", value: session.nativeLifecycleConfiguration != nil
-                        ? "Private per launch" : session.accountRuntimeReady ? "Connected"
-                        : session.accountRuntimeStarting ? "Connecting" : "Not connected")
-                    if let error = session.accountRuntimeError {
-                        Text(error).font(.callout).foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
+
+                Divider()
+
+                // Catalog Scope
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Store Catalog Scope")
+                        .font(.headline)
+                    HStack(spacing: 12) {
+                        TextField("Market (e.g. US)", text: $session.market)
+                            .frame(width: 140)
+                        TextField("Language (e.g. en-US)", text: $session.language)
+                            .frame(width: 160)
+                        Button("Apply") {
+                            Task { await session.refreshCatalog(state.query) }
+                        }
+                        .controlSize(.small)
                     }
                 }
-                Button("Preview redacted diagnostic summary") { Task { await session.previewDiagnostics() } }
-                    .disabled(!session.supports(.diagnostics) || session.diagnosticSaving || session.diagnosticPreviewing)
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityLabel("Preview redacted diagnostic summary")
-                    .accessibilityIdentifier("xodus.diagnostics.preview")
-                    .accessibilityAddTraits(.isButton)
-                    .accessibilityAction { Task { await session.previewDiagnostics() } }
-                if let preview = session.diagnosticPreview {
-                    Text(preview).font(.callout).textSelection(.enabled)
-                    Button("Save reviewed summary...") { session.chooseDiagnosticDestination() }
-                        .disabled(session.diagnosticSaving)
-                        .accessibilityElement(children: .ignore)
-                        .accessibilityLabel("Save reviewed diagnostic summary")
-                        .accessibilityIdentifier("xodus.diagnostics.save")
-                        .accessibilityAddTraits(.isButton)
-                        .accessibilityAction { session.chooseDiagnosticDestination() }
-                    Text("Only the summary shown above is saved, not raw engine logs or account data.")
-                        .font(.caption).foregroundStyle(.secondary)
-                }
-                if session.diagnosticPreviewing { ProgressView("Preparing summary") }
-                if session.diagnosticSaving { ProgressView("Saving summary") }
-                if session.diagnosticSaved {
-                    Label("Diagnostic summary saved.", systemImage: "checkmark.circle")
-                }
-                if let error = session.diagnosticExportError {
-                    Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
+
+                Divider()
+
+                // Diagnostics
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Diagnostics")
+                        .font(.headline)
+                    HStack {
+                        Button("Preview Diagnostic Summary…") {
+                            Task { await session.previewDiagnostics() }
+                        }
+                        .controlSize(.small)
+                        .disabled(!session.supports(.diagnostics) || session.diagnosticSaving || session.diagnosticPreviewing)
+                        .accessibilityIdentifier("xodus.diagnostics.preview")
+
+                        if session.diagnosticPreview != nil {
+                            Button("Save Summary…") {
+                                session.chooseDiagnosticDestination()
+                            }
+                            .controlSize(.small)
+                            .disabled(session.diagnosticSaving)
+                            .accessibilityIdentifier("xodus.diagnostics.save")
+                        }
+                    }
+                    if session.diagnosticPreviewing { ProgressView("Preparing summary").controlSize(.small) }
+                    if session.diagnosticSaving { ProgressView("Saving summary").controlSize(.small) }
+                    if session.diagnosticSaved {
+                        Label("Diagnostic summary saved.", systemImage: "checkmark.circle").font(.caption).foregroundStyle(.green)
+                    }
+                    if let error = session.diagnosticExportError {
+                        Label(error, systemImage: "exclamationmark.circle").font(.caption).foregroundStyle(.red)
+                    }
+                    if let preview = session.diagnosticPreview {
+                        Text(preview)
+                            .font(.system(.caption, design: .monospaced))
+                            .textSelection(.enabled)
+                            .padding(8)
+                            .background(Color.primary.opacity(0.04))
+                            .cornerRadius(6)
+                    }
                 }
             }
+            .padding(.horizontal, 28)
+            .padding(.vertical, 20)
         }
-        .formStyle(.grouped)
     }
 }

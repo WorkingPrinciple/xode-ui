@@ -687,12 +687,6 @@ struct InstalledGameActions: View {
         .task {
             await library.refreshEngineOverrides(force: false)
         }
-        .onReceive(NotificationCenter.default.publisher(for: NSMenu.didBeginTrackingNotification)) { notification in
-            guard let menu = notification.object as? NSMenu,
-                  Self.containsEngineMenu(menu, defaultTitle: "Use default (\(library.defaultEngineLabel(for: game)))")
-            else { return }
-            Task { await library.refreshEngineOverrides(force: false, retryFailed: true) }
-        }
     }
 
     static func containsEngineMenu(_ menu: NSMenu, defaultTitle: String) -> Bool {

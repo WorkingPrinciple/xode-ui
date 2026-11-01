@@ -320,7 +320,7 @@ struct LiveRootView: View {
         .task {
             if startupAllowed { await session.prepareWelcome() }
         }
-        .task(id: "\(accountContentAllowed):\(state.destination.rawValue):\(state.showsRecentActivity):\(scenePhase == .active):\(session.isReady):\(session.connectionTransitioning):\(session.accountBusy)") {
+        .task(id: "\(accountContentAllowed):\(state.destination.rawValue):\(state.showsRecentActivity):\(scenePhase == .active):\(session.isReady):\(session.connectionTransitioning)") {
             guard accountContentAllowed, scenePhase == .active else { return }
             await state.loadRecentActivityIfVisible(session: session)
         }
