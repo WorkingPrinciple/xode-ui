@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import Foundation
+import LocalAuthentication
 import OSLog
 import Security
 import XodusManagement
@@ -73,7 +74,9 @@ actor PCGamesKeychain: PCGamesRefreshStore {
         try Task.checkCancellation()
         var query = identity
         query[kSecReturnAttributes as String] = true
-        query[kSecUseAuthenticationUI as String] = kSecUseAuthenticationUIFail
+        let context = LAContext()
+        context.interactionNotAllowed = true
+        query[kSecUseAuthenticationContext as String] = context
         query[kSecMatchLimit as String] = kSecMatchLimitOne
         let status = SecItemCopyMatching(query as CFDictionary, nil)
         if status == errSecItemNotFound { return false }
@@ -87,7 +90,9 @@ actor PCGamesKeychain: PCGamesRefreshStore {
         var query = identity
         query[kSecReturnData as String] = true
         query[kSecMatchLimit as String] = kSecMatchLimitOne
-        query[kSecUseAuthenticationUI as String] = kSecUseAuthenticationUIAllow
+        let context = LAContext()
+        context.interactionNotAllowed = false
+        query[kSecUseAuthenticationContext as String] = context
         var result: CFTypeRef?
         let status = SecItemCopyMatching(query as CFDictionary, &result)
         if status == errSecItemNotFound { return nil }

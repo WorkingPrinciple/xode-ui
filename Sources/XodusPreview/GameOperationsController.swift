@@ -1024,7 +1024,7 @@ final class GameOperationsController: ObservableObject {
         error = nil
         log = nil
         failureCode = nil
-        mutationTask = Task {
+        mutationTask = Task { [self] in
             if let storageVolume {
                 do {
                     try await storageProbe.read {

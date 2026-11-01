@@ -233,7 +233,7 @@ final class PCGamesController: ObservableObject {
         deviceCode = nil
         snapshot = nil
         sheetPresented = true
-        operation = Task {
+        operation = Task { [self] in
             defer { MicrosoftSignInGate.shared.release(signInOwner) }
             defer { finish(token) }
             do {
@@ -273,7 +273,7 @@ final class PCGamesController: ObservableObject {
         generation = token
         busy = true
         error = nil
-        operation = Task {
+        operation = Task { [self] in
             defer { finish(token) }
             do {
                 guard let saved = try await store.read() else { throw PCGamesError.signInRequired }
@@ -310,9 +310,10 @@ final class PCGamesController: ObservableObject {
         generation = token
         busy = true
         error = nil
-        operation = Task {
+        operation = Task { [self, weak session] in
             defer { finish(token) }
             do {
+                guard let session else { return }
                 if !session.accountCountryReady { await session.refreshAccountCountry() }
                 try current(token)
                 guard session.accountCountryReady else {
