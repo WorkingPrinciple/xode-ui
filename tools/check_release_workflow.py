@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-only
 """Nonpublishing workflow checks; gh and all release artifacts are synthetic."""
 import hashlib
+from contextlib import chdir
 import os
 from pathlib import Path
 import subprocess
@@ -30,13 +31,17 @@ class ReleaseWorkflowChecks(unittest.TestCase):
             git.assert_not_called()
 
     def test_same_qualified_bytes_and_stale_evidence_rejection(self):
-        for case in ("valid", "changed-app", "stale-source", "changed-evidence"):
+        for case in ("valid", "changed-app", "stale-source", "changed-evidence", "mismatched-version"):
             with self.subTest(case=case), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory).resolve()
                 app, receipt, app_hash, receipt_hash = admission_checks.ReleaseAdmissionChecks().fixture(root)
+                (root / "tools").mkdir()
+                (root / "tools/Info.plist").write_bytes((app / "Contents/Info.plist").read_bytes())
                 environment = {"TAG": "v0.2.0", "EXPECTED_COMMIT": "a" * 40,
                     "RELEASE_APP": str(app), "RELEASE_ADMISSION": str(receipt),
                     "RELEASE_APP_SHA256": app_hash, "RELEASE_ADMISSION_SHA256": receipt_hash}
+                if case == "mismatched-version":
+                    environment["TAG"] = "v0.2.1"
                 if case == "changed-app":
                     (app / "Contents/MacOS/Fixture").write_bytes(b"new signing bytes")
                 if case == "changed-evidence":
@@ -47,7 +52,7 @@ class ReleaseWorkflowChecks(unittest.TestCase):
                     if arguments[-1] == "HEAD^{tree}":
                         return ("c" if case == "stale-source" else "b") * 40
                     return "a" * 40
-                with patch("release_workflow.subprocess.check_output", side_effect=git):
+                with chdir(root), patch("release_workflow.subprocess.check_output", side_effect=git):
                     if case == "valid":
                         self.assertEqual(qualified_app(environment), app)
                         # The same immutable input is passed to the existing packager;
