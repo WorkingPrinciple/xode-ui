@@ -5,8 +5,9 @@
 ### Issue 62: immutable qualified app, archive and tag-workflow source
 
 COR-389 / REQ-172 supersedes the earlier prohibition on writing tag-workflow
-source. `.github/workflows/release.yml` now declares a `v*` tag pipeline locally;
-it has not been pushed or run. The package job consumes an immutable app already
+source. `.github/workflows/release.yml` declares a `v*` tag pipeline; actual
+signed qualification and publication through it have not yet been observed.
+The package job consumes an immutable app already
 built/signed through the separately authorized app-build process (for example
 the existing `tools/build_app.sh` controlled-pair contract) and independently
 qualified for the exact tag commit. It never rebuilds or re-signs that input.
@@ -53,10 +54,12 @@ or protected-environment configuration is claimed by source/stub tests.
 
 `tools/package_release.sh` packages an **already built, signed and separately
 admitted** app with `hdiutil` and `ditto`; it never builds, signs, notarizes,
-uploads, installs or launches an app. No `release.yml` or new CI trigger is
-executed. Automatic tagged release execution remains blocked by the program's
-CI/release/publication hold, as do genuine signed-release acceptance and native
-qualification. An unsigned fixture is not a distribution candidate.
+uploads, installs or launches an app. The `v*` workflow exists, but its execution
+requires the real protected-environment configuration, admitted signed app and
+qualification evidence described above, together with release/publication
+authorization. Source and fixture checks do not establish genuine signed-release
+acceptance or native product qualification. An unsigned fixture is not a
+distribution candidate.
 
 When separately authorized, invoke from the admitted clean source checkout:
 
