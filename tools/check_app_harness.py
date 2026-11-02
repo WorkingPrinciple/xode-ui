@@ -8,6 +8,15 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 class AppHarnessSourceChecks(unittest.TestCase):
+    def test_sandbox_uses_production_credential_adapter(self):
+        source = (ROOT / "Sources/XodusPreview/AuthenticatedScenarioChecks.swift").read_text()
+        self.assertIn("PCGamesCredentialStore(sandboxBroker:", source)
+        adapter = (ROOT / "Sources/XodusPreview/PCGamesCredentialStore.swift").read_text()
+        self.assertIn("#if !XODUS_SHIPPING\n    init(sandboxBroker:", adapter)
+        self.assertIn("try await sandboxBroker(request)", adapter)
+        self.assertIn("CredentialRequest(data: request.encoded())", source)
+        self.assertIn("CredentialResponse(data: response.encoded(), request: request)", source)
+
     def test_fixture_runner_dispatches_before_app_state(self):
         source = (ROOT / "Sources/XodusPreview/XodusPreviewApp.swift").read_text()
         initializer = source.split("    init() {", 1)[1]

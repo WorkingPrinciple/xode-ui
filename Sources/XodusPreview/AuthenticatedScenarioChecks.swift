@@ -2,6 +2,34 @@
 import AppKit
 import Foundation
 import XodusManagement
+import XodusCredentials
+
+actor SandboxCredentialBroker {
+    private var token: String?
+    private(set) var writes: [String] = []
+    private(set) var reads = 0
+
+    func send(_ request: CredentialRequest) throws -> CredentialResponse {
+        let decoded = try CredentialRequest(data: request.encoded())
+        switch decoded.operation {
+        case .write:
+            guard let value = decoded.value, value.hasPrefix("SYNTHETIC_") else {
+                throw CredentialFailure.invalid
+            }
+            token = value
+            writes.append(value)
+        case .read:
+            if !decoded.presenceOnly { reads += 1 }
+        case .delete:
+            token = nil
+        case .migrate:
+            throw CredentialFailure.unavailable
+        }
+        let response = CredentialResponse(id: decoded.id, present: token != nil,
+            value: decoded.operation == .read && !decoded.presenceOnly ? token : nil)
+        return try CredentialResponse(data: response.encoded(), request: request)
+    }
+}
 
 @MainActor
 enum AuthenticatedScenarioChecks {
@@ -152,8 +180,11 @@ enum AuthenticatedScenarioChecks {
         ]
     }
 
-    private static func legacyLibraryScenario() async throws -> (PCGamesController, PCGamesMockStore, PCGamesMockTransport) {
-        let store = PCGamesMockStore("SYNTHETIC_INITIAL_REFRESH_TOKEN")
+    private static func legacyLibraryScenario() async throws -> (PCGamesController, SandboxCredentialBroker, PCGamesMockStore, PCGamesMockTransport) {
+        let broker = SandboxCredentialBroker()
+        let direct = PCGamesMockStore("SYNTHETIC_DIRECT_MUST_NOT_BE_READ")
+        let store = PCGamesCredentialStore(sandboxBroker: { try await broker.send($0) }, direct: direct)
+        try await store.save("SYNTHETIC_INITIAL_REFRESH_TOKEN")
         let transport = PCGamesMockTransport(try [
             response(["access_token": "SYNTHETIC_ACCESS_TOKEN",
                       "refresh_token": "SYNTHETIC_ROTATED_REFRESH_TOKEN"]),
@@ -175,7 +206,7 @@ enum AuthenticatedScenarioChecks {
         await library.restorePresence()
         library.refresh()
         await library.waitForOperation()
-        return (library, store, transport)
+        return (library, broker, direct, transport)
     }
 
     private static func unifiedAccountScenario(root: URL, expectedAccountHash: String?,
@@ -288,10 +319,12 @@ enum AuthenticatedScenarioChecks {
         for (passed, message) in await cleanupChecks() {
             check(passed, message, failures: &failures)
         }
-        let (library, store, transport) = try await legacyLibraryScenario()
+        let (library, broker, direct, transport) = try await legacyLibraryScenario()
         let snapshot = library.snapshot
-        let savedTokens = await store.saved
-        let tokenReads = await store.reads
+        let savedTokens = await broker.writes
+        let tokenReads = await broker.reads
+        let directReads = await direct.reads
+        let directSaves = await direct.saved
         let requests = await transport.requests
         let requestHosts = Set(requests.compactMap { $0.url?.host })
         let expectedHosts: Set<String> = [
@@ -306,16 +339,17 @@ enum AuthenticatedScenarioChecks {
               && snapshot?.games.first?.acquisitionKind == .subscription,
               "Synthetic Game Pass library sync enriches the product and confirms current subscription access",
               failures: &failures)
-        if savedTokens != ["SYNTHETIC_ROTATED_REFRESH_TOKEN"] || tokenReads != 1
+        if savedTokens != ["SYNTHETIC_INITIAL_REFRESH_TOKEN", "SYNTHETIC_ROTATED_REFRESH_TOKEN"] || tokenReads != 1
             || requests.count != 6 || requestHosts != expectedHosts {
             print("Synthetic transport diagnostics: reads=\(tokenReads), saves=\(savedTokens.count), "
                   + "requests=\(requests.count), hosts=\(requestHosts.sorted())")
         }
-        check(savedTokens == ["SYNTHETIC_ROTATED_REFRESH_TOKEN"]
+        check(savedTokens == ["SYNTHETIC_INITIAL_REFRESH_TOKEN", "SYNTHETIC_ROTATED_REFRESH_TOKEN"]
               && tokenReads == 1
+              && directReads == 0 && directSaves.isEmpty
               && requests.count == 6
               && requestHosts == expectedHosts,
-              "Synthetic access and refresh tokens use only the injected memory store and recorded transport",
+              "Synthetic credential issuance, consumption and rotation use the production store adapter and sandbox broker wire with no direct-store access",
               failures: &failures)
 
         let rejectedStore = PCGamesMockStore("SYNTHETIC_REJECTED_REFRESH_TOKEN")

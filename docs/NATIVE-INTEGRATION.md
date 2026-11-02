@@ -9,7 +9,20 @@ The nonshipping `--authenticated-scenario-runner` exposes the same check for
 an explicitly permitted headless invocation; it dispatches before AppState
 initialization. Shipping excludes the harness and rejects that argument.
 
-Synthetic tokens exist only in `PCGamesMockStore`. `PCGamesMockTransport`
+The legacy token scenario issues synthetic refresh credentials through the actual
+`PCGamesCredentialStore` adapter into a nonshipping injected sandbox broker.
+That in-memory broker round-trips the production `CredentialRequest` and
+`CredentialResponse` encoding, including request identity, before the real
+controller consumes the credential and rotates it through the same adapter.
+The injected broker fails closed without direct-store fallback; a sentinel
+`PCGamesMockStore` verifies zero direct reads/writes. Issuance, rotation, deletion
+and rejection of non-synthetic values are checked. The sandbox initializer and
+operation are compiled out of shipping; the production default still uses its
+pinned authenticated broker process or existing Keychain fallback unchanged.
+This tests the adapter and wire format, not a signed broker subprocess, OS
+Keychain access policy or real credential persistence.
+
+`PCGamesMockTransport`
 records requests and rejects exhausted responses; it has no URLSession fallback.
 Gamerpic bytes use an ephemeral fixture-only URLProtocol with no disk cache.
 Unified-account reads use the separately built `XodusManagementChecks` fixture
