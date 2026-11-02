@@ -15,6 +15,10 @@ import tempfile
 from shipping_pair import FEATURES, PROFILE, hex_value, owned_bytes, require, swift_pins
 from signing_identity import preflight, sign, verify_designated_requirement
 
+CANDIDATE_FEATURES = {name: features for name, features in FEATURES.items()
+                      if name != "xodus-management"}
+CANDIDATE_FEATURES["xode-control"] = ["live"]
+
 
 def validate_host():
     require(platform.system() == "Darwin" and platform.machine() == "arm64",
@@ -50,14 +54,14 @@ def build_evidence(messages):
         if frame.get("reason") != "compiler-artifact":
             continue
         name = frame.get("target", {}).get("name", "").replace("_", "-")
-        if name in FEATURES:
+        if name in CANDIDATE_FEATURES:
             require(frame.get("profile") == PROFILE, "Unexpected native release build profile: " + name)
             require(name not in native_features, "Duplicate native build artifact: " + name)
             native_features[name] = frame.get("features")
         if name == "xodus-cli" and frame.get("executable"):
             artifacts.append(frame)
     require(len(artifacts) == 1, "Expected one actual CLI build artifact")
-    require(native_features == FEATURES, "Missing or incompatible native release features")
+    require(native_features == CANDIDATE_FEATURES, "Missing or incompatible native release features")
     return artifacts[0], native_features
 
 
@@ -88,7 +92,14 @@ def build(engine_root, output_root, identity):
     with tarfile.open(archive) as archived:
         archived.extractall(source, filter="data")
     environment = os.environ.copy()
-    environment.update(CARGO_TARGET_DIR=str(stage / "engine-target"), CARGO_INCREMENTAL="0",
+    engine_target = Path(environment.get("CARGO_TARGET_DIR", str(stage / "engine-target")))
+    require(engine_target.is_absolute() and engine_target.resolve() == engine_target,
+            "Use a canonical absolute Cargo target directory")
+    if engine_target.exists():
+        target_info = engine_target.stat()
+        require(engine_target.is_dir() and target_info.st_uid == os.getuid()
+                and target_info.st_mode & 0o022 == 0, "Unsafe Cargo target directory")
+    environment.update(CARGO_TARGET_DIR=str(engine_target), CARGO_INCREMENTAL="0",
                        CARGO_BUILD_JOBS="1")
     command = ["cargo", "build", "--release", "--offline", "--locked", "-p", "xodus-cli",
                "--bin", "xodus-cli", "--target", "aarch64-apple-darwin",
@@ -97,7 +108,7 @@ def build(engine_root, output_root, identity):
     artifact, native_features = build_evidence(messages)
     require(source_identity(engine_root) == engine_source, "Engine source changed during build")
     executable = Path(artifact["executable"]).resolve(strict=True)
-    require(executable.is_relative_to(stage / "engine-target"), "CLI artifact is outside this build target")
+    require(executable.is_relative_to(engine_target), "CLI artifact is outside this build target")
     unsigned, _ = owned_bytes(executable)
     app = stage / "Ode to X Local Candidate.app"
     macos, resources = app / "Contents/MacOS", app / "Contents/Resources"

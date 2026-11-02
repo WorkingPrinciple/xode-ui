@@ -9,7 +9,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from build_local_candidate import build_evidence, source_identity, validate_host
+from build_local_candidate import CANDIDATE_FEATURES, build_evidence, source_identity, validate_host
 from shipping_pair import FEATURES, PROFILE, PRODUCER, PRODUCER_TREE, swift_pins
 
 
@@ -18,12 +18,12 @@ class LocalCandidateChecks(unittest.TestCase):
         frames = [{"reason": "compiler-artifact", "target": {"name": name},
                    "profile": PROFILE, "features": features,
                    **({"executable": "/neutral/target/xodus-cli"} if name == "xodus-cli" else {})}
-                  for name, features in FEATURES.items()]
+                  for name, features in CANDIDATE_FEATURES.items()]
         def encode(items):
             return b"neutral Cargo diagnostic\n" + b"\n".join(json.dumps(item).encode() for item in items)
         artifact, features = build_evidence(encode(frames))
         self.assertEqual(artifact["executable"], "/neutral/target/xodus-cli")
-        self.assertEqual(features, FEATURES)
+        self.assertEqual(features, CANDIDATE_FEATURES)
         changed = copy.deepcopy(frames)
         changed[0]["features"].append("plaintext")
         debug = copy.deepcopy(frames)

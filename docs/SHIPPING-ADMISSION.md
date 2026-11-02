@@ -2,6 +2,11 @@
 
 ## Purpose and authorization
 
+`build_local_candidate.py` validates the current producer's `xode-control`
+`live` feature and exact release profile. An explicit canonical, owned
+`CARGO_TARGET_DIR` can reuse compiled artifacts; the actual Cargo output and
+source identity are still verified for every candidate.
+
 ### Issue 62: immutable qualified app, archive and tag-workflow source
 
 COR-389 / REQ-172 supersedes the earlier prohibition on writing tag-workflow
