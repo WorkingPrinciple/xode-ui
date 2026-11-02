@@ -6,6 +6,10 @@ python3 tools/sync_contract.py
 python3 tools/check_contract_sync.py
 python3 tools/sync_runtime_provider_contract.py --check
 sh -n tools/build_app.sh
+sh -n tools/package_release.sh
+python3 tools/check_app_harness.py
+python3 tools/check_release_admission.py
+python3 tools/check_release_workflow.py
 python3 tools/check_signing_identity.py
 python3 tools/check_local_candidate.py
 python3 tools/check_release_candidate.py
@@ -15,6 +19,7 @@ python3 tools/check_python_runtime.py
 sh tools/check_shipping.sh
 swift run XodusFixtureChecks
 swift run XodusManagementChecks
+swift test --filter AppHarnessChecks
 swift run XodusPreview --self-check
 swift run XodusPreview --live-check
 swift run XodusAuthHost --self-check

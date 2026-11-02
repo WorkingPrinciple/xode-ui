@@ -207,27 +207,37 @@ struct LiveSettingsView: View {
                     Label("General", systemImage: "gearshape")
                 }
                 .tag(SettingsTab.general)
+                .accessibilityIdentifier("xodus.settings.tab.general")
 
             EnginesSettingsTab(state: state, session: session, dismiss: { dismiss() })
                 .tabItem {
                     Label("Engines", systemImage: "cpu")
                 }
                 .tag(SettingsTab.engines)
+                .accessibilityIdentifier("xodus.settings.tab.engines")
 
             AccountSettingsTab(state: state, session: session)
                 .tabItem {
                     Label("Account", systemImage: "person.crop.circle")
                 }
                 .tag(SettingsTab.account)
+                .accessibilityIdentifier("xodus.settings.tab.account")
 
             AdvancedSettingsTab(session: session)
                 .tabItem {
                     Label("Advanced", systemImage: "gearshape.2")
                 }
                 .tag(SettingsTab.advanced)
+                .accessibilityIdentifier("xodus.settings.tab.advanced")
         }
         .frame(width: 540, height: 450)
         .navigationTitle(selectedTab.rawValue)
+        .onExitCommand { dismiss() }
+        .background {
+            Button("Close Settings") { dismiss() }
+                .keyboardShortcut(.cancelAction)
+                .hidden()
+        }
         .task {
             await state.runtimeSettings.refreshCrossOverDependency()
         }
@@ -339,11 +349,13 @@ struct EnginesSettingsTab: View {
                         .labelsHidden()
                         .pickerStyle(.menu)
                         .frame(width: 320)
+                        .accessibilityIdentifier("xodus.settings.engine.picker")
 
                         Button("Refresh") {
                             Task { await state.runtimeSettings.refreshCrossOverDependency() }
                         }
                         .controlSize(.small)
+                        .accessibilityIdentifier("xodus.settings.engine.refresh")
                     }
                 }
 
@@ -661,8 +673,10 @@ struct AdvancedSettingsTab: View {
                     HStack(spacing: 12) {
                         TextField("Market (e.g. US)", text: $session.market)
                             .frame(width: 140)
+                            .accessibilityIdentifier("xodus.settings.catalog.market")
                         TextField("Language (e.g. en-US)", text: $session.language)
                             .frame(width: 160)
+                            .accessibilityIdentifier("xodus.settings.catalog.language")
                         Button("Apply") {
                             Task { await session.refreshCatalog(state.query) }
                         }

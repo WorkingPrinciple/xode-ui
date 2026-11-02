@@ -45,6 +45,31 @@ private final class MediaFixtureProtocol: URLProtocol, @unchecked Sendable {
 
 @MainActor
 enum CatalogMediaChecks {
+    static func fetchSyntheticGamerpic(_ reference: CatalogArtworkReference) async throws -> (NSImage, [URLRequest]) {
+        guard let bitmap = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 24, pixelsHigh: 24,
+            bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+            colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0),
+              let pixels = bitmap.bitmapData else {
+            throw ArtworkLoadError.invalidImage
+        }
+        pixels.initialize(repeating: 0, count: bitmap.bytesPerRow * bitmap.pixelsHigh)
+        guard let data = bitmap.representation(using: .png, properties: [:]) else {
+            throw ArtworkLoadError.invalidImage
+        }
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [MediaFixtureProtocol.self]
+        configuration.urlCache = nil
+        configuration.httpCookieStorage = nil
+        configuration.urlCredentialStorage = nil
+        let session = URLSession(configuration: configuration)
+        defer { session.invalidateAndCancel() }
+        MediaFixtureProtocol.state.reset([.init(status: 200, headers: [
+            "Content-Type": "image/png", "Cache-Control": "no-store"
+        ], data: data)])
+        let image = try await CatalogArtworkStore(diskCache: nil, session: session).image(for: reference)
+        return (image, MediaFixtureProtocol.state.observed())
+    }
+
     static func run(check: (Bool, String) -> Void) async throws {
         guard let canonical = realpath(FileManager.default.temporaryDirectory.path, nil) else {
             throw CatalogMediaCacheError.storage

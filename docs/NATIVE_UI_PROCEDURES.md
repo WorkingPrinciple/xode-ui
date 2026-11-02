@@ -1,5 +1,38 @@
 # Native UI verification
 
+## Issue 63: Settings identifiers and gated native keyboard runner
+
+`tools/test_settings_accessibility.swift` is an opt-in native AX runner, not a
+default check or CI step. It requires a separately authorized app launch and
+exclusive native-input window, an explicitly supplied nonshipping XodusPreview
+executable and already granted Accessibility permission. Do not invoke it under
+the current native-input/launch hold. It does not grant permissions or change
+Full Keyboard Access/global keyboard settings.
+
+After authorization, `swift tools/test_settings_accessibility.swift /absolute/path/to/XodusPreview`
+stages a uniquely identified temporary app, launches only that child and targets
+key events to its owned PID. It asserts Cmd+, opens Settings, selection by the
+visible General/Engines/Account/Advanced labels changes the identified content,
+the engine picker/Refresh identifiers exist, Tab moves focus from Advanced's
+Market field to Language, and Escape dismisses Settings. It joins its child and
+removes its temporary bundle, reporting cleanup/termination failures.
+
+`xodus.settings.tab.general`, `.engines`, `.account` and `.advanced` identify
+**tab content views**, not a claim that SwiftUI exports those IDs on the native
+tab selector buttons. `xodus.settings.engine.picker` and
+`xodus.settings.engine.refresh` identify the existing controls. The real Tab
+assertion is text-field traversal; it does not prove picker-to-Refresh traversal,
+all controls' traversal or Full Keyboard Access under a different system policy.
+`--settings-accessibility-check` shows an isolated test window with the existing
+LiveSettingsView and in-memory PC-library fixtures, without normal welcome
+startup. Do not use its other controls to sign in, configure engines or mutate
+settings. It is not installed-product acceptance.
+
+The runner's `--cleanup-self-check` uses synthetic bundles and owned `/bin/sleep`
+children only; it proves lifecycle handling, not native tab/key behavior.
+`python3 tools/check_app_harness.py` checks source wiring only. Neither static
+checks nor Swift compilation substitutes for a captured native AX result.
+
 These recipes use the existing app and native tools, not another test harness.
 Keep private screenshots, traces and account observations outside the repository.
 

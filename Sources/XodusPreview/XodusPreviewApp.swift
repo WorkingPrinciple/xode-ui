@@ -27,6 +27,8 @@ enum DevelopmentArguments {
         if GameLaunchArguments.parse(arguments) != nil { return true }
         guard let mode = arguments.first else { return true }
         switch mode {
+        case "--authenticated-scenario-runner", "--settings-accessibility-check", "--real-account-scenario-runner":
+            return arguments.count == 1
         case "--fixture", "--self-check", "--live-check", "--media-check", "--stats-check", "--game-operation-check", "--library-access-check", "--gamepass-collections-check", "--presentation-performance-check", "--search-performance-check", "--account-presentation-check", "--engine-selection-check":
             return arguments.count == 1
         case "--export-preview", "--export-live", "--export-live-data":
@@ -92,9 +94,17 @@ final class PreviewDelegate: NSObject, NSApplicationDelegate {
 @main
 struct XodusPreviewApp: App {
     @NSApplicationDelegateAdaptor(PreviewDelegate.self) private var delegate
-    @StateObject private var state = AppState()
-    @StateObject private var session = LiveSession()
+    @StateObject private var state: AppState
+    @StateObject private var session: LiveSession
     @Environment(\.openWindow) private var openWindow
+
+    private var settingsAccessibilityTestMode: Bool {
+#if !XODUS_SHIPPING
+        CommandLine.arguments == [CommandLine.arguments[0], "--settings-accessibility-check"]
+#else
+        false
+#endif
+    }
 
     private var navigationAllowed: Bool {
 #if !XODUS_SHIPPING
@@ -104,9 +114,13 @@ struct XodusPreviewApp: App {
 #endif
     }
 
+#if !XODUS_SHIPPING
     public static func setupDiagnosticLogging() {
         let args = CommandLine.arguments.dropFirst()
-        let isCheckMode = args.contains { $0.hasSuffix("-check") || $0.hasPrefix("--export-") }
+        let isCheckMode = args.contains {
+            $0.hasSuffix("-check") || $0.hasPrefix("--export-")
+                || $0 == "--authenticated-scenario-runner" || $0 == "--real-account-scenario-runner"
+        }
         guard !isCheckMode else { return }
 
         let fileManager = FileManager.default
@@ -128,11 +142,32 @@ struct XodusPreviewApp: App {
         fputs("[\(timestamp)] [ODE_APP_INIT] pid=\(ProcessInfo.processInfo.processIdentifier) args=\(CommandLine.arguments)\n", stderr)
         fflush(stderr)
     }
+#endif
 
     init() {
 #if !XODUS_SHIPPING
+        let arguments = Array(CommandLine.arguments.dropFirst())
+        guard DevelopmentArguments.accepts(arguments) else {
+            FileHandle.standardError.write(Data("Unsupported development arguments; ordinary startup was not attempted.\n".utf8))
+            exit(64)
+        }
+        if arguments == ["--real-account-scenario-runner"] {
+            RealAccountScenarioChecks.launch()
+        }
+        if arguments == ["--authenticated-scenario-runner"] {
+            AuthenticatedScenarioChecks.launch()
+        }
+        if arguments == ["--settings-accessibility-check"] {
+            _state = StateObject(wrappedValue: AppState(pcGames: PCGamesController(
+                store: PCGamesMockStore(), client: PCGamesClient(transport: PCGamesMockTransport([])))))
+        } else {
+            _state = StateObject(wrappedValue: AppState())
+        }
         Self.setupDiagnosticLogging()
+#else
+        _state = StateObject(wrappedValue: AppState())
 #endif
+        _session = StateObject(wrappedValue: LiveSession())
         ProcessInfo.processInfo.processName = "Ode to X"
 #if XODUS_SHIPPING
         if !CommandLine.arguments.dropFirst().isEmpty,
@@ -141,10 +176,6 @@ struct XodusPreviewApp: App {
             exit(64)
         }
 #else
-        guard DevelopmentArguments.accepts(Array(CommandLine.arguments.dropFirst())) else {
-            FileHandle.standardError.write(Data("Unsupported development arguments; ordinary startup was not attempted.\n".utf8))
-            exit(64)
-        }
         if Bundle.main.object(forInfoDictionaryKey: "XodusLibraryReviewBuild") as? Bool == true,
            !LibraryPreviewExporter.requested {
             FileHandle.standardError.write(Data("Use the staged read-only Library review job; ordinary startup is disabled.\n".utf8))
@@ -215,7 +246,9 @@ struct XodusPreviewApp: App {
         WindowGroup("Ode to X") {
             Group {
 #if !XODUS_SHIPPING
-                if state.fixtureMode { RootView() }
+                if settingsAccessibilityTestMode {
+                    Text("Ode to X Settings accessibility test")
+                } else if state.fixtureMode { RootView() }
                 else { LiveRootView() }
 #else
                 LiveRootView()
