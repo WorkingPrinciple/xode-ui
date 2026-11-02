@@ -1654,7 +1654,11 @@ enum MockBackend {
         guard let index = CommandLine.arguments.firstIndex(of: "--state-dir"),
               CommandLine.arguments.indices.contains(index + 1) else { exit(2) }
         let scenario = URL(fileURLWithPath: CommandLine.arguments[index + 1]).lastPathComponent
-        let fixtureAccountHash = String(repeating: "a", count: 64)
+        let scenarioXUID = "1234567890"
+        let fixtureAccountHash = scenario == "recentodeauthscenario"
+            ? SHA256.hash(data: Data(("xodus-account-v1\u{0}" + scenarioXUID).utf8))
+                .map { String(format: "%02x", $0) }.joined()
+            : String(repeating: "a", count: 64)
         do {
             let lifecycleDirectory = URL(fileURLWithPath: CommandLine.arguments[index + 1])
             let lifecycleScenario = ["retireslow", "retirefailed", "retirehello", "retiresnapshot", "authgate",
@@ -1692,7 +1696,9 @@ enum MockBackend {
             var hello = frames.first(where: { $0["data"]?["schema"] != nil })?["data"]?.object ?? [:]
             var supported: Set<ManagementCommand> = [.authStatus, .authLogout, .jobs]
             if scenario.hasPrefix("descriptors") { supported.insert(.descriptors) }
-            if scenario.hasPrefix("ode") { supported.insert(.odeAccountRead) }
+            if scenario.hasPrefix("ode") || scenario == "recentodeauthscenario" {
+                supported.insert(.odeAccountRead)
+            }
             if scenario.hasPrefix("recent") { supported.formUnion([.libraryRecent, .query]) }
             if scenario == "verify" || scenario.hasPrefix("verify-") { supported.insert(.authVerify) }
             if scenario == "diagnostics" || scenario.hasPrefix("metrics") { supported.insert(.diagnostics) }
@@ -1789,7 +1795,7 @@ enum MockBackend {
                             usleep(2_000)
                         }
                     }
-                    if scenario.hasPrefix("ode") {
+                    if scenario.hasPrefix("ode") || scenario == "recentodeauthscenario" {
                         try trace(command)
                         if command == "auth.status" {
                             try emit(.object(result(request, data: authStatus(loggedOut ? "signedOut" : "credentialPresent"))))
@@ -1813,7 +1819,9 @@ enum MockBackend {
                                 try emit(.object(response))
                                 continue
                             }
-                            let items: [JSONValue] = warm
+                            let items: [JSONValue] = scenario == "recentodeauthscenario"
+                                ? [.object(["productID": .string("SYNTHETIC001"), "acquisitionKind": .string("subscription")])]
+                                : warm
                                 && !(scenario == "odelibraryempty" && accountLibraryReads > 1)
                                 ? [.object(["productID": .string("FIXTURE00001"), "acquisitionKind": .string("purchased")])] : []
                             let payload: JSONValue
@@ -1822,6 +1830,34 @@ enum MockBackend {
                                     "productID": request["params"]?["productID"] ?? .null,
                                     "access": .string("permitted"), "expiresAt": .string("2030-01-01T00:00:00Z"),
                                     "reason": .null
+                                ])
+                            } else if section == "profile" && scenario == "recentodeauthscenario" {
+                                payload = .object([
+                                    "gamertag": .string("SyntheticFixture"),
+                                    "displayName": .string("Synthetic Account"),
+                                    "avatarURL": .string("https://images-eds-ssl.xboxlive.com/image/synthetic-gamerpic"),
+                                    "gamerscore": .integer(420), "bio": .null, "location": .null,
+                                    "accountCountry": .object([
+                                        "status": .string("verified"), "countryCode": .string("US"),
+                                        "locale": .string("en-US"),
+                                        "source": .string("xboxAccount.legalCountry"), "reason": .null
+                                    ])
+                                ])
+                            } else if section == "achievements" && scenario == "recentodeauthscenario" {
+                                payload = .object([
+                                    "titleID": request["params"]?["titleID"] ?? .null,
+                                    "complete": .bool(true),
+                                    "achievements": .array([.object([
+                                        "id": .string("SYNTHETIC-ACHIEVEMENT-01"),
+                                        "name": .string("Synthetic achievement"),
+                                        "description": .string("Recorded fixture achievement."),
+                                        "progressState": .string("Achieved"),
+                                        "unlocked": .bool(true),
+                                        "unlockTime": .string("2026-10-18T12:00:00Z"),
+                                        "gamerscore": .integer(10), "isSecret": .bool(false),
+                                        "artworkURL": .null, "rarityPercentage": .null,
+                                        "requirements": .array([])
+                                    ])])
                                 ])
                             } else {
                                 payload = section == "library" ? .object(["items": .array(items)])
@@ -1838,7 +1874,8 @@ enum MockBackend {
                             }
                             let response = result(request, data: .object([
                                 "section": .string(section),
-                                "accountHash": .string(String(repeating: scenario == "odemismatch" ? "b" : "a", count: 64)),
+                                "accountHash": .string(scenario == "odemismatch"
+                                    ? String(repeating: "b", count: 64) : fixtureAccountHash),
                                 "checkedAt": .string("2026-10-19T12:00:00Z"), "payload": payload
                             ]))
                             if scenario == "odeslow" || (scenario == "odecountryslow" && section == "library") {

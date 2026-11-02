@@ -5,7 +5,7 @@ import SwiftUI
 import XodusManagement
 import XodusCredentials
 
-private actor PCGamesMockTransport: PCGamesTransport {
+actor PCGamesMockTransport: PCGamesTransport {
     var responses: [PCGamesHTTPResponse]
     private(set) var requests: [URLRequest] = []
 
@@ -21,7 +21,7 @@ private actor PCGamesMockTransport: PCGamesTransport {
     func append(_ more: [PCGamesHTTPResponse]) { responses += more }
 }
 
-private actor PCGamesMockStore: PCGamesRefreshStore {
+actor PCGamesMockStore: PCGamesRefreshStore {
     var token: String?
     private(set) var saved: [String] = []
     private(set) var reads = 0

@@ -1,5 +1,55 @@
 # Native management integration
 
+## Issue 61: TEST-only authenticated scenario harness
+
+`swift build --jobs 1 --product XodusManagementChecks` followed by
+`swift test --jobs 1 --filter AppHarnessChecks` exercises the production PC-library,
+profile, gamerpic decoding and achievement paths without application startup.
+The nonshipping `--authenticated-scenario-runner` exposes the same check for
+an explicitly permitted headless invocation; it dispatches before AppState
+initialization. Shipping excludes the harness and rejects that argument.
+
+The legacy token scenario issues synthetic refresh credentials through the actual
+`PCGamesCredentialStore` adapter into a nonshipping injected sandbox broker.
+That in-memory broker round-trips the production `CredentialRequest` and
+`CredentialResponse` encoding, including request identity, before the real
+controller consumes the credential and rotates it through the same adapter.
+The injected broker fails closed without direct-store fallback; a sentinel
+`PCGamesMockStore` verifies zero direct reads/writes. Issuance, rotation, deletion
+and rejection of non-synthetic values are checked. The sandbox initializer and
+operation are compiled out of shipping; the production default still uses its
+pinned authenticated broker process or existing Keychain fallback unchanged.
+This tests the adapter and wire format, not a signed broker subprocess, OS
+Keychain access policy or real credential persistence.
+
+`PCGamesMockTransport`
+records requests and rejects exhausted responses; it has no URLSession fallback.
+Gamerpic bytes use an ephemeral fixture-only URLProtocol with no disk cache.
+Unified-account reads use the separately built `XodusManagementChecks` fixture
+process and an isolated temporary state root/preferences suite, not the installed
+backend, credential broker or Keychain. Success, rejected authentication, absent
+responses, process joining and root-cleanup failures are checked.
+
+The same scenario also binds `PCGamesController.useUnifiedAccount` to the fixture
+session and exercises the production unified library reader plus catalogue
+resolution. It asserts account-bound subscription access with no legacy store
+reads/saves, separately from the legacy token/collection path.
+
+This is **synthetic source evidence**, not live OAuth, verified Xbox entitlement,
+a real gamerpic fetch or account acceptance. The nonshipping
+`--real-account-scenario-runner` is source-only while runtime holds apply. It
+requires interactive stdin/stderr and explicit operator availability before
+constructing any account controller/session or initiating credential/browser
+work. Noninteractive invocation, EOF and refusal stop without account work.
+After confirmation it reuses only LiveSession's existing admitted unified
+sign-in path, preserving native-host admission and existing prompts; it never
+opens a browser directly or falls back to legacy credentials. Availability is
+not authorization to bypass account/native-input holds. Its completion message
+covers sign-in only, not library, entitlement or gameplay acceptance.
+The injected gate is tested without executing real-account code. Actual
+interactive authentication remains separately owner-authorized and cannot be
+substituted by injected tokens or an automated consent response.
+
 ## Ode to X unified-account source slice (19 October)
 
 The candidate integrates the explicit `ode.account.read.v1` producer extension.
