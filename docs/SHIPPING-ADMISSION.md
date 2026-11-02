@@ -33,8 +33,16 @@ Required runner/repository inputs are listed in `tools/release_workflow.py`:
 canonical `RELEASE_APP_PATH`, exact tag commit, independent
 `RELEASE_ADMISSION_RECEIPT_PATH`, `RELEASE_APP_TREE_SHA256` and
 `RELEASE_ADMISSION_RECEIPT_SHA256`. These pin the same signed app, its source
-and genuine qualification/redistribution evidence. No signing identity is
-needed by the tag job because it never signs.
+and genuine qualification/redistribution evidence. The tag job never rebuilds
+or re-signs the admitted app. It signs its newly generated outer DMG using
+`RELEASE_SIGNING_IDENTITY_SHA1` and the existing runner Keychain identity, then
+submits it using `RELEASE_NOTARY_PROFILE`. These variables are a public
+certificate fingerprint and Keychain profile name, not credentials. The
+selected runner must already have authorized access to both; the workflow never
+provisions or exports credentials. The existing `release_candidate.py` helper
+requires Apple acceptance, staples and validates the DMG, verifies its signature
+and Gatekeeper assessment, and only then recalculates the archive checksums.
+A failed submission or validation stops before artifact upload/publication.
 The `release` and `release-publication` environments must be configured by the
 owner for `v*` tags; declaring environment names does not configure deployment
 policies or variables. Required-reviewer gates are not needed for automatic

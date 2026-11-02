@@ -25,6 +25,8 @@ jobs:
       RELEASE_ADMISSION: ${{ vars.RELEASE_ADMISSION_RECEIPT_PATH }}
       RELEASE_ADMISSION_SHA256: ${{ vars.RELEASE_ADMISSION_RECEIPT_SHA256 }}
       RELEASE_APP_SHA256: ${{ vars.RELEASE_APP_TREE_SHA256 }}
+      RELEASE_SIGNING_IDENTITY: ${{ vars.RELEASE_SIGNING_IDENTITY_SHA1 }}
+      RELEASE_NOTARY_PROFILE: ${{ vars.RELEASE_NOTARY_PROFILE }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -44,6 +46,11 @@ jobs:
           sh tools/package_release.sh "$app" "$version" "$dist_root/assets" \
             "$RELEASE_ADMISSION" "$RELEASE_APP_SHA256" "$RELEASE_ADMISSION_SHA256" \
             "$EXPECTED_COMMIT" "$source_tree" WorkingPrinciple/xode-ui
+          # Only the generated outer DMG is signed; the admitted app stays unchanged.
+          python3 tools/release_candidate.py --finalize-generated-assets "$dist_root/assets" \
+            --archive-version "$version" --identity "$RELEASE_SIGNING_IDENTITY" \
+            --notary-profile "$RELEASE_NOTARY_PROFILE"
+          (cd "$dist_root/assets" && shasum -a 256 -c SHA256SUMS.txt)
           printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
           printf 'commit=%s\n' "$EXPECTED_COMMIT" >> "$GITHUB_OUTPUT"
           printf 'DIST=%s\n' "$dist_root/assets" >> "$GITHUB_ENV"

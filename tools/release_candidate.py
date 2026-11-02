@@ -8,6 +8,7 @@ receipt records all observed commands, including failures and unexecuted gates.
 import argparse
 import json
 import os
+import re
 from pathlib import Path
 import subprocess
 import tempfile
@@ -17,7 +18,7 @@ from refresh_local_candidate import refresh
 from shipping_pair import (CLI_SHA256, WINDOWS_HELPER_SHA256 as HELPER_SHA256,
                            PRODUCER as PRODUCER_COMMIT, PRODUCER_TREE, PRODUCER_MANIFEST_SHA256,
                            hex_value, owned_bytes, require, unique_object)
-from signing_identity import verify_designated_requirement
+from signing_identity import preflight, verify_designated_requirement
 
 UNNOTARIZED_PAIR = (
     "a1aade5e959a5ad27e695f85c15ef50addf036d4ab857d70e041f57a95abe664",
@@ -129,6 +130,46 @@ def notarize(path, stage, receipt, receipt_path, label, profile):
                  "--keychain-profile", profile], stage, receipt, receipt_path, label + "-apple-log")
         raise ValueError("Apple did not accept " + label + "; inspect its submission and Apple log")
     return submission
+
+
+def finalize_generated_assets(directory, version, identity, profile):
+    require(re.fullmatch(r"[0-9][0-9A-Za-z.+-]*", version) is not None, "Invalid archive version")
+    require(directory.is_absolute() and directory.resolve(strict=True) == directory,
+            "Use a canonical generated asset directory")
+    signer = preflight(identity)
+    paths = [directory / f"Ode-to-X-v{version}-macos-arm64.{suffix}" for suffix in ("dmg", "zip")]
+    identities = [owned_bytes(path)[0] for path in paths]
+    checksum = directory / "SHA256SUMS.txt"
+    expected = "".join(record["sha256"] + "  " + path.name + "\n"
+                       for path, record in zip(paths, identities))
+    require(owned_bytes(checksum, bounded=4096)[1] == expected.encode(), "Generated archive checksums differ")
+    stage = directory / "notarization"
+    require(not stage.exists(), "Generated archive finalization already started; inspect its receipt")
+    stage.mkdir(mode=0o700)
+    receipt_path = stage / "receipt.json"
+    receipt = {"kind": "generated-archive-notarization", "commands": [],
+               "generatedFiles": {path.name: record for path, record in zip(paths, identities)}}
+    dmg, archive = paths
+    execute(["/usr/bin/codesign", "--sign", signer, "--timestamp", str(dmg)],
+            stage, receipt, receipt_path, "dmg-sign")
+    receipt["submission"] = notarize(dmg, stage, receipt, receipt_path, "dmg", profile)
+    for verb in ("staple", "validate"):
+        execute(["/usr/bin/xcrun", "stapler", verb, str(dmg)],
+                stage, receipt, receipt_path, "dmg-" + verb)
+    execute(["/usr/bin/codesign", "--verify", "--strict", str(dmg)],
+            stage, receipt, receipt_path, "dmg-signature")
+    execute(["/usr/sbin/spctl", "--assess", "--type", "open", "--context",
+             "context:primary-signature", "--verbose=4", str(dmg)],
+            stage, receipt, receipt_path, "dmg-gatekeeper")
+    owned_bytes(archive, identities[1]["sha256"], identities[1]["bytes"])
+    receipt["finalFiles"] = {path.name: owned_bytes(path)[0] for path in paths}
+    temporary = directory / "SHA256SUMS.notarized.tmp"
+    with temporary.open("x") as output:
+        output.write("".join(record["sha256"] + "  " + name + "\n"
+                             for name, record in receipt["finalFiles"].items()))
+    temporary.replace(checksum)
+    receipt["state"] = "accepted"
+    write_receipt(receipt_path, receipt)
 
 
 def distribute(app, stage, receipt, receipt_path, identity, profile):
@@ -291,12 +332,22 @@ def main():
     parser.add_argument("--candidate", type=Path, help="Frozen payload directory with approved producer receipts")
     parser.add_argument("--producer-source", type=Path)
     parser.add_argument("--resume-receipt", type=Path, help="Submit the exact already-signed successful dry-run app")
+    parser.add_argument("--finalize-generated-assets", type=Path,
+                        help="Sign/notarize/staple generated DMG and refresh final archive checksums")
+    parser.add_argument("--archive-version")
     parser.add_argument("--notary-profile", default="notary")
     parser.add_argument("--approve-unnotarized-cli",
                         help="Only after owner approval: exact prepared CLI SHA; otherwise standalone Accepted is required")
     parser.add_argument("--dry-run", action="store_true", help="Build/sign only; no Apple submission, install or activation")
     args = parser.parse_args()
-    if args.resume_receipt:
+    if args.finalize_generated_assets:
+        require(args.identity and args.archive_version and not args.dry_run
+                and not any((args.resume_receipt, args.app_commit, args.installed_app, args.output_root,
+                             args.candidate, args.producer_source, args.approve_unnotarized_cli)),
+                "Archive finalization takes only generated assets, version, identity and notary profile")
+        finalize_generated_assets(args.finalize_generated_assets, args.archive_version,
+                                  args.identity, args.notary_profile)
+    elif args.resume_receipt:
         require(not args.dry_run and not any((args.app_commit, args.installed_app, args.output_root,
                                              args.identity, args.candidate, args.producer_source)),
                 "Resume takes only its exact dry-run receipt and notary profile")

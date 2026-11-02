@@ -16,6 +16,50 @@ import shipping_pair as pins
 
 
 class ReleaseCandidateChecks(unittest.TestCase):
+    def test_generated_dmg_notary_failure_preserves_original_checksums(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            paths = [root / f"Ode-to-X-v0.2.1-macos-arm64.{suffix}" for suffix in ("dmg", "zip")]
+            for path in paths:
+                path.write_bytes(b"generated archive")
+            original = "".join(hashlib.sha256(path.read_bytes()).hexdigest() + "  " + path.name + "\n"
+                               for path in paths)
+            (root / "SHA256SUMS.txt").write_text(original)
+            with patch.object(release, "preflight", return_value="A" * 40), \
+                    patch.object(release, "execute"), \
+                    patch.object(release, "notarize", side_effect=ValueError("Apple rejected")):
+                with self.assertRaisesRegex(ValueError, "Apple rejected"):
+                    release.finalize_generated_assets(root, "0.2.1", "A" * 40, "notary")
+            self.assertEqual((root / "SHA256SUMS.txt").read_text(), original)
+
+    def test_generated_dmg_finalization_precedes_final_checksums(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            dmg = root / "Ode-to-X-v0.2.1-macos-arm64.dmg"
+            archive = root / "Ode-to-X-v0.2.1-macos-arm64.zip"
+            dmg.write_bytes(b"generated image")
+            archive.write_bytes(b"unchanged archive")
+            (root / "SHA256SUMS.txt").write_text(
+                "".join(hashlib.sha256(path.read_bytes()).hexdigest() + "  " + path.name + "\n"
+                        for path in (dmg, archive)))
+            events = []
+            def execute(arguments, *args, **kwargs):
+                events.append(arguments)
+                if arguments[:3] == ["/usr/bin/xcrun", "stapler", "staple"]:
+                    dmg.write_bytes(b"signed notarized stapled image")
+            with patch.object(release, "preflight", return_value="A" * 40), \
+                    patch.object(release, "execute", side_effect=execute), \
+                    patch.object(release, "notarize", return_value={"status": "Accepted"}):
+                release.finalize_generated_assets(root, "0.2.1", "A" * 40, "notary")
+            self.assertIn(["/usr/bin/codesign", "--sign", "A" * 40, "--timestamp", str(dmg)], events)
+            self.assertIn(["/usr/bin/xcrun", "stapler", "validate", str(dmg)], events)
+            self.assertEqual((root / "SHA256SUMS.txt").read_text(),
+                "".join(hashlib.sha256(path.read_bytes()).hexdigest() + "  " + path.name + "\n"
+                        for path in (dmg, archive)))
+            self.assertEqual(archive.read_bytes(), b"unchanged archive")
+            with self.assertRaises(ValueError):
+                release.finalize_generated_assets(root, "0.2.1", "A" * 40, "notary")
+
     def pin_fixture_manifest(self, path):
         patcher = patch.object(release, "PRODUCER_MANIFEST_SHA256", hashlib.sha256(path.read_bytes()).hexdigest())
         patcher.start()

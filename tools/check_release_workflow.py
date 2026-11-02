@@ -69,7 +69,11 @@ class ReleaseWorkflowChecks(unittest.TestCase):
         self.assertIn("tags: ['v*']", WORKFLOW)
         package, publish = WORKFLOW.split("\n  publish:", 1)
         self.assertNotIn("sh tools/build_app.sh", package)
-        self.assertNotIn("--signing-identity", package)
+        self.assertIn("--finalize-generated-assets", package)
+        self.assertLess(package.index("sh tools/package_release.sh"),
+                        package.index("--finalize-generated-assets"))
+        self.assertLess(package.index("--finalize-generated-assets"),
+                        package.index("actions/upload-artifact"))
         self.assertLess(package.index("tools/release_workflow.py qualified-app"),
                         package.index("sh tools/package_release.sh"))
         self.assertIn("codesign --verify --deep --strict", package)
