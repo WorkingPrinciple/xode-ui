@@ -35,10 +35,21 @@ canonical `RELEASE_APP_PATH`, exact tag commit, independent
 `RELEASE_ADMISSION_RECEIPT_SHA256`. These pin the same signed app, its source
 and genuine qualification/redistribution evidence. No signing identity is
 needed by the tag job because it never signs.
-Protected `release` and `release-publication` environments
-must be configured by the owner; declaring environment names does not create
-approval rules. No embedded signing credentials or approval synthesis exists.
+The `release` and `release-publication` environments must be configured by the
+owner for `v*` tags; declaring environment names does not configure deployment
+policies or variables. Required-reviewer gates are not needed for automatic
+tag releases unless an existing repository policy requires them. No embedded
+signing credentials or approval synthesis exists.
 The source checkout/tag/version must agree and be clean.
+
+Keep the admitted app and every transitively referenced evidence file in
+durable, access-controlled storage on the selected runner, not a session,
+worktree, or runner-temporary directory. Copy receipts without changing their
+bytes and verify admission again at the durable location before configuring
+the four path/hash variables above. Future releases must stage their own
+qualified candidate and update these variables before tagging; a later commit
+or version cannot inherit a prior candidate's receipts. The runner must have
+access to those paths. Missing storage or stale pins fail closed.
 
 **Same-build handoff:** build/sign once outside the tag job, qualify those
 exact signed bytes under REQ-53/54, preserve the resulting app and evidence on
