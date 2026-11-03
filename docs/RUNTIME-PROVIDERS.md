@@ -1,5 +1,119 @@
 # Runtime provider configuration v1
 
+## External game handoffs (REQ-178/179/182)
+
+The 3 November owner request adds **Highball**, **Porting Kit** and **Heroic
+Games Launcher** as external, provider-owned game handoffs. This is the narrow
+exception to the earlier non-Calimocho UI fence, not a change to native Xbox
+engine admission. Normal Play, title recipes, the selected Calimocho engine,
+account checks and backend contracts are unchanged. No legacy script execution
+has been re-enabled.
+
+Open **Engines** for read-only app discovery and official acquisition links.
+Detection checks canonical app locations in `/Applications` and
+`~/Applications`, bounded bundle metadata, the executable and the publisher's
+Apple Developer ID signature. The fixed identities are:
+
+| Product | Bundle identifier | Publisher team |
+| --- | --- | --- |
+| Highball | `app.highball.Highball` | `B95M7DARU4` |
+| Porting Kit | `com.paulthetall.portingkit` | `45WEPZ3433` |
+| Heroic | `com.heroicgameslauncher.hgl` | `DLB2RYLUDX` |
+
+These are observations of the app, not licence, engine, installed-game or
+compatibility admission. Ode does not bundle, download or re-sign these vendors'
+apps. Acquisition links open the official websites; any installation or
+licensing remains outside the handoff.
+
+An installed game's **Actions > External launchers…** configures an explicitly
+selected matching game/edition already installed in the other product:
+
+- **Highball:** `highball://play/steam/<appID>`,
+  `highball://play/epic/<appName>` or
+  `highball://play/pin/<bottle>/<UUID>`. This matches the installed **0.10.22**
+  [PlayLink implementation](https://github.com/gauthierpiarrette/highball/blob/v0.10.22/Sources/HighballKit/PlayLink.swift).
+  GOG/Battle.net links from newer Highball sources are not assumed supported.
+  Tokens, query parameters, arbitrary paths/arguments and launcher-install
+  actions are refused. Ode never reads Highball's per-install launch token;
+  Highball's own confirmation remains intact.
+- **Porting Kit:** select the game `.app` created by Porting Kit, not the manager
+  or a raw Wine executable. The adapter checks `WineskinLauncher` and an existing
+  wrapper-owned prefix, then opens the app through Launch Services without
+  arguments or environment overrides. The
+  [official site](https://www.portingkit.com/) identifies Porting Kit as a
+  Wineskin-based installer, distinct from Apple's Game Porting Toolkit.
+  [Wineskin's path implementation](https://github.com/The-Wineskin-Project/wineskin-source/blob/main/WineskinLauncher/Classes/Functions/NSPathUtilities.m)
+  documents the launcher and prefix layout. A wrapper is user-selected, not
+  certified as vendor-signed or proven to originate from Porting Kit. Gatekeeper
+  is not bypassed.
+- **Heroic:** use `heroic://launch/<runner>/<gameID>`, or the official
+  `heroic://launch?appName=<gameID>&runner=<runner>` shortcut form.
+  Require an explicit `legendary` (Epic), `gog`, `nile` (Amazon) or `sideload`
+  runner; never let an omitted/unknown runner search multiple stores.
+  The installed **2.22.3**
+  [protocol handler](https://github.com/Heroic-Games-Launcher/HeroicGamesLauncher/blob/v2.22.3/src/backend/protocol.ts)
+  and [macOS shortcut builder](https://github.com/Heroic-Games-Launcher/HeroicGamesLauncher/blob/v2.22.3/src/backend/shortcuts/shortcuts/macos_shortcut.ts)
+  are the API references. Extra arguments, alternate executables, credentials,
+  fragments and presentation overrides are refused. Heroic retains its own
+  login, installation and update prompts.
+
+Handoffs are saved per installed game in the private installed-game list,
+independently of native engine selection. Missing providers/wrappers and invalid
+links produce explicit errors; there is no fallback to another provider.
+Removing a link changes only that association, not the provider's game files,
+bottle, saves or sign-in.
+
+After an explicit confirmation, Ode sends the request to the selected app.
+An OS handoff acknowledgement is **not Playing, process ownership, tracked
+playtime, a completed launch, or gameplay evidence**. Ode does not change
+last-played/session history or the tested-game inventory for a handoff, and
+does not offer Stop for an untracked external game. It does not import/decrypt
+an Xbox package into another store or reuse an Xbox licence as another store's
+entitlement.
+
+### Source and local runtime evidence
+
+REQ-178/179/180 originate from owner event
+`ddc978cf-981d-4069-8760-46235e994016` (Highball/Porting Kit integration and
+bounded real FH6 testing). Parent correction C-04 permits only the explicitly
+requested external-provider path without weakening the native admission
+contract. REQ-182 adds the owner's subsequent "heroic games as well" request.
+The worker inherits that parent scope; no recursive board or backend edits.
+
+Local observation on 3 November 2026: Highball 0.10.22 and Heroic 2.22.3
+passed strict vendor signature and notarized Gatekeeper assessment. Official
+Porting Kit 6.7.0 arm64 was downloaded from the vendor's
+[release](https://github.com/vitor251093/porting-kit-releases/releases/tag/v6.7.0);
+its DMG SHA256
+`7e33b70e326c7e5a99c531b65b678b605c44aaa107f51688777ad5dd9e5fbf5a`
+matched the independent Homebrew cask, and its installed app passed the same
+signature/assessment checks. This establishes vendor installation only.
+
+| Provider | Observed app-level readiness on macOS 27.2 (26B123) | FH6 outcome |
+| --- | --- | --- |
+| Highball 0.10.22 | Native first-launch downloaded-app confirmation is awaiting the user. It was not automated or bypassed. | No provider-owned FH6 installation established; no game launch or gameplay observed. |
+| Porting Kit 6.7.0 arm64 | Startup failed twice: no normal window and a busy main thread through `UIIntelligenceSupport`, AppKit `NSMenu _simulateOpening` and Electron. Owned processes were stopped after diagnostics. | Manager startup is blocked, and no existing FH6 game wrapper was established. No Wine/game compatibility conclusion. |
+| Heroic 2.22.3 | Existing Library rendered with 15 entries. Its Epic installed-game list contained one entry, not FH6. Accounts and game files were left unchanged. | App/library observation only; no provider-owned FH6 or gameplay established. |
+
+Porting Kit diagnostics retained the first-launch process sample and second
+startup log, including a cancelled login handler. No account prompt was
+accepted. The same fingerprint reproduced twice; do not loop identical launches
+without a documented bounded vendor workaround and new evidence. No vendor
+signature, security policy or game state was altered to work around it.
+
+The owner-started **Forza Horizon 6** download was actually observed in X Ode's
+Downloads view, with exact native lifecycle product ID **9NR1R1XWLCNB** and
+destination `~/Games/Xodus/ForzaHorizon6-Xbox`. At the first observation it was
+6.83 GB of 170.55 GB (4%), not a completed playable installation. It was left
+running without a second download, app replacement or payload migration.
+Subsequently the actual terminal installation receipt reported success with
+exit code 0 for the same product and destination, and `MicrosoftGame.config`
+appeared with identity `Microsoft.ForteBaseGame`, version `3.479.874.0`.
+This establishes completed Xbox installation only, not a game launch.
+This Xbox-native download does not establish a provider-owned FH6 installation
+in any of these external launchers. No FH5 substitution or FH6 gameplay
+qualification is claimed.
+
 ## Engine management source candidate (REQ-79/80)
 
 Settings now puts **Calimocho** and **CrossOver** first as provider choices to
@@ -105,10 +219,12 @@ render evidence, installed delivery and product acceptance are separate gates.
 
 ### Current Calimocho execution policy (REQ95 / COR110)
 
-Current Play accepts only an explicitly selected, admitted Calimocho configuration.
+Current native Xbox Play accepts only an explicitly selected, admitted Calimocho configuration.
 CrossOver, GPTK and generic Wine records remain historical data; detecting them or
 retaining an old preference does not permit execution or automatic substitution.
 No default is invented by CrossOver detection.
+The separate owner-directed external handoffs described above do not enter this
+native Play route or change its engine selection/admission.
 
 Selecting Calimocho for a game persists the complete `engineSelection` alongside
 `engineOverride` in the private installed-game list: registry path and byte digest,

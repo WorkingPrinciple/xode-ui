@@ -66,6 +66,7 @@ historical deployments, recovered package receipts and current unknowns.
 | Account / library | Explicit sign-in, account-bound collections, background access checks for known installed Store IDs, Installed and Continue Playing | Permission does not identify ownership or subscription acquisition; uninstalled account-wide Game Pass enumeration is unresolved |
 | Install / downloads | Check support, confirm destination and space, show backend progress, cancel | Requires an entitled supported package and the paired runtime; Install never auto-plays |
 | Play / Stop | Launch a registered installed game; request Stop for the tracked title | Current account access and runtime/title-specific qualification still apply; ordinary Quit does not stop gameplay |
+| External launchers | Detect Highball, Porting Kit and Heroic; save an installed game's explicit link or wrapper in Actions > External launchers | Provider-owned game handoff only, not Xbox engine admission, tracked Playing or verified gameplay; see [runtime handoffs](docs/RUNTIME-PROVIDERS.md#external-game-handoffs-req-178179182) |
 | Repair / update / remove | Explicit runtime repair, Check for update / Repair, confirmed Uninstall, separate Remove from list | List removal does not delete files; save preservation needs exact-runtime acceptance |
 
 Library checks known installed products automatically and retains still-valid
