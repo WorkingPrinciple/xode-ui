@@ -252,10 +252,11 @@ enum InstalledGameChecks {
         check(linkedController.error != nil && linkedController.games.count == 2,
               "REQ92 manual import refuses symlinked storage without replacing recorded games")
         let probe = GameStorageProbe()
+        let timedOutGate = PackageInspectionInterleaving()
+        defer { timedOutGate.release() }
         do {
             _ = try await probe.read(timeout: .milliseconds(10)) {
-                Thread.sleep(forTimeInterval: 0.15)
-                return 1
+                try timedOutGate.inspect(root)
             }
             check(false, "REQ92: A stalled filesystem read releases its UI waiter at the deadline")
         } catch {
@@ -269,8 +270,8 @@ enum InstalledGameChecks {
             check(error as? GameStorageProbeError == .pending,
                   "REQ92: Timed-out syscall retains its one worker reservation until it actually returns")
         }
-        try await Task.sleep(for: .milliseconds(200))
-        check(try await probe.read { 3 } == 3,
+        timedOutGate.release()
+        check(try await readAfterWorkerReturn(probe, value: 3) == 3,
               "REQ92: Late completion cannot republish its old result and a returned worker can be reused")
         let gate = PackageInspectionInterleaving()
         defer { gate.release() }
@@ -295,10 +296,23 @@ enum InstalledGameChecks {
                   "COR105: Cancelled blocked worker prevents a replacement worker")
         }
         gate.release()
-        try await Task.sleep(for: .milliseconds(50))
-        check(try await probe.read { 5 } == 5,
+        check(try await readAfterWorkerReturn(probe, value: 5) == 5,
               "COR105: Only actual worker return releases the cancelled storage reservation")
         try await discoveryLocationChecks(root: root, check: check)
+    }
+
+    private static func readAfterWorkerReturn(_ probe: GameStorageProbe, value: Int) async throws -> Int {
+        let deadline = ContinuousClock.now.advanced(by: .seconds(2))
+        while true {
+            do {
+                return try await probe.read { value }
+            } catch GameStorageProbeError.pending {
+                // Only successful fresh admission observes the released reservation.
+                // A still-pending worker at the bound remains a failing check.
+                guard ContinuousClock.now < deadline else { throw GameStorageProbeError.pending }
+                await Task.yield()
+            }
+        }
     }
 
     private static func discoveryLocationChecks(root: URL, check: (Bool, String) -> Void) async throws {
