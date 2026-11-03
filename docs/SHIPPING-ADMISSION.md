@@ -113,9 +113,43 @@ archive corruption, dirty/wrong source, output-path and mount-cleanup failures.
 It is not genuine hdiutil, code-signature, Gatekeeper or notarization evidence.
 Real inputs and scoped local-packaging authorization are still required.
 
-### REQ103 r7 source candidate: Stop lifecycle and orphan safety
+### REQ183 fresh source-bound pair for the external-launcher candidate
 
-The current reviewed producer source is
+On 3 November 2026 the parent independently reviewed a fresh isolated build of
+producer `01d4cfd625764c2a8ec4d60824ef4f277b30b9e9`, tree
+`97a18c1f2c680cd4bce32a9bc2f0818b48977e64`, unchanged and clean before and
+after building/signing. The actual compiler log contains 542 newly compiled
+artifact frames, a successful finish and the four required feature/profile
+sets. This is a new compilation, not a reconstruction of deleted signed bytes.
+
+The approved tuple is signed CLI
+`68159d8b7650aca83107dbeea6b5558aa1c0d652505962cced72fc98bd95cc68`
+(28,758,800 bytes), matching embedded Windows helper
+`b692abd84f0b6c2f85a4c3e3a621bfec1b5747b508307490b3ce61349cdcab20`
+(20,480 bytes), and immutable producer manifest
+`9f710c9eaf63c0155c632a68f88af5de2b52791baec639037c5955bd5dcc670b`
+(6,590 bytes). The unsigned CLI identity remains separately recorded as
+`c9dfc21b6c891a1ae61c8985923cc96c9cd27000a76cd7633c2192367613727f`
+(28,908,688 bytes). Actual helper bytes occur in both unsigned and signed CLI.
+Developer ID signing uses the existing fixed identifier/certificate
+requirement, hardened runtime and timestamp, without added entitlements.
+
+The parent reviewed all seven referenced evidence-file digests, clean exact
+source identity, actual compiler features/profile, helper embedding and signing
+metadata before authorizing this repin. The current native CLI and recipe
+binding follow this exact tuple; historical recipe evidence identities and
+the tested-game inventory remain unchanged. No backend contract/API changed.
+
+The manifest truth is **NOT_SUBMITTED**: no standalone Apple acceptance has
+been observed. The exact-pair opt-in below still requires outer-app and DMG
+notarization, stapling and Gatekeeper checks. This source change is not a signed
+app, an installed candidate, native game acceptance or external FH6 gameplay.
+Preserve the active installed X Ode downloader; combine the independently owned
+queue fix before building the next distribution candidate.
+
+### Retained REQ103 r7 source candidate: Stop lifecycle and orphan safety
+
+The retained r7 producer source is
 `01d4cfd625764c2a8ec4d60824ef4f277b30b9e9`, tree
 `97a18c1f2c680cd4bce32a9bc2f0818b48977e64`. It includes the separate broker
 process group, owner Stop classification, bounded parent-death pipe regression,
@@ -127,8 +161,8 @@ The sealed signed CLI is
 `847ad6f535cc5a32cd33cdc687c330aa66cad45d4c2577fd4c035033b029c78d`
 (20,480 bytes), and producer manifest
 `4945099d043aed748d25e5908f7c6be26136ad67be18de8cd97c01161deac1fe`
-(19,730 bytes). The app source and current runtime-recipe CLI binding use this
-exact producer; historical gameplay identities remain unchanged. The management
+(19,730 bytes). At r7 adoption the app source and runtime-recipe CLI binding used
+these exact bytes; the current rebuilt tuple is recorded above. The management
 schema is unchanged. Artifact verification and source checks are not installation,
 native Stop acceptance, notarization, or title qualification.
 
@@ -594,52 +628,41 @@ notarized c22029c artifact.
 
 ### One-command pinned release candidate
 
-The `a1aade` adoption is preparation only until owner approval: no release,
-notarization, install or activation is authorized by this source change.
-After approval, merge the preparation commit and use the existing command
-below at the resulting clean full commit. The installed `42f793d` RC remains
-unchanged in the meantime.
+The owner approved building/signing/notarizing this delivery, and the parent
+independently reviewed the REQ183 tuple above. Use the existing command at the
+clean combined app-source commit, after the queue fix is integrated. The
+installed public app and its active FH6 download remain unchanged.
 
 From the clean checkout at `FULL_APP_COMMIT`, run:
 
 ```sh
 python3 tools/release_candidate.py \
   --app-commit FULL_APP_COMMIT \
-  --installed-app "$HOME/Applications/Ode to X Local Candidate.app" \
+  --installed-app "/Applications/Ode to X.app" \
   --output-root "$PWD/.build/local-candidates" \
   --identity 410914520BCC840C0125D3826CCF0F247F603321 \
-  --candidate "$HOME/Library/Application Support/Ode to X/Service/candidates/a1aade5e959a5ad27e695f85c15ef50addf036d4ab857d70e041f57a95abe664" \
+  --candidate /absolute/reviewed-frozen-producer \
   --producer-source /absolute/frozen-xodus-macos-checkout \
   --notary-profile notary \
+  --approve-unnotarized-cli 68159d8b7650aca83107dbeea6b5558aa1c0d652505962cced72fc98bd95cc68 \
   --dry-run
 ```
 
 `--dry-run` performs the real pinned build and Developer-ID signing in a new
 owned output directory; it does not submit to Apple, install or activate.
 The installed app supplies only its verified icon and prior receipt.
-The command verifies S2's exact immutable CLI/helper bytes, actual embedding,
-producer commit `f54654db11a67497323f5e49625a48c847e1f41b`, tree
-`12f94181f8448782e7eee685d66353859d78587a`, and producer manifest SHA256
-`9b692e615a16376f65fd83c3c5dd42f9ea7ddda7900242941f034f79b1c31380`.
-This includes TUNIC's per-call inventory index (`0b12147`), popup timeout
-continuation (`fdb7931`) and bounded CrossOver probe budget (`f54654d`).
-The actual embedded Windows helper SHA256 is
-`0f58c46716ab759fa4317756be38812a3c2265b6c1856bacc9787f9269b28fb7`
-(20,480 bytes, identical copies at offsets 13,584,269, 13,647,408 and
-13,710,147), **not** the older adf8 helper's `d5968170`.
-Although only PE timestamp/checksum bytes differ, they are not raw-byte equal.
-The helper is preserved beside the CLI; the separately built Mach-O
-authentication helper is signed independently. The producer manifest records
-the historical build/test provenance, not a new build or independently
-reproduced binary.
+The command verifies REQ183's exact immutable CLI/helper bytes, actual embedding,
+producer commit/tree and manifest hash recorded above. The adjacent helper is
+preserved beside the CLI; the separately built Mach-O authentication helper is
+signed independently. The producer manifest preserves actual fresh compiler
+and signing evidence; a different signed build is not byte-equivalent.
 
-There are two morning choices; preparation grants neither:
+There are two supported standalone-notarization paths:
 
-1. Explicitly approve this exact CLI/helper/producer/manifest tuple without
-   standalone acceptance. Only then add
-   `--approve-unnotarized-cli a1aade5e959a5ad27e695f85c15ef50addf036d4ab857d70e041f57a95abe664`
-   to the build or resume command.
-2. Require real standalone acceptance. Omit that flag and wait for S2's
+1. Use the independently reviewed exact tuple without standalone acceptance,
+   with the explicit `--approve-unnotarized-cli` flag shown above. The resulting
+   app/DMG must still pass real Apple notarization and the remaining gates.
+2. Require real standalone acceptance. Omit that flag and wait for the producer's
    `notarization/receipt.json` plus its adjacent Accepted Apple submission,
    bound to the same source and exact CLI/helper hashes. The original
    build manifest may remain a historical `NOT_SUBMITTED` record; the
@@ -647,7 +670,7 @@ There are two morning choices; preparation grants neither:
 
 Without the exact approval flag or a matching accepted sidecar, admission
 fails **before building or signing**. An invalid sidecar cannot fall back to
-the exception. The earlier ebd approval does not authorize this new pair.
+the exception. Approval of an earlier pair does not authorize a different tuple.
 For the explicit exception the manifest truthfully says `NOT_SUBMITTED`,
 with no submission/acceptance pointers; the release receipt records
 `standaloneNotarized:false` and `outerAppNotarizationRequired:true`.
