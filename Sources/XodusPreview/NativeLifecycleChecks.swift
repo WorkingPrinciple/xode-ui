@@ -151,9 +151,16 @@ enum NativeLifecycleChecks {
             check(true, "Malformed window evidence is surfaced without fabricating a no-window cause")
         }
         let executable = root.appendingPathComponent("synthetic-cli")
+        let managementExecutable = URL(fileURLWithPath: CommandLine.arguments[0])
+            .deletingLastPathComponent().appendingPathComponent("XodusManagementChecks")
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .withoutEscapingSlashes
+        let managementLiteral = String(decoding: try encoder.encode(managementExecutable.path), as: UTF8.self)
         let script = #"""
         #!/usr/bin/python3
         import json, os, pathlib, signal, sys, time, uuid
+        if sys.argv[1] == "manage":
+            os.execv(\#(managementLiteral), [\#(managementLiteral)] + sys.argv[1:])
         operation, product = sys.argv[1:3]
         options = dict(zip(sys.argv[3::2], sys.argv[4::2]))
         assert sys.argv[-1] == "--allow-keychain-prompt"
@@ -175,6 +182,13 @@ enum NativeLifecycleChecks {
             global cancelled
             cancelled = True
         signal.signal(signal.SIGTERM, stop)
+        control = pathlib.Path(__file__).parent
+        if operation == "repair" and (control / "queue-hold").exists():
+            with (control / "queue-starts").open("a") as starts:
+                starts.write(product + "\n")
+            if product == "FIXTURE00001":
+                while not cancelled and not (control / "queue-release").exists():
+                    time.sleep(0.01)
         if operation == "launch":
             assert os.environ.get("S5_SYNTHETIC_ENV") == "owned-fixture"
             assert "HOME" not in os.environ
@@ -264,6 +278,110 @@ enum NativeLifecycleChecks {
             runID: InstalledGamesController.runID(), stateRoot: root.appendingPathComponent("repair"))
         check(!repair.success && repair.errorCode == "OPERATION_FAILED",
               "Native lifecycle: stream completed before a failed repair cannot register success")
+        let queueCatalogue = OfflineGameCompatibility(version: 1, checkedAt: "2026-10-21T00:00:00Z",
+            market: "GB", packageSource: "Synthetic unit-test classification", antiCheatReference: "Unit test",
+            products: Dictionary(uniqueKeysWithValues: ["FIXTURE00001", "FIXTURE00002"].map {
+                ($0, OfflineGameCompatibility.Entry(title: nil, packageFormat: "MSIXVC", pcPackageIdentified: true,
+                    antiCheat: "none", technologyReferences: [], referencePlatforms: []))
+            }))
+        let queueStore = InstalledGameStore(file: root.appendingPathComponent("queue-registry/games.json"))
+        let queueLibrary = InstalledGamesController(store: queueStore, inspectPackage: { _ in .msixvc },
+                                                    compatibilityCatalogue: queueCatalogue)
+        await queueLibrary.load()
+        let secondGame = root.appendingPathComponent("second-game")
+        try FileManager.default.createDirectory(at: secondGame, withIntermediateDirectories: false)
+        try Data("""
+            <Game><Identity Name="Fixture.Native.Second" Version="1.0.0.0"/><StoreId>FIXTURE00002</StoreId></Game>
+            """.utf8).write(to: secondGame.appendingPathComponent("MicrosoftGame.config"))
+        for (folder, product) in [(game, "FIXTURE00001"), (secondGame, "FIXTURE00002")] {
+            try queueLibrary.reserveMutation(gameID: nil)
+            try await queueLibrary.registerNativeInstallation(folder: folder, expectedStoreID: product)
+            queueLibrary.releaseMutation()
+        }
+        let queueConfiguration = BackendConfiguration(executable: executable, stateDirectory: root.appendingPathComponent("odeempty"),
+            executableIdentity: NativeAuthHostBinding(executable: executable,
+                sha256: SHA256.hash(data: Data(script.utf8)).map { String(format: "%02x", $0) }.joined()))
+        let queueSession = LiveSession(configuration: queueConfiguration)
+        await queueSession.connect()
+        await queueSession.refreshAccount()
+        check(queueSession.nativeLifecycleConfiguration != nil && queueSession.accountHash == String(repeating: "a", count: 64),
+              "REQ184 review: Native failure regression uses the admitted existing management fixture and verified native child (\(queueSession.errorMessage ?? queueSession.accountError ?? "no session error"), hash \(queueSession.accountHash ?? "missing"))")
+        queueLibrary.useUnifiedAccount(queueSession)
+        queueLibrary.setAccountAccessAllowed(true)
+        let queuePaths = GameScriptPaths(scripts: root.appendingPathComponent("queue-scripts"),
+            processed: root.appendingPathComponent("queue-processed"), logs: root.appendingPathComponent("queue-logs"),
+            games: root, journal: root.appendingPathComponent("queue-state/operation.json"))
+        let queueOperations = GameOperationsController(installed: queueLibrary, paths: queuePaths,
+                                                       compatibilityCatalogue: queueCatalogue)
+        queueOperations.useUnifiedAccount(queueSession)
+        var nativeQueueRuns: [String] = []
+        defer {
+            for id in nativeQueueRuns {
+                let directory = NativeGameLifecycle.directory(runID: id)
+                if FileManager.default.fileExists(atPath: directory.path) {
+                    do { try FileManager.default.removeItem(at: directory) }
+                    catch { check(false, "REQ184 review: Owned native queue test run is cleaned after child exit") }
+                }
+            }
+        }
+        func waitForQueueProgress() async throws {
+            let deadline = ContinuousClock.now.advanced(by: .seconds(5))
+            while queueOperations.progress?.bytesDone != 25 || queueOperations.operation?.productID != "FIXTURE00001" {
+                guard ContinuousClock.now < deadline else { throw GameScriptError.timeout }
+                try await Task.sleep(for: .milliseconds(10))
+            }
+        }
+        guard let firstEntry = queueLibrary.games.first(where: { $0.storeId == "FIXTURE00001" }),
+              let secondEntry = queueLibrary.games.first(where: { $0.storeId == "FIXTURE00002" }) else {
+            _ = await queueSession.disconnect()
+            throw GameScriptError.invalidReceipt
+        }
+        try Data().write(to: root.appendingPathComponent("queue-hold"))
+        do {
+            for cancelled in [false, true] {
+                let release = root.appendingPathComponent("queue-release")
+                if FileManager.default.fileExists(atPath: release.path) { try FileManager.default.removeItem(at: release) }
+                await queueOperations.repair(PCGame(id: firstEntry.storeId, title: firstEntry.title, artwork: nil), installed: firstEntry)
+                try await waitForQueueProgress()
+                guard let activeID = queueOperations.operation?.id else { throw GameScriptError.invalidReceipt }
+                nativeQueueRuns.append(activeID)
+                await queueOperations.repair(PCGame(id: secondEntry.storeId, title: secondEntry.title, artwork: nil), installed: secondEntry)
+                let pendingIDs = queueOperations.queuedInstalls.map(\.id)
+                check(pendingIDs.count == 1 && queueOperations.operation?.id == activeID,
+                      "REQ184 review: The native failure/cancellation case has an independently waiting repair and unchanged active run")
+                nativeQueueRuns.append(contentsOf: pendingIDs)
+                let before = try String(contentsOf: root.appendingPathComponent("queue-starts"), encoding: .utf8)
+                if cancelled { await queueOperations.cancelInstall() }
+                else { try Data().write(to: release) }
+                await queueOperations.waitForMutation()
+                if cancelled {
+                    check(queueOperations.queuedInstalls.isEmpty && queueOperations.feedbackProductID == secondEntry.storeId,
+                          "REQ184 review: Native cancellation still joins and promotes the waiting title")
+                } else {
+                    check(queueOperations.installQueuePaused && queueOperations.queuedInstalls.map(\.id) == pendingIDs
+                          && !queueLibrary.mutationActive,
+                          "REQ184 review: Initially active native failure pauses the durable waiting queue")
+                    check(queueOperations.feedbackProductID == firstEntry.storeId && queueOperations.failureCode == 1
+                          && queueOperations.error?.contains("Open its log") == true
+                          && queueOperations.log?.path.hasPrefix(NativeGameLifecycle.directory(runID: activeID).path) == true,
+                          "REQ184 review: Initially active native failure preserves its title, code, error and log")
+                    check(try String(contentsOf: root.appendingPathComponent("queue-starts"), encoding: .utf8) == before
+                          && GameInstallQueueJournal(file: queuePaths.journal.appendingPathExtension("queue.json")).load().map(\.id) == pendingIDs,
+                          "REQ184 review: Native waiting child never starts or disappears after the joined run fails")
+                    queueOperations.resumeInstallQueue()
+                    await queueOperations.waitForMutation()
+                    check(queueOperations.queuedInstalls.isEmpty && queueOperations.feedbackProductID == secondEntry.storeId,
+                          "REQ184 review: Explicit continuation, not initial native failure, starts the waiting child")
+                }
+            }
+        } catch {
+            await queueOperations.cancelInstall()
+            await queueOperations.waitForMutation()
+            _ = await queueSession.disconnect()
+            throw error
+        }
+        check(await queueSession.disconnect(), "REQ184 review: Native queue regression joins its isolated management fixture")
+        try FileManager.default.removeItem(at: root.appendingPathComponent("queue-hold"))
         for succeeds in [false, true] {
             let cancelledState = root.appendingPathComponent("cancel-\(succeeds)")
             do {

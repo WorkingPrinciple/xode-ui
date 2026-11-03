@@ -279,7 +279,7 @@ struct InstalledPlayButton: View {
         .modifier(LibraryHeroControlSize(enabled: heroStyle))
         .disabled(library.checkingInstallations.contains(game.id) || library.editing || library.choosing
                   || library.applicationTerminating
-                  || (nativeAction != .check && (!operations.canStartMutation || library.runningGameID != nil)))
+                  || (nativeAction != .check && (!operations.canRepair(game) || library.runningGameID != nil)))
         .accessibilityLabel("\(nativeActionTitle) for \(game.title)")
         .accessibilityIdentifier("xodus.installed.readinessAction")
         if library.checkingInstallations.contains(game.id) {
@@ -293,6 +293,7 @@ struct InstalledPlayButton: View {
 
     @ViewBuilder var body: some View {
         if operations.operation?.productID == game.storeId
+            || operations.queuedInstalls.contains(where: { $0.record.productID == game.storeId })
             || (operations.installingDirectly && operations.directInstallProductID == game.storeId) {
             GameInstallAction(game: PCGame(id: game.storeId, title: game.title, artwork: nil),
                               operations: operations, enabled: false, primary: prominent)
@@ -344,7 +345,7 @@ struct InstalledPlayButton: View {
         .disabled(opensAttention ? library.editing || library.choosing || library.accountDisconnecting
                    || library.applicationTerminating
                    : canStop ? !library.canStop(game) || !operations.canStartMutation
-                  : needsRepair ? !operations.canStartMutation || !library.accountAccessAllowed
+                  : needsRepair ? !operations.canRepair(game) || !library.accountAccessAllowed
                     || library.runningGameID != nil || library.stoppingGameID != nil
                   : library.runningGameID != nil || library.stoppingGameID != nil || library.editing || library.choosing
                   || library.mutationGameID == game.id || library.serviceSignInActive || library.runtimeRepairActive

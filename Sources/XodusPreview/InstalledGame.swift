@@ -22,6 +22,7 @@ struct InstalledGame: Codable, Equatable, Identifiable, Sendable {
     var engineOverride: RuntimeProviderKind? = nil
     var engineSelection: AdmittedEngineSelection? = nil
     var engineOverrideV2: GameEngineOverride? = nil
+    var externalHandoffs: [ExternalGameHandoff]? = nil
     var usesNativeLifecycle: Bool? = nil
     var storageVolume: GameStorageVolume? = nil
 }
@@ -243,6 +244,7 @@ actor InstalledGameStore {
                   && ($0.lastPlayedAt.map { $0.timeIntervalSince1970.isFinite } ?? true) }) else {
             throw InstalledGameError.invalidRegistry
         }
+        for game in games { try Self.validateExternalHandoffs(game.externalHandoffs) }
         return games.map { game in
             guard let volume = game.storageVolume, !volume.contains(game.folder) else { return game }
             var entry = game
@@ -253,6 +255,7 @@ actor InstalledGameStore {
     }
 
     func save(_ games: [InstalledGame]) throws {
+        for game in games { try Self.validateExternalHandoffs(game.externalHandoffs) }
         guard games.allSatisfy({ $0.storageVolume?.contains($0.folder) ?? true }) else {
             throw InstalledGameError.invalidRegistry
         }
@@ -292,6 +295,7 @@ actor InstalledGameStore {
             updated.engineOverride = game.engineOverride ?? previous.engineOverride
             updated.engineSelection = game.engineSelection ?? previous.engineSelection
             updated.engineOverrideV2 = game.engineOverrideV2 ?? previous.engineOverrideV2
+            updated.externalHandoffs = game.externalHandoffs ?? previous.externalHandoffs
             updated.storageVolume = game.storageVolume ?? previous.storageVolume
         }
         games.removeAll { $0.folder == game.folder }
@@ -365,6 +369,28 @@ actor InstalledGameStore {
             try selection.validate(registryPath: selection.registryPath, engineName: name, registryDigest: digest)
         }
         games[index].engineOverrideV2 = selection.map { GameEngineOverride(selection: $0) }
+        try save(games)
+        return games
+    }
+
+    private static func validateExternalHandoffs(_ handoffs: [ExternalGameHandoff]?) throws {
+        guard let handoffs else { return }
+        guard handoffs.count <= ExternalGameProvider.allCases.count,
+              Set(handoffs.map(\.provider)).count == handoffs.count else { throw InstalledGameError.invalidRegistry }
+        for handoff in handoffs { try handoff.validate() }
+    }
+
+    func setExternalHandoff(id: UUID, provider: ExternalGameProvider, target: String?) throws -> [InstalledGame] {
+        var games = try load()
+        guard let index = games.firstIndex(where: { $0.id == id }) else { throw InstalledGameError.invalidRegistry }
+        var handoffs = games[index].externalHandoffs ?? []
+        handoffs.removeAll { $0.provider == provider }
+        if let target {
+            let handoff = ExternalGameHandoff(provider: provider, target: target)
+            try handoff.validate()
+            handoffs.append(handoff)
+        }
+        games[index].externalHandoffs = handoffs.isEmpty ? nil : handoffs
         try save(games)
         return games
     }

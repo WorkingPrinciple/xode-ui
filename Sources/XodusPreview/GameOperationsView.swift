@@ -256,6 +256,9 @@ struct GameOperationProgressView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
+            if let productID, !privacyRestricted {
+                QueuedGameInstallsView(operations: operations, productID: productID)
+            }
             if showsPreparation {
                 ProgressView(preparationTitle)
                     .accessibilityIdentifier("xodus.install.preparing")
@@ -326,6 +329,39 @@ struct GameOperationProgressView: View {
     }
 }
 
+struct QueuedGameInstallsView: View {
+    @ObservedObject var operations: GameOperationsController
+    var productID: String?
+    private var entries: [QueuedGameInstall] {
+        operations.queuedInstalls.filter { productID == nil || $0.record.productID == productID }
+    }
+
+    var body: some View {
+        ForEach(entries) { entry in
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(entry.record.title).font(.headline)
+                    Text(entry.record.kind == .repair ? "Repair queued" : "Installation queued")
+                        .font(.callout).foregroundStyle(.secondary)
+                }
+                Spacer()
+                Button("Cancel") { Task { await operations.cancelQueuedInstall(entry.id) } }
+                    .accessibilityLabel("Cancel queued download of \(entry.record.title)")
+            }
+        }
+        if operations.installQueuePaused, !entries.isEmpty {
+            Text("The download queue is paused. Check any unfinished operation before continuing.")
+                .font(.callout).foregroundStyle(.secondary)
+            Button("Continue queue") { operations.resumeInstallQueue() }
+                .disabled(operations.recoveryRequired)
+        }
+        if productID == nil, let message = operations.installQueueError {
+            Label(message, systemImage: "exclamationmark.circle")
+                .font(.callout).foregroundStyle(.secondary)
+        }
+    }
+}
+
 struct InstallUnavailableNotice: View {
     let message: String
     var recoveryTitle: String? = nil
@@ -378,7 +414,7 @@ struct GameInstallAction: View {
         operations.installationCheckRequired(for: game) ? "Check installation"
             : failed ? "Retry installation" : "Install"
     }
-    var canInstall: Bool { enabled && operations.canStartMutation }
+    var canInstall: Bool { enabled && operations.canInstall(productID: game.id) }
     var unavailableReason: String? {
         guard !canInstall else { return nil }
         return !enabled ? (disabledReason ?? "Installation is not available yet.")
@@ -398,7 +434,12 @@ struct GameInstallAction: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            if active, operations.recoveryRequired {
+            if let queued = operations.queuedInstalls.first(where: { $0.record.productID == game.id }) {
+                Text(queued.record.kind == .repair ? "Repair queued" : "Installation queued")
+                    .font(.callout.weight(.semibold))
+                Button("Cancel") { Task { await operations.cancelQueuedInstall(queued.id) } }
+                    .accessibilityLabel("Cancel queued download of \(game.title)")
+            } else if active, operations.recoveryRequired {
                 Label("Installation needs attention", systemImage: "exclamationmark.circle")
                     .font(.callout.weight(.semibold))
                 Button("Check last operation") { Task { await operations.reconcile() } }
@@ -497,7 +538,10 @@ struct GameInstallConsentView: View {
                     LabeledContent("Staging and expansion", value: "Calculated during setup")
                 }
                 Section {
-                    if operations.checkingCompatibility {
+                    if operations.operation != nil, consent.compatibility == nil, consent.nativeAccountHash == nil {
+                        Text("This download will wait in the queue. Package access, compatibility and free space are checked before it starts.")
+                            .font(.callout).foregroundStyle(.secondary)
+                    } else if operations.checkingCompatibility {
                         ProgressView("Preparing installation…").controlSize(.small)
                             .accessibilityIdentifier("xodus.install.checking")
                     } else if let result = consent.compatibility, !result.supported {
@@ -586,7 +630,7 @@ private struct GameDetailSheet<Item: Identifiable, Detail: View>: ViewModifier {
             Task { await operations.prepareInstall(game, expectedAccountHash: request.accountHash) }
         }) { item in
             detail(item) { game in
-                guard self.item?.id == item.id, allowed, pendingInstall == nil, operations.canStartMutation,
+                guard self.item?.id == item.id, allowed, pendingInstall == nil, operations.canInstall(productID: game.id),
                       operations.installConsent == nil else { return }
                 pendingInstall = GameDetailInstallRequest(game: game, accountHash: accountHash)
                 self.item = nil
@@ -643,6 +687,7 @@ struct InstalledGameActions: View {
     var usesGlass = false
     var heroStyle = false
     var details: (() -> Void)?
+    @State private var showingExternalLaunchers = false
 
     var body: some View {
         Menu {
@@ -671,6 +716,9 @@ struct InstalledGameActions: View {
             }
             .disabled(library.editing || library.choosing || library.mutationActive
                       || library.accountDisconnecting || library.applicationTerminating || library.runningGameID == game.id)
+            Button("External launchers…") { showingExternalLaunchers = true }
+                .disabled(!library.canUseExternalHandoff(game))
+                .accessibilityIdentifier("xodus.installed.externalLaunchers")
             InstalledGameManagement(library: library, operations: operations, game: game)
         } label: {
             if heroStyle {
@@ -684,6 +732,9 @@ struct InstalledGameActions: View {
         .buttonBorderShape(heroStyle ? .circle : .automatic)
         .fixedSize()
         .accessibilityLabel("Actions for \(game.title)")
+        .sheet(isPresented: $showingExternalLaunchers) {
+            ExternalGameHandoffSettings(library: library, game: game)
+        }
         .task {
             await library.refreshEngineOverrides(force: false)
         }
