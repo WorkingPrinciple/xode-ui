@@ -20,8 +20,8 @@ from shipping_pair import (CLI_SHA256, WINDOWS_HELPER_SHA256 as HELPER_SHA256,
 from signing_identity import verify_designated_requirement
 
 UNNOTARIZED_PAIR = (
-    "a1aade5e959a5ad27e695f85c15ef50addf036d4ab857d70e041f57a95abe664",
-    "0f58c46716ab759fa4317756be38812a3c2265b6c1856bacc9787f9269b28fb7",
+    "68159d8b7650aca83107dbeea6b5558aa1c0d652505962cced72fc98bd95cc68",
+    "b692abd84f0b6c2f85a4c3e3a621bfec1b5747b508307490b3ce61349cdcab20",
 )
 
 
