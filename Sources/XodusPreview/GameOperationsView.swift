@@ -643,6 +643,7 @@ struct InstalledGameActions: View {
     var usesGlass = false
     var heroStyle = false
     var details: (() -> Void)?
+    @State private var showingExternalLaunchers = false
 
     var body: some View {
         Menu {
@@ -671,6 +672,9 @@ struct InstalledGameActions: View {
             }
             .disabled(library.editing || library.choosing || library.mutationActive
                       || library.accountDisconnecting || library.applicationTerminating || library.runningGameID == game.id)
+            Button("External launchers…") { showingExternalLaunchers = true }
+                .disabled(!library.canUseExternalHandoff(game))
+                .accessibilityIdentifier("xodus.installed.externalLaunchers")
             InstalledGameManagement(library: library, operations: operations, game: game)
         } label: {
             if heroStyle {
@@ -684,6 +688,9 @@ struct InstalledGameActions: View {
         .buttonBorderShape(heroStyle ? .circle : .automatic)
         .fixedSize()
         .accessibilityLabel("Actions for \(game.title)")
+        .sheet(isPresented: $showingExternalLaunchers) {
+            ExternalGameHandoffSettings(library: library, game: game)
+        }
         .task {
             await library.refreshEngineOverrides(force: false)
         }
