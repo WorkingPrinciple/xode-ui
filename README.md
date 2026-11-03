@@ -73,8 +73,9 @@ Install and Repair can join Downloads while another title is downloading.
 Requests keep their reviewed destination and account binding; duplicate titles
 and overlapping folders are rejected. Only one game operation writes at a time.
 Waiting requests can be cancelled without stopping the active download. A failed
-or uncertain operation pauses subsequent requests; after restart, the saved
-queue stays paused until **Continue queue** is selected. Legacy package checks
+or uncertain operation, including the download already active when requests were
+queued, preserves its error and pauses subsequent requests until **Continue queue**
+is selected. Restarted queues also require explicit continuation. Legacy package checks
 deferred during another download run before the queued request starts.
 
 Library checks known installed products automatically and retains still-valid

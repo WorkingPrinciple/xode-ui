@@ -76,7 +76,7 @@ final class GameOperationsController: ObservableObject {
     private var installQueueTask: Task<Void, Never>?
     private var startingQueuedInstall: QueuedGameInstall?
     private let compatibilityCatalogue: OfflineGameCompatibility?
-    private var mutationTask: Task<Void, Never>?
+    private var mutationTask: Task<InstallEvent, Never>?
     private var serviceTask: Task<Void, Never>?
     private var compatibilityTask: Task<Void, Never>?
     private var compatibilityRunID: String?
@@ -1063,8 +1063,11 @@ final class GameOperationsController: ObservableObject {
         guard installQueueTask == nil, !queuedInstalls.isEmpty, !installQueuePaused, !terminating else { return }
         let currentMutation = mutationTask
         installQueueTask = Task {
-            await currentMutation?.value
             defer { installQueueTask = nil }
+            if let currentMutation, case .fail = await currentMutation.value {
+                installQueuePaused = !queuedInstalls.isEmpty
+                return
+            }
             while let next = queuedInstalls.first, !installQueuePaused, !terminating {
                 guard !recoveryRequired, operation == nil, mutationSlotAvailable,
                       installConsent == nil, !installingDirectly else {
@@ -1096,10 +1099,11 @@ final class GameOperationsController: ObservableObject {
                     repairing: repaired, expectedAccountHash: record.nativeAccountHash,
                     destination: URL(fileURLWithPath: record.destination))
                 installConsent?.resuming = record.kind == .resume
+                var terminal: InstallEvent?
                 if queuedInstalls.contains(where: { $0.id == next.id }),
                    let consent = installConsent, consentAdmitted(consent) {
                     confirmInstall(consent)
-                    await mutationTask?.value
+                    terminal = await mutationTask?.value
                 }
                 startingQueuedInstall = nil
                 if queuedInstalls.contains(where: { $0.id == next.id }) {
@@ -1110,7 +1114,7 @@ final class GameOperationsController: ObservableObject {
                     installConsent = nil
                     return
                 }
-                if recoveryRequired || error != nil {
+                if let terminal, case .fail = terminal {
                     installQueuePaused = !queuedInstalls.isEmpty
                     return
                 }
@@ -1184,6 +1188,10 @@ final class GameOperationsController: ObservableObject {
         log = nil
         failureCode = nil
         mutationTask = Task { [self] in
+            defer {
+                mutationTask = nil
+                cancelling = false
+            }
             if let storageVolume {
                 do {
                     try await storageProbe.read {
@@ -1195,8 +1203,7 @@ final class GameOperationsController: ObservableObject {
                     self.error = Self.message(error)
                     operation = nil
                     installed.releaseMutation()
-                    mutationTask = nil
-                    return
+                    return .fail(code: -1)
                 }
             }
             do {
@@ -1208,16 +1215,10 @@ final class GameOperationsController: ObservableObject {
                 }
                 await cancelPrecheck()
                 if record.nativeAccountHash != nil {
-                    try await runNative(record)
-                    mutationTask = nil
-                    cancelling = false
-                    return
+                    return try await runNative(record)
                 }
                 if cancelling {
-                    try await complete(record, outcome: GameScriptOutcome(code: 14, result: nil, log: nil))
-                    mutationTask = nil
-                    cancelling = false
-                    return
+                    return try await complete(record, outcome: GameScriptOutcome(code: 14, result: nil, log: nil))
                 }
                 let args = [record.productID, record.destination]
                 let outcome = try await mutationRunner.run(
@@ -1226,7 +1227,7 @@ final class GameOperationsController: ObservableObject {
                         await self?.publishProgress(value, runID: record.id)
                     })
                 log = outcome.log
-                try await complete(record, outcome: outcome)
+                return try await complete(record, outcome: outcome)
             } catch {
                 self.error = Self.message(error)
                 log = record.nativeAccountHash == nil ? await scriptLog(record.id) : nativeRunner.stateDirectory
@@ -1238,20 +1239,18 @@ final class GameOperationsController: ObservableObject {
                         installed.releaseMutation()
                     } catch { self.error = GameScriptError.storage.localizedDescription; recoveryRequired = true }
                 } else { recoveryRequired = true }
+                return .fail(code: failureCode ?? -1)
             }
-            mutationTask = nil
-            cancelling = false
         }
     }
 
-    private func runNative(_ record: GameOperationRecord) async throws {
+    private func runNative(_ record: GameOperationRecord) async throws -> InstallEvent {
         guard let configuration = unifiedSession?.nativeLifecycleConfiguration,
               let account = record.nativeAccountHash, account == nativeAccount else {
             throw GameScriptError.runtimeUnavailable
         }
         if cancelling {
-            try await completeNative(record, result: nil)
-            return
+            return try await completeNative(record, result: nil)
         }
         do {
             let value = try await nativeRunner.run(configuration: configuration, accountHash: account,
@@ -1260,27 +1259,27 @@ final class GameOperationsController: ObservableObject {
                 onProgress: { [weak self] value in self?.publishProgress(value, runID: record.id) })
             log = URL(fileURLWithPath: value.logDirectory)
             guard nativeAccount == account else { throw GameScriptError.invalidReceipt }
-            try await completeNative(record, result: value)
+            return try await completeNative(record, result: value)
         } catch {
             log = nativeRunner.stateDirectory
             if cancelling, !nativeRunner.started {
-                try await completeNative(record, result: nil)
-                return
+                return try await completeNative(record, result: nil)
             }
             if cancelling, error as? GameScriptError == .failed(14), let result = nativeRunner.completedResult {
                 guard nativeAccount == account, result.errorCode == "CANCELLED", !result.success else {
                     throw GameScriptError.statusMismatch
                 }
-                try await completeNative(record, result: result)
-                return
+                return try await completeNative(record, result: result)
             }
             throw error
         }
     }
 
-    private func completeNative(_ record: GameOperationRecord, result: NativeGameResult?) async throws {
+    private func completeNative(_ record: GameOperationRecord, result: NativeGameResult?) async throws -> InstallEvent {
         guard operation?.id == record.id else { throw GameScriptError.invalidReceipt }
+        let terminal: InstallEvent
         if let result, result.success {
+            terminal = .complete
             if record.kind == .uninstall {
                 guard let id = record.installedID else { throw GameScriptError.invalidReceipt }
                 try await installed.removeUninstalled(id)
@@ -1296,7 +1295,9 @@ final class GameOperationsController: ObservableObject {
             }
         } else {
             let cancelled = result?.errorCode == "CANCELLED" || result == nil
-            failureCode = cancelled ? 14 : (result?.exitCode == 14 ? 1 : Int(result?.exitCode ?? 1))
+            let code = cancelled ? 14 : (result?.exitCode == 14 ? 1 : Int(result?.exitCode ?? 1))
+            failureCode = code
+            terminal = cancelled ? .cancel : .fail(code: code)
             if cancelled {
                 error = nil
                 notice = record.kind == .uninstall
@@ -1310,6 +1311,7 @@ final class GameOperationsController: ObservableObject {
         operation = nil
         recoveryRequired = false
         installed.releaseMutation()
+        return terminal
     }
 
     private func resetFeedback(productID: String?) {
@@ -1322,7 +1324,7 @@ final class GameOperationsController: ObservableObject {
         downloadRetry = nil
     }
 
-    private func complete(_ record: GameOperationRecord, outcome: GameScriptOutcome) async throws {
+    private func complete(_ record: GameOperationRecord, outcome: GameScriptOutcome) async throws -> InstallEvent {
         guard operation?.id == record.id else { throw GameScriptError.invalidReceipt }
         if outcome.code == 0 {
             if record.kind == .uninstall {
@@ -1375,6 +1377,7 @@ final class GameOperationsController: ObservableObject {
         operation = nil
         recoveryRequired = false
         installed.releaseMutation()
+        return outcome.code == 0 ? .complete : outcome.code == 14 ? .cancel : .fail(code: outcome.code)
     }
 
     private func publishProgress(_ value: GameScriptProgress, runID: String) {
@@ -1408,27 +1411,17 @@ final class GameOperationsController: ObservableObject {
         queueProgressObserver = onProgress
         defer { queueProgressObserver = nil }
         begin(record)
-        guard operation?.id == record.id else { return .fail(code: -1) }
-        await mutationTask?.value
-        if let code = failureCode {
-            guard code != 14 else {
-                // A queue-originated pause/cancel stops the engine with code 14 (partial files
-                // kept). That is the user's intent, not a failure, and the per-job queue UI
-                // already reflects it — so clear the shared operation banner that `complete()`
-                // populated instead of surfacing a spurious "download stopped / failed" notice.
-                failureCode = nil
-                error = nil
-                log = nil
-                notice = nil
-                return .cancel
-            }
-            return .fail(code: code)
+        guard operation?.id == record.id, let task = mutationTask else { return .fail(code: -1) }
+        let terminal = await task.value
+        if terminal == .cancel {
+            // The per-job queue UI already reflects this confirmed cancellation.
+            failureCode = nil
+            error = nil
+            log = nil
+            notice = nil
+            return .cancel
         }
-        // `begin` resets `error` to nil for each run, so a non-nil value here means
-        // the async install task threw (journal/mutation failure) without setting a
-        // numeric failure code. Report it as a failure instead of a false `.complete`.
-        if error != nil { return .fail(code: -1) }
-        return .complete
+        return terminal
     }
 
     /// Queue bridge. Stops the active queued run identified by `runID`; the engine keeps
@@ -1464,7 +1457,7 @@ final class GameOperationsController: ObservableObject {
                     operation: record.kind.nativeOperation, product: record.productID,
                     gameDirectory: URL(fileURLWithPath: record.destination))
                 log = URL(fileURLWithPath: result.logDirectory)
-                try await completeNative(record, result: result)
+                _ = try await completeNative(record, result: result)
                 return
             }
             let outcome = try await Task.detached {
@@ -1476,7 +1469,7 @@ final class GameOperationsController: ObservableObject {
                 return GameScriptOutcome(code: code, result: result, log: GameScriptFiles.log(runID: record.id, paths: self.paths))
             }.value
             log = outcome.log
-            try await complete(record, outcome: outcome)
+            _ = try await complete(record, outcome: outcome)
         } catch { self.error = Self.message(error) }
     }
 
@@ -1486,7 +1479,7 @@ final class GameOperationsController: ObservableObject {
     func showSetupLog() { if let setupLog { NSWorkspace.shared.activateFileViewerSelecting([setupLog]) } }
     func waitForMutation() async {
         await compatibilityTask?.value
-        await mutationTask?.value
+        _ = await mutationTask?.value
         await gamePassTask?.value
         await stopTask?.value
         await setupTask?.value

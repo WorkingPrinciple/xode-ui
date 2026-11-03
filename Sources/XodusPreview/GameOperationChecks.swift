@@ -224,6 +224,7 @@ enum GameOperationChecks {
             printf '{"phase":"downloading","bytesDone":20,"bytesTotal":100}\\n' | publish "$receipts/$r.progress.json"
             if [ "$mode" = slow ]; then
                 while [ ! -f '\(root.path)/complete-'"$r" ]; do sleep 0.1; done
+                mode="$(cat '\(root.path)/mode')"
             fi
             if [ "$mode" = invalidprogress ]; then
                 printf '{"phase":"downloading","bytesDone":-1}\\n' | publish "$receipts/$r.progress.json"
@@ -1294,6 +1295,38 @@ enum GameOperationChecks {
                 try recoveryQueue.save([failedRequest, overlapping])
                 check(false, "REQ184: Queue persistence rejects overlapping destination trees")
             } catch { check(true, "REQ184: Queue persistence rejects overlapping destination trees") }
+            guard let failingAlpha = queueLibrary.games.first(where: { $0.storeId == alpha.id }),
+                  let waitingRepair = queueLibrary.games.first(where: { $0.storeId == repair.id }) else {
+                throw GameScriptError.invalidReceipt
+            }
+            try writeMode("slow")
+            await restoredQueue.repair(alpha, installed: failingAlpha)
+            try await wait { restoredQueue.operation?.productID == alpha.id && restoredQueue.progress?.bytesDone == 20 }
+            guard let failingRun = restoredQueue.operation?.id else { throw GameScriptError.invalidReceipt }
+            await restoredQueue.repair(repair, installed: waitingRepair)
+            let waitingIDs = restoredQueue.queuedInstalls.map(\.id)
+            check(waitingIDs.count == 1 && restoredQueue.operation?.id == failingRun,
+                  "REQ184 review: The legacy failure case has an independently waiting repair and unchanged active run")
+            let beforeFailure = try String(contentsOf: root.appendingPathComponent("install-starts"), encoding: .utf8)
+            try writeMode("13")
+            try privateFile(root.appendingPathComponent("complete-\(failingRun)"), "Release the failing active run")
+            await restoredQueue.waitForMutation()
+            check(restoredQueue.installQueuePaused && restoredQueue.queuedInstalls.map(\.id) == waitingIDs
+                  && restoredQueue.operation == nil && !queueLibrary.mutationActive,
+                  "REQ184 review: Initially active legacy failure pauses the durable waiting queue")
+            check(restoredQueue.feedbackProductID == alpha.id && restoredQueue.failureCode == 13
+                  && restoredQueue.error == GameScriptError.failed(13).localizedDescription
+                  && restoredQueue.log == paths.logs.appendingPathComponent("\(failingRun).stderr.log"),
+                  "REQ184 review: Initially active legacy failure keeps its title, code, error and log")
+            check(try String(contentsOf: root.appendingPathComponent("install-starts"), encoding: .utf8) == beforeFailure
+                  && recoveryQueue.load().map(\.id) == waitingIDs,
+                  "REQ184 review: No legacy waiting request starts or disappears after the joined run fails")
+            try writeMode("success")
+            restoredQueue.resumeInstallQueue()
+            await restoredQueue.waitForMutation()
+            check(restoredQueue.queuedInstalls.isEmpty && restoredQueue.error == nil
+                  && restoredQueue.feedbackProductID == repair.id,
+                  "REQ184 review: Explicit continuation after legacy failure starts the waiting request, not the failed title")
         }
         let completedRow = LibraryGame.collection(installed: installed.games, owned: [game],
             products: [], gamePass: [], active: false)[0]
