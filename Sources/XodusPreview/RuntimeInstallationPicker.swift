@@ -27,6 +27,8 @@ struct RuntimeInstallationPicker: View {
         VStack(alignment: .leading, spacing: 12) {
             EngineProviderOverview(settings: settings, inspections: registryObservation.inspections)
             Divider()
+            ExternalProviderOverview(allowsCheck: !settings.planning && !settings.applicationTerminating)
+            Divider()
             Picker("Default game engine", selection: Binding(
                 get: { RuntimeProviderKind(rawValue: defaultProvider) },
                 set: { defaultProvider = $0?.rawValue ?? "" })) {

@@ -32,6 +32,8 @@ final class InstalledGamesController: ObservableObject {
     @Published private(set) var installationErrors: [UUID: String] = [:]
     @Published private(set) var playLogs: [UUID: URL] = [:]
     @Published private(set) var playNotices: [UUID: String] = [:]
+    @Published private(set) var externalHandoffMessages: [UUID: String] = [:]
+    @Published private(set) var externalHandoffGameID: UUID?
     @Published private(set) var stoppingGameID: UUID?
     @Published private(set) var launchStarted = false
     @Published private(set) var launchableIDs: Set<UUID> = []
@@ -466,6 +468,7 @@ final class InstalledGamesController: ObservableObject {
         playErrors = [:]
         playLogs = [:]
         playNotices = [:]
+        externalHandoffMessages = [:]
         packageErrors = [:]
         for task in nativeInspectionTasks.values { task.cancel() }
         installationStatuses = [:]
@@ -476,6 +479,56 @@ final class InstalledGamesController: ObservableObject {
 
     func play(_ game: InstalledGame) async {
         await play(game, historicalFixture: false)
+    }
+
+    func canUseExternalHandoff(_ game: InstalledGame) -> Bool {
+        loaded && !editing && !choosing && !mutationActive && !accountDisconnecting
+            && !applicationTerminating && runningGameID == nil && externalHandoffGameID == nil
+            && games.contains(where: { $0.id == game.id })
+    }
+
+    func setExternalHandoff(_ target: String?, provider: ExternalGameProvider, for game: InstalledGame) async {
+        guard canUseExternalHandoff(game) else { return }
+        editing = true
+        defer { editing = false }
+        do {
+            if provider == .portingKit, let target {
+                _ = try await Task.detached(priority: .utility) {
+                    try ExternalGameHandoff.portingKitWrapper(URL(fileURLWithPath: target))
+                }.value
+            }
+            guard !applicationTerminating, !accountDisconnecting, loaded else { return }
+            applySavedGames(try await store.setExternalHandoff(id: game.id, provider: provider, target: target))
+            externalHandoffMessages[game.id] = target == nil
+                ? "\(provider.label) handoff removed. Its game files haven't changed."
+                : "\(provider.label) handoff saved. Xbox launch settings haven't changed."
+        } catch {
+            externalHandoffMessages[game.id] = error.localizedDescription
+        }
+    }
+
+    func openExternalHandoff(_ provider: ExternalGameProvider, for game: InstalledGame) async {
+        guard canUseExternalHandoff(game) else { return }
+        guard let handoff = games.first(where: { $0.id == game.id })?.externalHandoffs?
+            .first(where: { $0.provider == provider }) else {
+            externalHandoffMessages[game.id] = ExternalHandoffError.noSelection.localizedDescription
+            return
+        }
+        externalHandoffGameID = game.id
+        defer { externalHandoffGameID = nil }
+        do {
+            try await handoff.open {
+                self.loaded && !self.accountDisconnecting && !self.applicationTerminating
+                    && !self.mutationActive && self.runningGameID == nil
+                    && self.games.first(where: { $0.id == game.id })?.externalHandoffs?.contains(handoff) == true
+            }
+            guard loaded, !accountDisconnecting, !applicationTerminating else { return }
+            externalHandoffMessages[game.id] =
+                "Request handed to \(provider.label). Confirm any prompts there. Game launch and gameplay aren't verified; this external session isn't tracked by Ode."
+        } catch {
+            guard loaded, !applicationTerminating else { return }
+            externalHandoffMessages[game.id] = "Couldn't hand off to \(provider.label): \(error.localizedDescription)"
+        }
     }
 
 #if !XODUS_SHIPPING
