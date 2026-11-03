@@ -64,10 +64,18 @@ historical deployments, recovered package receipts and current unknowns.
 | --- | --- | --- |
 | Discover / search | Browse PC Game Pass candidates, search Store games, show loaded owned matches first, open details | Public results and artwork do not grant ownership or Mac compatibility; search coverage is partial |
 | Account / library | Explicit sign-in, account-bound collections, background access checks for known installed Store IDs, Installed and Continue Playing | Permission does not identify ownership or subscription acquisition; uninstalled account-wide Game Pass enumeration is unresolved |
-| Install / downloads | Check support, confirm destination and space, show backend progress, cancel | Requires an entitled supported package and the paired runtime; Install never auto-plays |
+| Install / downloads | Review destination and space, queue installs or repairs behind another title, show backend progress, cancel | Serial execution rechecks package access/support and storage; restored queues require explicit continuation; Install never auto-plays |
 | Play / Stop | Launch a registered installed game; request Stop for the tracked title | Current account access and runtime/title-specific qualification still apply; ordinary Quit does not stop gameplay |
 | External launchers | Detect Highball, Porting Kit and Heroic; save an installed game's explicit link or wrapper in Actions > External launchers | Provider-owned game handoff only, not Xbox engine admission, tracked Playing or verified gameplay; see [runtime handoffs](docs/RUNTIME-PROVIDERS.md#external-game-handoffs-req-178179182) |
 | Repair / update / remove | Explicit runtime repair, Check for update / Repair, confirmed Uninstall, separate Remove from list | List removal does not delete files; save preservation needs exact-runtime acceptance |
+
+Install and Repair can join Downloads while another title is downloading.
+Requests keep their reviewed destination and account binding; duplicate titles
+and overlapping folders are rejected. Only one game operation writes at a time.
+Waiting requests can be cancelled without stopping the active download. A failed
+or uncertain operation pauses subsequent requests; after restart, the saved
+queue stays paused until **Continue queue** is selected. Legacy package checks
+deferred during another download run before the queued request starts.
 
 Library checks known installed products automatically and retains still-valid
 access facts while renewing them. Expiry, sign-out and account changes withdraw

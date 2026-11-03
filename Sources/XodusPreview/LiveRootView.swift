@@ -684,6 +684,9 @@ struct LiveActivityView: View {
             .padding(.horizontal, 30).padding(.vertical, 24)
             List {
                 DownloadQueueView(queue: queue)
+                if !operations.queuedInstalls.isEmpty || operations.installQueueError != nil {
+                    Section("Waiting") { QueuedGameInstallsView(operations: operations) }
+                }
                 if operations.installingDirectly {
                     Section("Current") { GameOperationProgressView(operations: operations) }
                 }

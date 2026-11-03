@@ -572,6 +572,47 @@ struct GameOperationRecord: Codable, Identifiable, Sendable {
               kind != .resume || nativeAccountHash != nil,
               kind == .install ? installedID == nil : installedID != nil else { throw GameScriptError.storage }
     }
+
+    func conflicts(productID: String, destination: String?) -> Bool {
+        if self.productID == productID { return true }
+        guard let destination else { return false }
+        let existing = URL(fileURLWithPath: self.destination).standardizedFileURL.path.lowercased()
+        let proposed = URL(fileURLWithPath: destination).standardizedFileURL.path.lowercased()
+        return existing == proposed || existing.hasPrefix(proposed + "/") || proposed.hasPrefix(existing + "/")
+    }
+}
+
+struct QueuedGameInstall: Codable, Identifiable, Sendable {
+    let record: GameOperationRecord
+    let storageVolume: GameStorageVolume?
+    var id: String { record.id }
+}
+
+struct GameInstallQueueJournal {
+    let file: URL
+
+    func load() throws -> [QueuedGameInstall] {
+        guard let data = try GameScriptFiles.read(file, missingAllowed: true) else { return [] }
+        let entries = try JSONDecoder().decode([QueuedGameInstall].self, from: data)
+        try validate(entries)
+        return entries
+    }
+
+    private func validate(_ entries: [QueuedGameInstall]) throws {
+        for (index, entry) in entries.enumerated() {
+            try entry.record.validate()
+            guard entry.record.kind != .uninstall,
+                  !entries.prefix(index).contains(where: {
+                      $0.id == entry.id || $0.record.conflicts(productID: entry.record.productID,
+                                                            destination: entry.record.destination)
+                  }) else { throw GameScriptError.storage }
+        }
+    }
+
+    func save(_ entries: [QueuedGameInstall]) throws {
+        try validate(entries)
+        try GameScriptFiles.writePrivate(JSONEncoder().encode(entries), to: file)
+    }
 }
 
 actor GameOperationJournal {
