@@ -106,6 +106,10 @@ Downloads view, with exact native lifecycle product ID **9NR1R1XWLCNB** and
 destination `~/Games/Xodus/ForzaHorizon6-Xbox`. At the first observation it was
 6.83 GB of 170.55 GB (4%), not a completed playable installation. It was left
 running without a second download, app replacement or payload migration.
+Subsequently the actual terminal installation receipt reported success with
+exit code 0 for the same product and destination, and `MicrosoftGame.config`
+appeared with identity `Microsoft.ForteBaseGame`, version `3.479.874.0`.
+This establishes completed Xbox installation only, not a game launch.
 This Xbox-native download does not establish a provider-owned FH6 installation
 in any of these external launchers. No FH5 substitution or FH6 gameplay
 qualification is claimed.
