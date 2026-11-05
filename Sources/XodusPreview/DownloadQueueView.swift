@@ -43,7 +43,7 @@ struct DownloadQueueRow: View {
                 }
             }
             HStack(spacing: 12) {
-                if job.phase.canPause {
+                if job.phase.canPause, queue.pendingStops[job.id] == nil {
                     Button("Pause") { queue.pause(job.id) }
                         .accessibilityIdentifier("xodus.queue.pause")
                 }
@@ -51,7 +51,7 @@ struct DownloadQueueRow: View {
                     Button("Resume") { queue.resume(job.id) }
                         .accessibilityIdentifier("xodus.queue.resume")
                 }
-                if job.phase.canCancel {
+                if job.phase.canCancel, queue.pendingStops[job.id] != .cancel {
                     Button("Cancel", role: .destructive) { queue.cancel(job.id) }
                         .accessibilityIdentifier("xodus.queue.cancel")
                 }
@@ -63,8 +63,11 @@ struct DownloadQueueRow: View {
         .accessibilityLabel("\(job.title), \(statusLabel)")
     }
 
-    private var statusLabel: String {
-        switch job.phase {
+    var statusLabel: String {
+        if let pending = queue.pendingStops[job.id] {
+            return pending == .pause ? "Pausing..." : "Cancelling..."
+        }
+        return switch job.phase {
         case .queued: "Waiting"
         case .preparing: "Preparing"
         case .downloading:
