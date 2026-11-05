@@ -540,9 +540,10 @@ in run `86f694f5`; that is not gameplay success. Brotato now has an explicit
 Apple GPTK 4.0b3/default-COM profile, runtime 7106's pinned primary/legacy pair,
 the historical standard native-web shim profile and `Brotato.exe`. A separate
 COR-425 Calimocho-only local candidate binds source-built XCurl plus the existing
-CA bundle and leaves Windows.Web on Wine's builtin implementation; its two-file
-directory is outside the app bundle. The candidate is distinct from the
-historical DLL tuple and has no title-launch, gameplay, save-retention or
+CA bundle and explicitly selects Wine's builtin Windows.Web with a pinned
+per-title recipe, including when a retained prefix has native Windows.Web state;
+its two-file directory is outside the app bundle. The candidate is distinct from
+the historical DLL tuple and has no title-launch, gameplay, save-retention or
 ordinary-quit acceptance. Explicit title-profile engines take priority over
 generic provider defaults; existing provider-specific NMS profiles still select
 their own distinct recipes.
