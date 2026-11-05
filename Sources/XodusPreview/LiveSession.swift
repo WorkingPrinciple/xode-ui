@@ -627,11 +627,11 @@ final class LiveSession: ObservableObject {
             try result.validate(limit: 20)
             recentLibrary = result
             recentLibraryCurrent = true
-            recentLibraryLogger.notice("stage=recentlyPlayed count=\(result.titles.count, privacy: .public)")
+            recentLibraryLogger.notice("stage=recentlyPlayed result=received")
         } catch {
             guard token == generation, authToken == authenticationGeneration,
                   recentToken == recentLibraryGeneration else { return }
-            if case let ManagementError.recentLibraryFailed(stage) = error {
+            if case let ManagementError.recentLibraryFailed(stage, _) = error {
                 if [.credentialUnavailable, .profileChanged, .authRejected].contains(stage) {
                     recentLibrary = nil
                     accountStatusCurrent = false
@@ -647,6 +647,8 @@ final class LiveSession: ObservableObject {
                     recentLibraryError = "Microsoft couldn't authorize recent activity. Try again."
                 case .transportFailed:
                     recentLibraryError = "Recent activity couldn't connect. Try again."
+                case .throttled:
+                    recentLibraryError = Self.describe(error)
                 case .responseInvalid:
                     recentLibraryError = "Microsoft's recent activity couldn't be read safely. No empty result was assumed."
                 }
@@ -2260,13 +2262,14 @@ final class LiveSession: ObservableObject {
     }
 
     static func describe(_ error: Error) -> String {
-        if case let ManagementError.authenticatedReadFailed(failure) = error {
+        if case let ManagementError.authenticatedReadFailed(failure, _) = error {
             switch failure {
             case .credentialUnavailable: return "Your saved sign-in couldn't be read. Check account status."
             case .profileChanged: return "The account changed while loading. Reload to try again."
             case .authExchangeFailed: return "Microsoft couldn't authorize this request. Try again."
             case .authRejected: return "Microsoft rejected access to this feature. Check account status before reconnecting."
             case .transportFailed: return "The connection didn't finish. Check your network and try again."
+            case .throttled: return error.localizedDescription
             case .responseInvalid: return "Microsoft returned details that couldn't be read safely. Reload to try again."
             case .packageUnavailable: return "The requested content isn't available."
             }

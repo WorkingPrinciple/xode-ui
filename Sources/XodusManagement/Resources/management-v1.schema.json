@@ -1412,6 +1412,32 @@
                     "details": {
                       "properties": {
                         "stage": {
+                          "const": "throttled"
+                        }
+                      }
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "code": {
+                      "const": "NETWORK_UNAVAILABLE"
+                    },
+                    "retryable": {
+                      "const": true
+                    },
+                    "message": {
+                      "const": "Authenticated read failed: throttled."
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "details": {
+                      "properties": {
+                        "stage": {
                           "const": "authRejected"
                         }
                       }
@@ -1613,6 +1639,32 @@
                     },
                     "message": {
                       "const": "Recent library read failed: authExchangeFailed."
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "details": {
+                      "properties": {
+                        "stage": {
+                          "const": "throttled"
+                        }
+                      }
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "code": {
+                      "const": "NETWORK_UNAVAILABLE"
+                    },
+                    "retryable": {
+                      "const": true
+                    },
+                    "message": {
+                      "const": "Recent library read failed: throttled."
                     }
                   }
                 }
@@ -2293,11 +2345,30 @@
             "authRejected",
             "transportFailed",
             "responseInvalid",
-            "packageUnavailable"
+            "packageUnavailable",
+            "throttled"
           ]
+        },
+        "retryAfterSeconds": {
+          "type": "integer",
+          "minimum": 0
         }
       },
-      "additionalProperties": false
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "required": ["retryAfterSeconds"]
+          },
+          "then": {
+            "properties": {
+              "stage": {
+                "const": "throttled"
+              }
+            }
+          }
+        }
+      ]
     },
     "recentLibraryFailure": {
       "type": "object",
@@ -2316,11 +2387,30 @@
             "authExchangeFailed",
             "authRejected",
             "transportFailed",
-            "responseInvalid"
+            "responseInvalid",
+            "throttled"
           ]
+        },
+        "retryAfterSeconds": {
+          "type": "integer",
+          "minimum": 0
         }
       },
-      "additionalProperties": false
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "required": ["retryAfterSeconds"]
+          },
+          "then": {
+            "properties": {
+              "stage": {
+                "const": "throttled"
+              }
+            }
+          }
+        }
+      ]
     },
     "artwork": {
       "type": "object",

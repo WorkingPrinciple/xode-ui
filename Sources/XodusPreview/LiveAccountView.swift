@@ -291,7 +291,7 @@ struct GeneralSettingsTab: View {
                     Text("About Ode to X")
                         .font(.headline)
                     HStack(spacing: 12) {
-                        Text("Version 0.2.0 (Build 745)")
+                        Text(Self.versionDescription())
                             .font(.caption)
                             .foregroundStyle(.secondary)
                         Spacer()
@@ -305,6 +305,18 @@ struct GeneralSettingsTab: View {
             .padding(.horizontal, 28)
             .padding(.vertical, 20)
         }
+    }
+}
+
+extension GeneralSettingsTab {
+    static func versionDescription(in bundle: Bundle = .main) -> String {
+        func value(_ key: String) -> String {
+            guard let text = bundle.object(forInfoDictionaryKey: key) as? String, !text.isEmpty else {
+                return "unknown"
+            }
+            return text
+        }
+        return "Version \(value("CFBundleShortVersionString")) (Build \(value("CFBundleVersion")))"
     }
 }
 
