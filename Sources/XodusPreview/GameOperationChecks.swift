@@ -1305,6 +1305,12 @@ enum GameOperationChecks {
         await operations.waitForMutation()
         check(installed.games.count == 1 && operations.error?.contains("couldn't be preserved") == true,
               "S6 code 20 explicitly preserves the installed entry after save-preservation refusal")
+        let retainedAfterRefusal = try await store.loadRetained()
+        let identityWhileActive = try await store.identity(forStoreID: repaired.storeId)
+        check(retainedAfterRefusal.contains(where: { $0.storeId == repaired.storeId && $0.id == repaired.id })
+              && identityWhileActive != repaired.id && installed.games == [repaired]
+              && !installed.mutationActive && !operations.recoveryRequired,
+              "REQ214A5: Failed uninstall keeps active registration authoritative over its durably preflighted shadow identity")
         try writeMode("success")
         let recordedPrefix = installed.storageDirectory.appendingPathComponent("Prefixes/\(repaired.id.uuidString)")
         try FileManager.default.createDirectory(at: recordedPrefix, withIntermediateDirectories: true)
@@ -1329,6 +1335,46 @@ enum GameOperationChecks {
               && afterUninstall.facts.badgeLabels() == ["In your library"]
               && GameInstallAction(game: game, operations: operations).canInstall,
               "REQ-50: Only explicit uninstall invokes its transport; success withdraws installed facts but preserves held reinstall eligibility")
+        for atBoundary in [false, true] {
+            let label = atBoundary ? "retention-at-limit" : "retention-over-limit"
+            let boundaryStore = InstalledGameStore(file: root.appendingPathComponent("\(label)/installed-games.json"))
+            try await boundaryStore.save([repaired])
+            let retainedURL = await boundaryStore.retainedFile
+            let seedID = atBoundary ? repaired.id : UUID()
+            let seedProduct = atBoundary ? repaired.storeId : "OTHER000001"
+            let seedDate = Date(timeIntervalSinceReferenceDate: 0)
+            let seed = RetainedGameIdentity(storeId: seedProduct, id: seedID, folder: "/", retainedAt: seedDate)
+            let baseBytes = try JSONEncoder().encode([seed]).count
+            let padded = RetainedGameIdentity(storeId: seedProduct, id: seedID,
+                folder: "/" + String(repeating: "a", count: 1_048_576 - baseBytes), retainedAt: seedDate)
+            let boundaryData = try JSONEncoder().encode([padded])
+            try boundaryData.write(to: retainedURL, options: .atomic)
+            try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: retainedURL.path)
+            let boundaryLibrary = InstalledGamesController(store: boundaryStore)
+            await boundaryLibrary.load()
+            let boundaryOperations = GameOperationsController(installed: boundaryLibrary, paths: paths,
+                                                               compatibilityCatalogue: catalogue)
+            let callsBefore = try Data(contentsOf: root.appendingPathComponent("uninstall-calls"))
+            boundaryOperations.prepareUninstall(repaired)
+            boundaryOperations.confirmUninstall(repaired)
+            await boundaryOperations.waitForMutation()
+            let callsAfter = try Data(contentsOf: root.appendingPathComponent("uninstall-calls"))
+            let retainedAfter = try await boundaryStore.loadRetained()
+            if atBoundary {
+                check(boundaryData.count == 1_048_576 && boundaryLibrary.games.isEmpty
+                      && boundaryOperations.error == nil && callsAfter.count > callsBefore.count
+                      && retainedAfter == [padded],
+                      "REQ214A5: A persisted identity at exactly 1 MiB permits uninstall without a post-transport retention rewrite")
+            } else {
+                check(boundaryData.count == 1_048_576 && boundaryLibrary.games == [repaired]
+                      && boundaryOperations.error?.contains("nothing was uninstalled") == true
+                      && boundaryOperations.operation == nil && !boundaryOperations.recoveryRequired
+                      && !boundaryLibrary.mutationActive && callsAfter == callsBefore
+                      && retainedAfter == [padded]
+                      && FileManager.default.fileExists(atPath: repaired.folder),
+                      "REQ214A5: Projected retention beyond 1 MiB refuses uninstall before transport and keeps active registration")
+            }
+        }
         for code in [10, 11, 12, 14] {
             try writeMode(String(code))
             try await install()

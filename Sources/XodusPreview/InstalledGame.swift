@@ -349,15 +349,26 @@ actor InstalledGameStore {
         return games
     }
 
+    func retainIdentityBeforeRemoval(id: UUID) throws {
+        guard let game = try load().first(where: { $0.id == id }) else {
+            throw InstalledGameError.invalidRegistry
+        }
+        try retainIdentity(game)
+    }
+
+    private func retainIdentity(_ game: InstalledGame) throws {
+        var retained = try loadRetained()
+        if retained.contains(where: { $0.storeId == game.storeId && $0.id == game.id }) { return }
+        retained.removeAll { $0.storeId == game.storeId || $0.id == game.id }
+        retained.append(RetainedGameIdentity(storeId: game.storeId, id: game.id,
+                                             folder: game.folder, retainedAt: Date()))
+        try saveRetained(retained)
+    }
+
     func remove(id: UUID) throws -> [InstalledGame] {
         var games = try load()
-        if let removed = games.first(where: { $0.id == id }) {
-            // Retain first: a failed registry write then leaves a harmless extra record, never a lost identity.
-            var retained = try loadRetained().filter { $0.storeId != removed.storeId && $0.id != removed.id }
-            retained.append(RetainedGameIdentity(storeId: removed.storeId, id: removed.id,
-                                                 folder: removed.folder, retainedAt: Date()))
-            try saveRetained(retained)
-        }
+        // A preflight shadow is idempotent; failed/cancelled uninstalls leave the active entry authoritative.
+        if let removed = games.first(where: { $0.id == id }) { try retainIdentity(removed) }
         games.removeAll { $0.id == id }
         try save(games)
         return games

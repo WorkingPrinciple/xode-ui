@@ -1117,6 +1117,13 @@ final class InstalledGamesController: ObservableObject {
         try await saveValidatedGame(folder: folder, launcher: nil, expectedStoreID: expectedStoreID)
     }
 
+    func retainIdentityBeforeUninstall(_ id: UUID) async throws {
+        guard mutationActive, mutationGameID == id, runningGameID != id, !editing else { throw GameScriptError.busy }
+        editing = true
+        defer { editing = false }
+        try await store.retainIdentityBeforeRemoval(id: id)
+    }
+
     func removeUninstalled(_ id: UUID) async throws {
         guard mutationActive, mutationGameID == id, runningGameID != id, !editing else { throw GameScriptError.busy }
         editing = true

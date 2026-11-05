@@ -1095,13 +1095,15 @@ final class GameOperationsController: ObservableObject {
                     guard let game = installed.games.first(where: { $0.id == record.installedID }) else {
                         throw GameScriptError.invalidReceipt
                     }
+                    try await installed.retainIdentityBeforeUninstall(game.id)
                     try uninstallImpact(for: game, runID: record.id)
                         .writeCheckpoint(storageDirectory: installed.storageDirectory)
                 } catch {
-                    self.error = "Ode to X couldn't record which bottle and save locations to keep, so nothing was uninstalled. Try again."
+                    self.error = "Ode to X couldn't record the game identity or bottle and save locations, so nothing was uninstalled. Try again."
                     operation = nil
                     installed.releaseMutation()
                     mutationTask = nil
+                    cancelling = false
                     return
                 }
             }
