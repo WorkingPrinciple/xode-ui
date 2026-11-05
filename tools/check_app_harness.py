@@ -101,6 +101,11 @@ class AppHarnessSourceChecks(unittest.TestCase):
         self.assertIn('"notarytool", "wait"', trust)
         self.assertIn('"stapler", verb', trust)
         self.assertIn('"spctl", "--assess"', trust)
+        self.assertIn('"exitCode": self.exit_code', trust)
+        self.assertIn('"timedOut": self.timed_out', trust)
+        self.assertIn('"command_timeout"', trust)
+        self.assertIn('"submission_id_mismatch"', trust)
+        self.assertIn('"local_operation_failed"', trust)
 
     def test_operator_prompt_precedes_unified_auth_construction(self):
         source = (ROOT / "Sources/XodusPreview/RealAccountScenarioChecks.swift").read_text()

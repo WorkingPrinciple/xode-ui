@@ -10,8 +10,7 @@ import textwrap
 import unittest
 from unittest.mock import patch
 
-import check_release_admission as admission_checks
-from release_workflow import preflight, qualified_app
+from release_workflow import preflight
 
 ROOT = Path(__file__).resolve().parent.parent
 WORKFLOW = (ROOT / ".github/workflows/release.yml").read_text()
@@ -29,40 +28,6 @@ class ReleaseWorkflowChecks(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "Invalid version tag"):
                 preflight(env)
             git.assert_not_called()
-
-    def test_same_qualified_bytes_and_stale_evidence_rejection(self):
-        for case in ("valid", "changed-app", "stale-source", "changed-evidence"):
-            with self.subTest(case=case), tempfile.TemporaryDirectory() as directory:
-                root = Path(directory).resolve()
-                app, receipt, app_hash, receipt_hash = admission_checks.ReleaseAdmissionChecks().fixture(root)
-                environment = {"TAG": "v0.2.0", "EXPECTED_COMMIT": "a" * 40,
-                    "RELEASE_APP": str(app), "RELEASE_ADMISSION": str(receipt),
-                    "RELEASE_APP_SHA256": app_hash, "RELEASE_ADMISSION_SHA256": receipt_hash,
-                    "RELEASE_DMG_SIGNING_IDENTITY": "a" * 40, "RELEASE_NOTARY_PROFILE": "synthetic",
-                    "RELEASE_DMG_RECOVERY_ROOT": "/synthetic/persistent"}
-                if case == "changed-app":
-                    (app / "Contents/MacOS/Fixture").write_bytes(b"new signing bytes")
-                if case == "changed-evidence":
-                    (root / "releaseQualification.txt").write_bytes(b"changed")
-                def git(arguments, **kwargs):
-                    if "status" in arguments:
-                        return ""
-                    if arguments[-1] == "HEAD^{tree}":
-                        return ("c" if case == "stale-source" else "b") * 40
-                    return "a" * 40
-                with patch("release_workflow.subprocess.check_output", side_effect=git), \
-                        patch("release_workflow.persistent_root"):
-                    if case == "valid":
-                        self.assertEqual(qualified_app(environment), app)
-                        # The same immutable input is passed to the existing packager;
-                        # only Apple tools are stubbed, not its admission verifier.
-                        result = admission_checks.ReleaseAdmissionChecks().package(
-                            root, (app, receipt, app_hash, receipt_hash), "checkout-origin")
-                        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-                        self.assertEqual(admission_checks.app_tree_sha256(app), app_hash)
-                    else:
-                        with self.assertRaises(ValueError):
-                            qualified_app(environment)
 
     def test_workflow_build_admission_and_token_separation(self):
         self.assertIn("tags: ['v*']", WORKFLOW)

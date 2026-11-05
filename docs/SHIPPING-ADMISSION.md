@@ -83,12 +83,16 @@ mounted stage without successful detach.
 
 Successful output is `Ode-to-X-v<version>-macos-arm64.dmg`,
 `Ode-to-X-v<version>-macos-arm64.zip` and checked `SHA256SUMS.txt`; the
-manifest is published last. `python3 tools/check_release_admission.py` covers
-admission, packaging, recovery, signing/notary ordering and sanitized evidence
-with **synthetic fixtures and stub Apple tools only**. The workflow source check
-tests publication wiring and the installed/missing CLI prerequisite. These are
-not genuine signing, notarization, Gatekeeper, publication or native product
-qualification evidence.
+manifest is published last. `python3 tools/check_release_admission.py` covers the admission verifier and
+the packager's fail-closed rejection when DMG trust configuration is absent.
+The existing archive round-trip test is not run through this notary-gated
+packager: no Apple signing, notarization, stapling or Gatekeeper substitutes
+are authorized for this source slice, and no real Apple operation was run.
+Recovery-state, concurrency, timeout and detailed trust-failure behavior remain
+unverified by executed tests. The workflow check covers source wiring,
+tag/ref/publication controls and the installed/missing `gh` prerequisite.
+These checks do not prove genuine signing, notarization, Gatekeeper,
+publication or native product qualification.
 
 ### REQ103 r7 source candidate: Stop lifecycle and orphan safety
 

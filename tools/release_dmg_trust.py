@@ -16,6 +16,40 @@ import tempfile
 import uuid
 
 
+class TrustFailure(Exception):
+    def __init__(self, stage, reason, exit_code=None, timed_out=False, attempt=None):
+        self.stage = stage
+        self.reason = reason
+        self.exit_code = exit_code
+        self.timed_out = timed_out
+        self.attempt = attempt
+
+    def receipt(self):
+        return {
+            "stage": self.stage,
+            "reason": self.reason,
+            "exitCode": self.exit_code,
+            "timedOut": self.timed_out,
+        }
+
+    def exit_status(self):
+        return 124 if self.timed_out else 1
+
+    def diagnostic(self):
+        parts = [f"DMG trust failed at {self.stage}: {self.reason}"]
+        if self.exit_code is not None:
+            parts.append(f"command exit {self.exit_code}")
+        if self.timed_out:
+            parts.append("timed out")
+        if self.attempt:
+            parts.append(f"reconcile attempt {self.attempt}")
+        return "; ".join(parts)
+
+
+def fail(stage, reason, exit_code=None, timed_out=False):
+    raise TrustFailure(stage, reason, exit_code, timed_out)
+
+
 def unique(pairs):
     result = {}
     for key, value in pairs:
@@ -93,30 +127,47 @@ def submission_lock(root):
         try:
             fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError as error:
-            raise ValueError("A DMG trust operation is already active for this recovery root") from error
+            raise TrustFailure("recovery-lock", "operation_already_active") from error
         yield
     finally:
         os.close(descriptor)
 
 
 def trust(image, evidence, environment=os.environ):
-    root = persistent_root(environment)
-    with submission_lock(root):
-        trust_locked(image, evidence, root, environment)
+    try:
+        root = persistent_root(environment)
+    except (OSError, ValueError, KeyError):
+        fail("recovery-preflight", "persistent_recovery_configuration_invalid")
+    try:
+        with submission_lock(root):
+            trust_locked(image, evidence, root, environment)
+    except TrustFailure:
+        raise
+    except (OSError, ValueError, KeyError):
+        fail("recovery-state", "persistent_recovery_state_invalid")
+
+
+def read_json(path, stage):
+    try:
+        return json.loads(path.read_text(), object_pairs_hook=unique)
+    except (OSError, UnicodeDecodeError, ValueError):
+        fail(stage, "invalid_response")
 
 
 def trust_locked(image, evidence, root, environment):
     for previous in root.glob("dmg-*"):
         record = previous / "receipt.json"
-        if (previous.is_symlink() or not record.is_file()
-                or json.loads(record.read_text(), object_pairs_hook=unique).get("state") != "trusted"):
-            raise ValueError("An earlier DMG attempt requires owner reconciliation before a new submission")
+        if previous.is_symlink() or not record.is_file():
+            fail("recovery-check", "prior_attempt_requires_reconciliation")
+        if read_json(record, "recovery-check").get("state") != "trusted":
+            fail("recovery-check", "prior_attempt_requires_reconciliation")
     attempt = Path(tempfile.mkdtemp(prefix="dmg-", dir=root))
     attempt.chmod(0o700)
     sync_directory(root)
     evidence.mkdir(mode=0o700, parents=True, exist_ok=True)
     receipt = {"version": 1, "attempt": attempt.name, "state": "preparing",
                "submissionID": None, "notaryStatus": None, "automaticRetry": False}
+    current_stage = "prepare"
 
     def save():
         # This allowlisted receipt is suitable for public Actions artifacts:
@@ -125,15 +176,24 @@ def trust_locked(image, evidence, root, environment):
         write_json(evidence / "receipt.json", receipt)
 
     def execute(command, label, timeout=1800):
-        with (attempt / (label + ".json")).open("xb") as stdout, (
-                attempt / (label + "-stderr.log")).open("xb") as stderr:
-            result = subprocess.run(command, stdout=stdout, stderr=stderr, timeout=timeout)
+        try:
+            with (attempt / (label + ".json")).open("xb") as stdout, (
+                    attempt / (label + "-stderr.log")).open("xb") as stderr:
+                result = subprocess.run(command, stdout=stdout, stderr=stderr, timeout=timeout)
+        except subprocess.TimeoutExpired:
+            fail(label, "command_timeout", 124, True)
+        except FileNotFoundError:
+            fail(label, "command_not_found")
+        except PermissionError:
+            fail(label, "command_permission_denied")
+        except OSError:
+            fail(label, "command_unavailable_or_local_io_failed")
         if result.returncode:
-            raise ValueError(label + " failed; reconcile the private recovery attempt before retry")
+            fail(label, "command_failed", result.returncode)
         return attempt / (label + ".json")
 
     def interrupted(signum, frame):
-        raise InterruptedError("Interrupted; reconcile the private recovery attempt before retry")
+        raise TrustFailure(current_stage, "operation_interrupted", 130)
 
     old_handlers = {sig: signal.signal(sig, interrupted)
                     for sig in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP)}
@@ -146,36 +206,47 @@ def trust_locked(image, evidence, root, environment):
             os.fsync(source.fileno())
         receipt["submittedImage"] = identity(submitted)
         if identity(image) != receipt["submittedImage"]:
-            raise ValueError("Signed image changed during recovery capture")
+            fail("capture", "submitted_image_identity_mismatch")
         receipt["state"] = "submission-may-have-started"
         save()
+        current_stage = "submit"
         profile = environment["RELEASE_NOTARY_PROFILE"]
         response = execute(["xcrun", "notarytool", "submit", str(submitted),
                             "--keychain-profile", profile, "--output-format", "json"], "submit")
-        submission = json.loads(response.read_text(), object_pairs_hook=unique)
+        submission = read_json(response, "submit-response")
         if not isinstance(submission, dict):
-            raise ValueError("Apple submission response is not an object")
+            fail("submit-response", "invalid_response")
         submission_id = submission.get("id")
-        if not isinstance(submission_id, str) or str(uuid.UUID(submission_id)) != submission_id.lower():
-            raise ValueError("Apple submission did not return a valid ID; reconcile before retry")
+        try:
+            valid_submission_id = isinstance(submission_id, str) and (
+                str(uuid.UUID(submission_id)) == submission_id.lower())
+        except ValueError:
+            valid_submission_id = False
+        if not valid_submission_id:
+            fail("submit-response", "submission_id_invalid")
         receipt["submissionID"] = submission_id
         receipt["state"] = "waiting"
         save()
+        current_stage = "wait"
         response = execute(["xcrun", "notarytool", "wait", submission_id,
                             "--keychain-profile", profile, "--timeout", "1h",
                             "--output-format", "json"], "wait", timeout=3660)
-        result = json.loads(response.read_text(), object_pairs_hook=unique)
+        current_stage = "wait-response"
+        result = read_json(response, "wait-response")
         if not isinstance(result, dict):
-            raise ValueError("Apple wait response is not an object")
+            fail("wait-response", "invalid_response")
         if result.get("id") != submission_id:
-            raise ValueError("Apple wait response does not identify the selected submission")
+            fail("wait-response", "submission_id_mismatch")
         status = result.get("status")
         receipt["notaryStatus"] = status if status in ("Accepted", "Invalid", "In Progress", "Rejected") else None
+        current_stage = "notary-result"
         save()
         if status != "Accepted":
-            raise ValueError("Apple did not accept the selected submission")
+            fail("notary-result", "submission_not_accepted")
+        current_stage = "submitted-image-check"
         if identity(submitted) != receipt["submittedImage"]:
-            raise ValueError("Submission image changed while waiting for Apple")
+            fail("submitted-image-check", "submitted_image_identity_mismatch")
+        current_stage = "finalize"
         final = attempt / "distribution.dmg"
         shutil.copyfile(submitted, final)
         final.chmod(0o600)
@@ -185,16 +256,24 @@ def trust_locked(image, evidence, root, environment):
         execute(["spctl", "--assess", "--type", "open", "--context",
                  "context:primary-signature", "--verbose=4", str(final)], "gatekeeper")
         receipt["distributionImage"] = identity(final)
+        current_stage = "copy-back"
         shutil.copyfile(final, image)
         if identity(image) != receipt["distributionImage"]:
-            raise ValueError("Final distribution image copy changed")
+            fail("copy-back", "distribution_image_identity_mismatch")
         receipt["state"] = "trusted"
         save()
-    except (OSError, ValueError, KeyError, subprocess.SubprocessError) as error:
+    except TrustFailure as error:
         receipt["state"] = "reconciliation-required"
+        receipt["failure"] = error.receipt()
         save()
-        raise ValueError("DMG trust incomplete; reconcile owner-only attempt " + attempt.name
-                         + " before any new submission") from error
+        error.attempt = attempt.name
+        raise
+    except (OSError, ValueError, KeyError, subprocess.SubprocessError):
+        receipt["state"] = "reconciliation-required"
+        receipt["failure"] = TrustFailure(current_stage, "local_operation_failed").receipt()
+        save()
+        raise TrustFailure(current_stage, "local_operation_failed",
+                           attempt=attempt.name) from None
     finally:
         for sig, handler in old_handlers.items():
             signal.signal(sig, handler)
@@ -208,6 +287,9 @@ if __name__ == "__main__":
         elif len(sys.argv) == 3:
             trust(Path(sys.argv[1]), Path(sys.argv[2]))
         else:
-            raise ValueError("Usage: release_dmg_trust.py preflight | image evidenceDirectory")
-    except (OSError, ValueError, KeyError, subprocess.SubprocessError) as error:
-        sys.exit("DMG trust rejected: " + str(error))
+            fail("invocation", "invalid_arguments")
+    except TrustFailure as error:
+        print(error.diagnostic(), file=sys.stderr)
+        sys.exit(error.exit_status())
+    except (OSError, ValueError, KeyError, subprocess.SubprocessError):
+        sys.exit("1:DMG trust failed at preflight: invalid recovery configuration")
