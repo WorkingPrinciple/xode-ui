@@ -2,6 +2,63 @@
 
 ## Purpose and authorization
 
+### Current Calimocho-first final-candidate gates (5 November 2026)
+
+The parent SPEC's COR-400/401/402/410/411/412 governs this release, not older
+publication prohibitions in historical receipts below. Signing and publication
+are authorized for this Ode release within the seven-day execution window;
+the parent serializes final integration, signing, notarization and publication.
+This does not grant credential/MFA or legal-dialog consent, third-party
+redistribution rights, or permission to replace truthful acceptance evidence.
+Game acceptance precedes release readiness. No child should race tags, releases,
+installation or native input.
+
+| Gate | Exact prerequisite / evidence |
+| --- | --- |
+| Source and version freeze | One clean integrated app commit/tree and its exact backend commit/tree, engine releases and title recipe. The 5 November starting pair was app `16f36943` / backend `809dd6f2`, not a final qualification. Record successor identities after integration. `build_app.sh` rejects a failed Git status inspection as well as dirty source. |
+| Version selection | Live releases checked 5 November contain `v0.2.0` and the separate `candidate-7083d936` prerelease. `0.2.1` is the next patch candidate, not an allocated tag or owner-selected version. Update `tools/Info.plist` before freezing source; its current `0.2.0` / build `2` must not be reported as build `745` or a new release. Settings must show actual bundle metadata. Recheck live tags/releases before allocation. |
+| Product acceptance | On the attributable candidate: saved-session/current-account behavior, canonical tabbed Settings, genuine Calimocho update/choice preservation and recovery, entitled title launch/play/ordinary quit/progress/relaunch, save-preserving uninstall/reinstall/rediscovery. Preserve exact title/recipe limits; earlier version labels, source checks or archive hashes do not qualify gameplay. |
+| Installed accessibility | Parent-owned physical keyboard and VoiceOver traversal of Settings tabs and existing controls, focus/escape/return behavior and read-only observation of the current keyboard policy. Record app executable/source identity, notes and screenshot as required by #69. Do not change global keyboard or permission settings to make a check pass. |
+| Distribution identity | An available, valid Developer ID Application certificate/private key in the authorized Keychain, exact public certificate SHA-1, stable designated requirements, arm64 payloads, hardened runtime and secure timestamps. A locally valid or ad-hoc signature is not this gate. Preserve account/broker identity and rollback; never export keys or repair credentials unattended. |
+| Apple and policy | Existing owner-selected notarytool Keychain profile with authorized Apple credentials; actual Accepted submission, stapling and Gatekeeper checks. Retain the exact source/app-bound provenance, component notices/source obligations and legal/distribution decision required by #38. Publication authority in COR-411 does not synthesize these results. |
+| Final immutable archives | Hash the final stapled app, bind genuine qualification/redistribution receipts to that exact tree/version/source, then run `release_workflow.py qualified-app` and `package_release.sh` from the admitted clean source. Verify the recovered DMG/ZIP app trees and both SHA-256 entries. Do not re-sign, staple or rebuild an admitted app without updating its identity and applicable evidence. |
+| Tagged workflow and installation | Configure real protected `release` / `release-publication` environment approvals and runner-local canonical inputs; run the exact-source tag workflow, retain its run/assets/checksums, then parent verifies the installed release's version and artifact identity without data loss. #69 stays open until genuine account, workflow and installed keyboard/VoiceOver observations exist. |
+
+**Current-pair signing route:** `tools/build_app.sh` builds a controlled local
+pair using the sealed producer inputs. Its ordinary identity mode deliberately
+uses `--timestamp=none`; it is not a notarization-ready build. The existing
+`tools/build_local_candidate.py --engine-source <clean-backend-checkout>
+--output-root <canonical-owned-directory> --identity <certificate-SHA1>` path
+uses Developer ID signing with hardened runtime and timestamp for the CLI,
+authentication helper and outer app, and generates compiler pins from the
+actual newly signed payloads. Its receipt remains a **local development
+candidate**, not release qualification. Use only the selected reviewed app/
+backend sources and preserve the matching build receipt. Do not point the
+historical `release_candidate.py` / `refresh_local_candidate.py` frozen-payload
+route at this new pair: those tools intentionally pin a different historical
+producer. Do not relax those pins or re-sign the CLI after compiler pins have
+been generated.
+
+After product acceptance, the parent can submit the chosen Developer-ID-signed
+app without rebuilding it: archive it with `ditto -c -k --keepParent`, submit
+that archive with `xcrun notarytool submit ... --keychain-profile <existing-profile>
+--wait --output-format json`, retain Apple's submission ID/result, require
+`Accepted`, then run `xcrun stapler staple`, `xcrun stapler validate`,
+`codesign --verify --deep --strict`, and
+`spctl --assess --type execute --verbose=4` on the app. A failed or uncertain
+submission must be reconciled by submission ID before retry. Stapling changes
+the app tree: compute `python3 tools/release_admission.py --tree-hash <app>`
+only afterward, and bind the final installed/native observations and genuine
+admission evidence to that final identity. No credentials or acceptance
+receipts are manufactured by this sequence.
+
+The tag workflow packages this stapled app into a verified DMG and ZIP; it does
+**not** separately sign, notarize or staple the DMG. An app notarization result
+must not be described as a notarized-DMG result. If the selected distribution
+requires an independently signed/stapled DMG, complete that distinct operation
+and reverify its recovered app before computing the final checksums and
+publication; the current tag workflow does not provide that route.
+
 ### Issue 62: immutable qualified app, archive and tag-workflow source
 
 COR-389 / REQ-172 supersedes the earlier prohibition on writing tag-workflow

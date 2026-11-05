@@ -4,6 +4,7 @@
 from pathlib import Path
 import copy
 import json
+import os
 import subprocess
 import tempfile
 import unittest
@@ -14,6 +15,18 @@ from shipping_pair import FEATURES, PROFILE, PRODUCER, PRODUCER_TREE, swift_pins
 
 
 class LocalCandidateChecks(unittest.TestCase):
+    def test_controlled_pair_rejects_failed_source_status(self):
+        project = Path(__file__).resolve().parent.parent
+        script = (project / "tools/build_app.sh").read_text()
+        guard = script.split('test "$(git rev-parse \'HEAD^{tree}\')" = "$tree"\n', 1)[1]
+        guard = guard.split('python3 - "$output_root"', 1)[0]
+        result = subprocess.run(
+            ["sh", "-c", "set -eu\n" + guard], cwd=project,
+            env={**os.environ, "GIT_INDEX_FILE": str(project / ".git")},
+            capture_output=True, text=True, timeout=10)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Could not inspect source status; packaging rejected.", result.stderr)
+
     def test_actual_build_features_and_profile(self):
         frames = [{"reason": "compiler-artifact", "target": {"name": name},
                    "profile": PROFILE, "features": features,
