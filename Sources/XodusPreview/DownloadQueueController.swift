@@ -8,10 +8,8 @@ import XodusManagement
 /// game-script engine in the shipping app and by a deterministic double in checks, without
 /// the orchestration logic (ordering, pause/resume/cancel) knowing which is in use.
 ///
-/// `run` returns the *natural* terminal event for a run that finished on its own
-/// (`.complete` or `.fail`). When a run is interrupted by `stop(runID:)`, the returned value
-/// is ignored by the controller — the controller has already recorded the user's intent
-/// (paused or cancelled) and never promotes an interrupted terminal over it.
+/// `run` returns the natural terminal event (`.complete` or `.fail`), or `.cancel` if the
+/// stop interrupted the run. The controller keeps its slot until that terminal is observed.
 protocol InstallQueueDriver: Sendable {
     func run(runID: String, job: InstallJob, destination: String,
              onProgress: @escaping @Sendable (InstallActivity, InstallProgress) async -> Void) async -> InstallEvent
@@ -26,7 +24,12 @@ protocol InstallQueueDriver: Sendable {
 /// defaults to one, matching the single-mutation guarantee the rest of the app relies on.
 @MainActor
 final class DownloadQueueController: ObservableObject {
+    enum StopIntent: Equatable {
+        case pause, cancel
+    }
+
     @Published private(set) var queue: InstallQueue
+    @Published private(set) var pendingStops: [UUID: StopIntent] = [:]
 
     private let driver: InstallQueueDriver
     private let makeRunID: @Sendable () -> String
@@ -58,14 +61,11 @@ final class DownloadQueueController: ObservableObject {
         return job.id
     }
 
-    /// Pauses an actively running job: the engine stops (partial files are kept) and a freed
-    /// slot is handed to the next queued job.
+    /// Requests a pause. The slot stays occupied until the engine actually stops.
     func pause(_ id: UUID) {
-        guard queue.job(id: id)?.phase.canPause == true else { return }
-        let runID = activeRunID[id]
-        let promoted = queue.apply(.pause, to: id)
-        if let runID { Task { await driver.stop(runID: runID) } }
-        launch(promoted)
+        guard queue.job(id: id)?.phase.canPause == true, pendingStops[id] == nil,
+              let runID = activeRunID[id] else { return }
+        requestStop(.pause, id: id, runID: runID)
     }
 
     /// Resumes a paused job by returning it to the queue; it restarts when a slot is free and
@@ -78,10 +78,16 @@ final class DownloadQueueController: ObservableObject {
     /// Cancels a job in any non-terminal phase, stopping the engine if it is running.
     func cancel(_ id: UUID) {
         guard let phase = queue.job(id: id)?.phase, phase.canCancel else { return }
-        let runID = activeRunID[id]
-        let promoted = queue.apply(.cancel, to: id)
-        if phase.occupiesSlot, let runID { Task { await driver.stop(runID: runID) } }
-        launch(promoted)
+        if pendingStops[id] == .pause {
+            pendingStops[id] = .cancel
+        } else if pendingStops[id] != nil {
+            return
+        } else if phase.occupiesSlot {
+            guard let runID = activeRunID[id] else { return }
+            requestStop(.cancel, id: id, runID: runID)
+        } else {
+            launch(queue.apply(.cancel, to: id))
+        }
     }
 
     /// Drops terminal jobs from the visible queue.
@@ -91,6 +97,14 @@ final class DownloadQueueController: ObservableObject {
     }
 
     // MARK: - Engine wiring
+
+    private func requestStop(_ intent: StopIntent, id: UUID, runID: String) {
+        pendingStops[id] = intent
+        Task { [weak self] in
+            guard let self, self.activeRunID[id] == runID, self.pendingStops[id] != nil else { return }
+            await self.driver.stop(runID: runID)
+        }
+    }
 
     private func launch(_ started: [InstallJob]) {
         for job in started {
@@ -111,8 +125,8 @@ final class DownloadQueueController: ObservableObject {
     }
 
     private func report(_ id: UUID, runID: String, activity: InstallActivity, progress: InstallProgress) {
-        // Discard progress from a superseded or already-interrupted run.
-        guard activeRunID[id] == runID, queue.job(id: id)?.phase.occupiesSlot == true else { return }
+        guard activeRunID[id] == runID, pendingStops[id] == nil,
+              queue.job(id: id)?.phase.occupiesSlot == true else { return }
         queue.apply(.report(activity, progress), to: id)
     }
 
@@ -122,18 +136,15 @@ final class DownloadQueueController: ObservableObject {
         guard activeRunID[id] == runID else { return }
         activeRunID[id] = nil
         runTasks[id] = nil
-        // A run's *natural* terminal (.complete/.fail) reflects work the engine already did on
-        // disk, so it must win even if a pause/cancel raced in just after the engine finished —
-        // otherwise a completed install would show as paused and be re-driven on resume. An
-        // interrupted terminal (.cancel, emitted when the engine is stopped) stays absorbed: the
-        // user's paused/cancelled intent is already recorded and the job keeps its partial files.
-        let isNaturalTerminal: Bool
+        let intent = pendingStops.removeValue(forKey: id)
+        let result: InstallEvent
         switch terminal {
-        case .complete, .fail: isNaturalTerminal = true
-        default: isNaturalTerminal = false
+        case .cancel:
+            result = intent == .pause ? .pause : .cancel
+        default:
+            result = terminal
         }
-        guard queue.job(id: id)?.phase.occupiesSlot == true || isNaturalTerminal else { return }
-        launch(queue.apply(terminal, to: id))
+        launch(queue.apply(result, to: id))
     }
 
     private func forget(_ id: UUID) {

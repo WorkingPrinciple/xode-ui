@@ -90,9 +90,11 @@ enum DownloadQueueChecks {
         check(controller.job(id: b)?.phase == .queued, "Progress on one job does not disturb a waiting job")
 
         controller.pause(a)
-        check(controller.job(id: a)?.phase == .paused, "An active job pauses")
+        check(controller.pendingStops[a] == .pause, "An active job records the pause request")
         try await settle { await engine.stops.contains(runA) }
         check(await engine.stops.contains(runA), "Pausing stops the engine run so partial files are kept")
+        try await settle { controller.job(id: a)?.phase == .paused }
+        check(controller.job(id: a)?.phase == .paused, "The job pauses after the engine stops")
         try await settle { controller.job(id: b)?.phase == .preparing }
         check(controller.job(id: b)?.phase == .preparing, "Pausing frees the slot and promotes the next job")
 
@@ -111,9 +113,11 @@ enum DownloadQueueChecks {
         let runA2 = await engine.activeRuns.first ?? ""
         check(runA2 != runA, "A resumed run uses a fresh engine run id")
         controller.cancel(a)
-        check(controller.job(id: a)?.phase == .cancelled, "A running job cancels")
+        check(controller.pendingStops[a] == .cancel, "A running job records the cancellation request")
         try await settle { await engine.stops.contains(runA2) }
         check(await engine.stops.contains(runA2), "Cancelling stops the active engine run")
+        try await settle { controller.job(id: a)?.phase == .cancelled }
+        check(controller.job(id: a)?.phase == .cancelled, "The job cancels after the engine stops")
 
         controller.clearFinished()
         check(controller.jobs.isEmpty, "Clearing finished jobs empties a fully terminal queue")
@@ -136,7 +140,7 @@ enum DownloadQueueChecks {
         try await settle { await raceEngine.activeRuns.count == 1 }
         let runX = await raceEngine.activeRuns.first ?? ""
         raceController.pause(x)
-        check(raceController.job(id: x)?.phase == .paused, "Pause is recorded while the engine run is still open")
+        check(raceController.pendingStops[x] == .pause, "Pause is recorded while the engine run is still open")
         await raceEngine.complete(runX)
         try await settle { raceController.job(id: x)?.phase == .completed }
         check(raceController.job(id: x)?.phase == .completed,
