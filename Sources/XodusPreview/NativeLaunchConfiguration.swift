@@ -112,6 +112,7 @@ struct NativeShimReference: Sendable {
     let directory: URL
     let hashes: [String: String]
     static let brotatoSourceCandidateID = "brotato-xcurl-source-schannel-candidate-01"
+    static let brotatoWeb03CandidateID = "brotato-source-xcurl-native-web-vector-web03-candidate-01"
 
     static let approved = Self(directory: URL(fileURLWithPath: NSHomeDirectory())
         .appendingPathComponent("Library/Application Support/Ode to X/Engines/profiles/native-web-shims-v1"),
@@ -370,16 +371,42 @@ struct NativeTitleLaunchProfile: Codable {
         let mirrored = crossOverEnvironment ?? [:]
         if productID == "9P9VNSQK1W3K" {
             let sourceCandidate = shimSet == NativeShimReference.brotatoSourceCandidateID
-            let validShimBinding = sourceCandidate
-                ? shimDirectory.map(Self.expand) == NativeShimReference.brotatoSourceCandidate.directory.path
+            let web03Candidate = shimSet == NativeShimReference.brotatoWeb03CandidateID
+            let validShimBinding: Bool
+            if sourceCandidate {
+                validShimBinding = shimDirectory.map(Self.expand) == NativeShimReference.brotatoSourceCandidate.directory.path
                     && candidateManifest == "A8 candidate-manifest.json"
                     && candidateManifestSHA256 == "1b22d36c4ce2eddbf5c3dd1e84c43ab5c9bcf5b7bb52bd14ff1ab6bc6a5ab983"
                     && engineRecipe == "BrotatoLoaderDiagnostic/9P9VNSQK1W3K.json"
                     && engineRecipeSHA256 == "84e79412ea69873c5dee75e2f833dba6245affdecd38509c5996e48fa4ed9076"
                     && diagnosticReceiptSHA256 == "0d6fd570654b4952e22b2f3ac2c02c6ec0f25c0a19745b9b775b3d80a0f4c3d1"
-                : shimDirectory == nil && shimSet == nil && candidateManifest == nil
+                    && prefixRegistryImports == nil && prefixOverlays == nil
+            } else if web03Candidate {
+                let registryImport = prefixRegistryImports?.first
+                let windowsWeb = prefixOverlays?.first
+                let winTypes = prefixOverlays?.dropFirst().first
+                validShimBinding = shimDirectory.map(Self.expand) == NativeShimReference.brotatoSourceCandidate.directory.path
+                    && candidateManifest == "BrotatoWeb03Candidate/manifest.json"
+                    && candidateManifestSHA256 == "95530323eb22fcbdfa91b5cb9d43f090a42d1758fc749246247f9b160f4ff17e"
+                    && engineRecipe == "BrotatoWeb03Candidate/Recipe/9P9VNSQK1W3K.json"
+                    && engineRecipeSHA256 == "3d9d3809481affe0b63ae7832f0c8987d5a247806b670f78a146b54964b3973c"
+                    && diagnosticReceiptSHA256 == "c8cc7790d331f5b36abdd769769ff23f1d998e53022760fe237564a026339895"
+                    && prefixRegistryImports?.count == 1
+                    && registryImport?.path == "${HOME}/Library/Application Support/Ode to X/Engines/profiles/brotato-web03-native-vector-v1/Vector.reg"
+                    && registryImport?.sha256 == "fd207f820aa20b6bfae50d712b3afd655adefa9f692864c1c3822ff1b93a6d80"
+                    && prefixOverlays?.count == 2
+                    && windowsWeb?.path == "${HOME}/Library/Application Support/Ode to X/Engines/profiles/brotato-web03-native-vector-v1/Windows.Web.dll"
+                    && windowsWeb?.sha256 == "6e334c81e31f428cd4f524cd5539d1825e8e55cb2df1faa102ba0c3df857dfe8"
+                    && windowsWeb?.destination == "drive_c/windows/system32/windows.web.dll"
+                    && winTypes?.path == "${HOME}/Library/Application Support/Ode to X/Engines/profiles/brotato-web03-native-vector-v1/wintypes.dll"
+                    && winTypes?.sha256 == "d19da3e350f70116097eb200a25aa31497415ed3999bb2d87faf7b724b7d2e74"
+                    && winTypes?.destination == "drive_c/windows/system32/wintypes.dll"
+            } else {
+                validShimBinding = shimDirectory == nil && shimSet == nil && candidateManifest == nil
                     && candidateManifestSHA256 == nil && engineRecipe == nil
                     && engineRecipeSHA256 == nil && diagnosticReceiptSHA256 == nil
+                    && prefixRegistryImports == nil && prefixOverlays == nil
+            }
             guard engine == "calimocho-11.20-4.0b3-06",
                   registrySHA256 == "fe35dba8938abbe3ca921cc4f92abd65ec8a539b1bac20ac5cf58a18213ce48d",
                   preservedPrefixPath == nil,
@@ -392,8 +419,10 @@ struct NativeTitleLaunchProfile: Codable {
                   runtime?.primaryPath == "${HOME}/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll",
                   runtime?.primarySHA256 == "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8",
                   runtime?.legacySHA256 == "cfe7e5f837fabc51b8066809ca69c2ee0a7852512afbb1979190ec495b0b8b96",
-                  requiredFiles == nil, prefixRegistryImports == nil, prefixOverlays == nil,
-                  dllOverrides == nil else { throw NativeLaunchError.invalidProfile }
+                  requiredFiles == nil,
+                  dllOverrides == nil else {
+                throw NativeLaunchError.invalidProfile
+            }
         } else if preservedPrefixPath != nil || registrySHA256 != nil {
             guard productID == "BQVQTL3PCH05",
                   engine == "calimocho-wine11.20-gptk4b3-tls-vulkan-private",
@@ -440,7 +469,8 @@ struct NativeTitleLaunchProfile: Codable {
             let expandedDirectory = Self.expand(directory)
             guard expandedDirectory.hasPrefix("/") else { throw NativeLaunchError.invalidProfile }
             let allowUnstagedCandidate = productID == "9P9VNSQK1W3K"
-                && shimSet == NativeShimReference.brotatoSourceCandidateID
+                && [NativeShimReference.brotatoSourceCandidateID,
+                    NativeShimReference.brotatoWeb03CandidateID].contains(shimSet ?? "")
             try GameScriptFiles.checkPath(URL(fileURLWithPath: expandedDirectory),
                                           allowMissing: allowUnstagedCandidate)
         }
@@ -459,17 +489,37 @@ struct NativeTitleLaunchProfile: Codable {
 
     func validatedLaunchEnvironment() throws -> [String: String] {
         var result = launchEnvironment
-        if shimSet == NativeShimReference.brotatoSourceCandidateID {
-            guard engineRecipe == "BrotatoLoaderDiagnostic/9P9VNSQK1W3K.json",
-                  engineRecipeSHA256 == "84e79412ea69873c5dee75e2f833dba6245affdecd38509c5996e48fa4ed9076" else {
-                throw NativeLaunchError.invalidProfile
+        if shimSet == NativeShimReference.brotatoSourceCandidateID
+            || shimSet == NativeShimReference.brotatoWeb03CandidateID {
+            let recipeURL: URL
+            let expectedRecipeHash: String
+            if shimSet == NativeShimReference.brotatoSourceCandidateID {
+                guard engineRecipe == "BrotatoLoaderDiagnostic/9P9VNSQK1W3K.json",
+                      engineRecipeSHA256 == "84e79412ea69873c5dee75e2f833dba6245affdecd38509c5996e48fa4ed9076" else {
+                    throw NativeLaunchError.invalidProfile
+                }
+                recipeURL = try LaunchRecipeResources.brotatoLoaderDiagnosticRecipeURL()
+                expectedRecipeHash = "84e79412ea69873c5dee75e2f833dba6245affdecd38509c5996e48fa4ed9076"
+            } else {
+                guard engineRecipe == "BrotatoWeb03Candidate/Recipe/9P9VNSQK1W3K.json",
+                      engineRecipeSHA256 == "3d9d3809481affe0b63ae7832f0c8987d5a247806b670f78a146b54964b3973c",
+                      candidateManifest == "BrotatoWeb03Candidate/manifest.json",
+                      candidateManifestSHA256 == "95530323eb22fcbdfa91b5cb9d43f090a42d1758fc749246247f9b160f4ff17e" else {
+                    throw NativeLaunchError.invalidProfile
+                }
+                recipeURL = try LaunchRecipeResources.brotatoWeb03CandidateRecipeURL()
+                expectedRecipeHash = "3d9d3809481affe0b63ae7832f0c8987d5a247806b670f78a146b54964b3973c"
+                let manifestURL = try LaunchRecipeResources.brotatoWeb03CandidateManifestURL()
+                let manifest = try InstalledGameFiles.readRegular(manifestURL, maximumBytes: 65_536)
+                let manifestHash = SHA256.hash(data: manifest).map { String(format: "%02x", $0) }.joined()
+                guard manifestHash == candidateManifestSHA256 else { throw NativeLaunchError.invalidProfile }
             }
-            let recipeURL = try LaunchRecipeResources.brotatoLoaderDiagnosticRecipeURL()
             let contents = try InstalledGameFiles.readRegular(recipeURL, maximumBytes: 65_536)
             let digest = SHA256.hash(data: contents).map { String(format: "%02x", $0) }.joined()
             let recipeDirectory = recipeURL.deletingLastPathComponent()
             let files = try FileManager.default.contentsOfDirectory(atPath: recipeDirectory.path)
-            guard digest == engineRecipeSHA256, Set(files) == ["9P9VNSQK1W3K.json"] else {
+            guard digest == expectedRecipeHash, digest == engineRecipeSHA256,
+                  Set(files) == ["9P9VNSQK1W3K.json"] else {
                 throw NativeLaunchError.invalidProfile
             }
             result["XODE_RECIPES_DIR"] = recipeDirectory.path
@@ -630,6 +680,8 @@ struct NativeLaunchConfiguration {
         let launchShims: NativeShimReference
         switch profile?.shimSet {
         case .some(NativeShimReference.brotatoSourceCandidateID):
+            launchShims = .brotatoSourceCandidate
+        case .some(NativeShimReference.brotatoWeb03CandidateID):
             launchShims = .brotatoSourceCandidate
         case .none:
             launchShims = shims

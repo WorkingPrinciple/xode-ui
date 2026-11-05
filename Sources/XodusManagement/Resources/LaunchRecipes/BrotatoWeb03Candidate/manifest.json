@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "candidate": "brotato-source-xcurl-native-web-vector-web03-candidate-01",
+  "status": "source candidate only; combined Brotato tuple not tested or accepted",
+  "candidateRecipeSHA256": "3d9d3809481affe0b63ae7832f0c8987d5a247806b670f78a146b54964b3973c",
+  "base": {
+    "sourceXCurlRecipeSHA256": "9b53f2ad3a5d82a22433f09dc41a45f6e3db401072c3d9e4734c361fd6340c9b",
+    "sourceXCurlProbeReceiptSHA256": "0d6fd570654b4952e22b2f3ac2c02c6ec0f25c0a19745b9b775b3d80a0f4c3d1",
+    "sourceXCurlSHA256": "5a0e410a4d769d623d86df1ea94031c0fb559b4a9787df910ceccf68e673a3a0",
+    "sourceCACertSHA256": "a41b5d356aea97a529fe27e0f7316d2f9d946d75927476cf9cf1b90637d00505",
+    "engine": "calimocho-11.20-4.0b3-06",
+    "registrySHA256": "fe35dba8938abbe3ca921cc4f92abd65ec8a539b1bac20ac5cf58a18213ce48d"
+  },
+  "web03Evidence": {
+    "packetSHA256": "a931bf7654c194992d0c2c45afab48142d9b85349259d22e9f05a145aa6e1bb6",
+    "receiptSHA256": "c8cc7790d331f5b36abdd769769ff23f1d998e53022760fe237564a026339895",
+    "nativeLogSHA256": "f9f37adfa1706383abb4392eccd808fd96103fbf4ce376cb22c74d6930766f79",
+    "windowsWeb": {
+      "sha256": "6e334c81e31f428cd4f524cd5539d1825e8e55cb2df1faa102ba0c3df857dfe8",
+      "bytes": 675840
+    },
+    "winTypes": {
+      "sha256": "d19da3e350f70116097eb200a25aa31497415ed3999bb2d87faf7b724b7d2e74",
+      "bytes": 1524624,
+      "guestLocalizedVersion": "10.0.26100.7705",
+      "embeddedVersion": "10.0.26100.9711"
+    },
+    "vectorRegistrationSourceManifestSHA256": "f3268e5ea27f66a83d96ea81219a0819192ce29532cba0189bf0c491b3a50d3b",
+    "vectorRegistration": {
+      "key": "HKLM\\SOFTWARE\\Microsoft\\WindowsRuntime\\ActivatableClassId\\Windows.Foundation.Collections.Detail.Vector",
+      "values": {
+        "ActivationType": {"type": "REG_DWORD", "data": "0"},
+        "DllPath": {"type": "REG_SZ", "data": "C:\\Windows\\System32\\wintypes.dll"},
+        "Threading": {"type": "REG_DWORD", "data": "0"},
+        "TrustLevel": {"type": "REG_DWORD", "data": "0"}
+      }
+    },
+    "scope": "A8 isolated fresh-prefix JSON WinRT probe only; not Brotato, XCurl, HTTP/TLS or product acceptance"
+  }
+}

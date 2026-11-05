@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "generation": 1,
+  "storeId": "9P9VNSQK1W3K",
+  "title": "Brotato source XCurl with Web03 native Windows.Web/vector candidate; not gameplay-qualified",
+  "graphics": "d3dMetal",
+  "launch": {
+    "dllOverrides": "mscoree,mshtml=;windows.web=n;wintypes=n;xgameruntime=n,b",
+    "esync": true,
+    "largeAddressAware": true,
+    "dxr": false,
+    "metalFx": false
+  }
+}
