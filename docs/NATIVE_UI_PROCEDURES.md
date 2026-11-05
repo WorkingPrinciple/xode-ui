@@ -105,6 +105,11 @@ access. Account-bound lifecycle access still requires confirmed sign-in and the
 negotiated account capability; title recipe, registry, runtime and prefix checks
 remain separate and unchanged. A detected-only engine message is not itself
 evidence of an account or connection failure.
+Unified Xbox access shows confirmation without disconnected copy when the native
+account is available. An absent account shows the connection warning; a genuine
+service error remains visible in either state. Engine-selection, game-operation
+and account-presentation checks cover these presentation decisions without
+starting authentication; installed account observation remains separate.
 Library hero scroll-target writeback publishes only an actual target change.
 Repeated writes of the same ID (including `nil`) must not invalidate the entire
 retained Library during SwiftUI scroll commits. `LibraryHeroWritebackChecks`

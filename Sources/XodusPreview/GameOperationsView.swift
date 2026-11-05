@@ -68,14 +68,24 @@ struct GameServiceSignInActions: View {
     var verifyIdentifier: String
     var setupRepairing = false
 
+    static func unifiedStatus(accountUnavailable: Bool, error: String?) -> (symbol: String, notice: String?) {
+        (accountUnavailable || error != nil ? "exclamationmark.circle" : "checkmark.circle",
+         error ?? (accountUnavailable ? "This runtime isn't connected to your Xbox Live account." : nil))
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             if operations.usesUnifiedAccount {
-                Label(operations.serviceLabel, systemImage: "exclamationmark.circle")
+                let status = Self.unifiedStatus(accountUnavailable: operations.installAccountUnavailable,
+                                                error: operations.serviceError)
+                Label(operations.serviceLabel, systemImage: status.symbol)
                     .accessibilityIdentifier(statusIdentifier)
-                Text(operations.serviceError ?? "This runtime isn't connected to your Xbox Live account.")
-                    .font(.callout).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                if let notice = status.notice {
+                    Text(notice)
+                        .font(.callout).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier(errorIdentifier)
+                }
             } else {
             Label(statusText, systemImage: operations.serviceAccountSymbol)
                 .accessibilityIdentifier(statusIdentifier)

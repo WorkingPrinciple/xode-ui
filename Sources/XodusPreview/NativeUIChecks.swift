@@ -35,6 +35,22 @@ private struct InstallSheetFixtureView: View {
 
 @MainActor
 enum NativeUIChecks {
+    static func checkUnifiedGameServiceStatus(check: (Bool, String) -> Void) {
+        let connected = GameServiceSignInActions.unifiedStatus(accountUnavailable: false, error: nil)
+        check(connected.symbol == "checkmark.circle" && connected.notice == nil,
+              "REQ219: Connected unified Xbox access shows confirmation without disconnected copy")
+        let disconnected = GameServiceSignInActions.unifiedStatus(accountUnavailable: true, error: nil)
+        check(disconnected.symbol == "exclamationmark.circle"
+              && disconnected.notice == "This runtime isn't connected to your Xbox Live account.",
+              "REQ219: Absent unified account shows the disconnected warning")
+        for unavailable in [false, true] {
+            let failed = GameServiceSignInActions.unifiedStatus(accountUnavailable: unavailable,
+                                                               error: "Account access check failed.")
+            check(failed.symbol == "exclamationmark.circle" && failed.notice == "Account access check failed.",
+                  "REQ219: A genuine service error remains visible regardless of unified account presence")
+        }
+    }
+
     static func checkCountryPendingLibrary(session: LiveSession, installed: InstalledGamesController,
                                            check: (Bool, String) -> Void) {
         let windows = NSApplication.shared.windows.count
