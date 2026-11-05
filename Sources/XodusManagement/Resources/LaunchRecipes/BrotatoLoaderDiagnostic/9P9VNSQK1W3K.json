@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "generation": 1,
+  "storeId": "9P9VNSQK1W3K",
+  "title": "Brotato local source-built XCurl candidate; not gameplay-qualified",
+  "graphics": "d3dMetal",
+  "launch": {
+    "dllOverrides": "mscoree,mshtml=;windows.web=b;xgameruntime=n,b",
+    "esync": true,
+    "largeAddressAware": true,
+    "dxr": false,
+    "metalFx": false,
+    "wineDebug": "-all,+timestamp,+loaddll,+seh"
+  }
+}

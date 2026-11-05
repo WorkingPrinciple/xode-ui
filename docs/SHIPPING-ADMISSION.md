@@ -608,6 +608,41 @@ The new route keeps the app's installation-specific prefix, not the old
 `430e9c33` proof prefix. Historical ebd56e gameplay/save evidence does not prove
 this a1aade app route; a separate approved live regression is still required.
 
+#### Diagnostic-only continuation of the local Calimocho candidate
+
+The source candidate selects a separate `BrotatoLoaderDiagnostic` recipe after actual run
+`df49ad4f-024d-467a-844d-3a8f8d0409c9` reached a black Engine-class window
+without a menu. This is diagnostic instrumentation, not a production fix or
+game acceptance. The diagnostic recipe has SHA-256
+`84e79412ea69873c5dee75e2f833dba6245affdecd38509c5996e48fa4ed9076`
+and adds only `launch.wineDebug: "-all,+timestamp,+loaddll,+seh"`.
+The ordinary producer recipe remains byte-identical at
+`9b53f2ad3a5d82a22433f09dc41a45f6e3db401072c3d9e4734c361fd6340c9b`;
+the historical/default profile still has an empty environment. Engine06,
+registry `fe35`, runtime `6c9d97`/`cfe7e5`, source XCurl/CA, builtin Windows.Web
+policy, title UUID/prefix and no-auto-dismiss behavior are unchanged.
+
+The frozen `fff97074` producer cannot run this diagnostic experiment. Its
+admitted registry overwrites inherited UI `WINEDEBUG` with `-all`, and its
+recipe schema derives no diagnostic value. The rejected `4f5d156` UI-only
+environment change therefore never reached Wine; this correction removes it.
+A separately reviewed producer must explicitly validate `launch.wineDebug`
+and derive exactly that `WINEDEBUG` value through the existing post-registry
+recipe application. A2 owns the producer seam and final-composed-environment
+regression. UI binding checks alone do not prove that downstream contract.
+Do not install or run this candidate with the frozen producer or an unverified
+replacement. Both UI profile environments remain empty; inherited environment
+filtering and registry admission are not relaxed, and no generic switch exists.
+
+Freeze/review and a separately sequenced install/runtime grant precede one
+changed-condition launch. Retain private `0600` stderr, stop at the first menu,
+fatal/repeating exception, human security/credential prompt, 90 seconds or
+8 MiB of output, then use app-owned Stop and observe cleanup. These execution
+bounds are the operator's required experiment protocol, not an automatic limit
+implemented by this source delta. Do not mix in native Windows.Web substitution,
+auth/token tracing, prefix deletion or an unchanged retry. Preserve the failed
+prefix and first-run evidence. No diagnostic execution is claimed here.
+
 ### Morning CLI-only WORKING additions
 
 The app bundles source-bound Hades II (CrossOver 26.3), Abiotic Factor
