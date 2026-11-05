@@ -151,12 +151,17 @@ enum InstalledGameChecks {
         let impact = GameUninstallImpact.inspect(game: original, runID: "impact-run", storageDirectory: storage,
                                                  recordedSave: insideSave)
         check(impact.packageFolder == folder.path
-              && impact.kept == [.init(kind: .prefix, path: bottle.deletingLastPathComponent().path, existed: true)]
+              && impact.kept.count == 1 && impact.kept[0].kind == .prefix
+              && impact.kept[0].path == bottle.deletingLastPathComponent().path && impact.kept[0].existed
+              && impact.kept[0].device != nil && impact.kept[0].inode != nil
               && impact.savesInsidePackage == [insideSave]
               && impact.engineOwners == [.init(prefix: bottle.path, engine: "apple-gptk-4.0b3", wineSHA256: "abc")]
               && impact.consentSummary.contains(bottle.deletingLastPathComponent().path)
               && impact.consentSummary.contains("will be deleted with it"),
               "REQ41/REQ102: Uninstall impact separates the package folder from the kept bottle and names saves inside the package")
+        check(impact.consentSummary.contains("Contents and save recovery are not verified.")
+              && !impact.consentSummary.contains("reuses the kept bottle"),
+              "REQ214A5: Uninstall consent does not equate location existence with preserved contents or save recovery")
         check(operations.uninstallImpact(for: original).kept.first?.path == bottle.deletingLastPathComponent().path,
               "REQ41: Consent inventory derives the kept bottle beside the installed registry")
         try impact.writeCheckpoint(storageDirectory: storage)
@@ -164,12 +169,21 @@ enum InstalledGameChecks {
         var duplicateRefused = false
         do { try impact.writeCheckpoint(storageDirectory: storage) } catch { duplicateRefused = true }
         check(recorded.kept == impact.kept && recorded.engineOwners == impact.engineOwners && duplicateRefused
-              && recorded.missingAfterUninstall().isEmpty,
+              && recorded.unconfirmedLocationsAfterUninstall().isEmpty,
               "COR412: Preservation checkpoint is durable, private, exact and never overwritten before uninstall")
         try FileManager.default.moveItem(at: bottle.deletingLastPathComponent(),
                                          to: storage.appendingPathComponent("moved-bottle"))
-        check(recorded.missingAfterUninstall() == [bottle.deletingLastPathComponent().path],
+        check(recorded.unconfirmedLocationsAfterUninstall() == [bottle.deletingLastPathComponent().path],
               "REQ41: A kept bottle that disappears is reported as missing instead of a successful uninstall")
+        try FileManager.default.createSymbolicLink(at: bottle.deletingLastPathComponent(),
+                                                   withDestinationURL: storage.appendingPathComponent("moved-bottle"))
+        check(recorded.unconfirmedLocationsAfterUninstall() == [bottle.deletingLastPathComponent().path],
+              "REQ214A5: A replacement symlink is not accepted as the original recorded directory")
+        try FileManager.default.removeItem(at: bottle.deletingLastPathComponent())
+        try FileManager.default.createDirectory(at: bottle.deletingLastPathComponent(), withIntermediateDirectories: false)
+        check(recorded.unconfirmedLocationsAfterUninstall() == [bottle.deletingLastPathComponent().path],
+              "REQ214A5: A replacement directory is not accepted as the original recorded directory")
+        try FileManager.default.removeItem(at: bottle.deletingLastPathComponent())
         try FileManager.default.moveItem(at: storage.appendingPathComponent("moved-bottle"),
                                          to: bottle.deletingLastPathComponent())
         await controller.remove(original)
@@ -192,6 +206,23 @@ enum InstalledGameChecks {
         let otherIdentity = try await reinstallStore.identity(forStoreID: "9OTHER000001")
         check(reinstallIdentity == original.id && otherIdentity != original.id,
               "REQ207: Uninstall then reinstall of the same product rejoins its retained bottle identity only")
+        let retainedFolder = folder.path + String(repeating: "/nested-folder", count: 40)
+        let priorIdentities = (0..<512).map {
+            RetainedGameIdentity(storeId: "retained-\($0)", id: UUID(), folder: retainedFolder, retainedAt: Date())
+        }
+        let retainedFile = await reinstallStore.retainedFile
+        let retainedData = try JSONEncoder().encode(priorIdentities)
+        try retainedData.write(to: retainedFile, options: .atomic)
+        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: retainedFile.path)
+        _ = try await reinstallStore.upsert(original)
+        _ = try await reinstallStore.remove(id: original.id)
+        let allIdentities = try await reinstallStore.loadRetained()
+        let oldestIdentity = try await reinstallStore.identity(forStoreID: priorIdentities[0].storeId)
+        check(allIdentities.count == 513 && oldestIdentity == priorIdentities[0].id
+              && Array(allIdentities.prefix(512)) == priorIdentities,
+              "REQ214A5: Removing a 513th product never evicts older retained bottle identities")
+        check(retainedData.count > 262_144 && allIdentities.last?.id == original.id,
+              "REQ214A5: Retained identities remain readable above the former read limit without truncation")
         try FileManager.default.removeItem(at: folder)
         await controller.discoverNativeInstallations(root: library)
         check(controller.games.count == 1,

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import AppKit
+import Darwin
 import Foundation
 import SwiftUI
 import XodusManagement
@@ -83,6 +84,8 @@ struct GameUninstallImpact: Codable, Equatable, Sendable {
         let kind: Kind
         let path: String
         let existed: Bool
+        var device: UInt64? = nil
+        var inode: UInt64? = nil
     }
     struct EngineOwner: Codable, Equatable, Sendable {
         let prefix: String
@@ -110,19 +113,23 @@ struct GameUninstallImpact: Codable, Equatable, Sendable {
         let package = URL(fileURLWithPath: game.folder).standardizedFileURL.path
         func inside(_ path: String) -> Bool { path == package || path.hasPrefix(package + "/") }
         func isDirectory(_ path: String) -> Bool {
-            var directory: ObjCBool = false
-            return fileManager.fileExists(atPath: path, isDirectory: &directory) && directory.boolValue
+            directoryIdentity(path) != nil
+        }
+        func location(_ kind: Location.Kind, path: String) -> Location {
+            let identity = directoryIdentity(path)
+            return Location(kind: kind, path: path, existed: identity != nil,
+                            device: identity?.device, inode: identity?.inode)
         }
         let root = storageDirectory.appendingPathComponent("Prefixes/\(game.id.uuidString)").standardizedFileURL.path
         var prefixes = [root]
         for path in additionalPrefixes.map({ URL(fileURLWithPath: $0).standardizedFileURL.path })
         where !prefixes.contains(path) && !inside(path) { prefixes.append(path) }
-        var kept = prefixes.map { Location(kind: .prefix, path: $0, existed: isDirectory($0)) }
+        var kept = prefixes.map { location(.prefix, path: $0) }
         var savesInside: [String] = []
         if let recordedSave {
             let save = URL(fileURLWithPath: recordedSave).standardizedFileURL.path
             if inside(save) { savesInside.append(save) }
-            else { kept.append(Location(kind: .saves, path: save, existed: isDirectory(save))) }
+            else { kept.append(location(.saves, path: save)) }
         }
         var bottles: [URL] = prefixes.dropFirst().map { URL(fileURLWithPath: $0) }
         if let engines = try? fileManager.contentsOfDirectory(atPath: root) {
@@ -143,14 +150,23 @@ struct GameUninstallImpact: Codable, Equatable, Sendable {
                     evidenceVerdict: evidence.map { "\($0.verdict)" }, recordedAt: Date())
     }
 
-    var hasPreservedData: Bool { kept.contains(where: \.existed) }
+    var hasRecordedLocations: Bool { kept.contains(where: \.existed) }
 
-    /// Kept locations that existed before uninstall and are gone now.
-    func missingAfterUninstall() -> [String] {
+    private static func directoryIdentity(_ path: String) -> (device: UInt64, inode: UInt64)? {
+        do { try GameScriptFiles.checkPath(URL(fileURLWithPath: path)) }
+        catch { return nil }
+        var info = stat()
+        guard lstat(path, &info) == 0, info.st_mode & S_IFMT == S_IFDIR else { return nil }
+        return (UInt64(truncatingIfNeeded: info.st_dev), UInt64(info.st_ino))
+    }
+
+    /// Directory identity only: matching locations do not prove that their contents survived.
+    func unconfirmedLocationsAfterUninstall() -> [String] {
         kept.filter { location in
-            var directory: ObjCBool = false
-            return location.existed && !(FileManager.default.fileExists(atPath: location.path, isDirectory: &directory)
-                && directory.boolValue)
+            guard location.existed else { return false }
+            guard let identity = Self.directoryIdentity(location.path),
+                  let device = location.device, let inode = location.inode else { return true }
+            return identity.device != device || identity.inode != inode
         }.map(\.path)
     }
 
@@ -158,16 +174,17 @@ struct GameUninstallImpact: Codable, Equatable, Sendable {
         var lines = ["Deletes only the game's package folder: \(packageFolder)"]
         let existing = kept.filter(\.existed)
         if existing.isEmpty {
-            lines.append("Ode to X hasn't created a bottle or recorded saves for this game yet, so there is nothing else to keep.")
+            lines.append("No recorded bottle or save locations were found. Saves may exist elsewhere.")
         } else {
-            lines.append("Keeps \(existing.count == 1 ? "this location" : "these locations"): "
+            lines.append("Intended to leave \(existing.count == 1 ? "this location" : "these locations") untouched: "
                 + existing.map(\.path).joined(separator: ", "))
         }
         if !savesInsidePackage.isEmpty {
             lines.append("Recorded saves inside the package folder will be deleted with it: "
                 + savesInsidePackage.joined(separator: ", ") + ". Back them up first.")
         }
-        lines.append("Reinstalling or finding this installation again reuses the kept bottle.")
+        lines.append("Reinstalling or finding this installation again reuses its recorded game identity.")
+        lines.append("Contents and save recovery are not verified.")
         return lines.joined(separator: "\n")
     }
 

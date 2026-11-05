@@ -271,7 +271,7 @@ actor InstalledGameStore {
             guard errno == ENOENT else { throw InstalledGameError.invalidRegistry }
             return []
         }
-        let data = try InstalledGameFiles.readRegular(retainedFile, maximumBytes: 262_144, privateFile: true)
+        let data = try InstalledGameFiles.readRegular(retainedFile, maximumBytes: 1_048_576, privateFile: true)
         let entries = try JSONDecoder().decode([RetainedGameIdentity].self, from: data)
         guard Set(entries.map(\.storeId)).count == entries.count, Set(entries.map(\.id)).count == entries.count,
               entries.allSatisfy({ !$0.storeId.isEmpty && $0.folder.hasPrefix("/") }) else {
@@ -356,7 +356,7 @@ actor InstalledGameStore {
             var retained = try loadRetained().filter { $0.storeId != removed.storeId && $0.id != removed.id }
             retained.append(RetainedGameIdentity(storeId: removed.storeId, id: removed.id,
                                                  folder: removed.folder, retainedAt: Date()))
-            try saveRetained(Array(retained.suffix(512)))
+            try saveRetained(retained)
         }
         games.removeAll { $0.id == id }
         try save(games)

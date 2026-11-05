@@ -1028,18 +1028,21 @@ final class GameOperationsController: ObservableObject {
     private func uninstallResult(_ record: GameOperationRecord) -> (notice: String?, error: String?) {
         guard let impact = try? GameUninstallImpact.readCheckpoint(storageDirectory: installed.storageDirectory,
                                                                    runID: record.id) else {
-            return (nil, "\(record.title) was uninstalled, but Ode to X couldn't confirm its bottle and saves were kept. "
-                + "Check \(installed.storageDirectory.appendingPathComponent("Prefixes").path) before reinstalling.")
+            return (nil, "\(record.title) was uninstalled, but its recorded locations couldn't be checked. "
+                + "Contents and save recovery are not verified. Check "
+                + "\(installed.storageDirectory.appendingPathComponent("Prefixes").path) before reinstalling.")
         }
-        let missing = impact.missingAfterUninstall()
-        guard missing.isEmpty else {
-            return (nil, "\(record.title) was uninstalled, but locations that should have been kept are missing: "
-                + missing.joined(separator: ", ") + ". Restore them from a backup before reinstalling.")
+        let unconfirmed = impact.unconfirmedLocationsAfterUninstall()
+        guard unconfirmed.isEmpty else {
+            return (nil, "\(record.title) was uninstalled, but recorded locations are missing, replaced, or couldn't be checked: "
+                + unconfirmed.joined(separator: ", ")
+                + ". Contents and save recovery are not verified. Check these locations before reinstalling.")
         }
-        var notice = impact.hasPreservedData
-            ? "\(record.title) was uninstalled. Its bottle and saves were kept for reinstalling."
-            : "\(record.title) was uninstalled. Ode to X hadn't created a bottle or recorded saves for it."
-        if !impact.savesInsidePackage.isEmpty { notice += " Saves inside the game folder were removed with it." }
+        var notice = impact.hasRecordedLocations
+            ? "\(record.title) was uninstalled. Recorded locations still exist."
+            : "\(record.title) was uninstalled. No recorded bottle or save locations were found before uninstall. Saves may exist elsewhere."
+        notice += " Contents and save recovery are not verified."
+        if !impact.savesInsidePackage.isEmpty { notice += " Recorded saves inside the game folder were in the removal scope." }
         return (notice, nil)
     }
 

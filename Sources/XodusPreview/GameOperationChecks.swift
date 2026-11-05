@@ -1306,6 +1306,8 @@ enum GameOperationChecks {
         check(installed.games.count == 1 && operations.error?.contains("couldn't be preserved") == true,
               "S6 code 20 explicitly preserves the installed entry after save-preservation refusal")
         try writeMode("success")
+        let recordedPrefix = installed.storageDirectory.appendingPathComponent("Prefixes/\(repaired.id.uuidString)")
+        try FileManager.default.createDirectory(at: recordedPrefix, withIntermediateDirectories: true)
         operations.prepareUninstall(repaired)
         operations.confirmUninstall(repaired)
         await operations.waitForMutation()
@@ -1315,8 +1317,10 @@ enum GameOperationChecks {
         let checkpoints = try FileManager.default.contentsOfDirectory(
             atPath: installed.storageDirectory.appendingPathComponent("LifecycleCheckpoints").path)
         check(checkpoints.count == 2 && operations.error == nil
-              && operations.notice?.contains("hadn't created a bottle") == true,
-              "COR412/REQ41: Every uninstall attempt records a preservation checkpoint first and reports verified kept data")
+              && operations.notice?.contains("Recorded locations still exist.") == true
+              && operations.notice?.contains("Contents and save recovery are not verified.") == true
+              && operations.notice?.contains("saves were kept") == false,
+              "COR412/REQ214A5: Uninstall checkpoints precede transport; result reports location existence, not preserved saves")
         let uninstallCalls = try String(contentsOf: root.appendingPathComponent("uninstall-calls"), encoding: .utf8)
         let afterUninstall = LibraryGame.collection(installed: installed.games, owned: [game],
             products: [], gamePass: [], active: false)[0]
