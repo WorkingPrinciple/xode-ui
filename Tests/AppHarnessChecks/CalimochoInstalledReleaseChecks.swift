@@ -43,9 +43,10 @@ final class CalimochoInstalledReleaseChecks: XCTestCase {
 
     @MainActor
     func testRealInstalledReleaseDetectionNeedsServiceBeforeSelection() async throws {
-        _ = try installedRelease()
+        let release = try installedRelease()
         let defaults = try isolatedDefaults()
         defer { defaults.removePersistentDomain(forName: defaultsSuite) }
+        defaults.set(release.registry.path, forKey: "Xodus.lifecycle.registry")
         EngineDefaults.setDefaultEngine(.crossover, defaults)
         let before = defaults.dictionaryRepresentation() as NSDictionary
         let controller = CalimochoEngineController(defaults: defaults)
@@ -66,6 +67,7 @@ final class CalimochoInstalledReleaseChecks: XCTestCase {
         let configuration = try installedConfiguration()
         let defaults = try isolatedDefaults()
         defer { defaults.removePersistentDomain(forName: defaultsSuite) }
+        defaults.set(release.registry.path, forKey: "Xodus.lifecycle.registry")
         EngineDefaults.setDefaultEngine(.crossover, defaults)
         let before = defaults.dictionaryRepresentation() as NSDictionary
         let controller = CalimochoEngineController(defaults: defaults)
@@ -94,9 +96,10 @@ final class CalimochoInstalledReleaseChecks: XCTestCase {
 
     @MainActor
     func testRealInspectionFailureAndCancellationPreserveExplicitChoice() async throws {
-        _ = try installedRelease()
+        let release = try installedRelease()
         let defaults = try isolatedDefaults()
         defer { defaults.removePersistentDomain(forName: defaultsSuite) }
+        defaults.set(release.registry.path, forKey: "Xodus.lifecycle.registry")
         EngineDefaults.setDefaultEngine(.crossover, defaults)
         let before = defaults.dictionaryRepresentation() as NSDictionary
         let executable = URL(fileURLWithPath: "/usr/bin/false")
@@ -118,10 +121,11 @@ final class CalimochoInstalledReleaseChecks: XCTestCase {
 
     @MainActor
     func testChoiceChangedDuringRealAdmissionIsNotOverwritten() async throws {
-        _ = try installedRelease()
+        let release = try installedRelease()
         let configuration = try installedConfiguration()
         let defaults = try isolatedDefaults()
         defer { defaults.removePersistentDomain(forName: defaultsSuite) }
+        defaults.set(release.registry.path, forKey: "Xodus.lifecycle.registry")
         EngineDefaults.setDefaultEngine(.crossover, defaults)
         let controller = CalimochoEngineController(defaults: defaults)
         controller.refresh(configuration: configuration, selectAsDefault: true)
@@ -130,6 +134,28 @@ final class CalimochoInstalledReleaseChecks: XCTestCase {
         await controller.waitForRefresh()
         guard case .failed = controller.state else { return XCTFail("Concurrent choice must refuse stale commit") }
         XCTAssertEqual(defaults.dictionaryRepresentation() as NSDictionary, changed)
+    }
+
+    func testDivergentRealRegistriesRequireTheSavedPreference() throws {
+        let selected = try installedRelease()
+        let records = try FileManager.default.contentsOfDirectory(
+            at: CalimochoInstalledRelease.registriesRoot, includingPropertiesForKeys: nil).filter {
+                $0.lastPathComponent.hasPrefix(CalimochoInstalledRelease.engineName + "-") && $0.pathExtension == "json"
+            }
+        let digests = try Set(records.map { try NativeEngineRegistry.read($0).byteDigest })
+        if digests.count > 1 {
+            XCTAssertThrowsError(try CalimochoInstalledRelease.locate()) {
+                guard case CalimochoInstalledRelease.Failure.ambiguousRegistry = $0 else {
+                    return XCTFail("Divergent genuine records must refuse an implicit choice: \($0)")
+                }
+            }
+            print("Genuine installed registries have \(digests.count) different digests; no-preference lookup refused ambiguity.")
+        } else {
+            XCTAssertEqual(try CalimochoInstalledRelease.locate().registrySHA256, selected.registrySHA256)
+        }
+        let preferred = try savedPreferredRegistry()
+        XCTAssertEqual(selected.registry.path, preferred, "Success must use the exact saved choice, not enumeration order")
+        XCTAssertEqual(try CalimochoInstalledRelease.locate(preferredRegistry: preferred).registry.path, preferred)
     }
 
     @MainActor
@@ -183,7 +209,19 @@ final class CalimochoInstalledReleaseChecks: XCTestCase {
         guard FileManager.default.fileExists(atPath: engine.path) else {
             throw XCTSkip("The genuine pinned Calimocho release is not installed on this host.")
         }
-        return try CalimochoInstalledRelease.locate()
+        let preferred = try savedPreferredRegistry()
+        let release = try CalimochoInstalledRelease.locate(preferredRegistry: preferred)
+        guard release.registry.path == preferred else { throw NativeLaunchError.selectionChanged }
+        return release
+    }
+
+    private func savedPreferredRegistry() throws -> String {
+        let app = try XCTUnwrap(Bundle(url: URL(fileURLWithPath: "/Applications/Ode to X.app")),
+                                "The actual installed app is required to identify its preference domain.")
+        let identifier = try XCTUnwrap(app.bundleIdentifier)
+        return try XCTUnwrap(CFPreferencesCopyAppValue("Xodus.lifecycle.registry" as CFString,
+                                                       identifier as CFString) as? String,
+                             "The actual installed app must have an explicit saved registry choice.")
     }
 
     private func installedConfiguration() throws -> BackendConfiguration {

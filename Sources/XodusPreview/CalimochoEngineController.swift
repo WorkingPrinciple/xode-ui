@@ -75,6 +75,7 @@ final class CalimochoEngineController: ObservableObject {
             .flatMap { $0.inspection.engineName.flatMap(CalimochoRelease.init(rawValue:)) }
         let preferredRelease = selectAsDefault ? (detectedRelease ?? savedRelease) : savedRelease
         let root = root, registries = registries
+        updateMessage = nil
         state = .checking
         task = Task { [self] in
             do {
@@ -144,6 +145,7 @@ final class CalimochoEngineController: ObservableObject {
         if case .verified(let selection) = state { previous = selection } else { previous = nil }
         let switchDefault = previous?.inspection.engineName == CalimochoRelease.release04.rawValue
             && EngineDefaults.defaultEngine(defaults) == .calimocho
+        updateMessage = nil
         do {
             if switchDefault {
                 guard let saved = defaults.data(forKey: NativeEngineDefaults.preferenceKey),
@@ -198,6 +200,7 @@ final class CalimochoEngineController: ObservableObject {
         let key = "Xodus.calimocho.lastUpdateCheck"
         if !force, let date = defaults.object(forKey: key) as? Date,
            Date().timeIntervalSince(date) >= 0, Date().timeIntervalSince(date) < 86_400 { return }
+        updateMessage = nil
         checkingUpdates = true
         updateTask = Task { [self] in
             defer { checkingUpdates = false; updateTask = nil }
@@ -242,7 +245,8 @@ final class CalimochoEngineController: ObservableObject {
                     updateMessage = isVerified ? "Your pinned Calimocho release is up to date." : "The pinned Calimocho release is available to download."
                 }
                 defaults.set(Date(), forKey: key)
-            } catch is CancellationError {
+            } catch let error where error is CancellationError
+                || (Task.isCancelled && (error as? URLError)?.code == .cancelled) {
                 updateMessage = "The update check was canceled."
             } catch {
                 updateMessage = "Calimocho updates couldn't be checked: \(error.localizedDescription)"

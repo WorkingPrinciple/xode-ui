@@ -119,10 +119,12 @@ final class CalimochoReleaseUpdateChecks: XCTestCase {
         XCTAssertFalse(installed.mutationActive)
         XCTAssertFalse(installed.runtimeRepairActive)
         controller.obtainLatest(configuration: configuration, operations: operations, cachedArchive: newerArchive)
+        XCTAssertNil(controller.updateMessage, "A new attempt must retire the previous success message")
         EngineDefaults.setDefaultEngine(.crossover, defaults)
         let concurrentChoice = defaults.dictionaryRepresentation() as NSDictionary
         await controller.waitForRefresh()
         guard case .failed = controller.state else { return XCTFail("The changed explicit choice must refuse stale selection") }
+        XCTAssertNil(controller.updateMessage, "A failed attempt must not retain an earlier update-success message")
         XCTAssertEqual(defaults.dictionaryRepresentation() as NSDictionary, concurrentChoice)
         XCTAssertFalse(installed.mutationActive)
         controller.refresh(configuration: configuration, selectAsDefault: true)
@@ -154,6 +156,59 @@ final class CalimochoReleaseUpdateChecks: XCTestCase {
         XCTAssertTrue(stopped)
         try await installer.close()
         print("Genuine04->06 evidence retained at \(directory.path); both complete engines and no-smoke registries retained. Only isolated defaults \(domain) were changed and removed.")
+    }
+
+    @MainActor
+    func testRealReleaseCheckCancellationReportsCancellation() async throws {
+        let domain = "io.github.dragoshont.ode.check-cancel.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
+        defer { defaults.removePersistentDomain(forName: domain) }
+        let controller = CalimochoEngineController(defaults: defaults)
+        controller.checkForUpdates(force: true)
+        let stopped = await controller.shutdownForApplicationTermination()
+        XCTAssertTrue(stopped)
+        XCTAssertFalse(controller.checkingUpdates)
+        XCTAssertEqual(controller.updateMessage, "The update check was canceled.")
+        XCTAssertNil(defaults.object(forKey: "Xodus.calimocho.lastUpdateCheck"),
+                     "A canceled public request must not consume the daily successful-check interval")
+    }
+
+    @MainActor
+    func testRealDownloadRequestCancellationPreservesChoice() async throws {
+        let configuration = try configuration()
+        let directory = artifactDirectory.appendingPathComponent("calimocho-request-cancel-\(UUID().uuidString)")
+        let engines = directory.appendingPathComponent("Engines")
+        let domain = "io.github.dragoshont.ode.request-cancel.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
+        defer { defaults.removePersistentDomain(forName: domain) }
+        EngineDefaults.setDefaultEngine(.crossover, defaults)
+        let before = defaults.dictionaryRepresentation() as NSDictionary
+        let installed = InstalledGamesController(store: InstalledGameStore(file: directory.appendingPathComponent("games.json")),
+                                                discoveryRoot: directory.appendingPathComponent("Games"))
+        await installed.load()
+        let operations = GameOperationsController(installed: installed)
+        let controller = CalimochoEngineController(defaults: defaults, root: engines,
+                                                 registries: directory.appendingPathComponent("Registries"))
+        controller.obtainLatest(configuration: configuration, operations: operations)
+        // Yield until obtain has created its stage and is awaiting the real anonymous HTTPS request.
+        let deadline = ContinuousClock.now.advanced(by: .seconds(5))
+        while !FileManager.default.fileExists(atPath: engines.path), ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        XCTAssertTrue(FileManager.default.fileExists(atPath: engines.path))
+        XCTAssertTrue(controller.isWorking)
+        controller.cancel()
+        await controller.waitForRefresh()
+        XCTAssertEqual(controller.state, .canceled, "Canceling URLSession work must not report an installation failure")
+        XCTAssertEqual(defaults.dictionaryRepresentation() as NSDictionary, before)
+        XCTAssertFalse(installed.mutationActive)
+        XCTAssertFalse(installed.runtimeRepairActive)
+        XCTAssertFalse(try FileManager.default.contentsOfDirectory(atPath: engines.path).contains {
+            $0.hasPrefix(".calimocho-install-") || $0 == CalimochoRelease.release06.rawValue
+        })
+        let stopped = await controller.shutdownForApplicationTermination()
+        XCTAssertTrue(stopped)
+        try FileManager.default.removeItem(at: directory)
     }
 
     @MainActor

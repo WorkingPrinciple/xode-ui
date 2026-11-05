@@ -175,6 +175,63 @@ inspection and removes its isolated preferences. No fake provider or engine is
 used. Source/pipeline checks do not prove an installed native-app update, Wine
 execution, ordinary gameplay/quit or game download/uninstall/reinstall acceptance.
 
+### Updater failure, cancellation and choice preservation
+
+The real request-cancellation check starts the production anonymous HTTPS
+downloader in an isolated root, cancels after staging begins, and requires
+**Canceled**, unchanged preferences, no published06/staging residue and released
+operation ownership. The real public-release check also requires canceled
+requests to report cancellation without recording a successful daily check.
+URLSession's canceled-request error is normalized only when the owning task
+was canceled; storage, integrity and cleanup errors remain failures. A new
+refresh, obtain or release check clears the previous update message so an
+earlier success cannot accompany a later failed attempt.
+
+For installed acceptance, only the parent's exclusive native-input owner runs
+the following procedure on the recorded app/CLI pair. Do not copy isolated
+preferences back into the app or change canonical files to manufacture failure.
+
+1. Before interaction, capture only the agreed title's persisted engine fields.
+   The store is `~/Library/Application Support/Xodus/installed-games.json`, a
+   top-level JSON array. For the agreed `storeId`, retain `id`,
+   `engineOverrideV2`, `engineOverride` and `engineSelection`, including whether
+   each optional field is absent. V2 has `version`, `selection` (registry path
+   and full inspection) and `chosenAt`; absence means **Use default**, not an
+   explicit override. Retain the five engine preferences named by
+   `CalimochoEngineController.preferenceKeys`, not the complete preference
+   domain. If relevant, retain only this title's
+   `Xodus.lifecycle.fallback.<storeId>` and the existing profile selected through
+   `Xodus.lifecycle.profileDirectory`; do not rewrite recipes or prefixes.
+2. With both genuine releases already present, use Settings > Engines to
+   explicitly select verified04, then **Update Calimocho**. During verification
+   of the existing06, choose **Cancel**. Record whether cancellation actually
+   won the race: a completed update is not a cancellation pass. Require the
+   canceled state, preserved04 default/admission and byte-identical title
+   choices and engine records. **Check Again** must recover verification and
+   allow a subsequent update. Never delete06 to force a longer operation.
+3. Repeat without cancellation, comparing the same fields before and after.
+   Only the unchanged explicit04 default/admission may advance to06.
+   An existing title override must remain exactly unchanged; absence before
+   and after proves only default-following preservation. No captured
+   pre-update baseline means preservation is unproven, not retroactively
+   inferred from the current store.
+4. Record any naturally observed admission/download failure and repeat the
+   same preservation/recovery checks. With a valid existing06, installed
+   download/final-admission failure cannot safely be forced through the
+   current UI within this procedure. Leave that native branch unverified;
+   the real unsupported-verifier and wrong-genuine-archive checks above
+   establish isolated failure handling only. Do not corrupt engines, swap
+   the installed backend, alter permissions or invent a test flag.
+
+Multiple differing registries without an explicit preferred path intentionally
+fail with `ambiguousRegistry`; do not remove records or choose arbitrarily to
+make a check pass. `CalimochoInstalledReleaseChecks` requires the actual
+installed app's explicitly saved `Xodus.lifecycle.registry`. Its success
+checks read only that preference from
+the installed bundle's domain and copy it into isolated defaults; a separate
+check requires no-preference lookup to refuse genuinely divergent records.
+The updater checks use isolated genuine release roots.
+
 Controlled packaging now pins unsigned backend809dd6f and its actual
 `xode-control: live` features. The historical released CLI/helper/manifest retain
 their separate original producer pins; a current sealed build is not permission

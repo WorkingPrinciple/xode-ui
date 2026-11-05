@@ -243,7 +243,11 @@ final class CalimochoReleaseInstaller {
             try handle.synchronize()
             guard received == release.archiveBytes else { throw CalimochoInstallFailure.integrity }
         }
-        try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }
+        do {
+            try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }
+        } catch let error as URLError where error.code == .cancelled && Task.isCancelled {
+            throw CancellationError()
+        }
     }
 
     private func extract(_ archive: URL, to destination: URL) async throws {
