@@ -1351,7 +1351,46 @@
                     "message": {
                       "const": "Authenticated read failed: credentialUnavailable."
                     }
-                  }
+                  },
+                  "allOf": [
+                    {
+                      "if": {
+                        "properties": {
+                          "details": {
+                            "properties": {
+                              "stage": {
+                                "const": "throttled"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "then": {
+                        "properties": {
+                          "details": {
+                            "properties": {
+                              "retryAfterSeconds": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 18446744073709551615
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "else": {
+                        "properties": {
+                          "details": {
+                            "not": {
+                              "required": [
+                                "retryAfterSeconds"
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
                 }
               },
               {
@@ -1377,7 +1416,46 @@
                     "message": {
                       "const": "Authenticated read failed: profileChanged."
                     }
-                  }
+                  },
+                  "allOf": [
+                    {
+                      "if": {
+                        "properties": {
+                          "details": {
+                            "properties": {
+                              "stage": {
+                                "const": "throttled"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "then": {
+                        "properties": {
+                          "details": {
+                            "properties": {
+                              "retryAfterSeconds": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 18446744073709551615
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "else": {
+                        "properties": {
+                          "details": {
+                            "not": {
+                              "required": [
+                                "retryAfterSeconds"
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
                 }
               },
               {
@@ -1403,33 +1481,46 @@
                     "message": {
                       "const": "Authenticated read failed: authExchangeFailed."
                     }
-                  }
-                }
-              },
-              {
-                "if": {
-                  "properties": {
-                    "details": {
-                      "properties": {
-                        "stage": {
-                          "const": "throttled"
+                  },
+                  "allOf": [
+                    {
+                      "if": {
+                        "properties": {
+                          "details": {
+                            "properties": {
+                              "stage": {
+                                "const": "throttled"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "then": {
+                        "properties": {
+                          "details": {
+                            "properties": {
+                              "retryAfterSeconds": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 18446744073709551615
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "else": {
+                        "properties": {
+                          "details": {
+                            "not": {
+                              "required": [
+                                "retryAfterSeconds"
+                              ]
+                            }
+                          }
                         }
                       }
                     }
-                  }
-                },
-                "then": {
-                  "properties": {
-                    "code": {
-                      "const": "NETWORK_UNAVAILABLE"
-                    },
-                    "retryable": {
-                      "const": true
-                    },
-                    "message": {
-                      "const": "Authenticated read failed: throttled."
-                    }
-                  }
+                  ]
                 }
               },
               {
@@ -1455,7 +1546,46 @@
                     "message": {
                       "const": "Authenticated read failed: authRejected."
                     }
-                  }
+                  },
+                  "allOf": [
+                    {
+                      "if": {
+                        "properties": {
+                          "details": {
+                            "properties": {
+                              "stage": {
+                                "const": "throttled"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "then": {
+                        "properties": {
+                          "details": {
+                            "properties": {
+                              "retryAfterSeconds": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 18446744073709551615
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "else": {
+                        "properties": {
+                          "details": {
+                            "not": {
+                              "required": [
+                                "retryAfterSeconds"
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
                 }
               },
               {
@@ -1481,7 +1611,46 @@
                     "message": {
                       "const": "Authenticated read failed: transportFailed."
                     }
-                  }
+                  },
+                  "allOf": [
+                    {
+                      "if": {
+                        "properties": {
+                          "details": {
+                            "properties": {
+                              "stage": {
+                                "const": "throttled"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "then": {
+                        "properties": {
+                          "details": {
+                            "properties": {
+                              "retryAfterSeconds": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 18446744073709551615
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "else": {
+                        "properties": {
+                          "details": {
+                            "not": {
+                              "required": [
+                                "retryAfterSeconds"
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
                 }
               },
               {
@@ -1507,7 +1676,46 @@
                     "message": {
                       "const": "Authenticated read failed: responseInvalid."
                     }
-                  }
+                  },
+                  "allOf": [
+                    {
+                      "if": {
+                        "properties": {
+                          "details": {
+                            "properties": {
+                              "stage": {
+                                "const": "throttled"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "then": {
+                        "properties": {
+                          "details": {
+                            "properties": {
+                              "retryAfterSeconds": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 18446744073709551615
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "else": {
+                        "properties": {
+                          "details": {
+                            "not": {
+                              "required": [
+                                "retryAfterSeconds"
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
                 }
               },
               {
@@ -1533,7 +1741,111 @@
                     "message": {
                       "const": "Authenticated read failed: packageUnavailable."
                     }
+                  },
+                  "allOf": [
+                    {
+                      "if": {
+                        "properties": {
+                          "details": {
+                            "properties": {
+                              "stage": {
+                                "const": "throttled"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "then": {
+                        "properties": {
+                          "details": {
+                            "properties": {
+                              "retryAfterSeconds": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 18446744073709551615
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "else": {
+                        "properties": {
+                          "details": {
+                            "not": {
+                              "required": [
+                                "retryAfterSeconds"
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "details": {
+                      "properties": {
+                        "stage": {
+                          "const": "throttled"
+                        }
+                      }
+                    }
                   }
+                },
+                "then": {
+                  "properties": {
+                    "code": {
+                      "const": "NETWORK_UNAVAILABLE"
+                    },
+                    "retryable": {
+                      "const": true
+                    },
+                    "message": {
+                      "const": "Authenticated read failed: throttled."
+                    }
+                  },
+                  "allOf": [
+                    {
+                      "if": {
+                        "properties": {
+                          "details": {
+                            "properties": {
+                              "stage": {
+                                "const": "throttled"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "then": {
+                        "properties": {
+                          "details": {
+                            "properties": {
+                              "retryAfterSeconds": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 18446744073709551615
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "else": {
+                        "properties": {
+                          "details": {
+                            "not": {
+                              "required": [
+                                "retryAfterSeconds"
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
                 }
               }
             ]
@@ -1588,7 +1900,46 @@
                     "message": {
                       "const": "Recent library read failed: credentialUnavailable."
                     }
-                  }
+                  },
+                  "allOf": [
+                    {
+                      "if": {
+                        "properties": {
+                          "details": {
+                            "properties": {
+                              "stage": {
+                                "const": "throttled"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "then": {
+                        "properties": {
+                          "details": {
+                            "properties": {
+                              "retryAfterSeconds": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 18446744073709551615
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "else": {
+                        "properties": {
+                          "details": {
+                            "not": {
+                              "required": [
+                                "retryAfterSeconds"
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
                 }
               },
               {
@@ -1614,7 +1965,46 @@
                     "message": {
                       "const": "Recent library read failed: profileChanged."
                     }
-                  }
+                  },
+                  "allOf": [
+                    {
+                      "if": {
+                        "properties": {
+                          "details": {
+                            "properties": {
+                              "stage": {
+                                "const": "throttled"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "then": {
+                        "properties": {
+                          "details": {
+                            "properties": {
+                              "retryAfterSeconds": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 18446744073709551615
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "else": {
+                        "properties": {
+                          "details": {
+                            "not": {
+                              "required": [
+                                "retryAfterSeconds"
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
                 }
               },
               {
@@ -1640,33 +2030,46 @@
                     "message": {
                       "const": "Recent library read failed: authExchangeFailed."
                     }
-                  }
-                }
-              },
-              {
-                "if": {
-                  "properties": {
-                    "details": {
-                      "properties": {
-                        "stage": {
-                          "const": "throttled"
+                  },
+                  "allOf": [
+                    {
+                      "if": {
+                        "properties": {
+                          "details": {
+                            "properties": {
+                              "stage": {
+                                "const": "throttled"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "then": {
+                        "properties": {
+                          "details": {
+                            "properties": {
+                              "retryAfterSeconds": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 18446744073709551615
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "else": {
+                        "properties": {
+                          "details": {
+                            "not": {
+                              "required": [
+                                "retryAfterSeconds"
+                              ]
+                            }
+                          }
                         }
                       }
                     }
-                  }
-                },
-                "then": {
-                  "properties": {
-                    "code": {
-                      "const": "NETWORK_UNAVAILABLE"
-                    },
-                    "retryable": {
-                      "const": true
-                    },
-                    "message": {
-                      "const": "Recent library read failed: throttled."
-                    }
-                  }
+                  ]
                 }
               },
               {
@@ -1692,7 +2095,46 @@
                     "message": {
                       "const": "Recent library read failed: authRejected."
                     }
-                  }
+                  },
+                  "allOf": [
+                    {
+                      "if": {
+                        "properties": {
+                          "details": {
+                            "properties": {
+                              "stage": {
+                                "const": "throttled"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "then": {
+                        "properties": {
+                          "details": {
+                            "properties": {
+                              "retryAfterSeconds": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 18446744073709551615
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "else": {
+                        "properties": {
+                          "details": {
+                            "not": {
+                              "required": [
+                                "retryAfterSeconds"
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
                 }
               },
               {
@@ -1718,7 +2160,46 @@
                     "message": {
                       "const": "Recent library read failed: transportFailed."
                     }
-                  }
+                  },
+                  "allOf": [
+                    {
+                      "if": {
+                        "properties": {
+                          "details": {
+                            "properties": {
+                              "stage": {
+                                "const": "throttled"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "then": {
+                        "properties": {
+                          "details": {
+                            "properties": {
+                              "retryAfterSeconds": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 18446744073709551615
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "else": {
+                        "properties": {
+                          "details": {
+                            "not": {
+                              "required": [
+                                "retryAfterSeconds"
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
                 }
               },
               {
@@ -1744,7 +2225,111 @@
                     "message": {
                       "const": "Recent library read failed: responseInvalid."
                     }
+                  },
+                  "allOf": [
+                    {
+                      "if": {
+                        "properties": {
+                          "details": {
+                            "properties": {
+                              "stage": {
+                                "const": "throttled"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "then": {
+                        "properties": {
+                          "details": {
+                            "properties": {
+                              "retryAfterSeconds": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 18446744073709551615
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "else": {
+                        "properties": {
+                          "details": {
+                            "not": {
+                              "required": [
+                                "retryAfterSeconds"
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "details": {
+                      "properties": {
+                        "stage": {
+                          "const": "throttled"
+                        }
+                      }
+                    }
                   }
+                },
+                "then": {
+                  "properties": {
+                    "code": {
+                      "const": "NETWORK_UNAVAILABLE"
+                    },
+                    "retryable": {
+                      "const": true
+                    },
+                    "message": {
+                      "const": "Recent library read failed: throttled."
+                    }
+                  },
+                  "allOf": [
+                    {
+                      "if": {
+                        "properties": {
+                          "details": {
+                            "properties": {
+                              "stage": {
+                                "const": "throttled"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "then": {
+                        "properties": {
+                          "details": {
+                            "properties": {
+                              "retryAfterSeconds": {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 18446744073709551615
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "else": {
+                        "properties": {
+                          "details": {
+                            "not": {
+                              "required": [
+                                "retryAfterSeconds"
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
                 }
               }
             ]
@@ -2351,24 +2936,11 @@
         },
         "retryAfterSeconds": {
           "type": "integer",
-          "minimum": 0
+          "minimum": 0,
+          "maximum": 18446744073709551615
         }
       },
-      "additionalProperties": false,
-      "allOf": [
-        {
-          "if": {
-            "required": ["retryAfterSeconds"]
-          },
-          "then": {
-            "properties": {
-              "stage": {
-                "const": "throttled"
-              }
-            }
-          }
-        }
-      ]
+      "additionalProperties": false
     },
     "recentLibraryFailure": {
       "type": "object",
@@ -2393,24 +2965,11 @@
         },
         "retryAfterSeconds": {
           "type": "integer",
-          "minimum": 0
+          "minimum": 0,
+          "maximum": 18446744073709551615
         }
       },
-      "additionalProperties": false,
-      "allOf": [
-        {
-          "if": {
-            "required": ["retryAfterSeconds"]
-          },
-          "then": {
-            "properties": {
-              "stage": {
-                "const": "throttled"
-              }
-            }
-          }
-        }
-      ]
+      "additionalProperties": false
     },
     "artwork": {
       "type": "object",
