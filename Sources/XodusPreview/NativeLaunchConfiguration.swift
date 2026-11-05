@@ -14,7 +14,7 @@ struct NativeEngineRegistry: Decodable {
         let wineserver: String?
         let sha256: String?
         let wineserver_sha256: String?
-        let smoke_test: SmokeTest
+        let smoke_test: SmokeTest?
         let presentation_validation: SmokeTest?
         let engine_label: String?
         let environment: [String: String]?
@@ -22,9 +22,12 @@ struct NativeEngineRegistry: Decodable {
         let source_url: String?
         let provider: Provider?
         var id: String { name }
-        var isAvailable: Bool {
-            smoke_test.status == "pass" && presentation_validation?.status != "failed"
+        var hasExecutable: Bool {
+            presentation_validation?.status != "failed"
                 && wine.hasPrefix("/") && RunnerAvailabilityDetector.isExecutable(URL(fileURLWithPath: wine))
+        }
+        var isAvailable: Bool {
+            smoke_test?.status == "pass" && hasExecutable
         }
     }
     let engines: [Entry]
@@ -580,7 +583,8 @@ struct NativeLaunchConfiguration {
         }
         var entry = try selectEngine(registry: registry,
                                      provider: selected != nil || qualified != nil || profile?.engine != nil || candidate != nil || profile?.dllOverrides != nil ? nil : provider, defaults: defaults,
-                                     provenEngine: selected?.inspection.engineName ?? profile?.engine ?? provenEngine)
+                                     provenEngine: selected?.inspection.engineName ?? profile?.engine ?? provenEngine,
+                                     admittedSelection: selected)
         if let selected {
             guard entry.sha256 == selected.inspection.wineSha256,
                   entry.wineserver_sha256 == selected.inspection.wineserverSha256,
@@ -660,16 +664,28 @@ struct NativeLaunchConfiguration {
     }
 
     static func selectEngine(registry: NativeEngineRegistry, provider: RuntimeProviderKind?,
-                             defaults: UserDefaults, provenEngine: String?) throws -> NativeEngineRegistry.Entry {
+                             defaults: UserDefaults, provenEngine: String?,
+                             admittedSelection: AdmittedEngineSelection? = nil) throws -> NativeEngineRegistry.Entry {
         let selected = provider.flatMap { defaults.string(forKey: "Xodus.lifecycle.engine.\($0.rawValue)") }
         if provider != nil || provenEngine != nil {
             guard let name = provider != nil ? selected : provenEngine,
                   let entry = registry.engines.first(where: { $0.name == name }),
                   provider.map({ EngineManagementPolicy.matches(entry, provider: $0)
                       || ($0 == .standaloneWine && entry.provider?.id == "calimocho"
-                          && defaults.data(forKey: AdmittedEngineSelection.preferenceKey) != nil) }) ?? true,
-                  entry.isAvailable else {
+                          && defaults.data(forKey: AdmittedEngineSelection.preferenceKey) != nil) }) ?? true else {
                 throw NativeLaunchError.engineUnavailable
+            }
+            if !entry.isAvailable {
+                guard entry.provider?.id == "calimocho", entry.smoke_test == nil, entry.hasExecutable else {
+                    throw NativeLaunchError.engineUnavailable
+                }
+                let admission = try admittedSelection ?? AdmittedEngineSelection.read(defaults: defaults)
+                try admission.validate(registryPath: admission.registryPath, engineName: entry.name,
+                                       registryDigest: registry.byteDigest)
+                guard entry.sha256 == admission.inspection.wineSha256,
+                      entry.wineserver_sha256 == admission.inspection.wineserverSha256 else {
+                    throw NativeLaunchError.selectionChanged
+                }
             }
             return entry
         }

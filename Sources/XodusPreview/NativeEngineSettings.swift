@@ -252,7 +252,9 @@ private struct NativeEnginePicker: View {
     private var available: [NativeEngineRegistry.Entry] {
         entries.filter {
             (EngineManagementPolicy.matches($0, provider: provider)
-                || (provider == .calimocho && admittedNames.contains($0.name))) && $0.isAvailable
+                || (provider == .calimocho && admittedNames.contains($0.name)))
+                && ($0.isAvailable || (provider == .calimocho && admittedNames.contains($0.name)
+                    && $0.smoke_test == nil && $0.hasExecutable))
                 && (provider != .calimocho || admittedNames.contains($0.name))
         }
     }

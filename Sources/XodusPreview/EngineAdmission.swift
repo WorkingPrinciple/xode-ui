@@ -245,7 +245,9 @@ actor EngineInspectionClient {
         child = process
         var bytes = Data(), diagnostics = 0
         var closed = [false, false]
-        let deadline = ContinuousClock.now.advanced(by: .seconds(5))
+        // Release admission verifies the complete installed artifact, not only its registry.
+        let isReleaseInspection = arguments.contains(CalimochoInstalledRelease.engineName)
+        let deadline = ContinuousClock.now.advanced(by: .seconds(isReleaseInspection ? 90 : 5))
         do {
             while process.isRunning || closed.contains(false) {
                 try Task.checkCancellation()

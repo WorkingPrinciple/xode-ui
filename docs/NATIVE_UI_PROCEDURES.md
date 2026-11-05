@@ -80,6 +80,35 @@ routing/persistence/readiness checks without opening windows or launching games.
 Installed Play, menu interaction and title variants still require separately
 authorized native acceptance; do not run them while desktop control is paused.
 
+REQ207 Settings > Engines checks the pinned published Calimocho release in
+`~/Library/Application Support/Xode/Engines` and its existing local records in
+`~/Library/Application Support/Xodus/EngineRegistries`. This bounded local check
+does not search other volumes, create a registry, run Wine or install an engine.
+The installed descriptor must match the release pin; only fresh backend
+`engine-inspect` admission with the exact registry digest enables explicit
+**Use Calimocho as default**. Checking never changes the saved choice. Selection
+rechecks admission and refuses a concurrent preference change. Missing, detected
+without a service, verified and failed states stay distinct; toolkit files are
+only "Files staged", never Calimocho readiness. Existing title-specific engine
+and prefix constraints remain enforced. The pinned release link is guidance,
+not an in-app installer or update implementation. Actual obtain/update, including
+the owner's two-genuine-release update scenario, and game lifecycle acceptance
+remain separate. `swift test --filter CalimochoInstalledReleaseChecks` checks
+the real installed release/CLI where present using isolated preference suites,
+without modifying the installed engine, real preferences, game files or saves.
+Published release records may omit historical `smoke_test` metadata. The
+consumer does not invent a passing smoke result: absent metadata leaves legacy
+availability false, while an exact backend-admitted Calimocho selection can
+pass artifact preflight. Generic engines still need their existing availability
+evidence; title qualification, presentation failures and launch identity checks
+are unchanged. The focused check removes only inert smoke metadata from a
+test-owned copy of the real installed release registry and reinspects the real
+engine, without launching it.
+The existing `XODUS_ENGINE_INSPECTION_TEST_BACKEND` executable selector can point
+these checks at a source-bound backend candidate. The installed development CLI
+admits its original registry but refuses the no-smoke record; that is an
+installed/backend parity gap, not permission to synthesize admission.
+
 COR137 keeps lifecycle cancellation operation-specific: user Stop of a launch
 returns to Play without installation/download recovery text. Install cancellation
 retains its existing partial-file guidance. A clean Wine exit followed only by

@@ -56,6 +56,7 @@ enum DevelopmentArguments {
 final class PreviewDelegate: NSObject, NSApplicationDelegate {
     var liveSession: LiveSession?
     var runtimeSettings: RuntimeProviderSettings?
+    var calimochoEngine: CalimochoEngineController?
     var installedGames: InstalledGamesController?
     var pcGames: PCGamesController?
     var gameOperations: GameOperationsController?
@@ -73,7 +74,7 @@ final class PreviewDelegate: NSObject, NSApplicationDelegate {
             await XboxCompanionController.shared.shutdown()
             let closed = await termination.shutdown(session: liveSession, runtime: runtimeSettings,
                                                     installedGames: installedGames, pcGames: pcGames,
-                                                    gameOperations: gameOperations)
+                                                    gameOperations: gameOperations, calimochoEngine: calimochoEngine)
             if !closed {
                 LibraryXboxStats.shared.resumeAfterTerminationRefusal()
                 XboxCompanionController.shared.resumeAfterTerminationRefusal()
@@ -264,6 +265,7 @@ struct XodusPreviewApp: App {
                 .onAppear {
                     delegate.liveSession = session
                     delegate.runtimeSettings = state.runtimeSettings
+                    delegate.calimochoEngine = state.calimochoEngine
                     delegate.installedGames = state.installedGames
                     delegate.pcGames = state.pcGames
                     delegate.gameOperations = state.gameOperations
@@ -358,6 +360,7 @@ struct XodusPreviewApp: App {
                 .onAppear {
                     delegate.liveSession = session
                     delegate.runtimeSettings = state.runtimeSettings
+                    delegate.calimochoEngine = state.calimochoEngine
                     delegate.installedGames = state.installedGames
                     delegate.pcGames = state.pcGames
                     delegate.gameOperations = state.gameOperations

@@ -8,7 +8,8 @@ final class ApplicationTerminationCoordinator {
     func shutdown(session: LiveSession?, runtime: RuntimeProviderSettings?,
                   installedGames: InstalledGamesController? = nil,
                   pcGames: PCGamesController? = nil,
-                  gameOperations: GameOperationsController? = nil) async -> Bool {
+                  gameOperations: GameOperationsController? = nil,
+                  calimochoEngine: CalimochoEngineController? = nil) async -> Bool {
         if let operation { return await operation.value }
         guard gameOperations?.canQuit != false else { return false }
         gameOperations?.beginTermination()
@@ -17,6 +18,7 @@ final class ApplicationTerminationCoordinator {
         runtime?.beginApplicationTermination()
         session?.applicationTerminating = true
         let pending = Task {
+            guard await calimochoEngine?.shutdownForApplicationTermination() ?? true else { return false }
             async let runtimeClosed = runtime?.shutdownForApplicationTermination() ?? true
             async let managementClosed = session?.disconnect() ?? true
             async let foregroundClosed = installedGames?.shutdownForegroundHandoff() ?? true
@@ -30,6 +32,7 @@ final class ApplicationTerminationCoordinator {
             pcGames?.resumeAfterTerminationRefusal()
             gameOperations?.resumeAfterTerminationRefusal()
             runtime?.resumeAfterTerminationRefusal()
+            calimochoEngine?.resumeAfterTerminationRefusal()
             session?.applicationTerminating = false
             operation = nil
         }

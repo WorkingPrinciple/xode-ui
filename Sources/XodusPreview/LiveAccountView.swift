@@ -209,7 +209,8 @@ struct LiveSettingsView: View {
                 .tag(SettingsTab.general)
                 .accessibilityIdentifier("xodus.settings.tab.general")
 
-            EnginesSettingsTab(state: state, session: session, dismiss: { dismiss() })
+            EnginesSettingsTab(state: state, session: session, calimochoEngine: state.calimochoEngine,
+                               dismiss: { dismiss() })
                 .tabItem {
                     Label("Engines", systemImage: "cpu")
                 }
@@ -320,6 +321,7 @@ struct GeneralSettingsTab: View {
 struct EnginesSettingsTab: View {
     @ObservedObject var state: AppState
     @ObservedObject var session: LiveSession
+    @ObservedObject var calimochoEngine: CalimochoEngineController
     let dismiss: () -> Void
 
     @AppStorage(EngineDefaults.defaultEngineKey) private var defaultProvider = ""
@@ -339,12 +341,21 @@ struct EnginesSettingsTab: View {
                     HStack(spacing: 12) {
                         Picker("Default Engine:", selection: Binding(
                             get: { RuntimeProviderKind(rawValue: defaultProvider) },
-                            set: { defaultProvider = $0?.rawValue ?? "" })) {
-                            Text("Calimocho (Wine 11) — Free / Open-source").tag(Optional(RuntimeProviderKind.calimocho))
+                            set: { provider in
+                                if provider == .calimocho {
+                                    state.calimochoEngine.refresh(configuration: session.nativeInstallStatusConfiguration,
+                                                                  selectAsDefault: true)
+                                } else {
+                                    EngineDefaults.setDefaultEngine(provider)
+                                }
+                            })) {
+                            Text("Calimocho (Wine 11) — Free / Open-source")
+                                .tag(Optional(RuntimeProviderKind.calimocho))
+                                .disabled(!calimochoEngine.isVerified)
                             if state.runtimeSettings.crossOverDependency.isVerified {
                                 Text("CrossOver — Detected").tag(Optional(RuntimeProviderKind.crossover))
                             }
-                            Text("No default (Prompt on launch)").tag(Optional<RuntimeProviderKind>.none)
+                            Text("No saved default").tag(Optional<RuntimeProviderKind>.none)
                         }
                         .labelsHidden()
                         .pickerStyle(.menu)
@@ -352,6 +363,7 @@ struct EnginesSettingsTab: View {
                         .accessibilityIdentifier("xodus.settings.engine.picker")
 
                         Button("Refresh") {
+                            state.calimochoEngine.refresh(configuration: session.nativeInstallStatusConfiguration)
                             Task { await state.runtimeSettings.refreshCrossOverDependency() }
                         }
                         .controlSize(.small)
@@ -367,28 +379,8 @@ struct EnginesSettingsTab: View {
                         .font(.headline)
 
                     // Calimocho Row
-                    HStack(alignment: .center, spacing: 12) {
-                        Image(systemName: "cpu")
-                            .font(.title2)
-                            .foregroundStyle(Color.accentColor)
-                            .frame(width: 28)
-                        VStack(alignment: .leading, spacing: 2) {
-                            HStack {
-                                Text("Calimocho 0.6 (Wine 11.20)")
-                                    .font(.body.bold())
-                                Spacer()
-                                Text(state.gptkOnboarding.isInstalled ? "Ready" : "Installed")
-                                    .font(.caption.bold())
-                                    .foregroundStyle(Color.accentColor)
-                            }
-                            Text("Free, open-source Windows translation layer built from LGPL source.")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .padding(10)
-                    .background(Color.primary.opacity(0.04))
-                    .cornerRadius(8)
+                    CalimochoSettingsRow(controller: state.calimochoEngine,
+                                         configuration: session.nativeInstallStatusConfiguration)
 
                     // CrossOver Row
                     HStack(alignment: .center, spacing: 12) {
@@ -445,12 +437,12 @@ struct EnginesSettingsTab: View {
                                 Text("Apple Game Porting Toolkit (D3DMetal)")
                                     .font(.body.bold())
                                 Spacer()
-                                Text(state.gptkOnboarding.isInstalled ? "Ready" : "Setup Required")
+                                Text(state.gptkOnboarding.isInstalled ? "Files staged" : "Setup Required")
                                     .font(.caption.bold())
                                     .foregroundStyle(state.gptkOnboarding.isInstalled ? .green : .secondary)
                             }
                             HStack {
-                                Text("Apple's Direct3D 12 Metal translation library.")
+                                Text("Separately staged Apple files do not verify Calimocho or a game.")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                                 Spacer()
@@ -505,6 +497,78 @@ struct EnginesSettingsTab: View {
                 await state.runtimeSettings.refreshCrossOverDependency()
             }
         }
+    }
+}
+
+struct CalimochoSettingsRow: View {
+    @ObservedObject var controller: CalimochoEngineController
+    let configuration: BackendConfiguration?
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "cpu")
+                .font(.title2)
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 28)
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text("Calimocho").font(.body.bold())
+                    Spacer()
+                    Text(controller.state.label)
+                        .font(.caption.bold())
+                        .foregroundStyle(.secondary)
+                        .accessibilityIdentifier("xodus.settings.calimocho.status")
+                }
+                switch controller.state {
+                case .checking:
+                    ProgressView("Verifying the installed release").controlSize(.small)
+                    Button("Cancel check") { controller.cancel() }
+                case .verified:
+                    Text("Version \(CalimochoInstalledRelease.version) (Wine 11.20). Artifact verified; game qualification is separate.")
+                        .font(.caption).foregroundStyle(.secondary)
+                    Button("Use Calimocho as default") {
+                        controller.refresh(configuration: configuration, selectAsDefault: true)
+                    }
+                    .disabled(configuration == nil)
+                    .accessibilityIdentifier("xodus.settings.calimocho.select")
+                case .detected:
+                    Text("Version \(CalimochoInstalledRelease.version) is present. Connect the approved app service, then check again to verify it.")
+                        .font(.caption).foregroundStyle(.secondary)
+                case .failed(let reason):
+                    Label(reason, systemImage: "exclamationmark.circle")
+                        .font(.caption).foregroundStyle(.secondary)
+                case .missing:
+                    Text("Calimocho isn't installed in its supported Engines folder.")
+                        .font(.caption).foregroundStyle(.secondary)
+                case .unchecked:
+                    Text("The installed Calimocho release has not been checked.")
+                        .font(.caption).foregroundStyle(.secondary)
+                case .canceled:
+                    Text("The check was canceled. Your engine choice is unchanged.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                if !controller.isWorking {
+                    HStack {
+                        Button("Check Again") { controller.refresh(configuration: configuration) }
+                            .accessibilityIdentifier("xodus.settings.calimocho.check")
+                        Link("Pinned release and installation notes", destination: CalimochoInstalledRelease.releaseURL)
+                    }
+                    .controlSize(.small)
+                }
+            }
+            .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(10)
+        .background(Color.primary.opacity(0.04))
+        .cornerRadius(8)
+        .task(id: configuration?.executableIdentity?.sha256) {
+            controller.cancel()
+            await controller.waitForRefresh()
+            guard !Task.isCancelled else { return }
+            controller.refresh(configuration: configuration)
+            await controller.waitForRefresh()
+        }
+        .onDisappear { controller.cancel() }
     }
 }
 
