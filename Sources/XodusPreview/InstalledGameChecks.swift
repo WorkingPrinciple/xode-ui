@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import AppKit
+import Combine
 import Darwin
 import Foundation
 import ImageIO
@@ -409,13 +410,17 @@ enum InstalledGameChecks {
         try await store.save([existing])
         let expectedFolders = folders
         var inspections: [String] = []
+        var discoveryInterleaving: (() async -> Void)?
+        var completesRemainingInstallation = false
         let controller = InstalledGamesController(store: store, inspectPackage: { _ in
             guard !Thread.isMainThread else { throw InstalledGameError.invalidConfig }
             return .msixvc
         }, mountedStorageRoots: { ["/", recorded.path] },
             discoveryRoot: original, installLocation: { savedLocation }, discoveryCompleteness: { product, folder in
                 inspections.append(product)
-                return product != "FIXTURE00005" && expectedFolders[product]?.path == folder.path
+                await discoveryInterleaving?()
+                return (product != "FIXTURE00005" || completesRemainingInstallation)
+                    && expectedFolders[product]?.path == folder.path
             })
         let session = LiveSession()
         await controller.load()
@@ -427,9 +432,25 @@ enum InstalledGameChecks {
         check(!controller.games.contains { $0.storeId == "FIXTURE00005" }
               && controller.discoveryError?.contains("incomplete") == true && controller.launchableIDs.isEmpty,
               "COR105: Config-only incomplete payload is not adopted or promoted to launch/account readiness")
+        let operations = GameOperationsController(installed: controller)
+        let installAction = GameInstallAction(game: PCGame(id: "FIXTURE00005", title: "Discovery", artwork: nil),
+                                             operations: operations)
+        var stableInstallAction: [Bool] = []
+        discoveryInterleaving = {
+            stableInstallAction.append(installAction.canInstall && installAction.unavailableReason == nil)
+            await controller.discoverNativeInstallations()
+        }
+        var backgroundEditing: [Bool] = []
+        let editingObservation = controller.$editing.sink { backgroundEditing.append($0) }
+        defer { editingObservation.cancel() }
         await controller.discoverNativeInstallations()
+        discoveryInterleaving = nil
         check(controller.games.count == 4 && controller.games.filter { $0.id == existing.id }.count == 1,
               "COR105: Repeated discovery deduplicates roots and preserves the registered identity")
+        check(!backgroundEditing.contains(true),
+              "REQ-221: Unchanged background discovery never publishes editing that disables Play or expands the hero Install notice")
+        check(stableInstallAction == [true],
+              "REQ-221: Single-flight discovery preserves the actual Install action and adds no unavailable notice beside View game")
 
         let offline = InstalledGamesController(store: store, inspectPackage: { _ in .msixvc },
             mountedStorageRoots: { [] }, discoveryRoot: original, installLocation: { savedLocation },
@@ -481,6 +502,30 @@ enum InstalledGameChecks {
         }
         check(observed.candidates.isEmpty && observed.errors.count == 1,
               "COR105: Discovery stops at the existing 512-child bound rather than scanning an unbounded root")
+        completesRemainingInstallation = true
+        discoveryInterleaving = { await controller.remove(existing) }
+        await controller.discoverNativeInstallations()
+        discoveryInterleaving = nil
+        check(!controller.games.contains { $0.id == existing.id }
+              && !controller.games.contains { $0.storeId == "FIXTURE00005" },
+              "REQ-221: A foreground registry edit can finish during discovery and retires the scan's stale adoption")
+        var mutationGuarded = false
+        discoveryInterleaving = {
+            do {
+                try controller.reserveMutation(gameID: nil)
+                mutationGuarded = !installAction.canInstall && installAction.unavailableReason != nil
+                controller.releaseMutation()
+            } catch {
+                mutationGuarded = false
+            }
+        }
+        await controller.discoverNativeInstallations()
+        discoveryInterleaving = nil
+        check(mutationGuarded && controller.games.count == 3,
+              "REQ-221: A genuine operation still disables Install and retires stale discovery even if it finishes before adoption")
+        await controller.discoverNativeInstallations()
+        check(controller.games.count == 5,
+              "REQ-221: A subsequent unchanged scan can still adopt genuinely complete installations")
     }
 
     static func legacyNativeReadiness(check: (Bool, String) -> Void) async throws {
