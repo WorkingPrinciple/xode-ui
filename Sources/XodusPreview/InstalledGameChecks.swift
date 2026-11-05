@@ -140,6 +140,58 @@ enum InstalledGameChecks {
         await controller.discoverNativeInstallations(root: library)
         check(controller.games.count == 1,
               "REQ106: Repeated external discovery never creates duplicate installed records")
+        let original = controller.games[0]
+        let storage = home.appendingPathComponent("registry")
+        let bottle = storage.appendingPathComponent("Prefixes/\(original.id.uuidString)/apple-gptk-4.0b3")
+        try FileManager.default.createDirectory(at: bottle.appendingPathComponent("drive_c/users/me/Saved Games"),
+                                                withIntermediateDirectories: true)
+        try Data(#"{"version":1,"engine":"apple-gptk-4.0b3","wine_sha256":"abc"}"#.utf8)
+            .write(to: bottle.deletingLastPathComponent().appendingPathComponent(".apple-gptk-4.0b3.xodus-engine-owner.json"))
+        let insideSave = folder.appendingPathComponent("Saves").path
+        let impact = GameUninstallImpact.inspect(game: original, runID: "impact-run", storageDirectory: storage,
+                                                 recordedSave: insideSave)
+        check(impact.packageFolder == folder.path
+              && impact.kept == [.init(kind: .prefix, path: bottle.deletingLastPathComponent().path, existed: true)]
+              && impact.savesInsidePackage == [insideSave]
+              && impact.engineOwners == [.init(prefix: bottle.path, engine: "apple-gptk-4.0b3", wineSHA256: "abc")]
+              && impact.consentSummary.contains(bottle.deletingLastPathComponent().path)
+              && impact.consentSummary.contains("will be deleted with it"),
+              "REQ41/REQ102: Uninstall impact separates the package folder from the kept bottle and names saves inside the package")
+        check(operations.uninstallImpact(for: original).kept.first?.path == bottle.deletingLastPathComponent().path,
+              "REQ41: Consent inventory derives the kept bottle beside the installed registry")
+        try impact.writeCheckpoint(storageDirectory: storage)
+        let recorded = try GameUninstallImpact.readCheckpoint(storageDirectory: storage, runID: "impact-run")
+        var duplicateRefused = false
+        do { try impact.writeCheckpoint(storageDirectory: storage) } catch { duplicateRefused = true }
+        check(recorded.kept == impact.kept && recorded.engineOwners == impact.engineOwners && duplicateRefused
+              && recorded.missingAfterUninstall().isEmpty,
+              "COR412: Preservation checkpoint is durable, private, exact and never overwritten before uninstall")
+        try FileManager.default.moveItem(at: bottle.deletingLastPathComponent(),
+                                         to: storage.appendingPathComponent("moved-bottle"))
+        check(recorded.missingAfterUninstall() == [bottle.deletingLastPathComponent().path],
+              "REQ41: A kept bottle that disappears is reported as missing instead of a successful uninstall")
+        try FileManager.default.moveItem(at: storage.appendingPathComponent("moved-bottle"),
+                                         to: bottle.deletingLastPathComponent())
+        await controller.remove(original)
+        check(controller.games.isEmpty
+              && FileManager.default.fileExists(atPath: bottle.path)
+              && FileManager.default.fileExists(atPath: folder.path),
+              "REQ207: Remove from list keeps both the package folder and the bottle")
+        await controller.discoverNativeInstallations(root: library)
+        check(controller.games.count == 1 && controller.games[0].id == original.id
+              && !controller.canCreateInstallation(productID: game.id),
+              "REQ209: Rediscovering the same installation reuses its identity and bottle without a redownload")
+        let nextIdentity = try await store.identity(forStoreID: game.id)
+        let retainedAfterReuse = try await store.loadRetained()
+        check(nextIdentity != original.id && retainedAfterReuse.isEmpty,
+              "REQ209: A reused identity is consumed and never shared by two listed installations")
+        let reinstallStore = InstalledGameStore(file: home.appendingPathComponent("reinstall/games.json"))
+        _ = try await reinstallStore.upsert(original)
+        _ = try await reinstallStore.remove(id: original.id)
+        let reinstallIdentity = try await reinstallStore.identity(forStoreID: original.storeId)
+        let otherIdentity = try await reinstallStore.identity(forStoreID: "9OTHER000001")
+        check(reinstallIdentity == original.id && otherIdentity != original.id,
+              "REQ207: Uninstall then reinstall of the same product rejoins its retained bottle identity only")
         try FileManager.default.removeItem(at: folder)
         await controller.discoverNativeInstallations(root: library)
         check(controller.games.count == 1,

@@ -1312,6 +1312,11 @@ enum GameOperationChecks {
         check(installed.games.isEmpty && !operations.isBusy
               && FileManager.default.fileExists(atPath: repaired.folder),
               "S6 only status zero removes registration; app itself never deletes game files")
+        let checkpoints = try FileManager.default.contentsOfDirectory(
+            atPath: installed.storageDirectory.appendingPathComponent("LifecycleCheckpoints").path)
+        check(checkpoints.count == 2 && operations.error == nil
+              && operations.notice?.contains("hadn't created a bottle") == true,
+              "COR412/REQ41: Every uninstall attempt records a preservation checkpoint first and reports verified kept data")
         let uninstallCalls = try String(contentsOf: root.appendingPathComponent("uninstall-calls"), encoding: .utf8)
         let afterUninstall = LibraryGame.collection(installed: installed.games, owned: [game],
             products: [], gamePass: [], active: false)[0]

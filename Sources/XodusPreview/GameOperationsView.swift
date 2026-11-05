@@ -620,9 +620,9 @@ struct GameOperationPresentation: View {
                 VStack(alignment: .leading, spacing: 18) {
                     Text("Uninstall \(game.title)?").font(.title2.bold())
                         .fixedSize(horizontal: false, vertical: true)
-                    Text(operations.usesUnifiedAccount
-                         ? "Deletes this game's installation folder. Back up any saves stored inside that folder first. Saves in separate bottles are not removed."
-                         : "Deletes the game files. Your saves are kept.").foregroundStyle(.secondary)
+                    Text(operations.uninstallImpact(for: game).consentSummary).foregroundStyle(.secondary)
+                        .textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("xodus.installed.uninstallImpact")
                     HStack {
                         Spacer()
                         Button("Cancel") { operations.uninstallConsent = nil }.keyboardShortcut(.cancelAction)

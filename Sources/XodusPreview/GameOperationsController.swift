@@ -1009,6 +1009,40 @@ final class GameOperationsController: ObservableObject {
         uninstallConsent = game
     }
 
+    /// Package folder that will be deleted versus bottles/prefixes and recorded saves that must be kept.
+    func uninstallImpact(for game: InstalledGame, runID: String = "consent") -> GameUninstallImpact {
+        let evidence = MacGameEvidenceStore.shared.games[game.storeId]
+        var prefixes: [String] = []
+        if let preserved = (try? NativeTitleLaunchProfile.read(productID: game.storeId, defaults: .standard,
+                                                                 evidence: evidence))??.preservedPrefixPath {
+            prefixes.append(NativeTitleLaunchProfile.expand(preserved))
+        }
+        if let recipe = NativeWorkingLaunchRecipe.admitted(productID: game.storeId, evidence: evidence) {
+            prefixes.append(recipe.prefix.path)
+        }
+        return GameUninstallImpact.inspect(game: game, runID: runID, storageDirectory: installed.storageDirectory,
+                                           recordedSave: evidence?.saveObservation?.saveDirectory,
+                                           additionalPrefixes: prefixes, evidence: evidence)
+    }
+
+    private func uninstallResult(_ record: GameOperationRecord) -> (notice: String?, error: String?) {
+        guard let impact = try? GameUninstallImpact.readCheckpoint(storageDirectory: installed.storageDirectory,
+                                                                   runID: record.id) else {
+            return (nil, "\(record.title) was uninstalled, but Ode to X couldn't confirm its bottle and saves were kept. "
+                + "Check \(installed.storageDirectory.appendingPathComponent("Prefixes").path) before reinstalling.")
+        }
+        let missing = impact.missingAfterUninstall()
+        guard missing.isEmpty else {
+            return (nil, "\(record.title) was uninstalled, but locations that should have been kept are missing: "
+                + missing.joined(separator: ", ") + ". Restore them from a backup before reinstalling.")
+        }
+        var notice = impact.hasPreservedData
+            ? "\(record.title) was uninstalled. Its bottle and saves were kept for reinstalling."
+            : "\(record.title) was uninstalled. Ode to X hadn't created a bottle or recorded saves for it."
+        if !impact.savesInsidePackage.isEmpty { notice += " Saves inside the game folder were removed with it." }
+        return (notice, nil)
+    }
+
     func confirmUninstall(_ game: InstalledGame) {
         guard uninstallConsent?.id == game.id, canStartMutation, !recoveryRequired,
               installed.games.contains(game), installed.runningGameID != game.id else { return }
@@ -1047,6 +1081,21 @@ final class GameOperationsController: ObservableObject {
                     }
                 } catch {
                     self.error = Self.message(error)
+                    operation = nil
+                    installed.releaseMutation()
+                    mutationTask = nil
+                    return
+                }
+            }
+            if record.kind == .uninstall {
+                do {
+                    guard let game = installed.games.first(where: { $0.id == record.installedID }) else {
+                        throw GameScriptError.invalidReceipt
+                    }
+                    try uninstallImpact(for: game, runID: record.id)
+                        .writeCheckpoint(storageDirectory: installed.storageDirectory)
+                } catch {
+                    self.error = "Ode to X couldn't record which bottle and save locations to keep, so nothing was uninstalled. Try again."
                     operation = nil
                     installed.releaseMutation()
                     mutationTask = nil
@@ -1133,7 +1182,7 @@ final class GameOperationsController: ObservableObject {
             if record.kind == .uninstall {
                 guard let id = record.installedID else { throw GameScriptError.invalidReceipt }
                 try await installed.removeUninstalled(id)
-                notice = "\(record.title) was uninstalled."
+                (notice, error) = uninstallResult(record)
             } else {
                 guard admitInstall(productID: record.productID, installedID: record.installedID,
                                    destination: record.destination) else {
@@ -1177,7 +1226,7 @@ final class GameOperationsController: ObservableObject {
             if record.kind == .uninstall {
                 guard let id = record.installedID else { throw GameScriptError.invalidReceipt }
                 try await installed.removeUninstalled(id)
-                notice = "\(record.title) was uninstalled. Your saves are kept."
+                (notice, error) = uninstallResult(record)
             } else {
                 guard let data = outcome.result else { throw GameScriptError.invalidReceipt }
                 let result = try JSONDecoder().decode(GameInstallResult.self, from: data)

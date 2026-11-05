@@ -218,6 +218,13 @@ enum InstalledGameFiles {
     }
 }
 
+struct RetainedGameIdentity: Codable, Equatable, Sendable {
+    let storeId: String
+    let id: UUID
+    let folder: String
+    let retainedAt: Date
+}
+
 actor InstalledGameStore {
     static var defaultFile: URL {
         URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true)
@@ -252,19 +259,56 @@ actor InstalledGameStore {
         }
     }
 
+    /// Identities of removed games, kept beside the registry so a reinstall or rediscovery of the
+    /// same product reuses its UUID and therefore its `Prefixes/<id>` bottle and saves.
+    var retainedFile: URL {
+        file.deletingLastPathComponent().appendingPathComponent("retained-game-identities.json")
+    }
+
+    func loadRetained() throws -> [RetainedGameIdentity] {
+        var info = stat()
+        if lstat(retainedFile.path, &info) != 0 {
+            guard errno == ENOENT else { throw InstalledGameError.invalidRegistry }
+            return []
+        }
+        let data = try InstalledGameFiles.readRegular(retainedFile, maximumBytes: 262_144, privateFile: true)
+        let entries = try JSONDecoder().decode([RetainedGameIdentity].self, from: data)
+        guard Set(entries.map(\.storeId)).count == entries.count, Set(entries.map(\.id)).count == entries.count,
+              entries.allSatisfy({ !$0.storeId.isEmpty && $0.folder.hasPrefix("/") }) else {
+            throw InstalledGameError.invalidRegistry
+        }
+        return entries
+    }
+
+    /// The UUID a newly registered installation of `storeId` should use: the retained identity of a
+    /// removed installation when no listed game already owns that product or UUID, otherwise a new one.
+    func identity(forStoreID storeId: String) throws -> UUID {
+        let games = try load()
+        guard let retained = try loadRetained().first(where: { $0.storeId == storeId }),
+              !games.contains(where: { $0.id == retained.id || $0.storeId == storeId }) else { return UUID() }
+        return retained.id
+    }
+
     func save(_ games: [InstalledGame]) throws {
         guard games.allSatisfy({ $0.storageVolume?.contains($0.folder) ?? true }) else {
             throw InstalledGameError.invalidRegistry
         }
+        try writePrivate(try JSONEncoder().encode(games), to: file, temporaryPrefix: ".installed-games-")
+    }
+
+    private func saveRetained(_ entries: [RetainedGameIdentity]) throws {
+        try writePrivate(try JSONEncoder().encode(entries), to: retainedFile, temporaryPrefix: ".retained-game-identities-")
+    }
+
+    private func writePrivate(_ data: Data, to file: URL, temporaryPrefix: String) throws {
         let directory = file.deletingLastPathComponent()
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true,
                                                 attributes: [.posixPermissions: 0o700])
         var info = stat()
         guard lstat(directory.path, &info) == 0, info.st_mode & S_IFMT == S_IFDIR,
               info.st_uid == getuid(), chmod(directory.path, 0o700) == 0 else { throw InstalledGameError.storage }
-        let data = try JSONEncoder().encode(games)
         guard data.count <= 1_048_576 else { throw InstalledGameError.storage }
-        let temporary = directory.appendingPathComponent(".installed-games-\(UUID().uuidString).json")
+        let temporary = directory.appendingPathComponent(temporaryPrefix + "\(UUID().uuidString).json")
         let descriptor = open(temporary.path, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0o600)
         guard descriptor >= 0 else { throw InstalledGameError.storage }
         let handle = FileHandle(fileDescriptor: descriptor, closeOnDealloc: true)
@@ -297,11 +341,23 @@ actor InstalledGameStore {
         games.removeAll { $0.folder == game.folder }
         games.append(updated)
         try save(games)
+        var retained = try loadRetained()
+        if retained.contains(where: { $0.id == updated.id }) {
+            retained.removeAll { $0.id == updated.id }
+            try saveRetained(retained)
+        }
         return games
     }
 
     func remove(id: UUID) throws -> [InstalledGame] {
         var games = try load()
+        if let removed = games.first(where: { $0.id == id }) {
+            // Retain first: a failed registry write then leaves a harmless extra record, never a lost identity.
+            var retained = try loadRetained().filter { $0.storeId != removed.storeId && $0.id != removed.id }
+            retained.append(RetainedGameIdentity(storeId: removed.storeId, id: removed.id,
+                                                 folder: removed.folder, retainedAt: Date()))
+            try saveRetained(Array(retained.suffix(512)))
+        }
         games.removeAll { $0.id == id }
         try save(games)
         return games

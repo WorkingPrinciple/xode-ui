@@ -67,6 +67,8 @@ final class InstalledGamesController: ObservableObject {
         }
     }
     private let store: InstalledGameStore
+    /// Directory holding the registry; Ode prefixes and lifecycle checkpoints live beside it.
+    var storageDirectory: URL { store.file.deletingLastPathComponent() }
     private let launchingDuration: Duration
     private let defaultEngine: @Sendable () -> RuntimeProviderKind?
     private let detectAvailability: @Sendable () async -> RunnerAvailability
@@ -314,10 +316,11 @@ final class InstalledGamesController: ObservableObject {
                         throw GameInstallationDiscoveryError.identityChanged
                     }
                     try Task.checkCancellation()
+                    let retainedID = try await store.identity(forStoreID: candidate.config.storeId)
                     guard !accountDisconnecting, !applicationTerminating, unifiedSession?.accountHash == account,
                           !games.contains(where: { $0.folder == candidate.folder.path }) else { return }
                     let config = candidate.config
-                    let game = InstalledGame(id: UUID(), title: config.title, identityName: config.identityName,
+                    let game = InstalledGame(id: retainedID, title: config.title, identityName: config.identityName,
                         version: config.version, storeId: config.storeId, folder: candidate.folder.path,
                         launcher: "", importedAt: Date(), publisher: config.publisher, packageType: candidate.package,
                         usesNativeLifecycle: true, storageVolume: candidate.volume)
@@ -1141,7 +1144,9 @@ final class InstalledGamesController: ObservableObject {
         }.value
         let previous = games.first(where: { $0.folder == folder.path })
         guard previous?.id != runningGameID || runningGameID == nil else { throw GameScriptError.busy }
-        let game = InstalledGame(id: previous?.id ?? UUID(),
+        let id: UUID
+        if let previous { id = previous.id } else { id = try await store.identity(forStoreID: metadata.0.storeId) }
+        let game = InstalledGame(id: id,
             title: metadata.0.title, identityName: metadata.0.identityName, version: metadata.0.version,
             storeId: metadata.0.storeId, folder: folder.path, launcher: launcher?.path ?? "", importedAt: Date(),
             publisher: metadata.0.publisher, packageType: metadata.1,
