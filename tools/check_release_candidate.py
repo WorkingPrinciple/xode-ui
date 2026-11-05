@@ -156,8 +156,11 @@ class ReleaseCandidateChecks(unittest.TestCase):
         recipe_bytes = (project / "Sources/XodusManagement/Resources/LaunchRecipes/title-runtime-v1.json").read_bytes()
         recipe = json.loads(recipe_bytes)
         self.assertIn(f'static let cliSHA256 = "{pins.CLI_SHA256}"', lifecycle)
-        self.assertIn(f'static let commit = "{pins.RELEASED_PRODUCER}"', producer)
-        self.assertIn(f'static let tree = "{pins.RELEASED_PRODUCER_TREE}"', producer)
+        self.assertIn(f'static let commit = "{pins.PRODUCER}"', producer)
+        self.assertIn(f'static let tree = "{pins.PRODUCER_TREE}"', producer)
+        self.assertNotEqual(pins.PRODUCER, pins.RELEASED_PRODUCER)
+        self.assertEqual(release.PRODUCER_COMMIT, pins.RELEASED_PRODUCER)
+        self.assertEqual(release.PRODUCER_TREE, pins.RELEASED_PRODUCER_TREE)
         self.assertIn(hashlib.sha256(recipe_bytes).hexdigest(), configuration)
         self.assertEqual(recipe["cliSha256"], pins.CLI_SHA256)
         self.assertEqual(recipe["evidenceCliSha256"],
