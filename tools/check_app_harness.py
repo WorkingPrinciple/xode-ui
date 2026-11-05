@@ -8,6 +8,17 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 class AppHarnessSourceChecks(unittest.TestCase):
+    def test_current_service_configuration_is_not_a_historical_game_recipe_pin(self):
+        source = (ROOT / "Sources/XodusPreview/LiveSession.swift").read_text()
+        factories = source.split("    var nativeLifecycleConfiguration:", 1)[1].split(
+            "    var canStartWelcomeSignIn:", 1)[0]
+        self.assertNotIn("NativeLifecyclePins.cliSHA256", factories)
+        self.assertEqual(factories.count("ShippingPairAdmission.connectedServiceConfiguration("), 2)
+        self.assertIn("guard hasConfirmedSignIn, !connectionTransitioning, !signingOut", factories)
+        self.assertIn("supports(.odeAccountRead)", factories)
+        profile = (ROOT / "Sources/XodusPreview/NativeLaunchConfiguration.swift").read_text()
+        self.assertIn("catalogue.cliSha256 == NativeLifecyclePins.cliSHA256", profile)
+
     def test_sandbox_uses_production_credential_adapter(self):
         source = (ROOT / "Sources/XodusPreview/AuthenticatedScenarioChecks.swift").read_text()
         self.assertIn("PCGamesCredentialStore(sandboxBroker:", source)

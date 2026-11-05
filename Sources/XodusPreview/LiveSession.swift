@@ -351,10 +351,9 @@ final class LiveSession: ObservableObject {
     var nativeLifecycleConfiguration: BackendConfiguration? {
 #if XODUS_SHIPPING
         guard hasConfirmedSignIn, !connectionTransitioning, !signingOut, !applicationTerminating,
-              supports(.odeAccountRead), let configuration = connectedConfiguration,
-              configuration.executableIdentity?.sha256 == NativeLifecyclePins.cliSHA256,
-              configuration.executableIdentity?.executable == configuration.executable else { return nil }
-        return configuration
+              supports(.odeAccountRead) else { return nil }
+        return ShippingPairAdmission.connectedServiceConfiguration(
+            connectedConfiguration, pins: ShippingPairPins.approved)
 #else
         guard hasConfirmedSignIn, !connectionTransitioning, !signingOut, !applicationTerminating,
               supports(.odeAccountRead), let configuration = connectedConfiguration,
@@ -365,10 +364,9 @@ final class LiveSession: ObservableObject {
     }
     var nativeInstallStatusConfiguration: BackendConfiguration? {
 #if XODUS_SHIPPING
-        guard !applicationTerminating, let configuration = connectedConfiguration,
-              configuration.executableIdentity?.sha256 == NativeLifecyclePins.cliSHA256,
-              configuration.executableIdentity?.executable == configuration.executable else { return nil }
-        return configuration
+        guard !applicationTerminating else { return nil }
+        return ShippingPairAdmission.connectedServiceConfiguration(
+            connectedConfiguration, pins: ShippingPairPins.approved)
 #else
         guard !applicationTerminating, let configuration = connectedConfiguration,
               let identity = configuration.executableIdentity ?? configuration.nativeAuthHost,

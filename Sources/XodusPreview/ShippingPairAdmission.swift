@@ -17,6 +17,21 @@ struct ShippingPairIdentity: Sendable {
 }
 
 enum ShippingPairAdmission {
+    // The connection was already admitted; each operation rechecks executable bytes before running.
+    static func connectedServiceConfiguration(_ configuration: BackendConfiguration?,
+                                              pins: ShippingPairIdentity?) -> BackendConfiguration? {
+        guard let configuration, let pins, pins.schemaVersion == 1,
+              pins.producerCommit == ShippingProducerPins.commit,
+              pins.producerTree == ShippingProducerPins.tree,
+              let engine = configuration.executableIdentity,
+              engine.executable == configuration.executable, engine.version == 1,
+              engine.sha256 == pins.engineSHA256, engine.expectedBytes == pins.engineBytes,
+              let helper = configuration.nativeAuthHost,
+              helper.version == pins.helperVersion, helper.sha256 == pins.helperSHA256,
+              helper.expectedBytes == pins.helperBytes else { return nil }
+        return configuration
+    }
+
     static func configuration(bundle: Bundle, stateDirectory: URL,
                               pins: ShippingPairIdentity?) throws -> BackendConfiguration {
         guard let pins, pins.schemaVersion == 1,

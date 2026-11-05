@@ -98,6 +98,13 @@ Failure/cancellation preserves04 and the previous choice. A fully verified06
 may remain installed but unselected if cancellation or a concurrent preference
 change arrives after artifact publication; retry reuses it without downloading
 again. Existing engine directories are never overwritten.
+COR406 current-service consumers use the already admitted connected pair's exact
+generated CLI/helper identities, not the historical game-recipe CLI hash.
+Account-free installation status and engine inspection do not require account
+access. Account-bound lifecycle access still requires confirmed sign-in and the
+negotiated account capability; title recipe, registry, runtime and prefix checks
+remain separate and unchanged. A detected-only engine message is not itself
+evidence of an account or connection failure.
 `swift test --filter CalimochoInstalledReleaseChecks` checks
 the real installed release/CLI where present using isolated preference suites,
 without modifying the installed engine, real preferences, game files or saves.
@@ -113,6 +120,14 @@ The existing `XODUS_ENGINE_INSPECTION_TEST_BACKEND` executable selector can poin
 these checks at a source-bound backend candidate. The installed development CLI
 admits its original registry but refuses the no-smoke record; that is an
 installed/backend parity gap, not permission to synthesize admission.
+With that selector pointing to a real controlled app's bundled CLI and its
+retained sibling `package-receipt.json`, `swift test --filter
+ShippingServiceConfigurationChecks` exercises actual pair admission, current
+service identity binding, real Calimocho inspection and an account-free
+installation-status query against both a test-owned absent game directory and
+the retained `~/Games/Xodus/Brotato-Xbox` installation. It does not start an
+account client, read credentials or launch a game. Unavailable real inputs skip
+the check rather than substituting a fixture.
 
 Downloads use anonymous ephemeral HTTPS sessions, exact released byte/SHA pins,
 bounded ZIP/path validation and publisher signatures, then real service admission
