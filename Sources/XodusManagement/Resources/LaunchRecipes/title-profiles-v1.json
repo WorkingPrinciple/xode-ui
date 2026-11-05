@@ -225,7 +225,7 @@
       "productID": "9P9VNSQK1W3K",
       "provider": "calimocho",
       "title": "Brotato",
-      "qualification": "Diagnostic-only loader/SEH candidate after black-window run df49ad4f-024d-467a-844d-3a8f8d0409c9. Adds WINEDEBUG only; ordinary producer recipe 9b53f2ad and runtime/shim tuple unchanged. No gameplay, save retention or ordinary-quit acceptance. Not a production fix or the historical COR-216 DLL tuple.",
+      "qualification": "Diagnostic-only loader/SEH candidate after black-window run df49ad4f-024d-467a-844d-3a8f8d0409c9. Requires the reviewed producer launch.wineDebug recipe seam; frozen fff97074 cannot run this experiment. Distinct recipe 84e79412 adds only wineDebug; ordinary recipe 9b53f2ad and runtime/shim tuple unchanged. No gameplay, save retention or ordinary-quit acceptance. Not a production fix or the historical COR-216 DLL tuple.",
       "engine": "calimocho-11.20-4.0b3-06",
       "registrySHA256": "fe35dba8938abbe3ca921cc4f92abd65ec8a539b1bac20ac5cf58a18213ce48d",
       "executable": "Brotato.exe",
@@ -236,12 +236,10 @@
       "sourceRecipeSHA256": "8e71ce9f47efe4573eba7ac327c7f248e88e7087561c7fe1db1747ff7430f429",
       "candidateManifest": "A8 candidate-manifest.json",
       "candidateManifestSHA256": "1b22d36c4ce2eddbf5c3dd1e84c43ab5c9bcf5b7bb52bd14ff1ab6bc6a5ab983",
-      "engineRecipe": "BrotatoSourceCandidate/9P9VNSQK1W3K.json",
-      "engineRecipeSHA256": "9b53f2ad3a5d82a22433f09dc41a45f6e3db401072c3d9e4734c361fd6340c9b",
+      "engineRecipe": "BrotatoLoaderDiagnostic/9P9VNSQK1W3K.json",
+      "engineRecipeSHA256": "84e79412ea69873c5dee75e2f833dba6245affdecd38509c5996e48fa4ed9076",
       "diagnosticReceiptSHA256": "0d6fd570654b4952e22b2f3ac2c02c6ec0f25c0a19745b9b775b3d80a0f4c3d1",
-      "environment": {
-        "WINEDEBUG": "-all,+timestamp,+loaddll,+seh"
-      },
+      "environment": {},
       "unsetEnvironment": [
         "XODUS_PRIVATE_RUNTIME_COM_STA",
         "XODUS_PRIVATE_CALLER_OWNS_COM"

@@ -38,9 +38,9 @@ final class BrotatoLaunchRecipeChecks: XCTestCase {
         XCTAssertEqual(candidate.candidateManifest, "A8 candidate-manifest.json")
         XCTAssertEqual(candidate.candidateManifestSHA256,
             "1b22d36c4ce2eddbf5c3dd1e84c43ab5c9bcf5b7bb52bd14ff1ab6bc6a5ab983")
-        XCTAssertEqual(candidate.engineRecipe, "BrotatoSourceCandidate/9P9VNSQK1W3K.json")
+        XCTAssertEqual(candidate.engineRecipe, "BrotatoLoaderDiagnostic/9P9VNSQK1W3K.json")
         XCTAssertEqual(candidate.engineRecipeSHA256,
-            "9b53f2ad3a5d82a22433f09dc41a45f6e3db401072c3d9e4734c361fd6340c9b")
+            "84e79412ea69873c5dee75e2f833dba6245affdecd38509c5996e48fa4ed9076")
         XCTAssertEqual(candidate.diagnosticReceiptSHA256,
             "0d6fd570654b4952e22b2f3ac2c02c6ec0f25c0a19745b9b775b3d80a0f4c3d1")
         XCTAssertEqual(candidate.runtime?.primarySHA256, profile.runtime?.primarySHA256)
@@ -49,21 +49,33 @@ final class BrotatoLaunchRecipeChecks: XCTestCase {
         XCTAssertEqual(Set(NativeShimReference.brotatoSourceCandidate.hashes.keys), ["XCurl.dll", "cacert.pem"])
         XCTAssertNil(candidate.preservedPrefixPath)
         XCTAssertEqual(candidate.arguments, profile.arguments)
-        XCTAssertEqual(candidate.environment, ["WINEDEBUG": "-all,+timestamp,+loaddll,+seh"])
+        XCTAssertEqual(candidate.environment, [:])
         let candidateEnvironment = try candidate.validatedLaunchEnvironment()
-        XCTAssertEqual(Set(candidateEnvironment.keys), ["XODE_RECIPES_DIR", "WINEDEBUG"])
-        XCTAssertEqual(candidateEnvironment["WINEDEBUG"], "-all,+timestamp,+loaddll,+seh")
+        XCTAssertEqual(Set(candidateEnvironment.keys), ["XODE_RECIPES_DIR"])
+        XCTAssertNil(candidateEnvironment["WINEDEBUG"],
+                     "Registry precedence requires diagnostics in the post-registry producer recipe")
         XCTAssertEqual(try profile.validatedLaunchEnvironment(), [:],
                        "The ordinary historical route must not inherit diagnostic logging")
         let recipeDirectory = try XCTUnwrap(candidateEnvironment["XODE_RECIPES_DIR"])
+        XCTAssertEqual(URL(fileURLWithPath: recipeDirectory).lastPathComponent, "BrotatoLoaderDiagnostic")
         let recipeURL = URL(fileURLWithPath: recipeDirectory).appendingPathComponent("9P9VNSQK1W3K.json")
         let recipeData = try Data(contentsOf: recipeURL)
         XCTAssertEqual(SHA256.hash(data: recipeData).map { String(format: "%02x", $0) }.joined(),
                        candidate.engineRecipeSHA256)
-        let recipe = try XCTUnwrap(JSONSerialization.jsonObject(with: recipeData) as? [String: Any])
+        var recipe = try XCTUnwrap(JSONSerialization.jsonObject(with: recipeData) as? [String: Any])
         let launch = try XCTUnwrap(recipe["launch"] as? [String: Any])
         XCTAssertEqual(launch["dllOverrides"] as? String,
                        "mscoree,mshtml=;windows.web=b;xgameruntime=n,b")
+        XCTAssertEqual(launch["wineDebug"] as? String, "-all,+timestamp,+loaddll,+seh")
+        let ordinaryData = try Data(contentsOf: LaunchRecipeResources.brotatoSourceCandidateRecipeURL())
+        XCTAssertEqual(SHA256.hash(data: ordinaryData).map { String(format: "%02x", $0) }.joined(),
+                       "9b53f2ad3a5d82a22433f09dc41a45f6e3db401072c3d9e4734c361fd6340c9b")
+        let ordinary = try XCTUnwrap(JSONSerialization.jsonObject(with: ordinaryData) as? [String: Any])
+        var ordinaryLaunch = launch
+        ordinaryLaunch.removeValue(forKey: "wineDebug")
+        recipe["launch"] = ordinaryLaunch
+        XCTAssertEqual(recipe as NSDictionary, ordinary as NSDictionary,
+                       "The dedicated diagnostic recipe must change only the Wine diagnostic field")
         XCTAssertNil(candidate.dllOverrides)
         XCTAssertEqual(Set(candidate.unsetEnvironment ?? []),
             ["XODUS_PRIVATE_RUNTIME_COM_STA", "XODUS_PRIVATE_CALLER_OWNS_COM"])

@@ -553,21 +553,29 @@ this a1aade app route; a separate approved live regression is still required.
 
 #### Diagnostic-only continuation of the local Calimocho candidate
 
-The source candidate adds exactly `WINEDEBUG=-all,+timestamp,+loaddll,+seh`
-to the Brotato Calimocho provider override after actual run
+The source candidate selects a separate `BrotatoLoaderDiagnostic` recipe after actual run
 `df49ad4f-024d-467a-844d-3a8f8d0409c9` reached a black Engine-class window
 without a menu. This is diagnostic instrumentation, not a production fix or
-game acceptance. The ordinary producer recipe remains byte-identical at
+game acceptance. The diagnostic recipe has SHA-256
+`84e79412ea69873c5dee75e2f833dba6245affdecd38509c5996e48fa4ed9076`
+and adds only `launch.wineDebug: "-all,+timestamp,+loaddll,+seh"`.
+The ordinary producer recipe remains byte-identical at
 `9b53f2ad3a5d82a22433f09dc41a45f6e3db401072c3d9e4734c361fd6340c9b`;
 the historical/default profile still has an empty environment. Engine06,
 registry `fe35`, runtime `6c9d97`/`cfe7e5`, source XCurl/CA, builtin Windows.Web
 policy, title UUID/prefix and no-auto-dismiss behavior are unchanged.
 
-The frozen producer recipe schema cannot carry arbitrary environment keys:
-its derived environment only includes DLL overrides and supported graphics/
-synchronization settings. The existing validated UI profile environment carries
-this exact diagnostic value instead; inherited process-environment filtering is
-not relaxed and no generic switch is introduced.
+The frozen `fff97074` producer cannot run this diagnostic experiment. Its
+admitted registry overwrites inherited UI `WINEDEBUG` with `-all`, and its
+recipe schema derives no diagnostic value. The rejected `4f5d156` UI-only
+environment change therefore never reached Wine; this correction removes it.
+A separately reviewed producer must explicitly validate `launch.wineDebug`
+and derive exactly that `WINEDEBUG` value through the existing post-registry
+recipe application. A2 owns the producer seam and final-composed-environment
+regression. UI binding checks alone do not prove that downstream contract.
+Do not install or run this candidate with the frozen producer or an unverified
+replacement. Both UI profile environments remain empty; inherited environment
+filtering and registry admission are not relaxed, and no generic switch exists.
 
 Freeze/review and a separately sequenced install/runtime grant precede one
 changed-condition launch. Retain private `0600` stderr, stop at the first menu,

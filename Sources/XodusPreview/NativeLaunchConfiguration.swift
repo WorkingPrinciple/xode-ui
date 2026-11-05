@@ -374,8 +374,8 @@ struct NativeTitleLaunchProfile: Codable {
                 ? shimDirectory.map(Self.expand) == NativeShimReference.brotatoSourceCandidate.directory.path
                     && candidateManifest == "A8 candidate-manifest.json"
                     && candidateManifestSHA256 == "1b22d36c4ce2eddbf5c3dd1e84c43ab5c9bcf5b7bb52bd14ff1ab6bc6a5ab983"
-                    && engineRecipe == "BrotatoSourceCandidate/9P9VNSQK1W3K.json"
-                    && engineRecipeSHA256 == "9b53f2ad3a5d82a22433f09dc41a45f6e3db401072c3d9e4734c361fd6340c9b"
+                    && engineRecipe == "BrotatoLoaderDiagnostic/9P9VNSQK1W3K.json"
+                    && engineRecipeSHA256 == "84e79412ea69873c5dee75e2f833dba6245affdecd38509c5996e48fa4ed9076"
                     && diagnosticReceiptSHA256 == "0d6fd570654b4952e22b2f3ac2c02c6ec0f25c0a19745b9b775b3d80a0f4c3d1"
                 : shimDirectory == nil && shimSet == nil && candidateManifest == nil
                     && candidateManifestSHA256 == nil && engineRecipe == nil
@@ -387,8 +387,7 @@ struct NativeTitleLaunchProfile: Codable {
                   sourceRecipeSHA256 == "8e71ce9f47efe4573eba7ac327c7f248e88e7087561c7fe1db1747ff7430f429",
                   validShimBinding,
                   executable == "Brotato.exe", noAutoDismiss == true, timeoutSeconds == nil,
-                  environment == (sourceCandidate
-                    ? ["WINEDEBUG": "-all,+timestamp,+loaddll,+seh"] : [:]), mirrored.isEmpty,
+                  environment.isEmpty, mirrored.isEmpty,
                   Set(unsetEnvironment ?? []) == ["XODUS_PRIVATE_RUNTIME_COM_STA", "XODUS_PRIVATE_CALLER_OWNS_COM"],
                   runtime?.primaryPath == "${HOME}/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll",
                   runtime?.primarySHA256 == "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8",
@@ -461,11 +460,11 @@ struct NativeTitleLaunchProfile: Codable {
     func validatedLaunchEnvironment() throws -> [String: String] {
         var result = launchEnvironment
         if shimSet == NativeShimReference.brotatoSourceCandidateID {
-            guard engineRecipe == "BrotatoSourceCandidate/9P9VNSQK1W3K.json",
-                  engineRecipeSHA256 == "9b53f2ad3a5d82a22433f09dc41a45f6e3db401072c3d9e4734c361fd6340c9b" else {
+            guard engineRecipe == "BrotatoLoaderDiagnostic/9P9VNSQK1W3K.json",
+                  engineRecipeSHA256 == "84e79412ea69873c5dee75e2f833dba6245affdecd38509c5996e48fa4ed9076" else {
                 throw NativeLaunchError.invalidProfile
             }
-            let recipeURL = try LaunchRecipeResources.brotatoSourceCandidateRecipeURL()
+            let recipeURL = try LaunchRecipeResources.brotatoLoaderDiagnosticRecipeURL()
             let contents = try InstalledGameFiles.readRegular(recipeURL, maximumBytes: 65_536)
             let digest = SHA256.hash(data: contents).map { String(format: "%02x", $0) }.joined()
             let recipeDirectory = recipeURL.deletingLastPathComponent()
