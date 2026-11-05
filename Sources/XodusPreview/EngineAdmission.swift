@@ -246,7 +246,7 @@ actor EngineInspectionClient {
         var bytes = Data(), diagnostics = 0
         var closed = [false, false]
         // Release admission verifies the complete installed artifact, not only its registry.
-        let isReleaseInspection = arguments.contains(CalimochoInstalledRelease.engineName)
+        let isReleaseInspection = arguments.contains { CalimochoRelease(rawValue: $0) != nil }
         let deadline = ContinuousClock.now.advanced(by: .seconds(isReleaseInspection ? 90 : 5))
         do {
             while process.isRunning || closed.contains(false) {

@@ -40,9 +40,11 @@ struct CalimochoInstalledRelease: Sendable {
     let registry: URL
     let registrySHA256: String
 
-    static func locate(root: URL = enginesRoot, registries: URL = registriesRoot,
+    static func locate(release: CalimochoRelease = .release06,
+                       root: URL = enginesRoot, registries: URL = registriesRoot,
                        preferredRegistry: String? = nil) throws -> Self {
         try Task.checkCancellation()
+        let engineName = release.rawValue
         let engine = root.appendingPathComponent(engineName, isDirectory: true)
         try GameScriptFiles.checkPath(engine, allowMissing: true)
         var directory: ObjCBool = false
@@ -51,7 +53,7 @@ struct CalimochoInstalledRelease: Sendable {
         }
         let descriptor = try InstalledGameFiles.readRegular(
             engine.appendingPathComponent("calimocho-engine.json"), maximumBytes: 65_536)
-        guard SHA256.hash(data: descriptor).map({ String(format: "%02x", $0) }).joined() == descriptorSHA256 else {
+        guard CalimochoRelease.digest(descriptor) == release.descriptorSHA256 else {
             throw Failure.invalidDescriptor
         }
         try GameScriptFiles.checkPath(registries, allowMissing: true)
@@ -74,7 +76,7 @@ struct CalimochoInstalledRelease: Sendable {
             let record = try NativeEngineRegistry.read(url)
             guard let entry = record.engines.first(where: { $0.name == engineName }),
                   entry.provider?.id == "calimocho", entry.provider?.contract_version == 1,
-                  entry.sha256 == wineSHA256, entry.wineserver_sha256 == wineserverSHA256,
+                  entry.sha256 == release.wineSHA256, entry.wineserver_sha256 == release.wineserverSHA256,
                   entry.wine == engine.appendingPathComponent("bin/wine").path,
                   entry.wineserver == engine.appendingPathComponent("bin/wineserver").path else {
                 throw Failure.registryMissing

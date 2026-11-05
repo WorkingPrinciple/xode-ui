@@ -15,7 +15,8 @@ import tempfile
 from build_local_candidate import source_identity
 from refresh_local_candidate import refresh
 from shipping_pair import (CLI_SHA256, WINDOWS_HELPER_SHA256 as HELPER_SHA256,
-                           PRODUCER as PRODUCER_COMMIT, PRODUCER_TREE, PRODUCER_MANIFEST_SHA256,
+                           RELEASED_PRODUCER as PRODUCER_COMMIT, RELEASED_PRODUCER_TREE as PRODUCER_TREE,
+                           PRODUCER_MANIFEST_SHA256,
                            hex_value, owned_bytes, require, unique_object)
 from signing_identity import verify_designated_requirement
 

@@ -10,12 +10,16 @@ import re
 import stat
 import sys
 
-PRODUCER = "01d4cfd625764c2a8ec4d60824ef4f277b30b9e9"
-PRODUCER_TREE = "97a18c1f2c680cd4bce32a9bc2f0818b48977e64"
+PRODUCER = "809dd6f24686132b3da099b28cb47c89d89ba996"
+PRODUCER_TREE = "fc6cc572409da85cd4b45b4ce6b19ff4a86b0259"
+# Historical released payloads retain their own producer; a new sealed CLI is
+# not evidence that the old notarized CLI, helper or manifest changed identity.
+RELEASED_PRODUCER = "01d4cfd625764c2a8ec4d60824ef4f277b30b9e9"
+RELEASED_PRODUCER_TREE = "97a18c1f2c680cd4bce32a9bc2f0818b48977e64"
 CLI_SHA256 = "358fd9ab8a90042f6678e27450e3dc28f431e99fc7669f7f97ad3a9d1cd31da9"
 WINDOWS_HELPER_SHA256 = "847ad6f535cc5a32cd33cdc687c330aa66cad45d4c2577fd4c035033b029c78d"
 PRODUCER_MANIFEST_SHA256 = "4945099d043aed748d25e5908f7c6be26136ad67be18de8cd97c01161deac1fe"
-FEATURES = {"xodus": [], "xodus-cli": [], "xodus-management": ["live"],
+FEATURES = {"xodus": [], "xodus-cli": [], "xode-control": ["live"],
             "apple-native-keyring-store": ["keychain", "security-framework"]}
 PROFILE = {"opt_level": "3", "debuginfo": 0, "debug_assertions": False,
            "overflow_checks": False, "test": False}

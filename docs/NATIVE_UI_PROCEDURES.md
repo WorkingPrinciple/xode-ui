@@ -80,7 +80,7 @@ routing/persistence/readiness checks without opening windows or launching games.
 Installed Play, menu interaction and title variants still require separately
 authorized native acceptance; do not run them while desktop control is paused.
 
-REQ207 Settings > Engines checks the pinned published Calimocho release in
+REQ207 Settings > Engines checks the pinned published Calimocho releases 04/06 in
 `~/Library/Application Support/Xode/Engines` and its existing local records in
 `~/Library/Application Support/Xodus/EngineRegistries`. This bounded local check
 does not search other volumes, create a registry, run Wine or install an engine.
@@ -90,10 +90,15 @@ The installed descriptor must match the release pin; only fresh backend
 rechecks admission and refuses a concurrent preference change. Missing, detected
 without a service, verified and failed states stay distinct; toolkit files are
 only "Files staged", never Calimocho readiness. Existing title-specific engine
-and prefix constraints remain enforced. The pinned release link is guidance,
-not an in-app installer or update implementation. Actual obtain/update, including
-the owner's two-genuine-release update scenario, and game lifecycle acceptance
-remain separate. `swift test --filter CalimochoInstalledReleaseChecks` checks
+and prefix constraints remain enforced. **Download Calimocho** obtains pinned06
+without selecting it. **Update Calimocho** obtains06 alongside a verified04;
+only an unchanged explicit Calimocho04 default is switched after final-location
+admission. Neither action rewrites title recipes or touches prefixes/saves.
+Failure/cancellation preserves04 and the previous choice. A fully verified06
+may remain installed but unselected if cancellation or a concurrent preference
+change arrives after artifact publication; retry reuses it without downloading
+again. Existing engine directories are never overwritten.
+`swift test --filter CalimochoInstalledReleaseChecks` checks
 the real installed release/CLI where present using isolated preference suites,
 without modifying the installed engine, real preferences, game files or saves.
 Published release records may omit historical `smoke_test` metadata. The
@@ -108,6 +113,44 @@ The existing `XODUS_ENGINE_INSPECTION_TEST_BACKEND` executable selector can poin
 these checks at a source-bound backend candidate. The installed development CLI
 admits its original registry but refuses the no-smoke record; that is an
 installed/backend parity gap, not permission to synthesize admission.
+
+Downloads use anonymous ephemeral HTTPS sessions, exact released byte/SHA pins,
+bounded ZIP/path validation and publisher signatures, then real service admission
+before and after same-volume exclusive publication. New registries derive the
+exact descriptor environment and omit smoke metadata. Shared mutation/runtime
+repair ownership blocks games, installs and account changes during obtain/update;
+quit cancels and joins workers, inspection and extraction before releasing it.
+If a child survives shutdown, its stage and reservation remain owned and quit
+is refused. **Check for Updates** reads public `engine-*` releases, never account
+APIs, from the Engines pane at most daily after a successful check or by explicit
+request. HTTP/rate-limit failures are shown, never treated as "up to date".
+Newer unpinned releases are reported but never silently admitted or installed.
+
+The real artifact-only checks use the existing source CLI selector and ordinary
+`TMPDIR` for an isolated artifact root. Put the genuine04 release ZIP there;
+the same anonymous downloader obtains06 if its genuine ZIP is absent:
+
+```sh
+TMPDIR=/absolute/owned/session-artifacts \
+XODUS_ENGINE_INSPECTION_TEST_BACKEND=/absolute/approved/xodus-cli \
+swift test --filter 'Calimocho(InstalledRelease|ReleaseUpdate)Checks' --jobs 2
+```
+
+`CalimochoReleaseUpdateChecks` verifies04 acquisition, explicit04→06 update,
+preserved04 full-manifest admission, real unsupported-verifier refusal, wrong
+genuine release refusal, cancellation with a live owned extractor, shared-operation
+exclusion, quit joining and concurrent-choice preservation. It retains the two
+actual engines/registries under the printed isolated root for independent
+inspection and removes its isolated preferences. No fake provider or engine is
+used. Source/pipeline checks do not prove an installed native-app update, Wine
+execution, ordinary gameplay/quit or game download/uninstall/reinstall acceptance.
+
+Controlled packaging now pins unsigned backend809dd6f and its actual
+`xode-control: live` features. The historical released CLI/helper/manifest retain
+their separate original producer pins; a current sealed build is not permission
+to relabel or replace those redistributed artifacts. The sealed-input verifier,
+ownership/mode checks, shipping exclusions and signing/qualification gates remain
+required. Building/checking source does not authorize signing or installing it.
 
 COR137 keeps lifecycle cancellation operation-specific: user Stop of a launch
 returns to Play without installation/download recovery text. Install cancellation

@@ -17,7 +17,8 @@ import tarfile
 import tempfile
 
 from build_local_candidate import run, source_identity, validate_host
-from shipping_pair import (CLI_SHA256, WINDOWS_HELPER_SHA256, PRODUCER, PRODUCER_TREE, PRODUCER_MANIFEST_SHA256,
+from shipping_pair import (CLI_SHA256, WINDOWS_HELPER_SHA256, RELEASED_PRODUCER as PRODUCER,
+                           RELEASED_PRODUCER_TREE as PRODUCER_TREE, PRODUCER_MANIFEST_SHA256,
                            owned_bytes, require, swift_pins)
 from signing_identity import command, preflight, sign, verify_designated_requirement
 

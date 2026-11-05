@@ -380,7 +380,8 @@ struct EnginesSettingsTab: View {
 
                     // Calimocho Row
                     CalimochoSettingsRow(controller: state.calimochoEngine,
-                                         configuration: session.nativeInstallStatusConfiguration)
+                                         configuration: session.nativeInstallStatusConfiguration,
+                                         operations: state.gameOperations)
 
                     // CrossOver Row
                     HStack(alignment: .center, spacing: 12) {
@@ -503,6 +504,7 @@ struct EnginesSettingsTab: View {
 struct CalimochoSettingsRow: View {
     @ObservedObject var controller: CalimochoEngineController
     let configuration: BackendConfiguration?
+    @ObservedObject var operations: GameOperationsController
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -523,16 +525,27 @@ struct CalimochoSettingsRow: View {
                 case .checking:
                     ProgressView("Verifying the installed release").controlSize(.small)
                     Button("Cancel check") { controller.cancel() }
+                case .obtaining(let message):
+                    ProgressView(message).controlSize(.small)
+                    Button("Cancel download or update") { controller.cancel() }
+                        .accessibilityIdentifier("xodus.settings.calimocho.cancel")
                 case .verified:
-                    Text("Version \(CalimochoInstalledRelease.version) (Wine 11.20). Artifact verified; game qualification is separate.")
+                    Text("Version \(controller.detectedRelease?.version ?? CalimochoInstalledRelease.version) (Wine 11.20). Artifact verified; game qualification is separate.")
                         .font(.caption).foregroundStyle(.secondary)
+                    if controller.availableUpdate {
+                        Button("Update Calimocho") {
+                            if let configuration { controller.obtainLatest(configuration: configuration, operations: operations) }
+                        }
+                        .disabled(configuration == nil || !operations.canDisconnectAccount)
+                        .accessibilityIdentifier("xodus.settings.calimocho.update")
+                    }
                     Button("Use Calimocho as default") {
                         controller.refresh(configuration: configuration, selectAsDefault: true)
                     }
                     .disabled(configuration == nil)
                     .accessibilityIdentifier("xodus.settings.calimocho.select")
                 case .detected:
-                    Text("Version \(CalimochoInstalledRelease.version) is present. Connect the approved app service, then check again to verify it.")
+                    Text("Version \(controller.detectedRelease?.version ?? CalimochoInstalledRelease.version) is present. Connect the approved app service, then check again to verify it.")
                         .font(.caption).foregroundStyle(.secondary)
                 case .failed(let reason):
                     Label(reason, systemImage: "exclamationmark.circle")
@@ -540,6 +553,11 @@ struct CalimochoSettingsRow: View {
                 case .missing:
                     Text("Calimocho isn't installed in its supported Engines folder.")
                         .font(.caption).foregroundStyle(.secondary)
+                    Button("Download Calimocho") {
+                        if let configuration { controller.obtainLatest(configuration: configuration, operations: operations) }
+                    }
+                    .disabled(configuration == nil || !operations.canDisconnectAccount)
+                    .accessibilityIdentifier("xodus.settings.calimocho.download")
                 case .unchecked:
                     Text("The installed Calimocho release has not been checked.")
                         .font(.caption).foregroundStyle(.secondary)
@@ -554,6 +572,14 @@ struct CalimochoSettingsRow: View {
                         Link("Pinned release and installation notes", destination: CalimochoInstalledRelease.releaseURL)
                     }
                     .controlSize(.small)
+                    Button("Check for Updates") { controller.checkForUpdates(force: true) }
+                        .disabled(controller.checkingUpdates)
+                        .controlSize(.small)
+                        .accessibilityIdentifier("xodus.settings.calimocho.checkUpdates")
+                }
+                if controller.checkingUpdates { ProgressView("Checking Calimocho releases").controlSize(.small) }
+                if let message = controller.updateMessage {
+                    Text(message).font(.caption).foregroundStyle(.secondary)
                 }
             }
             .fixedSize(horizontal: false, vertical: true)
@@ -567,6 +593,7 @@ struct CalimochoSettingsRow: View {
             guard !Task.isCancelled else { return }
             controller.refresh(configuration: configuration)
             await controller.waitForRefresh()
+            controller.checkForUpdates()
         }
         .onDisappear { controller.cancel() }
     }

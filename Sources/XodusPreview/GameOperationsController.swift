@@ -165,6 +165,19 @@ final class GameOperationsController: ObservableObject {
 
     func finishAccountDisconnect() { installed.accountDisconnecting = false }
 
+    func reserveEngineChange() throws {
+        guard canDisconnectAccount, installed.runningGameID == nil, installed.stoppingGameID == nil else {
+            throw CalimochoInstallFailure.busy
+        }
+        try installed.reserveMutation(gameID: nil)
+        installed.runtimeRepairActive = true
+    }
+
+    func releaseEngineChange() {
+        installed.runtimeRepairActive = false
+        installed.releaseMutation()
+    }
+
     func signOutForApp() async -> Bool {
         guard installed.accountDisconnecting, !serviceBusy, !terminating else { return false }
         serviceBusy = true

@@ -156,8 +156,8 @@ class ReleaseCandidateChecks(unittest.TestCase):
         recipe_bytes = (project / "Sources/XodusManagement/Resources/LaunchRecipes/title-runtime-v1.json").read_bytes()
         recipe = json.loads(recipe_bytes)
         self.assertIn(f'static let cliSHA256 = "{pins.CLI_SHA256}"', lifecycle)
-        self.assertIn(f'static let commit = "{pins.PRODUCER}"', producer)
-        self.assertIn(f'static let tree = "{pins.PRODUCER_TREE}"', producer)
+        self.assertIn(f'static let commit = "{pins.RELEASED_PRODUCER}"', producer)
+        self.assertIn(f'static let tree = "{pins.RELEASED_PRODUCER_TREE}"', producer)
         self.assertIn(hashlib.sha256(recipe_bytes).hexdigest(), configuration)
         self.assertEqual(recipe["cliSha256"], pins.CLI_SHA256)
         self.assertEqual(recipe["evidenceCliSha256"],
@@ -179,13 +179,13 @@ class ReleaseCandidateChecks(unittest.TestCase):
             cli, helper = root / "xodus-cli", root / "xodus-window-monitor.exe"
             with patch.object(refresh_tool, "CLI_SHA256", cli_hash), \
                     patch.object(refresh_tool, "WINDOWS_HELPER_SHA256", helper_hash):
-                refresh_tool.validate_payload_pair(cli, helper, pins.PRODUCER, pins.PRODUCER_TREE)
-                for commit, tree in (("0" * 40, pins.PRODUCER_TREE), (pins.PRODUCER, "0" * 40)):
+                refresh_tool.validate_payload_pair(cli, helper, pins.RELEASED_PRODUCER, pins.RELEASED_PRODUCER_TREE)
+                for commit, tree in (("0" * 40, pins.RELEASED_PRODUCER_TREE), (pins.RELEASED_PRODUCER, "0" * 40)):
                     with self.assertRaises(ValueError):
                         refresh_tool.validate_payload_pair(cli, helper, commit, tree)
                 helper.write_bytes(b"Altered helper")
                 with self.assertRaises(ValueError):
-                    refresh_tool.validate_payload_pair(cli, helper, pins.PRODUCER, pins.PRODUCER_TREE)
+                    refresh_tool.validate_payload_pair(cli, helper, pins.RELEASED_PRODUCER, pins.RELEASED_PRODUCER_TREE)
 
     def test_outer_notarization_signature_stapler_and_gatekeeper_remain_mandatory(self):
         labels = ("app-stapler-staple", "app-stapler-validate", "stapled-app-signature",
