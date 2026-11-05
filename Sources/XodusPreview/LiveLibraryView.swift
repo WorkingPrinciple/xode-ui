@@ -242,11 +242,11 @@ struct LiveLibraryView: View {
                         actions: { Button("Browse games", action: browse) }
                     }
                 } else {
-                    LazyVGrid(columns: LibraryGridLayout.columns,
-                              alignment: .leading, spacing: 30) {
+                    LibraryGamesRow {
                         ForEach(visible) { game in card(game).id("library-card-\(game.id)") }
                     }
-                    .scrollTargetLayout()
+                    .accessibilityLabel("Your Games")
+                    .accessibilityIdentifier("xodus.library.games")
                 }
                 if let error = art.error {
                     Label(error, systemImage: "photo.badge.exclamationmark").font(.callout).foregroundStyle(.secondary)
@@ -258,7 +258,7 @@ struct LiveLibraryView: View {
                     VStack(alignment: .leading, spacing: 16) {
                         Text("Installed games (\(LibraryGame.installedCount(local: visibleLocalRecords, native: showsNativeMinecraft)))")
                             .font(.title2.weight(.semibold))
-                        LazyVGrid(columns: LibraryGridLayout.columns, alignment: .leading, spacing: 30) {
+                        LibraryGamesRow {
                             ForEach(visibleLocalRecords) { game in card(game).id("library-local-\(game.id)") }
                             if showsNativeMinecraft {
                                 NativeMinecraftCard {
@@ -267,7 +267,8 @@ struct LiveLibraryView: View {
                                 }.id("library-native-minecraft")
                             }
                         }
-                        .scrollTargetLayout()
+                        .accessibilityLabel("Installed games")
+                        .accessibilityIdentifier("xodus.library.installedGames")
                     }
                 }
                 }

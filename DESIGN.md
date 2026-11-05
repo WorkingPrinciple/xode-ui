@@ -315,6 +315,17 @@ bounded title/flow evidence, not complete accessibility or gameplay certificatio
 
 ## Actual native implementation
 
+**5 November collection scrolling correction (REQ-222):** Your Games and the
+separate Installed games collection use native horizontal rows, not wrapping
+grids. Keep every filtered/sorted entry, the existing portrait cards, 24-point
+gaps and 56-point section insets; 200-point covers remain within the incumbent
+170–220-point range. Native scrolling and view-aligned targets own navigation,
+without wheel interception or changes to system scrollbar preferences.
+Continue Playing retains its separate history, disclosure and shelf-local
+hidden-indicator behavior. This supersedes the older Library grid descriptions
+below; Discover is unchanged. Source checks do not establish installed
+scrolling, keyboard or accessibility acceptance.
+
 **Phase 2 B5/B7/B8/B9 (`fee7f5f`, admitted and installed):** retain the same native grid and controls. A separate
 Game Pass shelf follows Your PC games only with active service-owned status;
 its tiles share Installed matching and the protected support-check/Install
