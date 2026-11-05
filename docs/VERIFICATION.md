@@ -4,6 +4,21 @@ Foundation recorded 2026-10-03; subsequent native/read-only milestones are
 identified separately below. Source checks, real lifecycle results and external
 gameplay observations are distinguished explicitly.
 
+## Library background action stability (REQ-221, source candidate)
+
+Read-only installed-folder discovery no longer publishes a foreground registry
+edit across its scan. Actual registry commits retain the edit fence, and a
+foreground edit or operation supersedes stale discovery. Background native
+revalidation retains the last verified Play action until its new result; explicit
+checks and genuine readiness/account/operation failures keep their existing guards.
+Autoplay, paging, selection and the hero layout are unchanged.
+
+`swift test --filter InstalledGameRefreshChecks` reuses the existing filesystem
+discovery/storage checks to cover no-op refresh, action-notice stability,
+single-flight discovery and concurrent edits/operations. These are source checks,
+not installed-product evidence. Continuous observation of the same installed hero
+across refresh is still required for Play availability and View game position.
+
 The dated [UI continuation specification](UI-CONTINUATION-SPEC.md) records the
 23 October source/installed divergence, failed current scroll acceptance,
 classification evidence and open F/A/T/UI/game requirements. Read it before
