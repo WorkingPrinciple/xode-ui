@@ -421,9 +421,12 @@ public actor ManagementClient {
                       [.authStatus, .authBegin, .authCancel, .authLogout].contains(waiter.command) {
                 failure = .credentialStoreUnavailable
             } else { failure = .backendError(code, retryable: retryable) }
+            if let diagnostic = TransportFailureDiagnostic(error: error) {
+                logger.error("Authenticated transport failure: phase=\(diagnostic.phase.rawValue, privacy: .public) cause=\(diagnostic.cause.rawValue, privacy: .public)")
+            }
             pending.removeValue(forKey: id)
             waiter.deadline.cancel()
-            // The producer's human message/raw diagnostic text is deliberately not retained.
+            // Only closed diagnostic enums are logged; producer text is not retained.
             waiter.continuation.resume(throwing: failure)
         }
     }

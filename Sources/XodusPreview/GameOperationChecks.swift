@@ -9,9 +9,9 @@ import XodusManagement
 
 @MainActor
 enum GameOperationChecks {
-    static func run(check: (Bool, String) -> Void) async throws {
+    static func run(root: URL? = nil, check: (Bool, String) -> Void) async throws {
         // macOS temporary URLs retain the /var symlink; the receipt policy correctly refuses it.
-        let root = URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true)
+        let root = root ?? URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true)
             .appendingPathComponent(".xodus-game-operation-checks-\(UUID().uuidString)")
         let paths = GameScriptPaths(scripts: root.appendingPathComponent("scripts"),
             processed: root.appendingPathComponent("processed"), logs: root.appendingPathComponent("logs"),
@@ -211,9 +211,13 @@ enum GameOperationChecks {
             printf '0\\n' | publish "$receipts/$r.status"
             """)
         let launcher = root.appendingPathComponent("fixture launcher.sh")
-        try privateFile(launcher, "#!/bin/bash\nsleep 1\nexit 0\n", mode: 0o700)
+        let legacyLauncherStarted = root.appendingPathComponent("legacy-launcher-started")
+        try privateFile(launcher,
+            "#!/bin/bash\nprintf 'started\\n' > \"${0%/*}/legacy-launcher-started\"\nsleep 1\nexit 0\n",
+            mode: 0o700)
         try script(.install, """
             r="$1"; product="$2"; folder="$3"; receipts='\(paths.processed.path)'
+            printf '%s\\n' "$product" >> '\(root.path)/install-starts'
             printf '%s\\n' "$#" "$r" "$product" "$folder" "$PATH" "${XODUS_NEUTRAL_SECRET-unset}" > '\(root.path)/arguments'
             printf 'Synthetic operation log\\n' > '\(paths.logs.path)'/"$r.stderr.log"
             mode="$(cat '\(root.path)/mode')"
@@ -221,7 +225,10 @@ enum GameOperationChecks {
             if [ "$mode" = mismatch ]; then printf '0\\n' | publish "$receipts/$r.status"; exit 3; fi
             trap 'printf "14\\n" | publish "$receipts/$r.status"; exit 14' TERM
             printf '{"phase":"downloading","bytesDone":20,"bytesTotal":100}\\n' | publish "$receipts/$r.progress.json"
-            if [ "$mode" = slow ]; then while :; do sleep 0.1; done; fi
+            if [ "$mode" = slow ]; then
+                while [ ! -f '\(root.path)/complete-'"$r" ]; do sleep 0.1; done
+                mode="$(cat '\(root.path)/mode')"
+            fi
             if [ "$mode" = invalidprogress ]; then
                 printf '{"phase":"downloading","bytesDone":-1}\\n' | publish "$receipts/$r.progress.json"
                 while :; do sleep 0.1; done
@@ -609,6 +616,29 @@ enum GameOperationChecks {
         check(operations.gamePassStatus?.probeProductId == probeID && operations.compatibilityErrors[probeID] != nil,
               "B5 malformed compatibility cache cannot silently exclude a probe")
         try FileManager.default.removeItem(at: excludedCache)
+        let switching = GameOperationsController(installed: installed, paths: paths)
+        try writeMode("passslow")
+        try privateFile(root.appendingPathComponent("gamepass-arguments"), "")
+        switching.checkGamePass(discoveryProducts: discoveryProducts, ownedGames: [game])
+        try await wait {
+            ((try? String(contentsOf: root.appendingPathComponent("gamepass-arguments"),
+                          encoding: .utf8).isEmpty) == false)
+        }
+        switching.useUnifiedAccount()
+        await switching.waitForMutation()
+        check(switching.gamePassStatus == nil && !switching.gamePassActive
+              && !switching.gamePassFromCache && switching.gamePassError == nil
+              && switching.gamePassLog == nil && switching.gamePassFailureCode == nil,
+              "Unified account switch rejects the in-flight legacy Game Pass result and feedback")
+        let previousProbe = try Data(contentsOf: root.appendingPathComponent("gamepass-arguments"))
+        switching.checkGamePass(discoveryProducts: discoveryProducts, ownedGames: [game])
+        await switching.waitForMutation()
+        await switching.loadGamePassCache()
+        check(try switching.gamePassStatus == nil && !switching.gamePassActive
+              && Data(contentsOf: root.appendingPathComponent("gamepass-arguments")) == previousProbe,
+              "Unified account cannot launch a legacy Game Pass probe or load its saved receipt")
+        check(!installed.mutationActive && switching.canQuit,
+              "Retired legacy probe joins before releasing the mutation fence")
         let setupData = """
             {"ready":true,"items":[{"id":"crossover","title":"CrossOver","ready":true,"fix":null},
             {"id":"environment","title":"Game environment","ready":true,"fix":null},
@@ -962,7 +992,29 @@ enum GameOperationChecks {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false)
         }
         let firstLocation = try await Task.detached { try GameInstallLocation(folder: firstRoot) }.value
-        locationDefaults.set(try JSONEncoder().encode(firstLocation), forKey: GameInstallLocation.preferenceKey)
+        let firstLocationData = try JSONEncoder().encode(firstLocation)
+        let decodedFirstLocation = try GameInstallLocation.decode(firstLocationData)
+        check(firstLocation.folder == firstRoot.path && decodedFirstLocation == firstLocation,
+              "REQ92: A saved install folder retains the validated path through encoding and decoding")
+        guard var locationFields = try JSONSerialization.jsonObject(with: firstLocationData) as? [String: Any] else {
+            throw GameScriptError.invalidDestination
+        }
+        for invalidPath in [firstRoot.path + "/..", firstRoot.path + "/.", firstRoot.path + "//child"] {
+            locationFields["folder"] = invalidPath
+            do {
+                _ = try GameInstallLocation.decode(JSONSerialization.data(withJSONObject: locationFields))
+                check(false, "REQ92: Saved folders reject noncanonical path components")
+            } catch {
+                check(true, "REQ92: Saved folders reject noncanonical path components")
+            }
+        }
+        do {
+            _ = try GameInstallLocation(folder: aliasedGames)
+            check(false, "REQ92: A symlinked install folder cannot become the saved default")
+        } catch {
+            check(true, "REQ92: A symlinked install folder cannot become the saved default")
+        }
+        locationDefaults.set(firstLocationData, forKey: GameInstallLocation.preferenceKey)
         let locationOperations = GameOperationsController(installed: installed, paths: paths,
             compatibilityCatalogue: catalogue, installLocationDefaults: locationDefaults)
         await locationOperations.prepareInstall(game)
@@ -1059,6 +1111,14 @@ enum GameOperationChecks {
         guard let consent = operations.installConsent else { throw GameScriptError.invalidDestination }
         operations.confirmInstall(consent)
         try await wait { operations.progress?.bytesDone == 20 }
+        let activeActivity = LibraryActivity.resolve(productID: game.id, operations: .init(operations))
+        check(activeActivity?.kind == .install && activeActivity?.title == "Installing 20%"
+              && LibraryActivity.resolve(productID: "UNRELATED001", operations: .init(operations)) == nil,
+              "REQ188: The active controller projects only the matching game's reported progress")
+        check(operations.directInstallCancelled && !operations.installingDirectly,
+              "REQ200: The real controller retains an earlier preparation cancellation while the next download runs")
+        NativeUIChecks.checkDetailInstallAction(operations: operations, game: game,
+            expectedStatus: "Installing", cancelEnabled: true, check: check)
         check(operations.isBusy && !operations.canQuit && installed.mutationActive
               && !operations.canStartMutation && !operations.canSignIn,
               "S5 one mutation reserves registration, service restart and normal Quit")
@@ -1070,6 +1130,11 @@ enum GameOperationChecks {
             game: game, expectedStatus: operations.progress?.phase.title ?? "Preparing download",
             cancelTitle: "Cancel installation", check: check)
         let activeID = operations.operation?.id
+        let waitingGame = PCGame(id: "FIXTURE00002", title: "Second Fixture", artwork: nil)
+        check(GameInstallAction(game: waitingGame, operations: operations).canInstall,
+              "REQ184: A different title's Install remains available during an active download")
+        check(operations.installUnavailableReason == nil,
+              "REQ184: A running download is not a global installation-admission blocker")
         await operations.prepareInstall(game)
         operations.signInForGames()
         check(operations.installConsent == nil && operations.operation?.id == activeID && !operations.serviceSigningIn,
@@ -1095,6 +1160,8 @@ enum GameOperationChecks {
         check(!operations.isBusy && !installed.mutationActive && operations.error == nil && operations.notice != nil
               && operations.log != nil && installed.games.isEmpty,
               "S5 SIGTERM joins the script, consumes code 14 and keeps partial files unregistered")
+        check(LibraryActivity.resolve(productID: game.id, operations: .init(operations))?.state == .cancelled,
+              "REQ188: The controller's cancelled install projects cancellation, not completion")
         // M7: a queue-originated pause/cancel also stops the engine with code 14, but unlike an
         // interactive cancel it must NOT leave the shared failure banner populated — the per-job
         // queue UI is authoritative, so the Downloads screen must not show a spurious failure for
@@ -1123,6 +1190,8 @@ enum GameOperationChecks {
               && imported.folder == consent.destination.path && imported.launcher == launcher.path
               && operations.error == nil && installed.launchableIDs.contains(imported.id),
               "S5 status zero ignores extra result fields and registers only from config validation and durable save")
+        check(LibraryActivity.resolve(productID: game.id, operations: .init(operations))?.state == .completed,
+              "REQ188: A registered successful install projects its real completion")
         checkUnrelatedDetail(operations, owner: game.id, stage: "completed download")
         check(operations.feedbackProductID == game.id
               && GameOperationProgressView(operations: operations, productID: game.id).operationNotice == operations.notice
@@ -1133,6 +1202,424 @@ enum GameOperationChecks {
         check(reloaded == installed.games, "S5 validated installation survives a registry reload")
         check(installed.runningGameID == nil && !installed.launchStarted,
               "Library Install completes registration without automatically calling Play")
+        do {
+            let queueStore = InstalledGameStore(file: root.appendingPathComponent("queue-registry/games.json"))
+            let queueLibrary = InstalledGamesController(store: queueStore, compatibilityCatalogue: catalogue)
+            await queueLibrary.load()
+            let queuePaths = GameScriptPaths(scripts: paths.scripts, processed: paths.processed, logs: paths.logs,
+                games: root.appendingPathComponent("QueueGames"),
+                journal: root.appendingPathComponent("queue-state/operation.json"))
+            let queued = GameOperationsController(installed: queueLibrary, paths: queuePaths,
+                                                  compatibilityCatalogue: catalogue)
+            await queued.restore()
+            let alpha = PCGame(id: "FIXTURE00002", title: "Queue Alpha", artwork: nil)
+            let bravo = PCGame(id: "FIXTURE00003", title: "Queue Bravo", artwork: nil)
+            let repair = PCGame(id: "FIXTURE00004", title: "Queue Repair", artwork: nil)
+            try writeMode("success")
+            await queued.install(repair)
+            await queued.waitForMutation()
+            guard let repairEntry = queueLibrary.games.first else { throw GameScriptError.invalidReceipt }
+            try writeMode("slow")
+            await queued.install(alpha)
+            try await wait { queued.progress?.bytesDone == 20 }
+            guard let active = queued.operation?.id else { throw GameScriptError.invalidReceipt }
+            let originalProgress = queued.progress
+            let originalOwner = queued.feedbackProductID
+            let startsBeforeAdmission = try String(contentsOf: root.appendingPathComponent("install-starts"), encoding: .utf8)
+            let checksBeforeAdmission = try String(contentsOf: root.appendingPathComponent("check-calls"), encoding: .utf8)
+            check(queued.canRepair(repairEntry),
+                  "REQ184: Repair of another title is admitted during an active download")
+            await GameInstallAction(game: bravo, operations: queued).requestInstall()
+            guard let review = queued.installConsent else { throw GameScriptError.invalidReceipt }
+            check(queued.canConfirmInstall && review.compatibility == nil,
+                  "REQ184: Another Install retains destination review with package check explicitly deferred")
+            queued.confirmInstall(review)
+            var observedPreparation: (LibraryActivity?, LibraryActivity?)?
+            var observedActions: (String, Bool, String, Bool)?
+            let preparationObservation = queued.$preparingConsent.sink { preparing in
+                guard preparing, queued.installingDirectly, queued.directInstallProductID == repair.id else { return }
+                let snapshot = LibraryActivity.Operations(queued)
+                observedPreparation = (LibraryActivity.resolve(productID: repair.id, operations: snapshot),
+                                       LibraryActivity.resolve(productID: alpha.id, operations: snapshot))
+                let preparingAction = GameInstallAction(game: repair, operations: queued)
+                let activeAction = GameInstallAction(game: alpha, operations: queued)
+                observedActions = (preparingAction.statusTitle, preparingAction.showsCancel,
+                                   activeAction.statusTitle, activeAction.showsCancel)
+            }
+            await queued.repair(repair, installed: repairEntry)
+            preparationObservation.cancel()
+            check(observedPreparation?.0?.state == .preparing
+                  && observedPreparation?.1?.title == "Installing 20%",
+                  "REQ200: Real controller preparation of another game does not hide either title's activity")
+            check(observedActions?.0 == "Preparing installation" && observedActions?.1 == true
+                  && observedActions?.2 == "Installing" && observedActions?.3 == true,
+                  "REQ200: Real controller exposes the correct detail actions for concurrent preparation and download")
+            check(queued.queuedInstalls.map(\.record.productID) == [bravo.id, repair.id]
+                  && queued.queuedInstalls.map(\.record.kind) == [.install, .repair]
+                  && queued.operation?.id == active && queued.progress == originalProgress
+                  && queued.feedbackProductID == originalOwner && queued.error == nil,
+                  "REQ184: Install and repair wait FIFO without replacing the active run, progress or feedback")
+            let activity = LibraryActivity.Operations(queued)
+            check(LibraryActivity.resolve(productID: alpha.id, operations: activity)?.title == "Installing 20%"
+                  && LibraryActivity.resolve(productID: bravo.id, operations: activity)?.state == .queued
+                  && LibraryActivity.resolve(productID: repair.id, operations: activity)?.kind == .repair
+                  && LibraryActivity.resolve(productID: repair.id, operations: activity)?.state == .queued,
+                  "REQ188: Active, queued install and queued repair project their matching controller state")
+            check(try String(contentsOf: root.appendingPathComponent("install-starts"), encoding: .utf8) == startsBeforeAdmission
+                  && String(contentsOf: root.appendingPathComponent("check-calls"), encoding: .utf8) == checksBeforeAdmission,
+                  "REQ184: Admission neither starts concurrent writes nor borrows the active mutation runner")
+            await queued.install(bravo)
+            await queued.repair(repair, installed: repairEntry)
+            check(queued.queuedInstalls.count == 2 && !GameInstallAction(game: alpha, operations: queued).canInstall
+                  && !GameInstallAction(game: bravo, operations: queued).canInstall && !queued.canRepair(repairEntry),
+                  "REQ184: Active-title and queued-title duplicates cannot be added twice")
+            let collision = PCGame(id: "FIXTURE00005", title: alpha.title, artwork: nil)
+            await queued.prepareInstall(collision)
+            check(queued.installConsent == nil && queued.queuedInstalls.count == 2
+                  && queued.installQueueError != nil && queued.operation?.id == active && queued.error == nil,
+                  "REQ184: Different products cannot share the active destination or corrupt its error state")
+            let persisted = try GameInstallQueueJournal(file: queuePaths.journal.appendingPathExtension("queue.json")).load()
+            check(persisted.map(\.id) == queued.queuedInstalls.map(\.id),
+                  "REQ184: Reviewed queue order and repair identity are durably saved before acknowledgement")
+            try privateFile(root.appendingPathComponent("complete-\(active)"), "Finish the existing deterministic run")
+            try await wait { queued.operation?.productID == bravo.id && queued.progress?.bytesDone == 20 }
+            check(queued.queuedInstalls.map(\.record.productID) == [repair.id]
+                  && queueLibrary.games.contains(where: { $0.storeId == alpha.id }),
+                  "REQ184: Natural completion registers A before starting queued B")
+            try writeMode("success")
+            await queued.cancelInstall()
+            await queued.waitForMutation()
+            check(queued.queuedInstalls.isEmpty && queued.operation == nil && !queueLibrary.mutationActive
+                  && queued.error == nil && queueLibrary.games.contains(where: { $0.id == repairEntry.id }),
+                  "REQ184: Cancellation joins B before starting the queued repair and preserves its installed identity")
+            let starts = try String(contentsOf: root.appendingPathComponent("install-starts"), encoding: .utf8)
+                .split(separator: "\n").suffix(4).map(String.init)
+            check(starts == [repair.id, alpha.id, bravo.id, repair.id],
+                  "REQ184: Real deterministic script start order is seed, A, B, repair with one mutation at a time")
+
+            try writeMode("slow")
+            await queued.install(bravo)
+            try await wait { queued.operation?.productID == bravo.id && queued.progress?.bytesDone == 20 }
+            guard let refreshedRepair = queueLibrary.games.first(where: { $0.id == repairEntry.id }) else {
+                throw GameScriptError.invalidReceipt
+            }
+            await queued.repair(repair, installed: refreshedRepair)
+            guard let cancelled = queued.queuedInstalls.first else { throw GameScriptError.invalidReceipt }
+            await queued.cancelQueuedInstall(cancelled.id)
+            let remainingQueue = try GameInstallQueueJournal(file: queuePaths.journal.appendingPathExtension("queue.json")).load()
+            check(queued.queuedInstalls.isEmpty && queued.operation?.productID == bravo.id
+                  && remainingQueue.isEmpty,
+                  "REQ184: Cancelling a waiting repair removes its durable intent without stopping the active download")
+            await queued.cancelInstall()
+            await queued.waitForMutation()
+            try writeMode("success")
+            let recoveryQueue = GameInstallQueueJournal(file: queuePaths.journal.appendingPathExtension("queue.json"))
+            try recoveryQueue.save([cancelled])
+            let restoredQueue = GameOperationsController(installed: queueLibrary, paths: queuePaths,
+                                                         compatibilityCatalogue: catalogue)
+            await restoredQueue.restore()
+            check(restoredQueue.installQueuePaused && restoredQueue.operation == nil
+                  && restoredQueue.queuedInstalls.first?.id == cancelled.id && !queueLibrary.mutationActive,
+                  "REQ184: Restored queue is visible and paused, never replayed implicitly after restart")
+            restoredQueue.resumeInstallQueue()
+            await restoredQueue.waitForMutation()
+            check(restoredQueue.queuedInstalls.isEmpty && restoredQueue.operation == nil
+                  && restoredQueue.error == nil && !queueLibrary.mutationActive,
+                  "REQ184: Explicit continuation revalidates and runs the recovered repair once")
+            try writeMode("slow")
+            await restoredQueue.install(bravo)
+            try await wait { restoredQueue.operation?.productID == bravo.id && restoredQueue.progress?.bytesDone == 20 }
+            let reviewRace = PCGame(id: "FIXTURE00005", title: "Queue Review Race", artwork: nil)
+            await restoredQueue.prepareInstall(reviewRace)
+            guard let delayedReview = restoredQueue.installConsent else { throw GameScriptError.invalidReceipt }
+            await restoredQueue.cancelInstall()
+            await restoredQueue.waitForMutation()
+            check(restoredQueue.canConfirmInstall && delayedReview.compatibility == nil,
+                  "REQ184: A deferred review remains confirmable when the prior download finishes before confirmation")
+            try writeMode("success")
+            restoredQueue.confirmInstall(delayedReview)
+            await restoredQueue.waitForMutation()
+            check(queueLibrary.games.contains(where: { $0.storeId == reviewRace.id })
+                  && restoredQueue.queuedInstalls.isEmpty && restoredQueue.error == nil,
+                  "REQ184: Deferred review runs the real package check before starting, even if the slot is now free")
+
+            guard let currentAlpha = queueLibrary.games.first(where: { $0.storeId == alpha.id }),
+                  let currentRepair = queueLibrary.games.first(where: { $0.storeId == repair.id }) else {
+                throw GameScriptError.invalidReceipt
+            }
+            try writeMode("slow")
+            await restoredQueue.repair(alpha, installed: currentAlpha)
+            try await wait { restoredQueue.operation?.productID == alpha.id && restoredQueue.progress?.bytesDone == 20 }
+            await restoredQueue.repair(repair, installed: currentRepair)
+            await restoredQueue.install(bravo)
+            let failureStarts = try String(contentsOf: root.appendingPathComponent("install-starts"), encoding: .utf8)
+            try writeMode("checkunsupported")
+            await restoredQueue.cancelInstall()
+            await restoredQueue.waitForMutation()
+            check(restoredQueue.installQueuePaused && restoredQueue.queuedInstalls.map(\.record.productID) == [repair.id, bravo.id]
+                  && restoredQueue.installQueueError != nil && !queueLibrary.mutationActive,
+                  "REQ184: Failed deferred compatibility stops FIFO execution and keeps subsequent requests visible")
+            check(try String(contentsOf: root.appendingPathComponent("install-starts"), encoding: .utf8) == failureStarts,
+                  "REQ184: A denied package check starts neither the repair nor the following download")
+            guard let failedRequest = restoredQueue.queuedInstalls.first else { throw GameScriptError.invalidReceipt }
+            await restoredQueue.cancelQueuedInstall(failedRequest.id)
+            try writeMode("success")
+            restoredQueue.resumeInstallQueue()
+            await restoredQueue.waitForMutation()
+            check(restoredQueue.queuedInstalls.isEmpty && restoredQueue.error == nil
+                  && queueLibrary.games.contains(where: { $0.storeId == bravo.id }),
+                  "REQ184: Cancelling the denied request and explicitly continuing starts the next title safely")
+            do {
+                try recoveryQueue.save([failedRequest, failedRequest])
+                check(false, "REQ184: Queue persistence rejects duplicate request identities")
+            } catch { check(true, "REQ184: Queue persistence rejects duplicate request identities") }
+            let overlapping = QueuedGameInstall(record: GameOperationRecord(id: InstalledGamesController.runID(),
+                kind: .install, productID: reviewRace.id, title: reviewRace.title,
+                destination: failedRequest.record.destination + "/nested", installedID: nil), storageVolume: nil)
+            do {
+                try recoveryQueue.save([failedRequest, overlapping])
+                check(false, "REQ184: Queue persistence rejects overlapping destination trees")
+            } catch { check(true, "REQ184: Queue persistence rejects overlapping destination trees") }
+            guard let failingAlpha = queueLibrary.games.first(where: { $0.storeId == alpha.id }),
+                  let waitingRepair = queueLibrary.games.first(where: { $0.storeId == repair.id }) else {
+                throw GameScriptError.invalidReceipt
+            }
+            try writeMode("slow")
+            await restoredQueue.repair(alpha, installed: failingAlpha)
+            try await wait { restoredQueue.operation?.productID == alpha.id && restoredQueue.progress?.bytesDone == 20 }
+            guard let failingRun = restoredQueue.operation?.id else { throw GameScriptError.invalidReceipt }
+            await restoredQueue.repair(repair, installed: waitingRepair)
+            let waitingIDs = restoredQueue.queuedInstalls.map(\.id)
+            check(waitingIDs.count == 1 && restoredQueue.operation?.id == failingRun,
+                  "REQ184 review: The legacy failure case has an independently waiting repair and unchanged active run")
+            let beforeFailure = try String(contentsOf: root.appendingPathComponent("install-starts"), encoding: .utf8)
+            try writeMode("13")
+            try privateFile(root.appendingPathComponent("complete-\(failingRun)"), "Release the failing active run")
+            await restoredQueue.waitForMutation()
+            check(restoredQueue.installQueuePaused && restoredQueue.queuedInstalls.map(\.id) == waitingIDs
+                  && restoredQueue.operation == nil && !queueLibrary.mutationActive,
+                  "REQ184 review: Initially active legacy failure pauses the durable waiting queue")
+            check(restoredQueue.feedbackProductID == alpha.id && restoredQueue.failureCode == 13
+                  && restoredQueue.error == GameScriptError.failed(13).localizedDescription
+                  && restoredQueue.log == paths.logs.appendingPathComponent("\(failingRun).stderr.log"),
+                  "REQ184 review: Initially active legacy failure keeps its title, code, error and log")
+            check(try String(contentsOf: root.appendingPathComponent("install-starts"), encoding: .utf8) == beforeFailure
+                  && recoveryQueue.load().map(\.id) == waitingIDs,
+                  "REQ184 review: No legacy waiting request starts or disappears after the joined run fails")
+            try writeMode("success")
+            restoredQueue.resumeInstallQueue()
+            await restoredQueue.waitForMutation()
+            check(restoredQueue.queuedInstalls.isEmpty && restoredQueue.error == nil
+                  && restoredQueue.feedbackProductID == repair.id,
+                  "REQ184 review: Explicit continuation after legacy failure starts the waiting request, not the failed title")
+
+            guard let protectedAlpha = queueLibrary.games.first(where: { $0.storeId == alpha.id }),
+                  let protectedRepair = queueLibrary.games.first(where: { $0.storeId == repair.id }) else {
+                throw GameScriptError.invalidReceipt
+            }
+            try writeMode("slow")
+            await restoredQueue.repair(alpha, installed: protectedAlpha)
+            try await wait { restoredQueue.operation?.productID == alpha.id && restoredQueue.progress?.bytesDone == 20 }
+            guard let protectedRun = restoredQueue.operation?.id else { throw GameScriptError.invalidReceipt }
+            var stalePreparationCancel: (@MainActor () async -> Void)?
+            var staleProgressPreparationCancel: (@MainActor () async -> Void)?
+            let stalePreparationObservation = restoredQueue.$preparingConsent.sink { preparing in
+                guard preparing, restoredQueue.installingDirectly,
+                      restoredQueue.directInstallProductID == repair.id else { return }
+                stalePreparationCancel = GameInstallAction(game: repair, operations: restoredQueue).cancelAction
+                staleProgressPreparationCancel = GameOperationProgressView(
+                    operations: restoredQueue, productID: repair.id).preparationCancelAction
+            }
+            await restoredQueue.repair(repair, installed: protectedRepair)
+            stalePreparationObservation.cancel()
+            guard let stalePreparationCancel, let staleProgressPreparationCancel else {
+                throw GameScriptError.invalidReceipt
+            }
+            let protectedQueue = restoredQueue.queuedInstalls.map(\.id)
+            await stalePreparationCancel()
+            check(restoredQueue.operation?.id == protectedRun && !restoredQueue.cancelling
+                  && restoredQueue.queuedInstalls.map(\.id) == protectedQueue,
+                  "REQ200: A delayed preparation Cancel cannot stop another game's active download or change its queue")
+            await staleProgressPreparationCancel()
+            check(restoredQueue.operation?.id == protectedRun && !restoredQueue.cancelling
+                  && restoredQueue.queuedInstalls.map(\.id) == protectedQueue,
+                  "REQ200: A delayed progress preparation Cancel cannot stop another game's download or change its queue")
+            try writeMode("success")
+            if restoredQueue.canCancel { await restoredQueue.cancelInstall() }
+            await restoredQueue.waitForMutation()
+
+            guard let laterRepair = queueLibrary.games.first(where: { $0.storeId == repair.id }) else {
+                throw GameScriptError.invalidReceipt
+            }
+            try writeMode("checkslow")
+            let laterPreparation = Task { await restoredQueue.repair(repair, installed: laterRepair) }
+            try await wait { restoredQueue.installingDirectly && restoredQueue.checkingCompatibility }
+            await stalePreparationCancel()
+            check(restoredQueue.installingDirectly && restoredQueue.checkingCompatibility
+                  && !restoredQueue.directInstallCancelled,
+                  "REQ200: A delayed preparation Cancel cannot stop a later preparation for the same game")
+            await staleProgressPreparationCancel()
+            check(restoredQueue.installingDirectly && restoredQueue.checkingCompatibility
+                  && !restoredQueue.directInstallCancelled,
+                  "REQ200: A delayed progress preparation Cancel cannot stop a later preparation for the same game")
+            let currentPreparationCancel = GameInstallAction(game: repair, operations: restoredQueue).cancelAction
+            await currentPreparationCancel()
+            await laterPreparation.value
+            check(!restoredQueue.installingDirectly && !queueLibrary.mutationActive,
+                  "REQ200: A current preparation Cancel still joins its own compatibility check")
+            let progressPreparation = Task { await restoredQueue.repair(repair, installed: laterRepair) }
+            try await wait { restoredQueue.installingDirectly && restoredQueue.checkingCompatibility }
+            guard let currentProgressPreparationCancel = GameOperationProgressView(
+                operations: restoredQueue, productID: repair.id).preparationCancelAction else {
+                throw GameScriptError.invalidReceipt
+            }
+            await currentProgressPreparationCancel()
+            await progressPreparation.value
+            check(!restoredQueue.installingDirectly && !queueLibrary.mutationActive,
+                  "REQ200: A current progress preparation Cancel joins its own compatibility check")
+
+            guard let earlierAlpha = queueLibrary.games.first(where: { $0.storeId == alpha.id }) else {
+                throw GameScriptError.invalidReceipt
+            }
+            try writeMode("slow")
+            await restoredQueue.repair(alpha, installed: earlierAlpha)
+            try await wait { restoredQueue.operation?.productID == alpha.id && restoredQueue.progress?.bytesDone == 20 }
+            guard let earlierRun = restoredQueue.operation?.id else { throw GameScriptError.invalidReceipt }
+            let staleOperationCancel = GameInstallAction(game: alpha, operations: restoredQueue).cancelAction
+            guard let staleProgressOperationCancel = GameOperationProgressView(
+                operations: restoredQueue, productID: alpha.id).installCancelAction else {
+                throw GameScriptError.invalidReceipt
+            }
+            try writeMode("success")
+            try privateFile(root.appendingPathComponent("complete-\(earlierRun)"), "Finish the earlier run")
+            await restoredQueue.waitForMutation()
+
+            guard let laterBravo = queueLibrary.games.first(where: { $0.storeId == bravo.id }) else {
+                throw GameScriptError.invalidReceipt
+            }
+            try writeMode("slow")
+            await restoredQueue.repair(bravo, installed: laterBravo)
+            try await wait { restoredQueue.operation?.productID == bravo.id && restoredQueue.progress?.bytesDone == 20 }
+            guard let otherRun = restoredQueue.operation?.id else { throw GameScriptError.invalidReceipt }
+            await staleOperationCancel()
+            check(restoredQueue.operation?.id == otherRun && !restoredQueue.cancelling,
+                  "REQ200: A delayed operation Cancel cannot stop a replacement run for another game")
+            await staleProgressOperationCancel()
+            check(restoredQueue.operation?.id == otherRun && !restoredQueue.cancelling,
+                  "REQ200: A delayed progress Cancel cannot stop a replacement run for another game")
+            try writeMode("success")
+            let currentOtherCancel = GameInstallAction(game: bravo, operations: restoredQueue).cancelAction
+            await currentOtherCancel()
+            await restoredQueue.waitForMutation()
+            check(restoredQueue.operation == nil && !queueLibrary.mutationActive,
+                  "REQ200: A current detail Cancel joins its own replacement download")
+
+            guard let laterAlpha = queueLibrary.games.first(where: { $0.storeId == alpha.id }) else {
+                throw GameScriptError.invalidReceipt
+            }
+            try writeMode("slow")
+            await restoredQueue.repair(alpha, installed: laterAlpha)
+            try await wait { restoredQueue.operation?.productID == alpha.id && restoredQueue.progress?.bytesDone == 20 }
+            guard let laterRun = restoredQueue.operation?.id, laterRun != earlierRun else {
+                throw GameScriptError.invalidReceipt
+            }
+            await staleOperationCancel()
+            check(restoredQueue.operation?.id == laterRun && !restoredQueue.cancelling,
+                  "REQ200: A delayed operation Cancel cannot stop a later run for the same game")
+            await staleProgressOperationCancel()
+            check(restoredQueue.operation?.id == laterRun && !restoredQueue.cancelling,
+                  "REQ200: A delayed progress Cancel cannot stop a later run for the same game")
+            guard let currentOperationCancel = GameOperationProgressView(
+                operations: restoredQueue, productID: alpha.id).installCancelAction else {
+                throw GameScriptError.invalidReceipt
+            }
+            await currentOperationCancel()
+            await restoredQueue.waitForMutation()
+            check(restoredQueue.operation == nil && !queueLibrary.mutationActive,
+                  "REQ200: A current progress Cancel joins its own download")
+            try writeMode("success")
+
+            guard let retainedRepair = queueLibrary.games.first(where: { $0.storeId == repair.id }) else {
+                throw GameScriptError.invalidReceipt
+            }
+            await restoredQueue.prepareInstall(repair, repairing: retainedRepair)
+            guard let retainedReview = restoredQueue.installConsent else { throw GameScriptError.invalidReceipt }
+            var reviewCancellation: Task<Void, Never>?
+            let reviewCancellationObservation = restoredQueue.$installingDirectly.sink { starting in
+                guard starting else { return }
+                reviewCancellation = Task {
+                    if let cancel = GameOperationProgressView(
+                        operations: restoredQueue, productID: repair.id).preparationCancelAction {
+                        await cancel()
+                    }
+                }
+            }
+            try writeMode("checkslow")
+            await restoredQueue.repair(repair, installed: retainedRepair)
+            reviewCancellationObservation.cancel()
+            await reviewCancellation?.value
+            check(reviewCancellation != nil && restoredQueue.directInstallCancelled
+                  && restoredQueue.installConsent?.id == retainedReview.id
+                  && restoredQueue.installConsent?.destination == retainedReview.destination
+                  && restoredQueue.operation == nil && !queueLibrary.mutationActive,
+                  "REQ200: Cancelling a new preparation preserves an earlier review for the same game")
+            await restoredQueue.cancelInstallConsent(reviewID: retainedReview.id)
+
+            let earlyController = GameOperationsController(installed: queueLibrary, paths: queuePaths,
+                                                            compatibilityCatalogue: catalogue)
+            await earlyController.restore()
+            try writeMode("checkslow")
+            earlyController.precheck([reviewRace.id])
+            try await wait {
+                guard earlyController.precheckingProductID == reviewRace.id,
+                      let arguments = try? String(contentsOf: root.appendingPathComponent("check-arguments"),
+                                                  encoding: .utf8) else { return false }
+                return arguments.split(separator: "\n").last == Substring(reviewRace.id)
+            }
+            var earlyCancellation: Task<Void, Never>?
+            var cancelledWhilePrecheck = false
+            let earlyCancellationObservation = earlyController.$installingDirectly.sink { starting in
+                guard starting else { return }
+                earlyCancellation = Task {
+                    cancelledWhilePrecheck = earlyController.precheckingProductID == reviewRace.id
+                    if let cancel = GameOperationProgressView(
+                        operations: earlyController, productID: repair.id).preparationCancelAction {
+                        await cancel()
+                    }
+                }
+            }
+            await earlyController.repair(repair, installed: retainedRepair)
+            earlyCancellationObservation.cancel()
+            await earlyCancellation?.value
+            check(earlyCancellation != nil && cancelledWhilePrecheck && earlyController.directInstallCancelled
+                  && !earlyController.installingDirectly && earlyController.installConsent == nil
+                  && earlyController.operation == nil && !queueLibrary.mutationActive,
+                  "REQ200: Cancel captures the current preparation before the older precheck finishes")
+
+            guard let queueAlpha = queueLibrary.games.first(where: { $0.storeId == alpha.id }) else {
+                throw GameScriptError.invalidReceipt
+            }
+            try writeMode("slow")
+            await restoredQueue.repair(alpha, installed: queueAlpha)
+            try await wait { restoredQueue.operation?.productID == alpha.id && restoredQueue.progress?.bytesDone == 20 }
+            guard let queueActiveRun = restoredQueue.operation?.id else { throw GameScriptError.invalidReceipt }
+            await restoredQueue.repair(repair, installed: retainedRepair)
+            guard let preparingQueueID = restoredQueue.queuedInstalls.first?.id else {
+                throw GameScriptError.invalidReceipt
+            }
+            let startsBeforeQueueCancel = try String(contentsOf: root.appendingPathComponent("install-starts"), encoding: .utf8)
+            try writeMode("checkslow")
+            try privateFile(root.appendingPathComponent("complete-\(queueActiveRun)"), "Finish the active run")
+            try await wait { restoredQueue.checkingCompatibility
+                && restoredQueue.queuedInstalls.contains(where: { $0.id == preparingQueueID }) }
+            await restoredQueue.cancelQueuedInstall(preparingQueueID)
+            await restoredQueue.waitForMutation()
+            check(try restoredQueue.queuedInstalls.isEmpty && restoredQueue.operation == nil
+                  && restoredQueue.installConsent == nil && !queueLibrary.mutationActive
+                  && String(contentsOf: root.appendingPathComponent("install-starts"), encoding: .utf8) == startsBeforeQueueCancel,
+                  "REQ200: Cancelling the selected queued preparation joins its own check without starting it")
+            try writeMode("success")
+        }
         let completedRow = LibraryGame.collection(installed: installed.games, owned: [game],
             products: [], gamePass: [], active: false)[0]
         let completedFacts = completedRow.facts
@@ -1194,7 +1681,8 @@ enum GameOperationChecks {
             }
             await installed.play(historical)
             check(installed.runningGameID == nil
-                  && installed.playErrors[imported.id] == InstalledGameActionCopy.launchUnavailable,
+                  && installed.playErrors[imported.id] == NativeLaunchError.providerPolicy.localizedDescription
+                  && !FileManager.default.fileExists(atPath: legacyLauncherStarted.path),
                   "REQ95 current per-game \(provider.rawValue) choice refuses before spawning a legacy launcher")
         }
         await installed.setEngineOverride(nil, for: imported)
@@ -1202,12 +1690,15 @@ enum GameOperationChecks {
             throw GameScriptError.invalidReceipt
         }
         await installed.play(policyGame)
-        check(installed.runningGameID == nil
-              && installed.playErrors[imported.id] == InstalledGameActionCopy.launchUnavailable,
-              "REQ95 current Play refuses historical CrossOver execution before spawning its legacy script")
+        check(policyGame.engineOverride == nil && installed.runningGameID == nil
+              && installed.playErrors[imported.id] == NativeLaunchError.providerPolicy.localizedDescription
+              && !FileManager.default.fileExists(atPath: legacyLauncherStarted.path),
+              "REQ95 clearing the override refuses the historical default before spawning its legacy script")
         await installed.playHistoricalFixture(policyGame)
-        check(installed.runningGameID == imported.id && !operations.canSignIn,
-              "S3 game-service restart is disabled while a game is running")
+        try await wait { FileManager.default.fileExists(atPath: legacyLauncherStarted.path) }
+        check(installed.runningGameID == imported.id && !operations.canSignIn
+              && FileManager.default.fileExists(atPath: legacyLauncherStarted.path),
+              "S3 historical fixture starts its launcher and disables game-service restart")
         check(!operations.canRepairSetup, "B8 environment recreation is disabled for every tracked running game")
         operations.repairSetup()
         check(!operations.setupRepairing, "B8 cannot reset the environment underneath a running title")
@@ -1327,6 +1818,9 @@ enum GameOperationChecks {
                                : operations.error == GameScriptError.failed(code).localizedDescription) && operations.log != nil
                   && installed.games.isEmpty && !operations.isBusy,
                   "S5 code \(code) has truthful failure/cancellation feedback and cannot become installed")
+            check(LibraryActivity.resolve(productID: game.id, operations: .init(operations))?.state
+                  == (code == 14 ? .cancelled : .failed),
+                  "REQ188: Install outcome \(code) projects the actual failure or cancellation")
         }
         try writeMode("resultfailure")
         try await install()

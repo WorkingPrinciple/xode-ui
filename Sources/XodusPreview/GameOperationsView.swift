@@ -47,7 +47,8 @@ struct GameServiceAccountView: View {
                     .padding(.top, 2)
             }
             DisclosureGroup("Library and subscription details") {
-                AccountTierView(entitlements: operations.accountEntitlements(library: library))
+                AccountTierView(entitlements: operations.accountEntitlements(library: library),
+                                subscriptionCheckedAt: library.currentGamePassEntitlementsCheckedAt)
             }
             DisclosureGroup("Troubleshoot game setup") {
                 GameSetupView(operations: operations, showsTitle: false)
@@ -138,14 +139,17 @@ struct GamePassAccountView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text(operations.gamePassLabel)
+                Text(operations.usesUnifiedAccount
+                    ? (library.currentReportedGamePassEntitlements?.isEmpty == false
+                        ? "Game Pass record reported" : "Game Pass membership not reported")
+                    : operations.gamePassLabel)
                     .accessibilityIdentifier("xodus.gamePass.status")
                 Spacer()
                 Button("Check") {
                     operations.checkGamePass(discoveryProducts: session.gamePassProducts,
                                              ownedGames: library.snapshot?.games)
                 }
-                .disabled(!operations.canStartMutation || operations.installConsent != nil
+                .disabled(operations.usesUnifiedAccount || !operations.canStartMutation || operations.installConsent != nil
                     || operations.uninstallConsent != nil || probeID == nil)
                 .accessibilityLabel("Check PC Game Pass")
                 .accessibilityIdentifier("xodus.gamePass.check")
@@ -153,10 +157,15 @@ struct GamePassAccountView: View {
                     ProgressView().controlSize(.small).accessibilityLabel("Checking PC Game Pass")
                 }
             }
+            if operations.usesUnifiedAccount, library.currentReportedGamePassEntitlements?.isEmpty == false,
+               let checkedAt = library.currentGamePassEntitlementsCheckedAt {
+                Text("As of \(checkedAt.formatted(date: .abbreviated, time: .shortened))")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
             if operations.gamePassFromCache {
                 Text("Saved status on this Mac. Check to refresh.").font(.callout).foregroundStyle(.secondary)
             }
-            if probeID == nil {
+            if probeID == nil && !operations.usesUnifiedAccount {
                 Text("Load your PC library and browse Discover to check PC Game Pass.")
                     .font(.callout).foregroundStyle(.secondary)
             }
@@ -178,6 +187,7 @@ struct GamePassAccountView: View {
 
 struct AccountTierView: View {
     let entitlements: AccountEntitlements
+    var subscriptionCheckedAt: Date?
 
     var body: some View {
         GroupBox("Library access") {
@@ -197,15 +207,19 @@ struct AccountTierView: View {
                         }
                     }
                 }
-                if entitlements.gamePassPlanUndetermined {
-                    Text("Your library includes subscription games, but the subscription plan hasn't been confirmed.")
+                if entitlements.hasReportedGamePassEntitlement {
+                    Text("A Game Pass record was reported by the account service. Subscription status not verified.")
                         .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                }
+                if entitlements.hasReportedGamePassEntitlement, let subscriptionCheckedAt {
+                    Text("As of \(subscriptionCheckedAt.formatted(date: .abbreviated, time: .shortened))")
+                        .font(.caption).foregroundStyle(.secondary)
                 }
                 if !entitlements.accessIsCurrent, entitlements.signedIn {
                     Text("Refresh Library to check your current game access.")
                         .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                 } else if entitlements.signedIn, entitlements.gamePass == .unknown {
-                    Text("Your library's subscription status hasn't been confirmed. The Xbox access check may use a different account.")
+                    Text("Account subscription membership isn't reported by the current library evidence.")
                         .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                 }
                 Text("Owned games stay in your library. Game Pass access requires an active subscription and is checked separately.")
@@ -246,6 +260,15 @@ struct GameOperationProgressView: View {
     var operationNotice: String? { privacyRestricted || !includesFeedback ? nil : operations.notice }
     var preparationCancelTitle: String? { showsPreparation ? "Cancel" : nil }
     var installCancelTitle: String? { presentedOperation != nil && operations.canCancel ? "Cancel installation" : nil }
+    var preparationCancelAction: (@MainActor () async -> Void)? {
+        guard showsPreparation, let preparation = operations.directPreparationIdentity,
+              productID == nil || productID == preparation.productID else { return nil }
+        return { await operations.cancelInstallConsent(expected: preparation) }
+    }
+    var installCancelAction: (@MainActor () async -> Void)? {
+        guard operations.canCancel, let operation = presentedOperation else { return nil }
+        return { await operations.cancelInstall(expected: operation) }
+    }
     var showsGameSignIn: Bool {
         includesFeedback && !privacyRestricted && operations.failureCode == 11 && operations.downloadNeedsSignIn
     }
@@ -256,11 +279,14 @@ struct GameOperationProgressView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
+            if let productID, !privacyRestricted {
+                QueuedGameInstallsView(operations: operations, productID: productID)
+            }
             if showsPreparation {
                 ProgressView(preparationTitle)
                     .accessibilityIdentifier("xodus.install.preparing")
-                if let title = preparationCancelTitle {
-                    Button(title) { Task { await operations.cancelInstallConsent() } }
+                if let title = preparationCancelTitle, let cancel = preparationCancelAction {
+                    Button(title) { Task { await cancel() } }
                         .disabled(operations.directInstallCancelled)
                         .accessibilityIdentifier("xodus.install.cancelPreparation")
                 }
@@ -288,8 +314,8 @@ struct GameOperationProgressView: View {
                             Text("\(Self.bytes(value.bytesDone)) downloaded").font(.callout).foregroundStyle(.secondary)
                         }
                     }
-                    if let title = installCancelTitle {
-                        Button(title) { Task { await operations.cancelInstall() } }
+                    if let title = installCancelTitle, let cancel = installCancelAction {
+                        Button(title) { Task { await cancel() } }
                             .accessibilityIdentifier("xodus.install.cancel")
                     }
                 }
@@ -323,6 +349,39 @@ struct GameOperationProgressView: View {
 
     static func bytes(_ value: Int64) -> String {
         ByteCountFormatter.string(fromByteCount: value, countStyle: .file)
+    }
+}
+
+struct QueuedGameInstallsView: View {
+    @ObservedObject var operations: GameOperationsController
+    var productID: String?
+    private var entries: [QueuedGameInstall] {
+        operations.queuedInstalls.filter { productID == nil || $0.record.productID == productID }
+    }
+
+    var body: some View {
+        ForEach(entries) { entry in
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(entry.record.title).font(.headline)
+                    Text(entry.record.kind == .repair ? "Repair queued" : "Installation queued")
+                        .font(.callout).foregroundStyle(.secondary)
+                }
+                Spacer()
+                Button("Cancel") { Task { await operations.cancelQueuedInstall(entry.id) } }
+                    .accessibilityLabel("Cancel queued download of \(entry.record.title)")
+            }
+        }
+        if operations.installQueuePaused, !entries.isEmpty {
+            Text("The download queue is paused. Check any unfinished operation before continuing.")
+                .font(.callout).foregroundStyle(.secondary)
+            Button("Continue queue") { operations.resumeInstallQueue() }
+                .disabled(operations.recoveryRequired)
+        }
+        if productID == nil, let message = operations.installQueueError {
+            Label(message, systemImage: "exclamationmark.circle")
+                .font(.callout).foregroundStyle(.secondary)
+        }
     }
 }
 
@@ -368,8 +427,15 @@ struct GameInstallAction: View {
     var failed: Bool {
         operations.feedbackProductID == game.id && operations.error != nil
     }
+    static func isStopping(for productID: String, operations: LibraryActivity.Operations) -> Bool {
+        LibraryActivity.resolve(productID: productID, operations: operations)?.state == .stopping
+    }
+    var isStopping: Bool {
+        Self.isStopping(for: game.id, operations: .init(operations))
+    }
+    var cancelDisabled: Bool { isStopping }
     var statusTitle: String {
-        operations.cancelling || operations.directInstallCancelled ? "Stopping"
+        isStopping ? "Stopping"
             : preparing ? "Preparing installation"
             : operations.operation?.kind == .uninstall ? "Uninstalling"
             : operations.operation?.kind == .repair ? "Repairing" : "Installing"
@@ -378,13 +444,22 @@ struct GameInstallAction: View {
         operations.installationCheckRequired(for: game) ? "Check installation"
             : failed ? "Retry installation" : "Install"
     }
-    var canInstall: Bool { enabled && operations.canStartMutation }
+    var canInstall: Bool { enabled && operations.canInstall(productID: game.id) }
     var unavailableReason: String? {
         guard !canInstall else { return nil }
         return !enabled ? (disabledReason ?? "Installation is not available yet.")
             : (operations.installUnavailableReason ?? "Installation is not available yet.")
     }
     var showsCancel: Bool { preparing || (active && operations.canCancel) }
+
+    var cancelAction: @MainActor () async -> Void {
+        let preparation = preparing ? operations.preparationIdentity(for: game.id) : nil
+        let operation = !preparing && active && operations.canCancel ? operations.operation : nil
+        return {
+            if let preparation { await operations.cancelInstallConsent(expected: preparation) }
+            else if let operation { await operations.cancelInstall(expected: operation) }
+        }
+    }
 
     func requestInstall() async {
         guard canInstall else { return }
@@ -398,7 +473,12 @@ struct GameInstallAction: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            if active, operations.recoveryRequired {
+            if let queued = operations.queuedInstalls.first(where: { $0.record.productID == game.id }) {
+                Text(queued.record.kind == .repair ? "Repair queued" : "Installation queued")
+                    .font(.callout.weight(.semibold))
+                Button("Cancel") { Task { await operations.cancelQueuedInstall(queued.id) } }
+                    .accessibilityLabel("Cancel queued download of \(game.title)")
+            } else if active, operations.recoveryRequired {
                 Label("Installation needs attention", systemImage: "exclamationmark.circle")
                     .font(.callout.weight(.semibold))
                 Button("Check last operation") { Task { await operations.reconcile() } }
@@ -416,13 +496,11 @@ struct GameInstallAction: View {
                         .accessibilityLabel("Preparing \(game.title)")
                 }
                 if showsCancel {
+                    let cancel = cancelAction
                     Button("Cancel") {
-                        Task {
-                            if preparing { await operations.cancelInstallConsent() }
-                            else { await operations.cancelInstall() }
-                        }
+                        Task { await cancel() }
                     }
-                    .disabled(operations.cancelling || operations.directInstallCancelled)
+                    .disabled(cancelDisabled)
                     .accessibilityLabel("Cancel installation of \(game.title)")
                 }
             } else {
@@ -455,8 +533,13 @@ struct GameInstallConsentView: View {
     let consent: GameInstallConsent
     @ObservedObject private var catalog = LibraryCatalogArtwork.shared
 
+    var displayedConsent: GameInstallConsent {
+        guard let current = operations.installConsent, current.id == consent.id else { return consent }
+        return current
+    }
+
     var body: some View {
-        let consent = operations.installConsent ?? self.consent
+        let consent = displayedConsent
         VStack(spacing: 0) {
             Form {
                 Section {
@@ -497,7 +580,10 @@ struct GameInstallConsentView: View {
                     LabeledContent("Staging and expansion", value: "Calculated during setup")
                 }
                 Section {
-                    if operations.checkingCompatibility {
+                    if operations.operation != nil, consent.compatibility == nil, consent.nativeAccountHash == nil {
+                        Text("This download will wait in the queue. Package access, compatibility and free space are checked before it starts.")
+                            .font(.callout).foregroundStyle(.secondary)
+                    } else if operations.checkingCompatibility {
                         ProgressView("Preparing installation…").controlSize(.small)
                             .accessibilityIdentifier("xodus.install.checking")
                     } else if let result = consent.compatibility, !result.supported {
@@ -509,6 +595,7 @@ struct GameInstallConsentView: View {
                             .fixedSize(horizontal: false, vertical: true)
                         if operations.hasDownloadRecovery {
                             Button(operations.downloadNeedsSignIn ? "Continue with Microsoft" : "Check download access") {
+                                guard operations.presentedInstallConsent?.id == consent.id else { return }
                                 operations.recoverDownload(productID: consent.game.id)
                             }.disabled(!operations.canRecoverDownload)
                         }
@@ -532,17 +619,22 @@ struct GameInstallConsentView: View {
             Divider()
             HStack {
                 Spacer()
-                Button("Cancel") { Task { await operations.cancelInstallConsent() } }.keyboardShortcut(.cancelAction)
+                Button("Cancel") {
+                    Task { await operations.cancelInstallConsent(reviewID: consent.id) }
+                }.keyboardShortcut(.cancelAction)
                     .accessibilityIdentifier("xodus.install.cancelConsent")
                 Button(consent.resuming ? "Resume" : consent.installedID == nil ? "Install" : "Check and repair") {
                     operations.confirmInstall(consent)
                 }
-                    .disabled(!operations.canConfirmInstall || operations.choosingInstallLocation).keyboardShortcut(.defaultAction)
+                    .disabled(operations.presentedInstallConsent?.id != consent.id
+                              || !operations.canConfirmInstall || operations.choosingInstallLocation)
+                    .keyboardShortcut(.defaultAction)
                     .buttonStyle(.borderedProminent)
                     .accessibilityIdentifier("xodus.install.confirm")
             }
             .padding(20)
         }
+        .disabled(operations.presentedInstallConsent?.id != consent.id)
         .frame(minWidth: 520, idealWidth: 560, maxWidth: 640,
                minHeight: 440, idealHeight: 560, maxHeight: 680)
         .modifier(InstallFormPresentation())
@@ -586,7 +678,7 @@ private struct GameDetailSheet<Item: Identifiable, Detail: View>: ViewModifier {
             Task { await operations.prepareInstall(game, expectedAccountHash: request.accountHash) }
         }) { item in
             detail(item) { game in
-                guard self.item?.id == item.id, allowed, pendingInstall == nil, operations.canStartMutation,
+                guard self.item?.id == item.id, allowed, pendingInstall == nil, operations.canInstall(productID: game.id),
                       operations.installConsent == nil else { return }
                 pendingInstall = GameDetailInstallRequest(game: game, accountHash: accountHash)
                 self.item = nil
@@ -606,15 +698,44 @@ extension View {
     }
 }
 
+struct GameInstallSheet: View {
+    @ObservedObject var operations: GameOperationsController
+    let reviewID: UUID
+
+    var installConsentBinding: Binding<GameInstallConsent?> {
+        Binding(get: {
+            guard let consent = operations.presentedInstallConsent, consent.id == reviewID else { return nil }
+            return consent
+        },
+                set: { value in
+            if let value {
+                guard value.id == reviewID, operations.presentedInstallConsent?.id == reviewID else { return }
+                operations.installConsent = value
+            } else {
+                Task { await operations.cancelInstallConsent(reviewID: reviewID) }
+            }
+        })
+    }
+
+    var body: some View {
+        Color.clear
+            .sheet(item: installConsentBinding) { consent in
+                GameInstallConsentView(operations: operations, consent: consent)
+                    .interactiveDismissDisabled(operations.checkingCompatibility)
+            }
+    }
+}
+
 struct GameOperationPresentation: View {
     @ObservedObject var operations: GameOperationsController
 
     var body: some View {
         Color.clear
-            .sheet(item: Binding(get: { operations.presentedInstallConsent },
-                                set: { operations.installConsent = $0 })) { consent in
-                GameInstallConsentView(operations: operations, consent: consent)
-                    .interactiveDismissDisabled(operations.checkingCompatibility)
+            .background {
+                if let consent = operations.presentedInstallConsent {
+                    GameInstallSheet(operations: operations, reviewID: consent.id)
+                        .id(consent.id)
+                }
             }
             .sheet(item: $operations.uninstallConsent) { game in
                 VStack(alignment: .leading, spacing: 18) {
@@ -643,6 +764,8 @@ struct InstalledGameActions: View {
     var usesGlass = false
     var heroStyle = false
     var details: (() -> Void)?
+    @State private var showingExternalLaunchers = false
+    @State private var showingWineBridge = false
 
     var body: some View {
         Menu {
@@ -671,6 +794,12 @@ struct InstalledGameActions: View {
             }
             .disabled(library.editing || library.choosing || library.mutationActive
                       || library.accountDisconnecting || library.applicationTerminating || library.runningGameID == game.id)
+            Button("External launchers…") { showingExternalLaunchers = true }
+                .disabled(!library.canUseExternalHandoff(game))
+                .accessibilityIdentifier("xodus.installed.externalLaunchers")
+            Button("Native Wine diagnostic…") { showingWineBridge = true }
+                .disabled(!library.canTestWineBridge(game))
+                .accessibilityIdentifier("xodus.installed.wineBridge")
             InstalledGameManagement(library: library, operations: operations, game: game)
         } label: {
             if heroStyle {
@@ -684,6 +813,12 @@ struct InstalledGameActions: View {
         .buttonBorderShape(heroStyle ? .circle : .automatic)
         .fixedSize()
         .accessibilityLabel("Actions for \(game.title)")
+        .sheet(isPresented: $showingExternalLaunchers) {
+            ExternalGameHandoffSettings(library: library, game: game)
+        }
+        .sheet(isPresented: $showingWineBridge) {
+            NativeWineBridgeSettings(library: library, game: game)
+        }
         .task {
             await library.refreshEngineOverrides(force: false)
         }

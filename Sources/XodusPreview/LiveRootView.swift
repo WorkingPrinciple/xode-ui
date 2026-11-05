@@ -132,6 +132,7 @@ struct LiveRootView: View {
                     operations: state.gameOperations,
                     installed: state.installedGames,
                     gptk: state.gptkOnboarding,
+                    calimocho: state.calimochoEngine,
                     onComplete: {
                         state.completeReadinessSetup()
                     }
@@ -146,10 +147,10 @@ struct LiveRootView: View {
             } else {
                 ZStack {
                     if libraryVisited || state.destination == .library {
-                        retainedBrowse(.library)
+                        retainedBrowse(.library, proxy: proxy)
                     }
                     if discoverVisited || state.destination == .discover {
-                        retainedBrowse(.discover)
+                        retainedBrowse(.discover, proxy: proxy)
                     }
                     if state.destination == .downloads {
                         LiveActivityView(operations: state.gameOperations, queue: state.downloadQueue) {
@@ -175,6 +176,12 @@ struct LiveRootView: View {
         .onPreferenceChange(LibraryHeroPresenceKey.self) { libraryHasHero = $0 }
         .onReceive(state.gameOperations.objectWillChange) { _ in state.objectWillChange.send() }
         .onReceive(state.installedGames.objectWillChange) { _ in state.objectWillChange.send() }
+        .safeAreaInset(edge: .bottom) {
+            if startupAllowed && !state.needsReadinessSetup && !state.showingSetup {
+                CalimochoPreparationBanner(controller: state.calimochoEngine,
+                    configuration: session.nativeInstallStatusConfiguration)
+            }
+        }
 #if !XODUS_SHIPPING
         .onReceive(LibraryPreviewExporter.presentation.$showGrid) { show in
             if show { proxy.scrollTo("library-games", anchor: .top) }
@@ -188,6 +195,10 @@ struct LiveRootView: View {
                 }
                 await state.runtimeSettings.refreshCrossOverDependency()
             }
+        }
+        .task(id: session.nativeInstallStatusConfiguration?.executable.path) {
+            guard startupAllowed, let configuration = session.nativeInstallStatusConfiguration else { return }
+            state.calimochoEngine.prepare(configuration: configuration, automatic: true)
         }
         .task(id: accountRecoveryAllowed) {
             if accountRecoveryAllowed {
@@ -486,7 +497,7 @@ struct LiveRootView: View {
         searchFocused = false
     }
 
-    private func retainedBrowse(_ destination: Destination) -> some View {
+    private func retainedBrowse(_ destination: Destination, proxy: ScrollViewProxy) -> some View {
         let selected = state.destination == destination
         let active = selected && scenePhase == .active
         let immersive = destination == .discover || !state.showsRecentActivity
@@ -503,6 +514,9 @@ struct LiveRootView: View {
                         library(positionCollection: { target in
                             state.librarySelection.scrollID = target
                             libraryScrollCommand += 1
+                            if target == "library-continue-playing" {
+                                proxy.scrollTo(target, anchor: .top)
+                            }
                         })
                     } else { catalog }
                 }
@@ -592,6 +606,8 @@ struct LiveRootView: View {
                                 allowsHeroAnimation: heroAnimationAllowed && state.destination == .library && scenePhase == .active,
                                 browse: { state.navigate(.discover) },
                                 recentActivity: { state.openRecentActivity() },
+                                showDownloads: { state.navigate(.downloads) },
+                                downloadQueue: state.downloadQueue,
                                 positionCollection: positionCollection,
                                 selection: state.librarySelection)
             }
@@ -684,6 +700,9 @@ struct LiveActivityView: View {
             .padding(.horizontal, 30).padding(.vertical, 24)
             List {
                 DownloadQueueView(queue: queue)
+                if !operations.queuedInstalls.isEmpty || operations.installQueueError != nil {
+                    Section("Waiting") { QueuedGameInstallsView(operations: operations) }
+                }
                 if operations.installingDirectly {
                     Section("Current") { GameOperationProgressView(operations: operations) }
                 }

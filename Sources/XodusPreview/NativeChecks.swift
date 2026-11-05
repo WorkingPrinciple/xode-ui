@@ -394,6 +394,8 @@ enum NativeChecks {
                 try await NativeLifecycleChecks.run(check: check)
                 try await EngineManagementChecks.run(check: check)
                 try await GameOperationChecks.run(check: check)
+                try await LibraryActivityChecks.run(check: check)
+                try await DownloadQueueChecks.run(check: check)
                 print("\(count) game operation checks, \(failures) failures. Synthetic scripts only.")
                 return failures == 0
             }
@@ -403,6 +405,7 @@ enum NativeChecks {
             try await InstalledProductAccessChecks.run(check: check)
             try await PCGamesChecks.run(check: check)
             try await GameOperationChecks.run(check: check)
+            try await LibraryActivityChecks.run(check: check)
             try await DownloadQueueChecks.run(check: check)
             try await InstalledGameUpdateChecks.run(check: check)
             func observationFailure(_ message: String, code: String = "AUTH_INVALID",

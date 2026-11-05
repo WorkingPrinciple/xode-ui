@@ -5,6 +5,7 @@ import XodusCore
 /// Launch preferences are independent of the management backend selection.
 enum EngineDefaults {
     static let defaultEngineKey = "Xodus.defaultEngine"
+    static let choiceRevisionKey = "Xodus.engineChoice.revision"
     static let crossOverApplicationKey = "Xodus.runtime.crossOverApplication"
 
     static func crossOverApplication(_ defaults: UserDefaults = .standard) -> String? {
@@ -31,6 +32,8 @@ enum EngineDefaults {
     }
 
     static func setDefaultEngine(_ kind: RuntimeProviderKind?, _ defaults: UserDefaults = .standard) {
+        defaults.set(UUID().uuidString, forKey: choiceRevisionKey)
+        defaults.removeObject(forKey: NativeEngineDefaults.automaticKey)
         if let kind { defaults.set(kind.rawValue, forKey: defaultEngineKey) }
         else { defaults.removeObject(forKey: defaultEngineKey) }
     }

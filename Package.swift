@@ -7,7 +7,8 @@ let shipping = ProcessInfo.processInfo.environment["XODUS_SHIPPING"] == "1"
 let previewOnly = ["Artwork.swift", "RootView.swift", "FixtureLibraryView.swift", "DetailView.swift", "DownloadsView.swift",
                    "PreviewExporter.swift", "LibraryPreviewExporter.swift", "PreviewChecks.swift", "NativeChecks.swift",
                    "NativeUIChecks.swift", "AccountCountryChecks.swift", "ApplicationTerminationChecks.swift", "CrossOverDependencyChecks.swift", "LaunchAssociationChecks.swift",
-                   "OdeRuntimeChecks.swift", "RecentLibraryChecks.swift", "CatalogMediaChecks.swift", "LibraryStatsChecks.swift", "LibraryAccessChecks.swift", "InstalledGameChecks.swift", "PCGamesChecks.swift", "GameOperationChecks.swift", "DownloadQueueChecks.swift", "InstalledGameUpdateChecks.swift", "EngineManagementChecks.swift", "CatalogDetailLoadingChecks.swift", "PresentationPerformanceChecks.swift", "SearchPerformanceChecks.swift", "PublicDescriptorChecks.swift", "Resources"]
+                   "OdeRuntimeChecks.swift", "RecentLibraryChecks.swift", "CatalogMediaChecks.swift", "LibraryStatsChecks.swift", "LibraryAccessChecks.swift", "LibraryActivityChecks.swift", "RenderedLabelPixels.swift", "InstalledGameChecks.swift", "PCGamesChecks.swift", "AuthenticatedScenarioChecks.swift", "GameOperationChecks.swift", "DownloadQueueChecks.swift", "InstalledGameUpdateChecks.swift", "EngineManagementChecks.swift", "CatalogDetailLoadingChecks.swift", "PresentationPerformanceChecks.swift", "SearchPerformanceChecks.swift", "PublicDescriptorChecks.swift", "Resources"]
+let scenarioOnly = ["RealAccountScenarioChecks.swift"]
 let shippingSettings: [SwiftSetting] = shipping ? [.define("XODUS_SHIPPING")] : []
 
 let package = Package(
@@ -38,7 +39,7 @@ let package = Package(
         .target(name: "XodusProcessIdentity"),
         .executableTarget(name: "XodusCredentialBroker", dependencies: ["XodusCredentials"]),
         .executableTarget(name: "XodusPreview", dependencies: ["XodusCore", "XodusManagement", "XodusCredentials", "XodusProcessIdentity"],
-                          exclude: shipping ? previewOnly : [],
+                          exclude: shipping ? previewOnly + scenarioOnly : [],
                           resources: shipping ? [] : [.copy("Resources/Artwork")],
                           swiftSettings: shippingSettings),
         .executableTarget(name: "XodusAuthHost", exclude: shipping ? ["AuthHostChecks.swift", "Resources"] : [],
@@ -47,6 +48,8 @@ let package = Package(
         .testTarget(name: "XodusShippingChecks", dependencies: ["XodusPreview", "XodusManagement"],
                     path: "Tests/ShippingChecks")
     ] : [
+        .testTarget(name: "XodusAppHarnessChecks", dependencies: ["XodusPreview"],
+                    path: "Tests/AppHarnessChecks"),
         .executableTarget(name: "XodusFixtureChecks", dependencies: ["XodusCore"],
                           path: "Tests/FixtureChecks"),
         .executableTarget(name: "XodusManagementChecks", dependencies: ["XodusManagement"],

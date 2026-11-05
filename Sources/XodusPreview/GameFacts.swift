@@ -50,9 +50,9 @@ struct GameFacts: Equatable {
     }
 
     init(pc: PCGame?, gamePass: Bool, installed: InstalledGame? = nil, accessIsCurrent: Bool) {
-        subscriptionAcquisition = accessIsCurrent && pc?.acquisitionKind == .subscription
+        subscriptionAcquisition = accessIsCurrent && pc?.presentationAcquisitionKind == .subscription
         if accessIsCurrent {
-            switch pc?.acquisitionKind {
+            switch pc?.presentationAcquisitionKind {
             case .purchased: ownership = .purchased(nil)
             case .subscription, .unknown: ownership = .inLibraryUnknownAcquisition
             case nil: ownership = .notInLibrary

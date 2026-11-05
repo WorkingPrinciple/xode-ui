@@ -48,6 +48,7 @@ final class SheetInteraction: ObservableObject {
 final class AppState: ObservableObject {
     let runtimeSettings = RuntimeProviderSettings()
     let gptkOnboarding = GPTKOnboardingController()
+    let calimochoEngine = CalimochoDefaultEngineController()
     let installedGames: InstalledGamesController
     let pcGames: PCGamesController
     let librarySelection = LibrarySelection()

@@ -2,17 +2,19 @@
 # SPDX-License-Identifier: GPL-3.0-only
 """Build an explicitly local, source-bound Developer ID candidate without replacing an installed app."""
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
 import platform
 import plistlib
+import re
 import shutil
 import subprocess
 import tarfile
 import tempfile
 
-from shipping_pair import FEATURES, PROFILE, hex_value, owned_bytes, require, swift_pins
+from shipping_pair import FEATURES, PROFILE, hex_value, owned_bytes, require, swift_pins, unique_object
 from signing_identity import preflight, sign, verify_designated_requirement
 
 
@@ -59,6 +61,56 @@ def build_evidence(messages):
     require(len(artifacts) == 1, "Expected one actual CLI build artifact")
     require(native_features == FEATURES, "Missing or incompatible native release features")
     return artifacts[0], native_features
+
+
+def bind_candidate_cli(source, cli_sha256):
+    cli_sha256 = hex_value(cli_sha256, 64)
+    lifecycle = "Sources/XodusPreview/NativeGameLifecycle.swift"
+    configuration = "Sources/XodusPreview/NativeLaunchConfiguration.swift"
+    catalogue = "Sources/XodusManagement/Resources/LaunchRecipes/title-runtime-v1.json"
+    paths = (lifecycle, configuration, catalogue)
+    originals = {}
+    source_files = {}
+    for path in paths:
+        record, contents = owned_bytes(source / path, bounded=2_097_152)
+        originals[path] = contents
+        source_files[path] = record["sha256"]
+
+    pins = re.findall(rb'static let cliSHA256 = "([0-9a-f]{64})"', originals[lifecycle])
+    require(len(pins) == 1, "Expected exactly one source lifecycle CLI pin")
+    old_cli = pins[0].decode("ascii")
+    data = json.loads(originals[catalogue], object_pairs_hook=unique_object)
+    require(type(data) is dict and type(data.get("schemaVersion")) is int
+            and data["schemaVersion"] == 1 and data.get("cliSha256") == old_cli,
+            "Source title catalogue does not match the lifecycle CLI pin")
+    evidence_cli = hex_value(data.get("evidenceCliSha256"), 64)
+    old_catalogue_hash = source_files[catalogue]
+    catalogue_marker = f'"cliSha256": "{old_cli}"'.encode()
+    lifecycle_marker = f'static let cliSHA256 = "{old_cli}"'.encode()
+    configuration_marker = f'== "{old_catalogue_hash}"'.encode()
+    require(originals[catalogue].count(catalogue_marker) == 1
+            and originals[lifecycle].count(lifecycle_marker) == 1
+            and originals[configuration].count(configuration_marker) == 1,
+            "Source lifecycle or title-catalogue digest binding is inconsistent")
+
+    generated = dict(originals)
+    generated[catalogue] = originals[catalogue].replace(
+        catalogue_marker, f'"cliSha256": "{cli_sha256}"'.encode(), 1)
+    generated[lifecycle] = originals[lifecycle].replace(
+        lifecycle_marker, f'static let cliSHA256 = "{cli_sha256}"'.encode(), 1)
+    catalogue_hash = hashlib.sha256(generated[catalogue]).hexdigest()
+    generated[configuration] = originals[configuration].replace(
+        configuration_marker, f'== "{catalogue_hash}"'.encode(), 1)
+    for path in paths:
+        (source / path).write_bytes(generated[path])
+
+    return {
+        "targetCliSHA256": cli_sha256,
+        "sourceCatalogueCliSHA256": old_cli,
+        "evidenceCliSHA256": evidence_cli,
+        "sourceFiles": source_files,
+        "generatedFiles": {path: hashlib.sha256(generated[path]).hexdigest() for path in paths},
+    }
 
 
 def build(engine_root, output_root, identity):
@@ -109,6 +161,7 @@ def build(engine_root, output_root, identity):
     owned_bytes(engine, unsigned["sha256"], unsigned["bytes"])
     sign(engine, "cli", identity, developer_id=True)
     signed_engine, _ = owned_bytes(engine)
+    lifecycle_binding = bind_candidate_cli(source, signed_engine["sha256"])
     environment = os.environ.copy()
     environment["XODUS_SHIPPING"] = "1"
     run(["swift", "build", "--jobs", "1", "-c", "release", "--product", "XodusAuthHost"],
@@ -144,6 +197,10 @@ def build(engine_root, output_root, identity):
          "-o", str(resources / "Xodus.icns")], source, log)
     shutil.copytree(binary_dir / "XodusAppFoundation_XodusManagement.bundle",
                     resources / "XodusAppFoundation_XodusManagement.bundle")
+    catalogue_path = "Sources/XodusManagement/Resources/LaunchRecipes/title-runtime-v1.json"
+    bundled_catalogue = resources / (
+        "XodusAppFoundation_XodusManagement.bundle/Contents/Resources/LaunchRecipes/title-runtime-v1.json")
+    owned_bytes(bundled_catalogue, lifecycle_binding["generatedFiles"][catalogue_path])
     (resources / "XodusAuthHost.json").write_text(json.dumps({
         "version": 1, "sha256": signed_helper["sha256"],
         "sourceCommit": app_source["commit"]}, sort_keys=True) + "\n")
@@ -156,6 +213,8 @@ def build(engine_root, output_root, identity):
                 "Candidate executables must all be arm64")
     owned_bytes(engine, signed_engine["sha256"], signed_engine["bytes"])
     owned_bytes(helper, signed_helper["sha256"], signed_helper["bytes"])
+    for path, digest in lifecycle_binding["generatedFiles"].items():
+        owned_bytes(source / path, digest)
     require(source_identity(project) == app_source and source_identity(engine_root) == engine_source,
             "Source changed during candidate packaging")
     inventory = {str(path.relative_to(app)): owned_bytes(path)[0]
@@ -166,6 +225,7 @@ def build(engine_root, output_root, identity):
         "actualCargoProfile": artifact["profile"], "unsignedEngine": unsigned,
         "actualNativeResolvedFeatures": native_features,
         "signedEngine": signed_engine, "signedHelper": signed_helper,
+        "generatedLifecycleBinding": lifecycle_binding,
         "certificateSHA1": identity.upper(), "generatedPins": owned_bytes(pins)[0],
         "architecture": "arm64",
         "generatedProducerPins": owned_bytes(producer_pins)[0], "packageFiles": inventory,

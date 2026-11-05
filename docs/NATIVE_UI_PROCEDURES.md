@@ -1,5 +1,38 @@
 # Native UI verification
 
+## Issue 63: Settings identifiers and gated native keyboard runner
+
+`tools/test_settings_accessibility.swift` is an opt-in native AX runner, not a
+default check or CI step. It requires a separately authorized app launch and
+exclusive native-input window, an explicitly supplied nonshipping XodusPreview
+executable and already granted Accessibility permission. Do not invoke it under
+the current native-input/launch hold. It does not grant permissions or change
+Full Keyboard Access/global keyboard settings.
+
+After authorization, `swift tools/test_settings_accessibility.swift /absolute/path/to/XodusPreview`
+stages a uniquely identified temporary app, launches only that child and targets
+key events to its owned PID. It asserts Cmd+, opens Settings, selection by the
+visible General/Engines/Account/Advanced labels changes the identified content,
+the engine picker/Refresh identifiers exist, Tab moves focus from Advanced's
+Market field to Language, and Escape dismisses Settings. It joins its child and
+removes its temporary bundle, reporting cleanup/termination failures.
+
+`xodus.settings.tab.general`, `.engines`, `.account` and `.advanced` identify
+**tab content views**, not a claim that SwiftUI exports those IDs on the native
+tab selector buttons. `xodus.settings.engine.picker` and
+`xodus.settings.engine.refresh` identify the existing controls. The real Tab
+assertion is text-field traversal; it does not prove picker-to-Refresh traversal,
+all controls' traversal or Full Keyboard Access under a different system policy.
+`--settings-accessibility-check` shows an isolated test window with the existing
+LiveSettingsView and in-memory PC-library fixtures, without normal welcome
+startup. Do not use its other controls to sign in, configure engines or mutate
+settings. It is not installed-product acceptance.
+
+The runner's `--cleanup-self-check` uses synthetic bundles and owned `/bin/sleep`
+children only; it proves lifecycle handling, not native tab/key behavior.
+`python3 tools/check_app_harness.py` checks source wiring only. Neither static
+checks nor Swift compilation substitutes for a captured native AX result.
+
 These recipes use the existing app and native tools, not another test harness.
 Keep private screenshots, traces and account observations outside the repository.
 
@@ -38,11 +71,18 @@ admission, and launch rechecks the exact registry digest and engine identity.
 The bundled `engine-defaults-v1.json` is the single path/digest binding source;
 a bundled entry is not proof that the installed CLI admits or can run it.
 Title profiles retain their existing runtime and prefix constraints.
-No engine explanation or recovery action is added below Play. Admission errors
-use the existing generic launch-failure surface; diagnostic logs retain the
-actual refusal. Native-path installs validate their folder and product identity,
-not an unused historical launcher. A launch refusal alone never means the
-installation is damaged. `--engine-selection-check` runs isolated synthetic
+No new engine explanation or recovery control is added below Play. The fixed,
+path-free provider-policy refusal retains its direction to choose Calimocho in
+Engines; an installation-not-ready refusal retains its existing recovery copy.
+Other admission errors use the existing generic launch-failure surface. When launch preflight or a
+late lifecycle failure reports a recognized missing-Wine, changed Wine entrypoint
+or changed Calimocho release-file inspection error, the GameLaunch log records
+a fixed public reason and the Engines recovery route, including when a title's
+pinned engine fails inspection. Other details for these
+caught failures are private and may be redacted by macOS. Native-path installs
+validate their folder and product identity, not an
+unused historical launcher. A launch refusal alone
+never means the installation is damaged. `--engine-selection-check` runs isolated synthetic
 routing/persistence/readiness checks without opening windows or launching games.
 Installed Play, menu interaction and title variants still require separately
 authorized native acceptance; do not run them while desktop control is paused.

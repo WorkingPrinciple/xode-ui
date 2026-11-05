@@ -16,7 +16,7 @@ enum EngineObservationStatus: String, CaseIterable {
 }
 
 enum EngineManagementPolicy {
-    static let calimochoSource = URL(string: "https://github.com/dragoshont/calimocho")!
+    static let calimochoSource = URL(string: "https://github.com/WorkingPrinciple/calimocho")!
     static let selectionExplanation = """
         Per-game Calimocho choices keep their exact saved registry and artifact identity independently of the default. A conflicting title recipe or unavailable configuration refuses launch without substituting CrossOver, GPTK or generic Wine. No bottle or save is moved.
         """
@@ -91,7 +91,9 @@ final class EngineRegistryObservation: ObservableObject {
             for entry in candidates {
                 let result = try await inspector.inspect(executable: executable,
                     registry: URL(fileURLWithPath: path), engine: entry.name,
-                    expectedDigest: loaded.byteDigest, executableIdentity: executableIdentity)
+                    expectedDigest: loaded.byteDigest, executableIdentity: executableIdentity,
+                    recordTimeout: entry.name == CalimochoReleasePin.release06.engineName
+                        ? .seconds(90) : .seconds(5))
                 guard token == revision, !Task.isCancelled else { return }
                 inspections[entry.name] = result
             }
@@ -126,7 +128,7 @@ struct EngineProviderOverview: View {
                     .foregroundStyle(.secondary)
                 Link("Calimocho official source", destination: EngineManagementPolicy.calimochoSource)
                     .accessibilityIdentifier("xodus.engines.calimocho.source")
-                Text("Download unavailable. A source checkout does not install an engine.")
+                Text("When Calimocho is the default, Ode prepares the verified published release automatically. Existing explicit engine choices are kept.")
                     .font(.caption).foregroundStyle(.secondary)
             }
             .accessibilityElement(children: .contain)

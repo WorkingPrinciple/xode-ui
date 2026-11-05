@@ -25,6 +25,17 @@ public struct OdeAccountCollection: Decodable, Sendable {
   }
 
   public let items: [Item]
+  public let reportedGamePassEntitlements: [String]?
+
+  public init(from decoder: Decoder) throws {
+    let value = try JSONValue(from: decoder)
+    guard let object = value.object,
+      Set(object.keys).isSubset(of: ["items", "reportedGamePassEntitlements"]),
+      let items = value["items"] else { throw ManagementError.invalidPayload }
+    self.items = try items.decode([Item].self)
+    reportedGamePassEntitlements = try value["reportedGamePassEntitlements"].map { try $0.decode([String].self) }
+    try validate()
+  }
 
   public func validate() throws {
     guard items.count <= 10_000,
@@ -34,6 +45,13 @@ public struct OdeAccountCollection: Decodable, Sendable {
           && item.productID.utf8.allSatisfy { (48...57).contains($0) || (65...90).contains($0) }
       })
     else { throw ManagementError.invalidPayload }
+    if let plans = reportedGamePassEntitlements {
+      guard plans.count <= 32, Set(plans).count == plans.count,
+        plans.allSatisfy({ $0.utf8.count == 12 && $0.utf8.allSatisfy {
+          (48...57).contains($0) || (65...90).contains($0)
+        } })
+      else { throw ManagementError.invalidPayload }
+    }
   }
 }
 

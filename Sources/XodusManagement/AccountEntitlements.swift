@@ -4,6 +4,8 @@ import Foundation
 public enum PCGameAcquisitionKind: String, Codable, Sendable {
     case unknown, purchased, subscription
 
+    public var isOwned: Bool { self == .purchased }
+
     public static func merged(_ current: Self?, _ next: Self) -> Self {
         guard let current else { return next }
         if current == .purchased || next == .purchased { return .purchased }
@@ -39,7 +41,7 @@ public enum GamePassAccess: Equatable, Sendable {
 }
 
 public enum AccountTier: Equatable, Sendable {
-    case unknown, free, owned, library
+    case unknown, free, owned, library, reportedGamePass
     case gamePass(GamePassPlan)
 
     public var label: String {
@@ -48,6 +50,7 @@ public enum AccountTier: Equatable, Sendable {
         case .free: "Free"
         case .owned: "Owned library"
         case .library: "In your library"
+        case .reportedGamePass: "Game Pass record reported"
         case let .gamePass(plan): plan.label
         }
     }
@@ -58,6 +61,7 @@ public enum AccountTier: Equatable, Sendable {
         case .free: "person.crop.circle"
         case .owned: "checkmark.seal"
         case .library: "books.vertical"
+        case .reportedGamePass: "ticket"
         case .gamePass: "ticket"
         }
     }
@@ -68,30 +72,33 @@ public struct AccountEntitlements: Equatable, Sendable {
     public let accessIsCurrent: Bool
     public let ownsGames: Bool
     public let gamePass: GamePassAccess
+    public let hasReportedGamePassEntitlement: Bool
     private let hasUnclassifiedGames: Bool
 
     public static let signedOut = Self(signedIn: false, accessIsCurrent: false,
-                                      ownsGames: false, gamePass: .unknown, hasUnclassifiedGames: false)
+                                      ownsGames: false, gamePass: .unknown,
+                                      hasReportedGamePassEntitlement: false, hasUnclassifiedGames: false)
 
     // The optional probe must be current and bound to the PC-library account.
     // A saved credential, stale snapshot or a different game-service account is not evidence.
     public static func derive(signedIn: Bool, held: [PCGameAcquisitionKind],
-                              gamePassActive: Bool?, accessIsCurrent: Bool) -> Self {
+                              gamePassActive: Bool?, accessIsCurrent: Bool,
+                              reportedGamePassEntitlement: Bool = false) -> Self {
         guard signedIn else { return .signedOut }
         guard accessIsCurrent else {
             return Self(signedIn: true, accessIsCurrent: false, ownsGames: false, gamePass: .unknown,
+                        hasReportedGamePassEntitlement: false,
                         hasUnclassifiedGames: false)
         }
-        let owns = held.contains(.purchased)
+        let owns = held.contains(where: \.isOwned)
         let access: GamePassAccess
         if gamePassActive == true { access = .active(.pc) }
-        else if held.contains(.subscription) {
-            // Recurring proves a current title grant, not the subscription brand or plan.
-            access = .active(.undetermined)
-        } else if gamePassActive == false { access = .inactive }
+        else if gamePassActive == false { access = .inactive }
         else { access = .unknown }
         return Self(signedIn: true, accessIsCurrent: true, ownsGames: owns, gamePass: access,
-                    hasUnclassifiedGames: held.contains(.unknown))
+                    hasReportedGamePassEntitlement: reportedGamePassEntitlement,
+                    hasUnclassifiedGames: held.contains(.unknown)
+                        || (held.contains(.subscription) && gamePassActive != true))
     }
 
     public var tiers: [AccountTier] {
@@ -100,6 +107,7 @@ public struct AccountEntitlements: Equatable, Sendable {
         var result: [AccountTier] = []
         if ownsGames { result.append(.owned) }
         if hasUnclassifiedGames { result.append(.library) }
+        if hasReportedGamePassEntitlement { result.append(.reportedGamePass) }
         if case let .active(plan) = gamePass { result.append(.gamePass(plan)) }
         if result.isEmpty { result.append(gamePass == .inactive ? .free : .unknown) }
         return result
@@ -121,7 +129,7 @@ public enum LibraryEligibility: String, Codable, Sendable {
         if accessIsCurrent, let entitlement {
             switch entitlement {
             case .purchased: return .owned
-            case .subscription: return .gamePass
+            case .subscription: return verifiedGamePassAccess ? .gamePass : .library
             case .unknown: return .library
             }
         }

@@ -28,7 +28,8 @@ struct CatalogCardIndex {
     let games: [String: LibraryGame]
 
     init(query: String, owned: [PCGame], products: [CatalogProduct], gamePass: [CatalogProduct],
-         gamePassIDs: Set<String>, installed: [InstalledGame], accessIsCurrent: Bool) {
+         gamePassIDs: Set<String>, installed: [InstalledGame], accessIsCurrent: Bool,
+         currentAcquisitionIDs: Set<String>? = nil) {
         results = CatalogSearchResults(query: query, ownedGames: owned, storeProducts: products,
             gamePassProductIDs: gamePassIDs, gamePassProducts: gamePass)
         let local = Dictionary(installed.map { ($0.storeId, $0) }, uniquingKeysWith: { first, _ in first })
@@ -38,13 +39,15 @@ struct CatalogCardIndex {
             let pc = results.ownedGame(for: product.id)
             indexed[product.id] = LibraryGame(id: product.id, title: product.title,
                 installed: local[product.id], pc: pc, product: product,
-                owned: pc.map { $0.acquisitionKind == .purchased } ?? false,
-                gamePass: gamePassIDs.contains(product.id), accessIsCurrent: accessIsCurrent)
+                owned: pc.map { $0.presentationAcquisitionKind.isOwned } ?? false,
+                gamePass: gamePassIDs.contains(product.id),
+                accessIsCurrent: currentAcquisitionIDs?.contains(product.id) ?? accessIsCurrent)
         }
         for pc in results.ownedMatches {
             indexed[pc.id] = LibraryGame(id: pc.id, title: pc.title, installed: local[pc.id],
-                pc: pc, product: catalog[pc.id], owned: pc.acquisitionKind == .purchased,
-                gamePass: gamePassIDs.contains(pc.id), accessIsCurrent: accessIsCurrent)
+                pc: pc, product: catalog[pc.id], owned: pc.presentationAcquisitionKind.isOwned,
+                gamePass: gamePassIDs.contains(pc.id),
+                accessIsCurrent: currentAcquisitionIDs?.contains(pc.id) ?? accessIsCurrent)
         }
         games = indexed
     }
@@ -64,6 +67,7 @@ struct CatalogProjectionKey: Equatable {
     let genre: String?
     var scope: GameSearchScope = .allGames
     let showsUnsupported: Bool
+    var currentAcquisitionIDs: Set<String>? = nil
 }
 
 struct CatalogProjection {
@@ -88,7 +92,7 @@ struct CatalogProjection {
          isVisible: (LibraryGame) -> Bool) {
         let index = CatalogCardIndex(query: key.query, owned: key.owned, products: key.products,
             gamePass: key.gamePass, gamePassIDs: key.gamePassIDs, installed: key.installed,
-            accessIsCurrent: key.accessIsCurrent)
+            accessIsCurrent: key.accessIsCurrent, currentAcquisitionIDs: key.currentAcquisitionIDs)
         self.index = index
         self.facts = facts
         let games = index.results.storeProducts.filter { facts[$0.id]?.isBaseGame == true }
@@ -152,6 +156,7 @@ struct LibraryProjectionKey: Equatable {
     let filter: LibraryFilter
     let sort: LibrarySort
     let showsUnsupported: Bool
+    var currentAcquisitionIDs: Set<String>? = nil
 }
 
 struct LibraryProjection {
@@ -170,7 +175,7 @@ struct LibraryProjection {
          recommendable: (LibraryGame) -> Bool) {
         collection = LibraryGame.collection(installed: key.installed, owned: key.owned, products: key.products,
             gamePass: key.gamePass, active: key.active, accessIsCurrent: key.accessIsCurrent,
-            permittedInstalledIDs: key.permitted)
+            permittedInstalledIDs: key.permitted, currentAcquisitionIDs: key.currentAcquisitionIDs)
         byID = Dictionary(collection.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         candidates = LibraryGame.visible(collection.filter { $0.installed == nil },
             query: key.query, filter: key.filter, sort: key.sort)

@@ -65,7 +65,7 @@ enum EngineManagementChecks {
         check(EngineManagementPolicy.status(try entry("calimocho-impostor")) != .qualified,
               "REQ79 a provider-looking filename never proves identity or game qualification")
         check(wine.version == "11.20" && wine.source_url == "https://www.winehq.org/"
-              && EngineManagementPolicy.calimochoSource.absoluteString == "https://github.com/dragoshont/calimocho"
+              && EngineManagementPolicy.calimochoSource.absoluteString == "https://github.com/WorkingPrinciple/calimocho"
               && CrossOverDependencyState.trialDownloadURL.absoluteString == "https://www.codeweavers.com/crossover/download",
               "REQ79 retains declared metadata separately and uses only verified official acquisition destinations")
         let suite = "EngineManagementChecks-\(UUID().uuidString)"
@@ -498,10 +498,22 @@ enum EngineManagementChecks {
                 engineName: "exact-calimocho", wineSha256: wineHash, wineserverSha256: serverHash)
         ])
         EngineDefaults.setDefaultEngine(nil, defaults)
+        let beforeUnresolvedChoice = NativeEngineDefaults.PreferenceSnapshot(defaults)
+        do {
+            _ = try await NativeLaunchConfiguration.resolveDefault(game: game,
+                configuration: backend, provider: nil, defaults: defaults, runtime: runtime, engineDefaults: defaultCatalog)
+            check(false, "COR132: An explicit unresolved registry is not replaced by an automatic default")
+        } catch NativeLaunchError.migrationRequired(let message) {
+            check(message.contains("saved registry or engine choice")
+                  && NativeEngineDefaults.PreferenceSnapshot(defaults) == beforeUnresolvedChoice,
+                  "COR132: An explicit unresolved registry is not replaced by an automatic default")
+        }
+        defaults.set(try JSONEncoder().encode(selection), forKey: NativeEngineDefaults.preferenceKey)
+        EngineDefaults.setDefaultEngine(.calimocho, defaults)
         let initialLaunch = try await NativeLaunchConfiguration.resolveDefault(game: game,
-            configuration: backend, provider: nil, defaults: defaults, runtime: runtime, engineDefaults: defaultCatalog)
+            configuration: backend, provider: .calimocho, defaults: defaults, runtime: runtime, engineDefaults: defaultCatalog)
         check(initialLaunch.admittedSelection == selection && EngineDefaults.defaultEngine(defaults) == .calimocho,
-              "COR132: An unset Settings provider initializes only the verified configured Calimocho default")
+              "COR132: A saved Settings default resolves its exact admitted Calimocho identity")
         for legacy in [nil, .crossover, .gptk3, .gptk4, .standaloneWine, .calimocho] as [RuntimeProviderKind?] {
             var savedGame = game
             savedGame.engineOverride = legacy
@@ -517,7 +529,7 @@ enum EngineManagementChecks {
         }
         check(try JSONDecoder().decode(AdmittedEngineSelection.self,
                   from: defaults.data(forKey: NativeEngineDefaults.preferenceKey) ?? Data()) == selection,
-              "COR132: First verified implicit default persists in its own settings key, not legacy registry preferences")
+              "COR132: The saved default remains in its own settings key, not legacy registry preferences")
         _ = try await store.setEngineOverrideV2(id: game.id, selection: alternate)
         let explicit = try await store.load()[0]
         check(explicit.engineOverrideV2?.version == 2 && explicit.engineOverrideV2?.selection == alternate

@@ -5,6 +5,17 @@ import XodusManagement
 
 enum NativeLifecyclePins {
     static let cliSHA256 = "358fd9ab8a90042f6678e27450e3dc28f431e99fc7669f7f97ad3a9d1cd31da9"
+    static func admitsShippingConfiguration(_ configuration: BackendConfiguration,
+                                            pins: ShippingPairIdentity? = ShippingPairPins.approved) -> Bool {
+        guard let pins, pins.schemaVersion == 1,
+              pins.producerCommit == ShippingProducerPins.commit,
+              pins.producerTree == ShippingProducerPins.tree,
+              let identity = configuration.executableIdentity,
+              identity.executable == configuration.executable,
+              identity.sha256 == pins.engineSHA256,
+              identity.expectedBytes == pins.engineBytes else { return false }
+        return true
+    }
     public static nonisolated(unsafe) var dynamicCliSHA256: String? = nil
     public static var effectiveCliSHA256: String {
         dynamicCliSHA256 ?? cliSHA256
@@ -87,6 +98,9 @@ struct NativeGameResult: Codable, Equatable, Sendable {
         if stoppedByUser, errorCode == "CANCELLED" || errorCode == "OPERATION_FAILED" { return nil }
         if errorCode == "OPERATION_FAILED", error == "Account broker did not shut down cleanly",
            wineExitCode == 0, wineTerminationSignal == nil { return nil }
+        if !success, errorCode == "OPERATION_FAILED", error?.hasPrefix("RECIPE_") == true {
+            return "The launch recipe could not be loaded for this game. Open the launch log for details."
+        }
         return success ? nil : InstalledGameActionCopy.launchUnavailable
     }
 
@@ -196,6 +210,7 @@ final class NativeGameLifecycle {
     private var progress = NativeGameProgress()
     private var active = false
     private var cancellationRequested = false
+    private var terminationRequested = false
     private(set) var started = false
     private(set) var stateDirectory: URL?
     private(set) var completedResult: NativeGameResult?
@@ -213,6 +228,7 @@ final class NativeGameLifecycle {
              launchEnvironment: [String: String] = [:],
              unsetLaunchEnvironment: [String] = [],
              engineSelection: AdmittedEngineSelection? = nil,
+             wineBridgeSelection: NativeWineBridgeSelection? = nil,
              onStarted: () -> Void = {},
              onProgress: (GameScriptProgress) -> Void = { _ in }) async throws -> NativeGameResult {
         guard !active, ["install", "repair", "uninstall", "launch"].contains(operation),
@@ -220,6 +236,7 @@ final class NativeGameLifecycle {
               GameScriptPaths.validRunID(runID) else { throw GameScriptError.invalidReceipt }
         active = true
         cancellationRequested = false
+        terminationRequested = false
         started = false
         completedResult = nil
         stateDirectory = nil
@@ -234,10 +251,21 @@ final class NativeGameLifecycle {
         try NativeLifecycleCancellation.check(operation: operation,
             cancelled: cancellationRequested || Task.isCancelled)
         if launchArguments.contains("--expected-registry-sha256") {
-            try await EngineInspectionClient().validateLaunch(configuration: configuration,
-                arguments: launchArguments, selection: engineSelection)
+            if let wineBridgeSelection {
+                guard operation == "launch", engineSelection == nil,
+                      launchEnvironment.isEmpty, unsetLaunchEnvironment.isEmpty else {
+                    throw NativeWineBridgeError.rejected("an account diagnostic cannot mix provider or title overrides")
+                }
+                try await wineBridgeSelection.validateLaunch(configuration: configuration, arguments: launchArguments)
+            } else {
+                try await EngineInspectionClient().validateLaunch(configuration: configuration,
+                    arguments: launchArguments, selection: engineSelection)
+            }
             try NativeLifecycleCancellation.check(operation: operation,
                 cancelled: cancellationRequested || Task.isCancelled)
+        }
+        if wineBridgeSelection != nil, !launchArguments.contains("--expected-registry-sha256") {
+            throw NativeWineBridgeError.rejected("the registry digest is missing")
         }
         try GameScriptFiles.checkPath(gameDirectory, allowMissing: operation == "install")
         let state = stateRoot ?? Self.directory(runID: runID)
@@ -282,11 +310,13 @@ final class NativeGameLifecycle {
                 try await Task.sleep(for: .milliseconds(150))
             }
         } catch {
-            if child.isRunning { child.terminate() }
+            terminateOwnedChild()
             // Join the CLI's owned-child cleanup, even if the caller was cancelled.
             while child.isRunning {
                 await Task.detached { try? await Task.sleep(for: .milliseconds(150)) }.value
             }
+            try NativeLifecycleCancellation.check(operation: operation,
+                cancelled: cancellationRequested || Task.isCancelled)
             throw error
         }
         child.waitUntilExit()
@@ -318,8 +348,15 @@ final class NativeGameLifecycle {
     }
 
     func cancel() {
+        guard !cancellationRequested else { return }
         cancellationRequested = true
-        if let process, process.isRunning { process.terminate() }
+        terminateOwnedChild()
+    }
+
+    private func terminateOwnedChild() {
+        guard !terminationRequested, let process, process.isRunning else { return }
+        terminationRequested = true
+        process.terminate()
     }
 
     @discardableResult

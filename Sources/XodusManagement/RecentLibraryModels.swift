@@ -74,7 +74,7 @@ public enum RecentLibraryFailure: String, CaseIterable, Equatable, Sendable {
 
     public init?(error: JSONValue) {
         guard let object = error.object, Set(object.keys) == ["code", "message", "retryable", "details"],
-              let details = object["details"]?.object, Set(details.keys) == ["category", "stage"],
+              let details = object["details"]?.object, TransportFailureDiagnostic.accepts(details: details),
               details["category"]?.string == "recentLibraryFailure",
               let stage = details["stage"]?.string, let failure = Self(rawValue: stage),
               object["code"]?.string == failure.code, object["message"]?.string == failure.message,

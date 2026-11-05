@@ -524,11 +524,11 @@ enum LibraryAccessChecks {
             artwork: nil, acquisitionKind: .subscription)], products: [], gamePass: [], active: false)
         check(granted.first?.facts.ownership == .inLibraryUnknownAcquisition
               && granted.first?.facts.badgeLabels() == ["In your library"]
-              && granted.first?.owned == false && granted.first?.eligibility == .gamePass
+              && granted.first?.owned == false && granted.first?.eligibility == .library
               && LibraryGame.visible(granted, query: "", filter: .owned, sort: .title).isEmpty
               && PCGameAcquisitionKind.merged(.subscription, .purchased) == .purchased
               && PCGameAcquisitionKind.merged(nil, .subscription) == .subscription,
-              "M10: current subscription-held titles qualify without entering Owned or inventing a plan")
+              "M10: subscription-held titles retain neutral library eligibility without inventing Game Pass or ownership")
         let page = try JSONDecoder().decode(PCGamesCollectionPage.self, from: Data("""
             {"items":[{"productId":"FIXTURE00005","productKind":"Game","status":"Active","acquisitionType":"Recurring"},
             {"productId":"FIXTURE00006","productKind":"Game","status":"Active","acquisitionType":"Single"},

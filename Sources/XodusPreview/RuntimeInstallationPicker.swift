@@ -11,6 +11,7 @@ struct RuntimeInstallationPicker: View {
     @AppStorage("Xodus.lifecycle.engine.standaloneWine") private var wineRecord = ""
     @AppStorage("Xodus.lifecycle.engine.crossover") private var crossOverRecord = ""
     @AppStorage("Xodus.lifecycle.engine.calimocho") private var calimochoRecord = ""
+    @AppStorage(NativeEngineDefaults.preferenceKey) private var defaultAdmission = Data()
     @StateObject private var registryObservation: EngineRegistryObservation
     @State private var paths = EngineDefaults.runnerPaths()
     @State private var crossOver = EngineDefaults.crossOverApplication()
@@ -27,9 +28,11 @@ struct RuntimeInstallationPicker: View {
         VStack(alignment: .leading, spacing: 12) {
             EngineProviderOverview(settings: settings, inspections: registryObservation.inspections)
             Divider()
+            ExternalProviderOverview(allowsCheck: !settings.planning && !settings.applicationTerminating)
+            Divider()
             Picker("Default game engine", selection: Binding(
                 get: { RuntimeProviderKind(rawValue: defaultProvider) },
-                set: { defaultProvider = $0?.rawValue ?? "" })) {
+                set: { EngineDefaults.setDefaultEngine($0) })) {
                 Text("No default selected").tag(Optional<RuntimeProviderKind>.none)
                 if let saved = RuntimeProviderKind(rawValue: defaultProvider), saved != .calimocho {
                     Text("\(saved.label) (historical, cannot launch)").tag(Optional(saved))
@@ -40,9 +43,7 @@ struct RuntimeInstallationPicker: View {
             }
             if let kind = RuntimeProviderKind(rawValue: defaultProvider) {
                 if kind == .calimocho {
-                    let name = calimochoRecord
-                    Text(name.isEmpty ? "No exact registry engine selected for this default."
-                         : "Configured registry engine: \(name)")
+                    Text(calimochoDescription)
                         .font(.callout).foregroundStyle(.secondary)
                 } else {
                     Text("This historical default is retained for reference, but current launches require verified Calimocho. No old prefix is adopted or migrated.")
@@ -113,6 +114,20 @@ struct RuntimeInstallationPicker: View {
             if let error { Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary) }
         }
         .disabled(settings.planning || settings.applicationTerminating)
+    }
+
+    private var calimochoDescription: String {
+        if !calimochoRecord.isEmpty { return "Configured registry engine: \(calimochoRecord)" }
+        guard !defaultAdmission.isEmpty else { return "No exact registry engine selected for this default." }
+        do {
+            let selection = try JSONDecoder().decode(AdmittedEngineSelection.self, from: defaultAdmission)
+            guard let name = selection.inspection.engineName else {
+                return "The saved engine selection is incomplete. Review it in Engines."
+            }
+            return "Configured registry engine: \(name)"
+        } catch {
+            return "The saved engine selection could not be read. Review it in Engines."
+        }
     }
 
     private func chooseCrossOver() {

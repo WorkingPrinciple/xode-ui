@@ -943,7 +943,9 @@ enum InstalledGameChecks {
         try Data("not a PE file".utf8).write(to: malformed)
         check(try PackageInspector.detect(folder: misleadingFolder) == .unknown,
               "M1: An executable extension without PE bytes is not Win32 evidence")
-        let routingLauncher = try script("routing launch.sh", "exit 0")
+        let routingLauncherStarted = root.appendingPathComponent("routing-launcher-started")
+        let routingLauncher = try script("routing launch.sh",
+            "printf 'started\\n' > \"${0%/*}/routing-launcher-started\"\nexit 0")
         let registeredRunner = try script("registered-gptk4-runner", "exit 0")
         let declaredPaths: [RuntimeProviderKind: String] = [.gptk4: registeredRunner.path]
         let observed = RunnerAvailabilityDetector.detect(crossOver: .absent, runnerPaths: declaredPaths)
@@ -1010,7 +1012,9 @@ enum InstalledGameChecks {
         guard let cleared = routing.games.first else { throw InstalledGameError.invalidRegistry }
         await routing.play(cleared)
         try await wait { routing.runningGameID == nil }
-        check(routing.playErrors[cleared.id] == InstalledGameActionCopy.launchUnavailable,
+        check(cleared.engineOverride == nil && routing.runningGameID == nil
+              && routing.playErrors[cleared.id] == NativeLaunchError.providerPolicy.localizedDescription
+              && !FileManager.default.fileExists(atPath: routingLauncherStarted.path),
               "REQ95 clearing an override without a configured default refuses instead of silently launching CrossOver")
         await routing.waitForSessionPersistence()
         await routing.setEngineOverride(.gptk4, for: cleared)
@@ -1067,7 +1071,8 @@ enum InstalledGameChecks {
         let liveLibrary = NSHostingView(rootView: LiveLibraryView(library: uiState.pcGames,
             installed: nonDefault, operations: uiOperations, query: "",
             allowsStartupTasks: false, allowsArtworkLoading: false, allowsHeroAnimation: false,
-            browse: {}, recentActivity: {}).environmentObject(uiSession))
+            browse: {}, recentActivity: {}, showDownloads: { uiState.navigate(.downloads) },
+            downloadQueue: uiState.downloadQueue).environmentObject(uiSession))
         liveLibrary.sizingOptions = []
         liveLibrary.frame = CGRect(x: 0, y: 0, width: 820, height: 874)
         liveLibrary.layoutSubtreeIfNeeded()

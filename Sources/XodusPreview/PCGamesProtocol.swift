@@ -223,13 +223,18 @@ struct PCGame: Identifiable, Equatable, Sendable {
     let title: String
     let artwork: CatalogArtworkReference?
     let acquisitionKind: PCGameAcquisitionKind
+    let unifiedCollectionRecord: Bool
+    var presentationAcquisitionKind: PCGameAcquisitionKind {
+        unifiedCollectionRecord && acquisitionKind == .purchased ? .unknown : acquisitionKind
+    }
 
     init(id: String, title: String, artwork: CatalogArtworkReference?,
-         acquisitionKind: PCGameAcquisitionKind = .unknown) {
+         acquisitionKind: PCGameAcquisitionKind = .unknown, unifiedCollectionRecord: Bool = false) {
         self.id = id
         self.title = title
         self.artwork = artwork
         self.acquisitionKind = acquisitionKind
+        self.unifiedCollectionRecord = unifiedCollectionRecord
     }
 }
 
@@ -244,6 +249,8 @@ struct PCGamesSnapshot: Sendable {
     let unresolvedCount: Int
     let unresolvedKinds: [String: PCGameAcquisitionKind]
     let detailFailureCount: Int
+    let reportedGamePassEntitlements: [String]?
+    let reportedGamePassCheckedAt: Date?
     var isComplete: Bool { unresolvedCount == 0 }
     func hasResolvedGame(_ productID: String) -> Bool {
         !unresolvedIDs.contains(productID) && games.contains { $0.id == productID }
@@ -251,7 +258,8 @@ struct PCGamesSnapshot: Sendable {
 
     init(games: [PCGame], excludedCount: Int, updatedAt: Date, accountID: String? = nil,
          boundAccountHash: String? = nil, unresolvedIDs: Set<String> = [], unresolvedCount: Int = 0,
-         unresolvedKinds: [String: PCGameAcquisitionKind] = [:], detailFailureCount: Int? = nil) {
+         unresolvedKinds: [String: PCGameAcquisitionKind] = [:], detailFailureCount: Int? = nil,
+         reportedGamePassEntitlements: [String]? = nil, reportedGamePassCheckedAt: Date? = nil) {
         self.games = games
         self.excludedCount = excludedCount
         self.updatedAt = updatedAt
@@ -261,6 +269,18 @@ struct PCGamesSnapshot: Sendable {
         self.unresolvedCount = unresolvedCount
         self.unresolvedKinds = unresolvedKinds
         self.detailFailureCount = detailFailureCount ?? unresolvedCount
+        self.reportedGamePassEntitlements = reportedGamePassEntitlements
+        self.reportedGamePassCheckedAt = reportedGamePassCheckedAt
+    }
+
+    func withReportedGamePassEntitlements(_ plans: [String]?, checkedAt: Date? = nil) -> Self {
+        Self(games: games.map {
+            PCGame(id: $0.id, title: $0.title, artwork: $0.artwork, acquisitionKind: $0.acquisitionKind,
+                   unifiedCollectionRecord: true)
+        }, excludedCount: excludedCount, updatedAt: updatedAt, accountID: accountID,
+             boundAccountHash: boundAccountHash, unresolvedIDs: unresolvedIDs, unresolvedCount: unresolvedCount,
+             unresolvedKinds: unresolvedKinds, detailFailureCount: detailFailureCount, reportedGamePassEntitlements: plans,
+             reportedGamePassCheckedAt: checkedAt)
     }
 
     func retainingUnresolved(from previous: Self?) -> Self {
@@ -269,13 +289,15 @@ struct PCGamesSnapshot: Sendable {
         let resolved = Set(games.map(\.id))
         let retained = previous.games.filter { unresolvedIDs.contains($0.id) && !resolved.contains($0.id) }.map {
             PCGame(id: $0.id, title: $0.title, artwork: $0.artwork,
-                   acquisitionKind: unresolvedKinds[$0.id] ?? .unknown)
+                   acquisitionKind: unresolvedKinds[$0.id] ?? .unknown,
+                   unifiedCollectionRecord: boundAccountHash != nil || $0.unifiedCollectionRecord)
         }
         return Self(games: (games + retained).sorted {
             $0.title.localizedStandardCompare($1.title) == .orderedAscending
         }, excludedCount: excludedCount, updatedAt: updatedAt, accountID: accountID,
             boundAccountHash: boundAccountHash, unresolvedIDs: unresolvedIDs, unresolvedCount: unresolvedCount,
-            unresolvedKinds: unresolvedKinds, detailFailureCount: detailFailureCount)
+            unresolvedKinds: unresolvedKinds, detailFailureCount: detailFailureCount,
+            reportedGamePassEntitlements: reportedGamePassEntitlements, reportedGamePassCheckedAt: reportedGamePassCheckedAt)
     }
 }
 

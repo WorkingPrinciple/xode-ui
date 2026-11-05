@@ -15,8 +15,17 @@ enum LibrarySort: String, CaseIterable, Identifiable {
 }
 
 enum LibraryGridLayout {
+    private static let minimum: CGFloat = 170
+    private static let maximum: CGFloat = 220
+    private static let spacing: CGFloat = 24
+
     static var columns: [GridItem] {
-        [GridItem(.adaptive(minimum: 170, maximum: 220), spacing: 24, alignment: .top)]
+        [GridItem(.adaptive(minimum: minimum, maximum: maximum), spacing: spacing, alignment: .top)]
+    }
+
+    static func controllerColumns(width: CGFloat) -> Int {
+        guard width.isFinite, width > 0 else { return 1 }
+        return max(1, Int((width + spacing) / (minimum + spacing)))
     }
 }
 
@@ -270,7 +279,8 @@ struct LibraryGame: Identifiable {
 
     static func collection(installed: [InstalledGame], owned: [PCGame], products: [CatalogProduct],
                            gamePass: [CatalogProduct], active: Bool,
-                           accessIsCurrent: Bool = true, permittedInstalledIDs: Set<String> = []) -> [Self] {
+                           accessIsCurrent: Bool = true, permittedInstalledIDs: Set<String> = [],
+                           currentAcquisitionIDs: Set<String>? = nil) -> [Self] {
         var result: [Self] = []
         var seen = Set<String>()
         let catalog = Dictionary(products.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
@@ -290,15 +300,15 @@ struct LibraryGame: Identifiable {
             }
             guard let entitlement = held[id], seen.insert(id).inserted else { continue }
             result.append(Self(id: id, title: game.title, installed: game, pc: entitlement,
-                               product: catalog[id] ?? pass[id], owned: entitlement.acquisitionKind == .purchased,
+                               product: catalog[id] ?? pass[id], owned: entitlement.presentationAcquisitionKind.isOwned,
                                gamePass: pass[id] != nil,
-                               accessIsCurrent: accessIsCurrent))
+                               accessIsCurrent: currentAcquisitionIDs?.contains(id) ?? accessIsCurrent))
         }
         for game in owned where seen.insert(game.id).inserted {
             result.append(Self(id: game.id, title: game.title, installed: nil, pc: game,
-                               product: catalog[game.id] ?? pass[game.id], owned: game.acquisitionKind == .purchased,
+                               product: catalog[game.id] ?? pass[game.id], owned: game.presentationAcquisitionKind.isOwned,
                                gamePass: pass[game.id] != nil,
-                               accessIsCurrent: accessIsCurrent))
+                               accessIsCurrent: currentAcquisitionIDs?.contains(game.id) ?? accessIsCurrent))
         }
         return result
     }
@@ -326,7 +336,7 @@ struct LibraryGame: Identifiable {
         var seen = Set<String>()
         return products.filter { $0.pcCatalogCandidate && seen.insert($0.id).inserted }.map {
             Self(id: $0.id, title: $0.title, installed: local[$0.id], pc: held[$0.id],
-                 product: $0, owned: held[$0.id].map { $0.acquisitionKind == .purchased } ?? false,
+                 product: $0, owned: held[$0.id].map { $0.presentationAcquisitionKind.isOwned } ?? false,
                  gamePass: true)
         }
     }
@@ -346,8 +356,8 @@ struct LibraryGame: Identifiable {
     static func heroCandidates(qualified: [Self], catalogue: [Self], continuingIDs: [UUID]) -> [Self] {
         let order = Dictionary(continuingIDs.enumerated().map { ($1, $0) },
                                uniquingKeysWith: { first, _ in first })
-        let subscriptions = qualified.filter { $0.pc?.acquisitionKind == .subscription }
-        let purchases = qualified.filter { $0.pc?.acquisitionKind == .purchased }
+        let subscriptions = qualified.filter { $0.pc?.presentationAcquisitionKind == .subscription }
+        let purchases = qualified.filter { $0.pc?.presentationAcquisitionKind.isOwned == true }
         let source = !subscriptions.isEmpty ? subscriptions
             : !purchases.isEmpty ? purchases : !qualified.isEmpty ? qualified : catalogue
         return Array(source.sorted {
@@ -363,7 +373,7 @@ struct LibraryGame: Identifiable {
 
     var eligibility: LibraryEligibility? {
         LibraryEligibility.evaluate(
-            entitlement: pc?.acquisitionKind ?? (owned ? .purchased : nil),
+            entitlement: pc?.presentationAcquisitionKind ?? (owned ? .purchased : nil),
             accessIsCurrent: accessIsCurrent && (pc != nil || owned),
             verifiedGamePassAccess: false, installed: installed != nil)
     }
@@ -965,6 +975,7 @@ struct GameCard<Artwork: View, Status: View>: View {
     var gameFacts = GameFacts()
     var compatibilityIssues: [LibraryCompatibilityIssue] = []
     var showsGamePassCatalogBadge = false
+    var activity: LibraryActivity? = nil
     var openLabel = "Open"
     var searchFocus: (FocusState<String?>.Binding, String)? = nil
     var focusReturn: (FocusState<String?>.Binding, String)? = nil
@@ -1007,17 +1018,22 @@ struct GameCard<Artwork: View, Status: View>: View {
             artwork().aspectRatio(2.0 / 3.0, contentMode: .fit)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .overlay(alignment: .bottomLeading) {
-                    if showsGamePassCatalogBadge {
-                        Text("GAME PASS")
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 6).padding(.vertical, 3)
-                            .background(Color(white: 0.12).opacity(0.9),
-                                        in: RoundedRectangle(cornerRadius: 4))
-                            .padding(8)
-                            .allowsHitTesting(false)
-                            .accessibilityHidden(true)
+                    VStack(alignment: .leading, spacing: 6) {
+                        if showsGamePassCatalogBadge {
+                            Text("GAME PASS")
+                                .font(.caption2.weight(.semibold))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 6).padding(.vertical, 3)
+                                .background(Color(white: 0.12).opacity(0.9),
+                                            in: RoundedRectangle(cornerRadius: 4))
+                        }
+                        if let fraction = activity?.fraction {
+                            LibraryActivityBar(fraction: fraction)
+                        }
                     }
+                    .padding(8)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
                 }
                 .overlay(alignment: .topTrailing) {
                     HStack(spacing: 4) {
@@ -1044,7 +1060,8 @@ struct GameCard<Artwork: View, Status: View>: View {
     }
 
     var coverStatusDescription: String {
-        ((showsGamePassCatalogBadge ? ["In PC Game Pass catalog"] : [])
+        ((activity.map { [$0.accessibilityText] } ?? [])
+            + (showsGamePassCatalogBadge ? ["In PC Game Pass catalog"] : [])
             + compatibilityIssues.map { "\($0.browseTitle). \($0.browseDetail)" })
             .joined(separator: ", ")
     }

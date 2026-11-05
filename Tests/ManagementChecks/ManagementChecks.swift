@@ -23,6 +23,8 @@ enum ManagementChecks {
                     inspect: CommandLine.arguments.contains("--probe-inspect"))
             } else if CommandLine.arguments.contains("--descriptor-metrics-checks") {
                 try await checks.descriptorMetricsChecks()
+            } else if CommandLine.arguments.contains("--transport-diagnostic-checks") {
+                try await checks.transportDiagnosticChecks()
             } else if CommandLine.arguments.contains("--overflow-checks") {
                 try await checks.overflowChecks()
             } else if let index = CommandLine.arguments.firstIndex(of: "--contract-schema-checks") {
@@ -71,6 +73,111 @@ actor Checks {
     func finish() -> Bool {
         print("\(count) management checks, \(failures) failures.")
         return failures == 0
+    }
+
+    func transportDiagnosticChecks() throws {
+        let validator = try ContractValidator()
+        for recent in [false, true] {
+            let failure = AuthenticatedReadFailure.transportFailed
+            let category = recent ? "recentLibraryFailure" : "authenticatedReadFailure"
+            let definition = recent ? "recentLibraryFailure" : "authVerificationFailure"
+            func error(_ details: JSONValue) -> JSONValue {
+                .object(["code": .string(failure.code), "retryable": .bool(failure.retryable),
+                         "message": .string(recent ? RecentLibraryFailure.transportFailed.message : failure.message),
+                         "details": details])
+            }
+            func decodes(_ value: JSONValue) -> Bool {
+                recent ? RecentLibraryFailure(error: value) == .transportFailed
+                    : AuthenticatedReadFailure(error: value) == .transportFailed
+            }
+            let legacy: JSONValue = .object(["category": .string(category), "stage": .string("transportFailed")])
+            try validator.validate(legacy, definition: definition)
+            check(decodes(error(legacy)) && TransportFailureDiagnostic(error: error(legacy)) == nil,
+                  "Older transport failure remains valid without invented diagnostic evidence")
+            for phase in TransportFailureDiagnostic.Phase.allCases {
+                for cause in TransportFailureDiagnostic.Cause.allCases {
+                    let allowed: Bool
+                    switch phase {
+                    case .credentialRead, .publicationRevalidation, .dispatchDeadline:
+                        allowed = cause == .deadline
+                    case .clientSetup:
+                        allowed = cause == .requestFailed
+                    case .tokenExchange, .userAuthentication, .xstsAuthorization, .providerRead:
+                        allowed = true
+                    }
+                    let transport: JSONValue = .object(["phase": .string(phase.rawValue),
+                                                       "cause": .string(cause.rawValue)])
+                    let details: JSONValue = .object(["category": .string(category),
+                        "stage": .string("transportFailed"), "transport": transport])
+                    let value = error(details)
+                    let diagnostic = TransportFailureDiagnostic(error: value)
+                    check(decodes(value) == allowed
+                          && (diagnostic != nil) == allowed
+                          && (!allowed || (diagnostic?.phase == phase && diagnostic?.cause == cause)),
+                          "Closed transport phase/cause pair is admitted only when valid")
+                    do {
+                        try validator.validate(details, definition: definition)
+                        check(allowed, "Contract and decoder agree on transport phase/cause")
+                    } catch {
+                        check(!allowed, "Contract and decoder agree on transport phase/cause")
+                    }
+                }
+            }
+            for transport: JSONValue in [
+                .null, .string("requestFailed"),
+                .object(["phase": .string("providerRead")]),
+                .object(["phase": .string("providerRead"), "cause": .string("unknown")]),
+                .object(["phase": .string("unknown"), "cause": .string("deadline")]),
+                .object(["phase": .integer(1), "cause": .string("deadline")]),
+                .object(["phase": .string("providerRead"), "cause": .bool(false)]),
+                .object(["phase": .string("providerRead"), "cause": .string("deadline"), "url": .string("redacted")])
+            ] {
+                let details: JSONValue = .object(["category": .string(category),
+                    "stage": .string("transportFailed"), "transport": transport])
+                check(!decodes(error(details)) && TransportFailureDiagnostic(error: error(details)) == nil,
+                      "Malformed or open transport evidence cannot reach sanitized logging")
+                do {
+                    try validator.validate(details, definition: definition)
+                    check(false, "Contract rejects malformed transport evidence")
+                } catch { check(true, "Contract rejects malformed transport evidence") }
+            }
+            let validTransport: JSONValue = .object(["phase": .string("credentialRead"), "cause": .string("deadline")])
+            let validDetails: JSONValue = .object(["category": .string(category),
+                "stage": .string("transportFailed"), "transport": validTransport])
+            for key in ["code", "message", "retryable", "details"] {
+                var wrong = error(validDetails).object ?? [:]
+                wrong[key] = key == "retryable" ? .bool(false) : .string("invalid")
+                check(!decodes(.object(wrong)) && TransportFailureDiagnostic(error: .object(wrong)) == nil,
+                      "Transport evidence cannot bypass the exact failure tuple")
+            }
+            for stage in AuthenticatedReadFailure.allCases where stage != .transportFailed {
+                if recent && stage == .packageUnavailable { continue }
+                let details: JSONValue = .object(["category": .string(category),
+                    "stage": .string(stage.rawValue), "transport": validTransport])
+                let value: JSONValue = .object(["code": .string(stage.code), "retryable": .bool(stage.retryable),
+                    "message": .string(recent ? "Recent library read failed: \(stage.rawValue)." : stage.message),
+                    "details": details])
+                check(AuthenticatedReadFailure(error: value) == nil && RecentLibraryFailure(error: value) == nil
+                      && TransportFailureDiagnostic(error: value) == nil,
+                      "Transport diagnostic is forbidden on nontransport failures")
+                do {
+                    try validator.validate(details, definition: definition)
+                    check(false, "Contract rejects diagnostic on nontransport failure")
+                } catch { check(true, "Contract rejects diagnostic on nontransport failure") }
+            }
+            let extraDetails: JSONValue = .object(["category": .string(category),
+                "stage": .string("transportFailed"), "transport": validTransport, "account": .string("redacted")])
+            check(!decodes(error(extraDetails)) && TransportFailureDiagnostic(error: error(extraDetails)) == nil,
+                  "Extra diagnostic identity fields remain rejected")
+            do {
+                try validator.validate(extraDetails, definition: definition)
+                check(false, "Contract rejects extra diagnostic identity fields")
+            } catch { check(true, "Contract rejects extra diagnostic identity fields") }
+            check(ManagementError.authenticatedReadFailed(failure).errorDescription == failure.message
+                  && ManagementError.recentLibraryFailed(.transportFailed).errorDescription
+                    == RecentLibraryFailure.transportFailed.message,
+                  "Existing failure API and wording remain unchanged")
+        }
     }
 
     func overflowChecks() async throws {
@@ -838,6 +945,7 @@ actor Checks {
                 do { try verificationValidator.validate(data, definition: "authVerifiedData"); check(false, "Only exact verified:true is accepted") }
                 catch { check(true, "Only exact verified:true is accepted") }
             }
+            try transportDiagnosticChecks()
             for stage in AuthenticatedReadFailure.allCases {
                 let error: JSONValue = .object(["code": .string(stage.code), "retryable": .bool(stage.retryable),
                                                "message": .string(stage.message), "details": stage.details])
@@ -1654,7 +1762,11 @@ enum MockBackend {
         guard let index = CommandLine.arguments.firstIndex(of: "--state-dir"),
               CommandLine.arguments.indices.contains(index + 1) else { exit(2) }
         let scenario = URL(fileURLWithPath: CommandLine.arguments[index + 1]).lastPathComponent
-        let fixtureAccountHash = String(repeating: "a", count: 64)
+        let scenarioXUID = "1234567890"
+        let fixtureAccountHash = scenario == "recentodeauthscenario"
+            ? SHA256.hash(data: Data(("xodus-account-v1\u{0}" + scenarioXUID).utf8))
+                .map { String(format: "%02x", $0) }.joined()
+            : String(repeating: "a", count: 64)
         do {
             let lifecycleDirectory = URL(fileURLWithPath: CommandLine.arguments[index + 1])
             let lifecycleScenario = ["retireslow", "retirefailed", "retirehello", "retiresnapshot", "authgate",
@@ -1692,7 +1804,9 @@ enum MockBackend {
             var hello = frames.first(where: { $0["data"]?["schema"] != nil })?["data"]?.object ?? [:]
             var supported: Set<ManagementCommand> = [.authStatus, .authLogout, .jobs]
             if scenario.hasPrefix("descriptors") { supported.insert(.descriptors) }
-            if scenario.hasPrefix("ode") { supported.insert(.odeAccountRead) }
+            if scenario.hasPrefix("ode") || scenario == "recentodeauthscenario" {
+                supported.insert(.odeAccountRead)
+            }
             if scenario.hasPrefix("recent") { supported.formUnion([.libraryRecent, .query]) }
             if scenario == "verify" || scenario.hasPrefix("verify-") { supported.insert(.authVerify) }
             if scenario == "diagnostics" || scenario.hasPrefix("metrics") { supported.insert(.diagnostics) }
@@ -1789,7 +1903,7 @@ enum MockBackend {
                             usleep(2_000)
                         }
                     }
-                    if scenario.hasPrefix("ode") {
+                    if scenario.hasPrefix("ode") || scenario == "recentodeauthscenario" {
                         try trace(command)
                         if command == "auth.status" {
                             try emit(.object(result(request, data: authStatus(loggedOut ? "signedOut" : "credentialPresent"))))
@@ -1813,7 +1927,9 @@ enum MockBackend {
                                 try emit(.object(response))
                                 continue
                             }
-                            let items: [JSONValue] = warm
+                            let items: [JSONValue] = scenario == "recentodeauthscenario"
+                                ? [.object(["productID": .string("SYNTHETIC001"), "acquisitionKind": .string("subscription")])]
+                                : warm
                                 && !(scenario == "odelibraryempty" && accountLibraryReads > 1)
                                 ? [.object(["productID": .string("FIXTURE00001"), "acquisitionKind": .string("purchased")])] : []
                             let payload: JSONValue
@@ -1822,6 +1938,34 @@ enum MockBackend {
                                     "productID": request["params"]?["productID"] ?? .null,
                                     "access": .string("permitted"), "expiresAt": .string("2030-01-01T00:00:00Z"),
                                     "reason": .null
+                                ])
+                            } else if section == "profile" && scenario == "recentodeauthscenario" {
+                                payload = .object([
+                                    "gamertag": .string("SyntheticFixture"),
+                                    "displayName": .string("Synthetic Account"),
+                                    "avatarURL": .string("https://images-eds-ssl.xboxlive.com/image/synthetic-gamerpic"),
+                                    "gamerscore": .integer(420), "bio": .null, "location": .null,
+                                    "accountCountry": .object([
+                                        "status": .string("verified"), "countryCode": .string("US"),
+                                        "locale": .string("en-US"),
+                                        "source": .string("xboxAccount.legalCountry"), "reason": .null
+                                    ])
+                                ])
+                            } else if section == "achievements" && scenario == "recentodeauthscenario" {
+                                payload = .object([
+                                    "titleID": request["params"]?["titleID"] ?? .null,
+                                    "complete": .bool(true),
+                                    "achievements": .array([.object([
+                                        "id": .string("SYNTHETIC-ACHIEVEMENT-01"),
+                                        "name": .string("Synthetic achievement"),
+                                        "description": .string("Recorded fixture achievement."),
+                                        "progressState": .string("Achieved"),
+                                        "unlocked": .bool(true),
+                                        "unlockTime": .string("2026-10-18T12:00:00Z"),
+                                        "gamerscore": .integer(10), "isSecret": .bool(false),
+                                        "artworkURL": .null, "rarityPercentage": .null,
+                                        "requirements": .array([])
+                                    ])])
                                 ])
                             } else {
                                 payload = section == "library" ? .object(["items": .array(items)])
@@ -1838,7 +1982,8 @@ enum MockBackend {
                             }
                             let response = result(request, data: .object([
                                 "section": .string(section),
-                                "accountHash": .string(String(repeating: scenario == "odemismatch" ? "b" : "a", count: 64)),
+                                "accountHash": .string(scenario == "odemismatch"
+                                    ? String(repeating: "b", count: 64) : fixtureAccountHash),
                                 "checkedAt": .string("2026-10-19T12:00:00Z"), "payload": payload
                             ]))
                             if scenario == "odeslow" || (scenario == "odecountryslow" && section == "library") {

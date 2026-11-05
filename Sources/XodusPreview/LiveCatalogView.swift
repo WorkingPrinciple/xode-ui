@@ -392,7 +392,8 @@ struct LiveCatalogView: View {
             gamePassIDs: session.gamePassProductIDs,
             installed: installed.games, accessIsCurrent: library.accessIsCurrent,
             metadataRevision: art.revision, compatibility: operations.compatibility,
-            genre: selection.genre, scope: selection.scope, showsUnsupported: showsUnsupportedGames)
+            genre: selection.genre, scope: selection.scope, showsUnsupported: showsUnsupportedGames,
+            currentAcquisitionIDs: library.currentAcquisitionIDs)
     }
 
     var body: some View {
@@ -794,15 +795,15 @@ struct LiveCatalogView: View {
         projection.index.games[product.id] ?? LibraryGame(id: product.id, title: product.title,
             installed: installed.games.first { $0.storeId == product.id },
             pc: results.ownedGame(for: product.id), product: product,
-            owned: results.ownedGame(for: product.id).map { $0.acquisitionKind == .purchased } ?? false,
-            gamePass: session.gamePassProductIDs.contains(product.id), accessIsCurrent: library.accessIsCurrent)
+            owned: results.ownedGame(for: product.id).map { $0.presentationAcquisitionKind.isOwned } ?? false,
+            gamePass: session.gamePassProductIDs.contains(product.id), accessIsCurrent: library.accessIsCurrent(for: product.id))
     }
 
     private func game(_ owned: PCGame) -> LibraryGame {
         projection.index.games[owned.id] ?? LibraryGame(id: owned.id, title: owned.title,
             installed: installed.games.first { $0.storeId == owned.id }, pc: owned,
-            product: session.products.first { $0.id == owned.id }, owned: owned.acquisitionKind == .purchased,
-            gamePass: session.gamePassProductIDs.contains(owned.id), accessIsCurrent: library.accessIsCurrent)
+            product: session.products.first { $0.id == owned.id }, owned: owned.presentationAcquisitionKind.isOwned,
+            gamePass: session.gamePassProductIDs.contains(owned.id), accessIsCurrent: library.accessIsCurrent(for: owned.id))
     }
 
     private func open(_ game: LibraryGame) {

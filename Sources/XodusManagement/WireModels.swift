@@ -111,12 +111,57 @@ public enum AuthenticatedReadFailure: String, CaseIterable, Equatable, Sendable 
 
     public init?(error: JSONValue) {
         guard let object = error.object, Set(object.keys) == ["code", "message", "retryable", "details"],
-              let details = object["details"]?.object, Set(details.keys) == ["category", "stage"],
+              let details = object["details"]?.object, TransportFailureDiagnostic.accepts(details: details),
               details["category"]?.string == "authenticatedReadFailure",
               let stage = details["stage"]?.string, let failure = Self(rawValue: stage),
               object["code"]?.string == failure.code, object["message"]?.string == failure.message,
               object["retryable"]?.boolean == failure.retryable else { return nil }
         self = failure
+    }
+}
+
+public struct TransportFailureDiagnostic: Equatable, Sendable {
+    public enum Phase: String, CaseIterable, Sendable {
+        case credentialRead, tokenExchange, userAuthentication, xstsAuthorization
+        case providerRead, publicationRevalidation, dispatchDeadline, clientSetup
+    }
+
+    public enum Cause: String, CaseIterable, Sendable {
+        case requestFailed, deadline, httpRedirect, httpRateLimited, httpClientError, httpServerError, httpOther
+    }
+
+    public let phase: Phase
+    public let cause: Cause
+
+    public init?(error: JSONValue) {
+        guard AuthenticatedReadFailure(error: error) == .transportFailed
+                || RecentLibraryFailure(error: error) == .transportFailed,
+              let value = error["details"]?["transport"] else { return nil }
+        self.init(value: value)
+    }
+
+    private init?(value: JSONValue) {
+        guard let object = value.object, Set(object.keys) == ["phase", "cause"],
+              let rawPhase = object["phase"]?.string, let phase = Phase(rawValue: rawPhase),
+              let rawCause = object["cause"]?.string, let cause = Cause(rawValue: rawCause) else { return nil }
+        switch phase {
+        case .credentialRead, .publicationRevalidation, .dispatchDeadline:
+            guard cause == .deadline else { return nil }
+        case .clientSetup:
+            guard cause == .requestFailed else { return nil }
+        case .tokenExchange, .userAuthentication, .xstsAuthorization, .providerRead:
+            break
+        }
+        self.phase = phase
+        self.cause = cause
+    }
+
+    static func accepts(details: [String: JSONValue]) -> Bool {
+        if Set(details.keys) == ["category", "stage"] { return true }
+        guard Set(details.keys) == ["category", "stage", "transport"],
+              details["stage"]?.string == "transportFailed",
+              let value = details["transport"] else { return false }
+        return Self(value: value) != nil
     }
 }
 

@@ -472,11 +472,8 @@ struct XboxAccountSummaryView: View {
                     }
                 }
             }
-            if companion.cache?.profile.available == true, companion.cache?.profile.value != nil,
-               !state.pcGames.representedGames.isEmpty || state.gameOperations.gamePassStatus != nil {
-                accountSection("Membership", symbol: "checkmark.seal.fill") {
-                    libraryAndGamePass
-                }
+            accountSection("Library access", symbol: "checkmark.seal.fill") {
+                libraryAndGamePass
             }
         }
         .tint(OdeBrand.accent)
@@ -498,42 +495,96 @@ struct XboxAccountSummaryView: View {
     }
 
     private var libraryAndGamePass: some View {
-        XboxLibraryAccessSummary(library: state.pcGames, operations: state.gameOperations,
-                                 gamePassCatalogCount: session.gamePassProducts.count)
+        XboxLibraryAccessSummary(games: state.pcGames.representedGames,
+                                 status: state.gameOperations.usesUnifiedAccount ? nil : state.gameOperations.gamePassStatus,
+                                 gamePassCatalogCount: session.gamePassProducts.count,
+                                 unifiedAccount: state.gameOperations.usesUnifiedAccount,
+                                 reportedGamePassEntitlements: state.pcGames.currentReportedGamePassEntitlements,
+                                 entitlementsCheckedAt: state.pcGames.currentGamePassEntitlementsCheckedAt,
+                                 gamePassFromCache: state.gameOperations.gamePassFromCache
+                                    || state.pcGames.accountHash == nil,
+                                 reportedGamePassIsCurrent: state.pcGames.currentGamePassEntitlementsCheckedAt != nil,
+                                 accessIsCurrent: state.pcGames.accountAccessIsCurrent,
+                                 libraryIsComplete: state.pcGames.snapshot?.isComplete == true)
+            .task { if state.gameOperations.gamePassStatus == nil { await state.gameOperations.loadGamePassCache() } }
     }
 }
 
-private struct XboxLibraryAccessSummary: View {
-    @ObservedObject var library: PCGamesController
-    @ObservedObject var operations: GameOperationsController
+struct XboxLibraryAccessSummary: View {
+    let games: [PCGame]
+    let status: GamePassStatusResult?
     let gamePassCatalogCount: Int
+    var unifiedAccount = false
+    var reportedGamePassEntitlements: [String]?
+    var entitlementsCheckedAt: Date?
+    var gamePassFromCache = false
+    var reportedGamePassIsCurrent: Bool?
+    var accessIsCurrent = true
+    var libraryIsComplete = true
 
     var body: some View {
-        let games = library.representedGames
-        let fromGamePass = games.filter { $0.acquisitionKind == .subscription }.count
-        let owned = games.filter { $0.acquisitionKind == .purchased }.count
-        let unknown = games.filter { $0.acquisitionKind == .unknown }.count
+        let reportIsCurrent = reportedGamePassIsCurrent ?? accessIsCurrent
+        let fromGamePass = games.filter { $0.presentationAcquisitionKind == .subscription }.count
+        let owned = games.filter { $0.presentationAcquisitionKind.isOwned }.count
+        let unknown = games.filter { $0.presentationAcquisitionKind == .unknown }.count
         VStack(spacing: 6) {
             if !games.isEmpty {
-                Text("\(owned.formatted()) owned · \(fromGamePass.formatted()) subscription"
-                     + (unknown > 0 ? " · \(unknown.formatted()) acquisition unknown" : ""))
+                Text(games.count == 1
+                     ? "\(games.count.formatted()) game in your library"
+                     : "\(games.count.formatted()) games in your library")
                     .font(.callout.weight(.medium))
                     .accessibilityIdentifier("xodus.account.libraryCounts")
-            }
-            if let status = operations.gamePassStatus, status.active == true {
-                let plan = status.planLabel ?? "Game Pass"
-                let expiry = status.expiryDate.map { " · renews or ends \($0.formatted(date: .abbreviated, time: .omitted))" } ?? ""
-                Label("\(plan) active\(expiry)", systemImage: "checkmark.seal.fill")
-                    .font(.callout.weight(.medium)).foregroundStyle(OdeBrand.accent)
-                if gamePassCatalogCount > 0 {
-                    Text("\(gamePassCatalogCount.formatted()) PC games available with Game Pass")
+                if !accessIsCurrent {
+                    Text("Saved library details - current access not verified")
+                        .font(.caption).foregroundStyle(.secondary)
+                } else if !libraryIsComplete {
+                    Text("Partial library - some game details are unavailable")
                         .font(.caption).foregroundStyle(.secondary)
                 }
-            } else if operations.gamePassStatus?.active == false {
-                Text("No Game Pass membership").font(.callout).foregroundStyle(.secondary)
+                if owned > 0 {
+                    Text("\(owned.formatted()) owned game\(owned == 1 ? "" : "s")")
+                        .font(.callout)
+                }
+                if fromGamePass > 0 {
+                    Text("\(fromGamePass.formatted()) subscription-sourced")
+                        .font(.callout)
+                }
+                if unknown > 0 {
+                    Text("Purchase or subscription source unavailable for \(unknown.formatted())")
+                        .font(.callout).foregroundStyle(.secondary)
+                        .accessibilityIdentifier("xodus.account.acquisitionUnavailable")
+                }
+            } else {
+                Text("Library ownership and acquisition unavailable")
+                    .font(.callout).foregroundStyle(.secondary)
+            }
+            if unifiedAccount {
+                Text(reportIsCurrent && reportedGamePassEntitlements?.isEmpty == false
+                     ? "Game Pass record reported" : "Game Pass membership not reported")
+                    .font(.callout)
+                    .accessibilityIdentifier("xodus.account.membership")
+                if reportIsCurrent, reportedGamePassEntitlements?.isEmpty == false, let entitlementsCheckedAt {
+                    Text("As of \(entitlementsCheckedAt.formatted(date: .abbreviated, time: .shortened))")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                if reportIsCurrent, reportedGamePassEntitlements?.isEmpty == false {
+                    Text("Subscription status not verified.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                Text("Some Game Pass games may not be included in this library.")
+                    .font(.caption).foregroundStyle(.secondary)
+            } else {
+                Text("Game Pass membership status unavailable")
+                    .font(.callout).foregroundStyle(.secondary)
+                    .accessibilityIdentifier("xodus.account.membershipUnavailable")
+                if status != nil {
+                    Text(gamePassFromCache || !accessIsCurrent
+                         ? "Saved title access check - current status not verified"
+                         : "A title access check does not establish account membership.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
             }
         }
-        .task { if operations.gamePassStatus == nil { await operations.loadGamePassCache() } }
     }
 }
 

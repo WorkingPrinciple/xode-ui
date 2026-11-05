@@ -306,8 +306,8 @@ struct LiveProductView: View {
                                 }
                                 .modifier(LibraryActionStyle())
                                 .disabled(!allowsStartupTasks || !library.accessIsCurrent(for: product.id)
-                                          || !operations.canStartMutation)
-                                if !allowsStartupTasks || !library.accessIsCurrent(for: product.id) || !operations.canStartMutation {
+                                          || !operations.canRepair(installed))
+                                if !allowsStartupTasks || !library.accessIsCurrent(for: product.id) || !operations.canRepair(installed) {
                                     InstallUnavailableNotice(message: !allowsStartupTasks
                                         ? "Wait for Ode to X to finish starting."
                                         : library.installAccessNotice(for: product.id)

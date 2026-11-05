@@ -25,12 +25,16 @@ struct LiveLibraryView: View {
     var allowsHeroAnimation = true
     let browse: () -> Void
     let recentActivity: () -> Void
+    let showDownloads: () -> Void
+    @ObservedObject var downloadQueue: DownloadQueueController
     var positionCollection: (String?) -> Void = { _ in }
     @ObservedObject var selection = LibrarySelection()
     @ObservedObject private var art = LibraryCatalogArtwork.shared
     @ObservedObject private var xboxStats = LibraryXboxStats.shared
     @ObservedObject private var macEvidence = MacGameEvidenceStore.shared
     @ObservedObject private var nativeMinecraft = NativeMinecraft.shared
+    @ObservedObject private var controller = LibraryControllerInput.shared
+    @StateObject private var controllerWindow = LibraryControllerWindow()
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.catalogPresentationActive) private var presentationActive
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
@@ -38,7 +42,12 @@ struct LiveLibraryView: View {
     @State private var heroVisible = false
     @State private var lowPower = ProcessInfo.processInfo.isLowPowerModeEnabled
     @State private var detailFocusReturnID: String?
+    @State private var showsNativeMinecraftDetails = false
+    @State private var controllerSubscribed = false
+    @State private var controllerGridWidth: CGFloat = 0
+    @State private var controllerFocus = LibraryControllerFocus()
     @FocusState private var focusedGameID: String?
+    private let nativeMinecraftFocusID = "native-minecraft"
     @AppStorage(LibrarySupportVisibility.preferenceKey)
     private var showsUnsupportedGames = LibrarySupportVisibility.defaultShowsUnsupported
     private var countryUnresolved: Bool { session.hasConfirmedSignIn && !session.accountCountryReady }
@@ -85,9 +94,9 @@ struct LiveLibraryView: View {
     private var purchaseNotice: String? {
         guard filter == .owned else { return nil }
         if accountCollectionIncomplete {
-            return "Your purchased PC games aren't fully available yet. Shown purchases may be incomplete; installed-game access is checked separately."
+            return "Your owned PC games aren't fully available yet. Shown ownership may be incomplete; installed-game access is checked separately."
         }
-        let unknown = library.representedGames.filter { $0.acquisitionKind == .unknown }.count
+        let unknown = library.representedGames.filter { $0.presentationAcquisitionKind == .unknown }.count
         return unknown > 0
             ? "\(unknown.formatted()) games in your PC library have an unidentified acquisition source and aren't classified as Owned."
             : nil
@@ -99,7 +108,8 @@ struct LiveLibraryView: View {
                 installed.productAccess.permits($0, account: session.accountHash)
             }), launchable: installed.launchableIDs, accessIsCurrent: library.accessIsCurrent,
             metadataRevision: art.revision, compatibility: operations.compatibility,
-            filter: filter, sort: sort, showsUnsupported: showsUnsupported)
+            filter: filter, sort: sort, showsUnsupported: showsUnsupported,
+            currentAcquisitionIDs: library.currentAcquisitionIDs)
     }
 
     private func changeScope(filter nextFilter: LibraryFilter, showsUnsupported: Bool) {
@@ -139,7 +149,9 @@ struct LiveLibraryView: View {
                 }
             }
             VStack(alignment: .leading, spacing: 22) {
-                if query.isEmpty, !continuing.isEmpty { continuePlaying }
+                if query.isEmpty, !continuing.isEmpty {
+                    continuePlaying.id("library-continue-playing")
+                }
                 GameOperationProgressView(operations: operations)
                 if OfflineGameCompatibility.unavailable {
                     Text("The offline compatibility catalogue couldn't be read. Live package checks remain available.")
@@ -191,6 +203,20 @@ struct LiveLibraryView: View {
                 }
                 .scrollTargetLayout()
                 VStack(alignment: .leading, spacing: 22) {
+                if let hint = controller.hint, presentationActive,
+                   controllerSections.contains(where: { !$0.ids.isEmpty }) {
+                    ViewThatFits(in: .horizontal) {
+                        HStack(spacing: 16) {
+                            ForEach(hint.labels, id: \.self) { Text($0).fixedSize() }
+                        }
+                        VStack(alignment: .leading, spacing: 4) {
+                            ForEach(hint.labels, id: \.self) { Text($0) }
+                        }
+                    }
+                    .font(.caption).foregroundStyle(.secondary)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityIdentifier("xodus.library.controllerHints")
+                }
                 if let purchaseNotice {
                     Label(purchaseNotice, systemImage: "info.circle")
                         .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
@@ -206,7 +232,7 @@ struct LiveLibraryView: View {
                 } else if visible.isEmpty && !showsNativeMinecraft && visibleLocalRecords.isEmpty {
                     if [.owned, .gamePass].contains(filter), accountCollectionIncomplete {
                         ContentUnavailableView {
-                            Label(filter == .owned ? "Purchased library unavailable" : "Game Pass library unavailable",
+                            Label(filter == .owned ? "Owned library unavailable" : "Game Pass library unavailable",
                                   systemImage: "books.vertical")
                         } description: {
                             Text(filter == .owned
@@ -225,11 +251,11 @@ struct LiveLibraryView: View {
                         ContentUnavailableView.search(text: query)
                     } else if !collection.isEmpty {
                         ContentUnavailableView {
-                            Label(filter == .owned ? "No confirmed purchases in this collection"
+                            Label(filter == .owned ? "No confirmed ownership in this collection"
                                   : "No \(filter.rawValue.lowercased()) games to show", systemImage: "gamecontroller")
                         } description: {
                             Text(filter == .owned
-                                 ? "Owned includes purchase or redemption evidence in your loaded PC library, not subscriptions or unidentified acquisition."
+                                 ? "Owned includes confirmed licence ownership in your loaded PC library, not subscriptions or unidentified acquisition."
                                  : "Try another filter to see the games in your library.")
                         }
                         actions: { Button("Show all games") { filter = .all } }
@@ -246,6 +272,9 @@ struct LiveLibraryView: View {
                         ForEach(visible) { game in card(game).id("library-card-\(game.id)") }
                     }
                     .scrollTargetLayout()
+                    .onGeometryChange(for: CGFloat.self) { $0.size.width } action: {
+                        controllerGridWidth = $0
+                    }
                 }
                 if let error = art.error {
                     Label(error, systemImage: "photo.badge.exclamationmark").font(.callout).foregroundStyle(.secondary)
@@ -260,13 +289,20 @@ struct LiveLibraryView: View {
                         LazyVGrid(columns: LibraryGridLayout.columns, alignment: .leading, spacing: 30) {
                             ForEach(visibleLocalRecords) { game in card(game).id("library-local-\(game.id)") }
                             if showsNativeMinecraft {
-                                NativeMinecraftCard {
+                                NativeMinecraftCard(showsDetails: $showsNativeMinecraftDetails,
+                                                    focusReturn: ($focusedGameID, nativeMinecraftFocusID)) {
                                     CatalogArtworkView(reference: artworkAllowed ? art.images["9PJ8266BHFWN"]?.cover : nil,
                                         status: art.images["9PJ8266BHFWN"]?.cover == nil ? .absent : .available)
-                                }.id("library-native-minecraft")
+                                }
+                                .id("library-native-minecraft")
+                                .onAppear { controllerCardAppeared(nativeMinecraftFocusID) }
+                                .onDisappear { controllerFocus.disappeared(nativeMinecraftFocusID) }
                             }
                         }
                         .scrollTargetLayout()
+                        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: {
+                            controllerGridWidth = $0
+                        }
                     }
                 }
                 }
@@ -311,10 +347,39 @@ struct LiveLibraryView: View {
             guard previous != nil, current == nil else { return }
             restoreDetailFocus()
         }
+        .onChange(of: showsNativeMinecraftDetails) { previous, current in
+            if current { detailFocusReturnID = nativeMinecraftFocusID }
+            if previous && !current { restoreDetailFocus() }
+        }
+        .onChange(of: focusedGameID) { _, current in controllerFocus.observeFocus(current) }
+        .onChange(of: query) { _, _ in controllerFocus.cancelRequest() }
+        .onChange(of: controllerSections.flatMap(\.ids)) { _, ids in
+            if let pending = controllerFocus.pendingTarget, !ids.contains(pending) {
+                controllerFocus.cancelRequest()
+            }
+        }
+        .onChange(of: presentationActive) { _, active in
+            if !active { controllerFocus.cancelRequest() }
+        }
+        .background(LibraryControllerWindowAnchor(focus: controllerWindow).frame(width: 0, height: 0))
+        .onAppear {
+            if !controllerSubscribed {
+                controller.start()
+                controllerSubscribed = true
+            }
+        }
+        .onReceive(controller.commands) { command in handleControllerCommand(command) }
+        .onReceive(controllerWindow.inputEvents) { controllerFocus.cancelRequestIfSuperseded(by: $0) }
         .onDisappear {
+            if controllerSubscribed {
+                controller.stop()
+                controllerSubscribed = false
+            }
             selection.heroHovered = false
             selection.heroPlaying = false
             selection.localDetail = nil
+            showsNativeMinecraftDetails = false
+            controllerFocus = LibraryControllerFocus()
         }
         .task(id: "\(allowsStartupTasks):\(countryUnresolved)") {
             if allowsStartupTasks && !countryUnresolved { await library.loadOnAppear() }
@@ -534,6 +599,8 @@ struct LiveLibraryView: View {
                             .buttonStyle(.plain)
                             .focusable()
                             .focused($focusedGameID, equals: "recent-\(game.id)")
+                            .onAppear { controllerCardAppeared("recent-\(game.id)") }
+                            .onDisappear { controllerFocus.disappeared("recent-\(game.id)") }
                             .focusEffectDisabled()
                             .onKeyPress(.return) {
                                 open(recentGame(game), focusID: "recent-\(game.id)")
@@ -581,6 +648,7 @@ struct LiveLibraryView: View {
     }
 
     private func open(_ game: LibraryGame, focusID: String? = nil) {
+        controllerFocus.cancelRequest()
         detailFocusReturnID = nil
         focusedGameID = nil
         do {
@@ -610,10 +678,92 @@ struct LiveLibraryView: View {
 
     private func restoreDetailFocus() {
         guard let detailFocusReturnID else { return }
-        let available = Set((visible + visibleLocalRecords).map(\.id) + continuing.map { "recent-\($0.id)" })
+        let available = Set((visible + visibleLocalRecords).map(\.id) + continuing.map { "recent-\($0.id)" }
+                            + (showsNativeMinecraft ? [nativeMinecraftFocusID] : []))
         focusedGameID = GameSearchPresentation.focusReturnTarget(preferred: detailFocusReturnID,
                                                                   available: available)
         self.detailFocusReturnID = nil
+    }
+
+    private var controllerSections: [LibraryControllerNavigation.Section] {
+        let recent = query.isEmpty ? continuing.map { "recent-\($0.id)" } : []
+        let columns = LibraryGridLayout.controllerColumns(width: controllerGridWidth)
+        return [
+            .init(ids: recent, columns: max(1, recent.count)),
+            .init(ids: visible.map(\.id), columns: columns),
+            .init(ids: visibleLocalRecords.map(\.id) + (showsNativeMinecraft ? [nativeMinecraftFocusID] : []),
+                  columns: columns)
+        ]
+    }
+
+    private func controllerCardAppeared(_ id: String) {
+        controllerFocus.appeared(id)
+        focusControllerTargetIfReady(id)
+    }
+
+    private func focusControllerTargetIfReady(_ id: String) {
+        guard controllerFocus.mayAssign(id, inputGeneration: controllerWindow.inputGeneration) else { return }
+        DispatchQueue.main.async {
+            guard controllerFocus.mayAssign(id, inputGeneration: controllerWindow.inputGeneration) else { return }
+            guard presentationActive,
+                  controllerWindow.permitsNavigation(), selection.localDetail == nil,
+                  session.selectedProduct == nil, !showsNativeMinecraftDetails,
+                  operations.installConsent == nil, operations.uninstallConsent == nil,
+                  !operations.preparingConsent else {
+                controllerFocus.cancelRequest()
+                return
+            }
+            if focusedGameID == id { controllerFocus.observeFocus(id) }
+            else { focusedGameID = id }
+        }
+    }
+
+    private func handleControllerCommand(_ command: LibraryControllerCommand) {
+        guard presentationActive else { return }
+        if case .back = command {
+            guard detailFocusReturnID != nil, controllerWindow.permitsDetailDismissal(),
+                  operations.installConsent == nil, operations.uninstallConsent == nil,
+                  !operations.preparingConsent else { return }
+            if selection.localDetail != nil { selection.localDetail = nil }
+            else if session.selectedProduct != nil { session.selectedProduct = nil }
+            else if showsNativeMinecraftDetails { showsNativeMinecraftDetails = false }
+            return
+        }
+        guard controllerWindow.permitsNavigation(), selection.localDetail == nil,
+              session.selectedProduct == nil, !showsNativeMinecraftDetails,
+              operations.installConsent == nil, operations.uninstallConsent == nil,
+              !operations.preparingConsent else { return }
+        switch command {
+        case .move(let move):
+            guard let target = controllerFocus.move(move, focused: focusedGameID,
+                                                    sections: controllerSections,
+                                                    inputGeneration: controllerWindow.inputGeneration) else { return }
+            if let game = continuing.first(where: { "recent-\($0.id)" == target }) {
+                selection.recentGameID = game.id
+                positionCollection("library-continue-playing")
+            } else if visible.contains(where: { $0.id == target }) {
+                positionCollection("library-card-\(target)")
+            } else if target == nativeMinecraftFocusID {
+                positionCollection("library-native-minecraft")
+            } else {
+                positionCollection("library-local-\(target)")
+            }
+            focusControllerTargetIfReady(target)
+        case .activate:
+            controllerFocus.cancelRequestIfSuperseded(by: controllerWindow.inputGeneration)
+            guard controllerFocus.pendingTarget == nil, let target = focusedGameID else { return }
+            if let game = continuing.first(where: { "recent-\($0.id)" == target }), query.isEmpty {
+                open(recentGame(game), focusID: target)
+            } else if let game = (visible + visibleLocalRecords).first(where: { $0.id == target }) {
+                open(game, focusID: target)
+            } else if target == nativeMinecraftFocusID, showsNativeMinecraft {
+                detailFocusReturnID = target
+                focusedGameID = nil
+                showsNativeMinecraftDetails = true
+            } else { return }
+        case .back:
+            break
+        }
     }
 
     private func information(id: String, compact: Bool = false, showsAccessBadges: Bool = true) -> some View {
@@ -629,15 +779,23 @@ struct LiveLibraryView: View {
 
     private func card(_ game: LibraryGame) -> some View {
         let artworkID = game.installed?.storeId ?? game.id
+        let activity = LibraryActivity.resolve(productID: artworkID,
+                                               operations: LibraryActivity.Operations(operations),
+                                               jobs: downloadQueue.jobs,
+                                               stoppingJobIDs: Set(downloadQueue.pendingStops.keys))
         return GameCard(title: game.title, gameFacts: game.facts,
                      compatibilityIssues: unsupportedIssues(game),
                      showsGamePassCatalogBadge: session.gamePassBadgeProductIDs.contains(artworkID),
+                     activity: activity,
                      openLabel: "View",
                      focusReturn: ($focusedGameID, game.id),
                      open: { open(game) }) {
             CatalogArtworkView(reference: artworkAllowed ? art.images[artworkID]?.cover ?? game.cover : nil,
                                status: (art.images[artworkID]?.cover ?? game.cover) == nil ? .absent : .available)
         } status: {
+            if let activity {
+                LibraryActivityStatus(activity: activity, showDownloads: showDownloads)
+            }
             if let match = game.installed {
                 InstalledPlayError(library: installed, game: match)
             }
@@ -649,5 +807,7 @@ struct LiveLibraryView: View {
                 Button("Show in Finder") { NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: match.folder) }
             }
         }
+        .onAppear { controllerCardAppeared(game.id) }
+        .onDisappear { controllerFocus.disappeared(game.id) }
     }
 }

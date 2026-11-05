@@ -34,13 +34,24 @@ struct GameInstallLocation: Codable, Equatable, Sendable {
     let folder: String
     let volume: GameStorageVolume
 
+    private static func validFolderPath(_ path: String) -> Bool {
+        path.hasPrefix("/") && path != "/" && path.count <= 4096
+            && !path.contains("//") && !path.utf8.contains(0)
+            && URL(fileURLWithPath: path, isDirectory: true).standardized.path == path
+    }
+
     init(folder: URL) throws {
+        let path = folder.path
+        guard folder.isFileURL, Self.validFolderPath(path) else {
+            throw GameScriptError.invalidDestination
+        }
         try GameScriptFiles.checkPath(folder)
         try InstalledGameFiles.checkFolder(folder)
         guard let volume = GameStorageVolume.read(at: folder) else {
             throw GameScriptError.invalidDestination
         }
-        self.folder = folder.standardizedFileURL.path
+        // Filesystem standardization can turn /private/tmp into the /tmp symlink.
+        self.folder = path
         self.volume = volume
     }
 
@@ -54,8 +65,7 @@ struct GameInstallLocation: Codable, Equatable, Sendable {
         if data.isEmpty { return nil }
         guard data.count <= 16384 else { throw GameScriptError.invalidDestination }
         let location = try JSONDecoder().decode(Self.self, from: data)
-        guard location.folder.hasPrefix("/"), location.folder.count <= 4096,
-              URL(fileURLWithPath: location.folder).standardizedFileURL.path == location.folder,
+        guard validFolderPath(location.folder),
               location.volume.contains(location.folder) else {
             throw GameScriptError.invalidDestination
         }

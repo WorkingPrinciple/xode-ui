@@ -496,7 +496,8 @@ enum NativeUIChecks {
                       "Library fixture lays out detached in \(appearance.rawValue) at \(Int(width)) points")
                 let live = NSHostingView(rootView: LiveLibraryView(library: state.pcGames,
                     installed: state.installedGames, operations: state.gameOperations, query: "",
-                    allowsStartupTasks: false, allowsArtworkLoading: false, browse: {}, recentActivity: {})
+                    allowsStartupTasks: false, allowsArtworkLoading: false, browse: {}, recentActivity: {},
+                    showDownloads: { state.navigate(.downloads) }, downloadQueue: state.downloadQueue)
                     .environmentObject(session))
                 live.sizingOptions = []
                 live.appearance = NSAppearance(named: appearance)
@@ -1006,6 +1007,20 @@ enum NativeUIChecks {
               && !welcomeWindow.isVisible && !otherModal.isVisible,
               "XO-010: Dismantling restores a blocking policy without presenting, dismissing or terminating an app")
         policyView.removeFromSuperview()
+    }
+
+    static func checkDetailInstallAction(operations: GameOperationsController, game: PCGame,
+                                         expectedStatus: String, cancelEnabled: Bool,
+                                         check: (Bool, String) -> Void) {
+        let action = GameInstallAction(game: game, operations: operations)
+        let host = NSHostingView(rootView: action)
+        host.sizingOptions = []
+        host.frame = CGRect(x: 0, y: 0, width: 230, height: 180)
+        host.layoutSubtreeIfNeeded()
+        check(host.window == nil && action.statusTitle == expectedStatus,
+              "REQ200: The detached detail shows \(expectedStatus), not \(action.statusTitle)")
+        check(action.showsCancel && action.cancelDisabled != cancelEnabled,
+              "REQ200: The detached detail's own cancellation enabled=\(cancelEnabled)")
     }
 
     static func checkOperationFeedback(operations: GameOperationsController,

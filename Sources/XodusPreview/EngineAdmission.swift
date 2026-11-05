@@ -15,7 +15,7 @@ enum EngineInspectionError: Error, LocalizedError {
         case .timedOut: "Provider inspection timed out. Retry Refresh; no engine was selected."
         case .shutdownFailed: "Provider inspection has not stopped. Quit the app before retrying."
         case .rejected(let failure):
-            "Calimocho verification failed (\(failure.code)): \(failure.message). Refresh the registry in Engines and explicitly select the verified build again. No game was started or other engine substituted."
+            "Calimocho preflight failed (\(failure.code)): \(failure.message). Restore the selected engine files or choose a verified build in Engines. No game was started or other engine substituted."
         }
     }
 }
@@ -185,13 +185,19 @@ actor EngineInspectionClient {
         try selection.validate(registryPath: registry, engineName: engine, registryDigest: digest)
         let fresh = try await inspect(executable: configuration.executable, registry: URL(fileURLWithPath: registry),
                                       engine: engine, expectedDigest: digest,
-                                      executableIdentity: configuration.executableIdentity)
+                                      executableIdentity: configuration.executableIdentity,
+                                      recordTimeout: engine == CalimochoReleasePin.release06.engineName
+                                        ? .seconds(90) : .seconds(5))
         if !fresh.ready, let failure = fresh.error { throw EngineInspectionError.rejected(failure) }
         guard fresh == selection.inspection else { throw NativeLaunchError.selectionChanged }
     }
 
     func inspect(executable: URL, registry: URL, engine: String, expectedDigest: String? = nil,
-                 executableIdentity: NativeAuthHostBinding? = nil) async throws -> EngineInspection {
+                 executableIdentity: NativeAuthHostBinding? = nil,
+                 recordTimeout: Duration = .seconds(5)) async throws -> EngineInspection {
+        guard recordTimeout > .zero, recordTimeout <= .seconds(90) else {
+            throw EngineInspectionError.invalidResponse
+        }
         let probe = try await run(executable: executable, arguments: ["engine-inspect", "--contract-version", "1"],
                                   executableIdentity: executableIdentity)
         struct Capability: Decodable { let schemaVersion: Int; let capability: String; let supported: Bool }
@@ -205,12 +211,14 @@ actor EngineInspectionClient {
             guard EngineInspection.validDigest(expectedDigest) else { throw EngineInspectionError.invalidResponse }
             arguments += ["--expected-registry-sha256", expectedDigest]
         }
-        let result = try await run(executable: executable, arguments: arguments, executableIdentity: executableIdentity)
+        let result = try await run(executable: executable, arguments: arguments,
+                                   executableIdentity: executableIdentity, timeout: recordTimeout)
         return try EngineInspection.decode(result.0, engine: engine, registryDigest: expectedDigest, exitCode: result.1)
     }
 
     private func run(executable: URL, arguments: [String],
-                     executableIdentity: NativeAuthHostBinding?) async throws -> (Data, Int32) {
+                     executableIdentity: NativeAuthHostBinding?,
+                     timeout: Duration = .seconds(5)) async throws -> (Data, Int32) {
         guard child == nil else { throw EngineInspectionError.shutdownFailed }
         try Task.checkCancellation()
 #if XODUS_SHIPPING
@@ -245,7 +253,7 @@ actor EngineInspectionClient {
         child = process
         var bytes = Data(), diagnostics = 0
         var closed = [false, false]
-        let deadline = ContinuousClock.now.advanced(by: .seconds(5))
+        let deadline = ContinuousClock.now.advanced(by: timeout)
         do {
             while process.isRunning || closed.contains(false) {
                 try Task.checkCancellation()

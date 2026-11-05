@@ -62,10 +62,16 @@ retires its access.
 current subscription grants and unverified access. Owned and subscription access
 are independent; subscription-held entries never enter the Owned filter.
 Saved credentials or a failed/in-flight refresh cannot establish a Free or
-Owned tier. Recurring collection entries show Subscription (plan unknown), not
-a fabricated PC/Console/Ultimate plan. The game-service licence probe lacks an
+Owned tier. Recurring collection entries retain neutral Library eligibility, not
+a fabricated Game Pass membership or PC/Console/Ultimate plan. Unified collection
+records do not establish paid ownership; separately reported Game Pass records
+do not establish current membership or complete Library coverage.
+The game-service licence probe lacks an
 identity binding to the PC-library account, so its result is shown separately
-and is not merged into that account's tier. Saved probe results are historical
+and is not merged into that account's tier. Neither positive nor negative
+title-scoped probe results establish account membership, plan or renewal/expiry.
+The account summary shows membership as unavailable without an account-level source.
+Saved probe results are historical
 and must be checked again before opening subscription install review.
 Fixture coverage lives in `Tests/ManagementChecks/Fixtures/account-tiers.json`,
 with controller transition checks in the preview harness. Perks, leaving-soon

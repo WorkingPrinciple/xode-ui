@@ -31,7 +31,11 @@ struct NativeEngineSettings: View {
                     panel.canChooseFiles = true
                     panel.allowsMultipleSelection = false
                     panel.allowedContentTypes = [.json]
-                    if panel.runModal() == .OK, let url = panel.url { registryPath = url.path }
+                    if panel.runModal() == .OK, let url = panel.url {
+                        UserDefaults.standard.set(UUID().uuidString, forKey: EngineDefaults.choiceRevisionKey)
+                        UserDefaults.standard.removeObject(forKey: NativeEngineDefaults.automaticKey)
+                        registryPath = url.path
+                    }
                 }
                 .disabled(!allowsFileReads)
                 .accessibilityIdentifier("xodus.lifecycle.chooseRegistry")
@@ -45,7 +49,7 @@ struct NativeEngineSettings: View {
             }
             if registryPath.isEmpty {
                 Text(
-                    "Choose the local engine registry to detect registered versions and locations. Refresh reads it again without installing or changing engines."
+                    "The default Calimocho release is prepared separately. Choose a registry here only to inspect another local engine."
                 )
                 .foregroundStyle(.secondary)
             } else if observation.entries.isEmpty, observation.status == .missing {
@@ -200,6 +204,8 @@ struct NativeEngineSettings: View {
     private func saveAdmission(_ inspection: EngineInspection) -> Bool {
         do {
             guard inspection.ready, let name = inspection.engineName else { throw EngineInspectionError.failed }
+            UserDefaults.standard.set(UUID().uuidString, forKey: EngineDefaults.choiceRevisionKey)
+            UserDefaults.standard.removeObject(forKey: NativeEngineDefaults.automaticKey)
             admittedSelection = try JSONEncoder().encode(AdmittedEngineSelection(
                 registryPath: registryPath, inspection: inspection))
             UserDefaults.standard.set(admittedSelection, forKey: NativeEngineDefaults.preferenceKey)

@@ -2,6 +2,146 @@
 
 ## Purpose and authorization
 
+### REQ-185: account-producer contract compatibility source port
+
+The canonical and bundled management schemas now retain the complete reviewed
+contract from development producer tree
+`57f15372a4271a5f61279f5842dbb1d8349e3510`, SHA-256
+`f0e7da1ec7ab9608e4dba49403a27517aa3cfbb8367b07a22834ee03fc4e90af`.
+Its optional reported Game Pass records do not establish active membership,
+plan, renewal, complete Library coverage or title access. The matching consumer
+accepts only the reviewed closed transport phase/cause combinations on exact
+authenticated-read or recent-library transport failures. Existing failures
+without diagnostics remain valid; producer text and extra identity fields are
+not retained or logged. Existing failure codes and account checks are unchanged.
+
+This is a source-compatibility port, not a producer selection or repin. Exact
+contract-byte admission remains required. The older `1118d0e8...` producer
+contract does not match it. The reviewed producer's later local `binrw`
+dependency correction is not part of this app port or the original `57f15372`
+source; the separately reviewed `d2d8dfff5261ff26dfa5379f9dc3f6622b72cc9f`
+producer includes that correction and the same full contract. A compatible
+contract alone does not admit either binary, establish current source-to-binary
+provenance, or qualify an installed app/backend pair. Existing pins, signing,
+account boundaries and release requirements remain in force.
+
+### Issue 62 / REQ-186: immutable qualified app and trusted distribution DMG
+
+`.github/workflows/release.yml` declares a `v*` tag pipeline for
+`Ode-to-X-v<version>-macos-arm64.dmg`, the corresponding ZIP, and
+`SHA256SUMS.txt`. This source port does not authorize or establish a real
+release, Apple submission, protected-environment configuration or publication.
+All existing candidate, producer, recipe and historical gameplay identities
+below remain unchanged; none is promoted to release qualification by this port.
+
+The package job consumes an immutable app already built, signed and
+independently qualified for the exact tag commit/tree/version. It never
+rebuilds, re-signs, re-notarizes, staples, installs or launches the input app.
+Protected `release` and `release-publication` environments must be configured
+by the owner; declaring their names does not create approval rules.
+
+Required repository variables are `RELEASE_APP_PATH`,
+`RELEASE_ADMISSION_RECEIPT_PATH`, `RELEASE_APP_TREE_SHA256`,
+`RELEASE_ADMISSION_RECEIPT_SHA256`, `RELEASE_SIGNING_IDENTITY_SHA1`,
+`RELEASE_NOTARY_PROFILE` and `RELEASE_DMG_RECOVERY_ROOT`.
+The workflow maps the certificate SHA1 to `RELEASE_DMG_SIGNING_IDENTITY` and
+uses the runner's existing notarytool Keychain profile. The controlled macOS
+runner needs the existing certificate/private key, operator-managed Keychain
+access, Xcode command-line tools and Apple connectivity. Provision these
+separately; the workflow neither imports/exports keys, changes Keychain access
+controls nor automates security prompts.
+
+The publication runner must also have **GitHub CLI (`gh`) exactly 2.102.1**
+provisioned separately. This pin was verified locally with `gh --version`;
+runner provisioning and hosted execution remain unverified. Before any release
+lookup, tag verification or publication, the publish script requires `gh` on
+PATH, a successful `gh --version` and an exact 2.102.1 version banner.
+Missing, failing, malformed or different versions reject with an explicit
+diagnostic before any GitHub API/release command. The workflow installs nothing.
+The prerequisite check uses the actual installed CLI and a system-tool PATH
+without `gh` (retaining real `awk`). Failed-version commands, malformed banners
+and other installed versions have not been exercised; no version responses are
+fabricated to cover them. Existing publication substitutes test only the
+downstream archive/tag/publication controls, separately from this prerequisite.
+
+`release_workflow.py qualified-app` and `package_release.sh` independently
+verify the pinned app and admission receipt against the clean source checkout,
+canonical repository origin, tag commit/tree and app version. Admission schema
+1 binds `source` (`repository`, `commit`, `tree`) and `app` (`sha256`, `version`).
+`releaseQualification` and `provenanceRedistributionReview` each pin an evidence
+receipt's relative `receipt` path and `sha256`. Each receipt binds that same
+source/app, its `kind`, `schemaVersion: 1`, `status: "accepted"` and a nonempty
+`evidence` array of relative `path`/`sha256` pairs. Missing, changed,
+duplicate-key, out-of-root or unaccepted evidence rejects. These receipts must
+come from genuine independent qualification/review: matching JSON/digests prove
+binding and integrity, not authenticity or authority to release.
+
+The app-tree digest covers sorted paths, entry types, modes, file sizes/bytes
+and symlink text, including the bundle root mode. Special files and escaping or
+unresolved symlinks reject; contained framework symlinks remain supported.
+`codesign --verify --deep --strict` precedes archiving and checks the snapshot
+and recovered apps. The main executable must contain arm64. The mounted,
+read-only DMG and extracted ZIP must reproduce the admitted tree, and the input
+app is rechecked after packaging.
+
+The packager signs the new DMG only, with a secure timestamp. Before submitting,
+`release_dmg_trust.py` retains the exact signed image, its digest/size and state
+in a private recovery attempt. It submits without waiting, records the returned
+submission ID, then waits on that exact ID. The wait response must identify the
+selected submission before any status is recorded; another submission's
+`Accepted` leaves `notaryStatus: null` and requires reconciliation.
+Only explicit `Accepted` proceeds to stapling, staple validation, final
+signature verification and Gatekeeper's `open` primary-signature assessment.
+The submitted image remains 0400 and separate from the distribution copy.
+Checksums cover the final stapled DMG bytes and ZIP, not the submitted image.
+The checked two-file checksum manifest is emitted last; every failed gate
+blocks successful asset upload.
+
+`RELEASE_DMG_RECOVERY_ROOT` must be separately provisioned persistent storage,
+canonical, owned by the runner user, mode 0700 and outside temporary directories
+and the Actions workspace. Provision a regular 0600 `.ode-dmg-recovery.json`
+there containing `{"version":1,"retention":"owner-managed-persistent"}`.
+This is an operator retention commitment, not proof of backup or survival of
+host loss. The operator must retain attempts across jobs and runner cleanup.
+A permanent owner-only 0600 `.submission.lock` uses a nonblocking exclusive
+kernel lock to serialize admission and submission across tags and invocations.
+Never remove or replace that lock file; process exit releases the kernel lock.
+Attempt-directory and receipt updates are synced before submission.
+
+Timeouts, interruptions, process death, malformed responses and ambiguous
+submission failure retain the signed bytes, ID if known, private diagnostics
+and incomplete state. Any prior incomplete attempt blocks new submissions.
+After investigating with Apple using the stored ID (or recovering an unknown
+ID), archive the resolved attempt outside the active root before explicitly
+retrying. Never delete or auto-resubmit an uncertain image.
+Only the allowlisted `dmg-trust-evidence/receipt.json` is uploaded by an
+`always()` step, including failures. It contains hashes, byte counts, bounded
+status and submission ID, not absolute runner paths, Keychain profile, command
+arguments, raw diagnostics or the signed image. Public Actions artifacts are
+not private recovery storage.
+
+All hdiutil operations use an owned-child timeout wrapper: create, verify and
+attach have 120-second budgets, detach five seconds, and termination/reaping
+two additional one-second bounds. Failed/partial mounts are treated as mounted
+until detach succeeds. Failed detach, timeout or interruption preserves the
+uncertain stage for reconciliation instead of deleting through a mountpoint.
+The output directory must be new, outside the app, with an existing canonical
+parent.
+
+Publication receives only the three exact assets, verifies exact checksum
+coverage and final bytes, and never executes checked-out source with its write
+token. Immediately before upload/create it rereads the live tag, peels annotated
+tags (at most eight levels), verifies the resolved commit exists and requires
+equality with the admitted package commit. Missing/moved tags, collisions and
+API/auth errors fail closed, without overwrite or speculative release creation.
+This is not an atomic GitHub tag lock; protected immutable tags remain required.
+
+`python3 tools/check_release_admission.py` and
+`python3 tools/check_release_workflow.py` exercise the existing account-free
+substitutes, not real Apple or GitHub operations. They cannot establish genuine
+signatures, notarization, Gatekeeper acceptance, persistent-host retention,
+product/legal qualification or hosted release execution.
+
 ### REQ103 r7 source candidate: Stop lifecycle and orphan safety
 
 The current reviewed producer source is
@@ -894,6 +1034,18 @@ builds a clean app-source archive, and generates exact source and signed-byte
 pins in that archive only. It does not edit release producer pins, accept
 unsigned arbitrary external binaries, replace an installed app, launch sign-in,
 or enable Actions.
+
+For a local candidate, the packager checks that the archived lifecycle CLI pin,
+runtime catalogue CLI pin, and source-pinned catalogue digest agree before it
+changes them. After signing the newly built CLI, it binds those three staged inputs to
+that CLI and records their original and generated hashes in the receipt. The
+copied catalogue must match the generated digest. The historical
+`evidenceCliSha256` and all title entries stay unchanged.
+
+Existing historical observed entries still select their recorded launch settings
+for this new CLI. Retaining those entries is not evidence that the new CLI has
+been tested with those titles, and this binding does not qualify gameplay. It
+does not change checked-in release pins or the separate refresh workflow.
 
 ```sh
 python3 tools/build_local_candidate.py \

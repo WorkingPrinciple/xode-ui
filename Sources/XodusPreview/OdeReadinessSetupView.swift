@@ -4,6 +4,81 @@ import SwiftUI
 import XodusCore
 import XodusManagement
 
+struct ReadinessLibraryRow: View {
+    @ObservedObject var library: PCGamesController
+
+    var statusTitle: String {
+        if library.busy || library.restoringPresence { return "Checking your PC library..." }
+        let count = library.representedGames.count
+        if count == 0 {
+            if library.accessIsCurrent { return "No PC games found" }
+            return library.accountAccessIsCurrent ? "PC game details unavailable" : "PC library unavailable"
+        }
+        let noun = count == 1 ? "PC game" : "PC games"
+        return library.accountAccessIsCurrent
+            ? "\(count.formatted()) \(noun) found"
+            : "\(count.formatted()) saved \(noun)"
+    }
+
+    var statusDetail: String {
+        if library.busy || library.restoringPresence { return "Checking your account's PC games." }
+        if library.needsKeychainApproval {
+            return "Approve Keychain access in Account settings, then rescan."
+        }
+        if let error = library.error {
+            return library.representedGames.isEmpty
+                ? error : "Saved results; current access is not verified. \(error)"
+        }
+        if !library.hasSavedSignIn || library.needsSignIn {
+            return "Check your sign-in in Account settings, then rescan."
+        }
+        if !library.accountAccessIsCurrent {
+            return library.representedGames.isEmpty
+                ? "Refresh your PC library to check account access."
+                : "Saved results. Current access is not verified."
+        }
+        if !library.accessIsCurrent {
+            return "Some game details are unavailable. Saved items may be included."
+        }
+        return "Some games may not be included in this library."
+    }
+
+    var canRescan: Bool {
+        !library.busy && !library.restoringPresence && !library.needsKeychainApproval
+            && !library.needsSignIn && !library.accountDisconnecting
+    }
+
+    func rescan() {
+        Task { await library.retryLibraryLoad() }
+    }
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 14) {
+            Image(systemName: "books.vertical.fill")
+                .font(.title3)
+                .foregroundStyle(.secondary)
+                .frame(width: 24)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(statusTitle)
+                    .font(.body.weight(.medium))
+                    .accessibilityIdentifier("xodus.setup.pcLibrary.status")
+                Text(statusDetail)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer()
+
+            Button("Rescan", action: rescan)
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .disabled(!canRescan)
+                .accessibilityIdentifier("xodus.setup.pcLibrary.rescan")
+        }
+    }
+}
+
 struct OdeReadinessSetupView: View {
     @ObservedObject var session: LiveSession
     @ObservedObject var state: AppState
@@ -11,6 +86,7 @@ struct OdeReadinessSetupView: View {
     @ObservedObject var operations: GameOperationsController
     @ObservedObject var installed: InstalledGamesController
     @ObservedObject var gptk: GPTKOnboardingController
+    @ObservedObject var calimocho: CalimochoDefaultEngineController
     let onComplete: () -> Void
 
     private var calimochoVersionLabel: String {
@@ -48,32 +124,7 @@ struct OdeReadinessSetupView: View {
                             .font(.headline)
                             .foregroundStyle(.primary)
 
-                        // Row 1: Xbox Live Library
-                        HStack(alignment: .center, spacing: 14) {
-                            Image(systemName: "books.vertical.fill")
-                                .font(.title3)
-                                .foregroundStyle(.secondary)
-                                .frame(width: 24)
-
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(state.pcGames.busy
-                                     ? "Loading Xbox® Live Library…"
-                                     : "\(state.pcGames.representedGames.count) Games in Xbox® Library")
-                                    .font(.body.weight(.medium))
-                                Text("Discovered from your Microsoft Store account and Game Pass.")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            Spacer()
-
-                            if !state.pcGames.busy {
-                                Button("Rescan") {
-                                    Task { await state.pcGames.loadOnAppear() }
-                                }
-                                .buttonStyle(.bordered)
-                                .controlSize(.small)
-                            }
-                        }
+                        ReadinessLibraryRow(library: state.pcGames)
 
                         // Row 2: Local Scan
                         HStack(alignment: .center, spacing: 14) {
@@ -116,7 +167,7 @@ struct OdeReadinessSetupView: View {
                             Text("Windows Execution Engine")
                                 .font(.headline)
                                 .foregroundStyle(.primary)
-                            Text("You need access to an engine for Windows games to run. You can set up multiple engines, but each game runs on one engine at a time (configurable in Settings). Set up at least one engine below to proceed:")
+                            Text("Ode prepares the published Calimocho engine with its Apple D3DMetal components. CrossOver detection lets you browse and configure external handoffs, but does not enable native Play. Game runtime and account access are checked separately before launch.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -154,7 +205,7 @@ struct OdeReadinessSetupView: View {
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
                 .keyboardShortcut(.defaultAction)
-                .disabled(!hasAtLeastOneEngine)
+                .disabled(!canEnterLibrary)
                 .accessibilityIdentifier("xodus.setup.enterLibrary")
             }
             .padding(.horizontal, 40)
@@ -177,19 +228,19 @@ struct OdeReadinessSetupView: View {
         .accessibilityIdentifier("xodus.readiness.setup")
     }
 
-    private var hasAtLeastOneEngine: Bool {
-        runtime.crossOverDependency.isVerified || gptk.isInstalled
+    var canEnterLibrary: Bool {
+        calimocho.isReady || runtime.crossOverDependency.isVerified || gptk.isInstalled
     }
 
-    private var footerStatusText: String {
-        if runtime.crossOverDependency.isVerified && gptk.isInstalled {
-            return "CrossOver and Calimocho are ready. You can choose either in Settings."
-        } else if runtime.crossOverDependency.isVerified {
-            return "CrossOver 26.3 is ready. You can enter your game library now."
+    var footerStatusText: String {
+        if calimocho.isReady {
+            return "Calimocho is verified. Game runtime and account access are checked separately."
         } else if gptk.isInstalled {
-            return "Calimocho is ready with Apple D3DMetal. You can enter your game library now."
+            return "Apple D3DMetal is detected. You can browse, but Native Play still requires an admitted Calimocho runtime."
+        } else if runtime.crossOverDependency.isVerified {
+            return "CrossOver is detected. You can browse the Library and configure external handoffs; this does not enable native Play."
         } else {
-            return "Set up at least one engine above to enter your game library."
+            return "Complete Calimocho setup below to enter your game library."
         }
     }
 
@@ -208,18 +259,18 @@ struct OdeReadinessSetupView: View {
                 HStack(spacing: 8) {
                     Text("CrossOver 26.3")
                         .font(.body.weight(.medium))
-                    Text("Third-party paid engine")
+                    Text("Not a native Play provider")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                Text("A popular, well-trusted paid third-party engine by CodeWeavers. Completely standalone with built-in Windows translation and DirectX 12 support.")
+                Text("CrossOver is a separately installed CodeWeavers app. Detection does not verify its license, enable native Play in Ode to X or satisfy Calimocho setup.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
             Spacer()
 
             if runtime.crossOverDependency.isVerified {
-                Text("Verified")
+                Text("Detected")
                     .font(.callout)
                     .foregroundStyle(.secondary)
             } else {
@@ -238,9 +289,9 @@ struct OdeReadinessSetupView: View {
         VStack(alignment: .leading, spacing: 10) {
             // Main Calimocho row
             HStack(alignment: .top, spacing: 14) {
-                Image(systemName: gptk.isInstalled ? "checkmark.circle.fill" : "circle")
+                Image(systemName: calimocho.isReady ? "checkmark.circle.fill" : "circle")
                     .font(.title3)
-                    .foregroundStyle(gptk.isInstalled ? Color.accentColor : Color.secondary)
+                    .foregroundStyle(calimocho.isReady ? Color.accentColor : Color.secondary)
                     .frame(width: 24)
                     .padding(.top, 2)
 
@@ -252,21 +303,26 @@ struct OdeReadinessSetupView: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
-                    Text("Free Wine 11 runtime built from source, included with Ode to X.")
+                    Text("The official release is downloaded separately and verified before use. Game requirements are checked before launch.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
 
-                Text(gptk.isInstalled ? "Verified" : "Setup Required")
+                Text(calimocho.isReady ? "Verified" : "Not verified")
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
             .padding(.vertical, 2)
 
-            // Subpart: Apple Game Porting Toolkit (One more remaining step)
-            GPTKOnboardingView(controller: gptk, showsHeader: false)
+            CalimochoPreparationControls(controller: calimocho,
+                configuration: session.nativeInstallStatusConfiguration)
                 .padding(.leading, 38)
+
+            DisclosureGroup("Separate Apple toolkit setup (optional)") {
+                GPTKOnboardingView(controller: gptk, showsHeader: false)
+            }
+            .padding(.leading, 38)
         }
     }
 }

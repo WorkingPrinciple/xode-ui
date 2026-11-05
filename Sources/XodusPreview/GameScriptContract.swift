@@ -417,9 +417,50 @@ struct GameScriptOutcome: Sendable {
     let log: URL?
 }
 
+final class GameScriptProcess: @unchecked Sendable {
+    private let lock = NSLock()
+    private var process: Process?
+    private var launchCommitted = false
+    private var cancellationRequested = false
+    private var terminationRequested = false
+
+    func start(_ child: Process) throws -> Bool {
+        let committed = try lock.withLock {
+            guard !cancellationRequested else { return false }
+            guard !launchCommitted else { throw GameScriptError.busy }
+            // This transition commits launch, not the later OS spawn. Cancellation
+            // accepted afterward is retained until the owned child can be stopped.
+            launchCommitted = true
+            return true
+        }
+        guard committed else { return false }
+        // Never hold the cancellation lock across Process.run(): Task.cancel()
+        // invokes its handler synchronously, potentially on the UI thread.
+        try child.run()
+        lock.withLock {
+            process = child
+            if cancellationRequested { terminateLocked() }
+        }
+        return true
+    }
+
+    func cancel() {
+        lock.withLock {
+            cancellationRequested = true
+            terminateLocked()
+        }
+    }
+
+    private func terminateLocked() {
+        guard !terminationRequested, let process, process.isRunning else { return }
+        terminationRequested = true
+        process.terminate()
+    }
+}
+
 actor GameScriptRunner {
     let paths: GameScriptPaths
-    private var process: Process?
+    private var ownedProcess: GameScriptProcess?
     private var activeRunID: String?
     private var cancellationRequested = false
     private var pendingCancellation: String?
@@ -431,11 +472,16 @@ actor GameScriptRunner {
         if activeRunID == nil { pendingCancellation = runID; return }
         guard activeRunID == runID else { return }
         cancellationRequested = true
-        if let process, process.isRunning { process.terminate() }
+        terminateOwnedChild()
+    }
+
+    private func terminateOwnedChild() {
+        ownedProcess?.cancel()
     }
 
     func run(command: GameScriptCommand, runID: String, arguments: [String] = [],
              progress: @escaping @Sendable (GameScriptProgress) async -> Void = { _ in }) async throws -> GameScriptOutcome {
+        try Task.checkCancellation()
         guard activeRunID == nil else { throw GameScriptError.busy }
         guard GameScriptPaths.validRunID(runID) else { throw GameScriptError.invalidReceipt }
         if command == .install || command == .uninstall {
@@ -467,7 +513,7 @@ actor GameScriptRunner {
         activeRunID = runID
         cancellationRequested = pendingCancellation == runID
         pendingCancellation = nil
-        defer { activeRunID = nil; process = nil }
+        defer { activeRunID = nil; ownedProcess = nil }
         if cancellationRequested, [.install, .check, .gameStats, .xboxCompanion, .xboxAchievements].contains(command) {
             return GameScriptOutcome(code: 14, result: nil, log: nil)
         }
@@ -482,21 +528,35 @@ actor GameScriptRunner {
         catch { throw GameScriptError.runtimeUnavailable }
         let env = InstalledGamesController.launchEnvironment(ProcessInfo.processInfo.environment,
                                                               interpreter: interpreter)
-        let child = try await Task.detached(priority: .userInitiated) {
-            let child = Process()
-            let managed = [.gameStats, .xboxCompanion, .xboxAchievements].contains(command)
-            child.executableURL = managed ? script : URL(fileURLWithPath: "/bin/bash")
-            let operation = command == .gameStats ? "game-stats" : command.rawValue
-            child.arguments = managed ? [operation, runID] + arguments : [script.path, runID] + arguments
-            child.environment = env
-            child.standardInput = FileHandle.nullDevice
-            child.standardOutput = FileHandle.nullDevice
-            child.standardError = FileHandle.nullDevice
-            try child.run()
-            return child
-        }.value
-        process = child
-        if cancellationRequested, child.isRunning { child.terminate() }
+        let termination = AsyncStream<Void>.makeStream()
+        try Task.checkCancellation()
+        let launch = GameScriptProcess()
+        ownedProcess = launch
+        let child = try await withTaskCancellationHandler {
+            try await Task.detached(priority: .userInitiated) { () throws -> Process? in
+                let child = Process()
+                let managed = [.gameStats, .xboxCompanion, .xboxAchievements].contains(command)
+                child.executableURL = managed ? script : URL(fileURLWithPath: "/bin/bash")
+                let operation = command == .gameStats ? "game-stats" : command.rawValue
+                child.arguments = managed ? [operation, runID] + arguments : [script.path, runID] + arguments
+                child.environment = env
+                child.standardInput = FileHandle.nullDevice
+                child.standardOutput = FileHandle.nullDevice
+                child.standardError = FileHandle.nullDevice
+                child.terminationHandler = { _ in
+                    termination.continuation.yield()
+                    termination.continuation.finish()
+                }
+                return try launch.start(child) ? child : nil
+            }.value
+        } onCancel: {
+            launch.cancel()
+        }
+        guard let child else {
+            try Task.checkCancellation()
+            return GameScriptOutcome(code: 14, result: nil, log: nil)
+        }
+        if cancellationRequested || Task.isCancelled { terminateOwnedChild() }
         let deadline = ContinuousClock.now.advanced(by: command == .serviceStatus ? .seconds(30)
             : [.serviceSignOut, .check, .gamePassStatus, .gameStats, .xboxCompanion, .xboxAchievements,
                .stop, .setup].contains(command) ? .seconds(120) : .seconds(1800))
@@ -511,25 +571,31 @@ actor GameScriptRunner {
                     }
                 } catch {
                     observationError = .invalidProgress
-                    if child.isRunning { child.terminate() }
+                    terminateOwnedChild()
                 }
             }
             if [.serviceStatus, .serviceSignIn, .serviceSignOut, .check, .gamePassStatus, .gameStats,
                 .xboxCompanion, .xboxAchievements, .stop, .setup].contains(command) {
                 if ContinuousClock.now >= deadline, observationError == nil {
                     observationError = .timeout
-                    if child.isRunning { child.terminate() }
+                    terminateOwnedChild()
                 }
             }
             // Cancellation or a bounded observation failure terminates only this owned child.
             do { try await Task.sleep(for: .milliseconds(300)) }
             catch {
-                if child.isRunning { child.terminate() }
-                // Join the owned child even when its observing task is cancelled.
-                await Task.detached { child.waitUntilExit() }.value
+                terminateOwnedChild()
+                // Observe the pre-registered exit signal even if the child exits before this join.
+                await Task.detached {
+                    for await _ in termination.stream { break }
+                }.value
                 throw error
             }
         }
+        await Task.detached {
+            for await _ in termination.stream { break }
+        }.value
+        try Task.checkCancellation()
         guard let data = try GameScriptFiles.read(paths.receipt(runID, suffix: "status"), maximumBytes: 32,
                                                  missingAllowed: true) else {
             throw GameScriptError.missingStatus
@@ -571,6 +637,79 @@ struct GameOperationRecord: Codable, Identifiable, Sendable {
               nativeAccountHash.map(XboxAccountBinding.valid) ?? true,
               kind != .resume || nativeAccountHash != nil,
               kind == .install ? installedID == nil : installedID != nil else { throw GameScriptError.storage }
+    }
+
+    func conflicts(productID: String, destination: String?) throws -> Bool {
+        if self.productID == productID { return true }
+        guard let destination else { return false }
+        let existing = try Self.canonicalDestination(self.destination)
+        let proposed = try Self.canonicalDestination(destination)
+        // The containing reservation's volume governs matching across a mount boundary.
+        let shorter = existing.url.pathComponents.count <= proposed.url.pathComponents.count ? existing : proposed
+        let longer = existing.url.pathComponents.count <= proposed.url.pathComponents.count ? proposed : existing
+        return zip(shorter.url.pathComponents, longer.url.pathComponents).allSatisfy { left, right in
+            if shorter.caseSensitive { return left == right }
+            return left.compare(right, options: .caseInsensitive, locale: Locale(identifier: "en_US_POSIX")) == .orderedSame
+        }
+    }
+
+    private static func canonicalDestination(_ path: String) throws -> (url: URL, caseSensitive: Bool) {
+        var ancestor = URL(fileURLWithPath: path).standardizedFileURL
+        var missingComponents: [String] = []
+        while true {
+            ancestor = ancestor.resolvingSymlinksInPath()
+            do {
+                let values = try ancestor.resourceValues(forKeys: [
+                    .canonicalPathKey, .isDirectoryKey, .volumeSupportsCaseSensitiveNamesKey
+                ])
+                guard values.isDirectory == true, let canonicalPath = values.canonicalPath,
+                      let caseSensitive = values.volumeSupportsCaseSensitiveNames else {
+                    throw GameScriptError.invalidDestination
+                }
+                let canonical = missingComponents.reversed().reduce(URL(fileURLWithPath: canonicalPath)) {
+                    $0.appendingPathComponent($1)
+                }
+                return (canonical, caseSensitive)
+            } catch let error as CocoaError where error.code == .fileReadNoSuchFile || error.code == .fileNoSuchFile {
+                guard ancestor.path != "/" else { throw error }
+                missingComponents.append(ancestor.lastPathComponent)
+                ancestor.deleteLastPathComponent()
+            }
+        }
+    }
+}
+
+struct QueuedGameInstall: Codable, Identifiable, Sendable {
+    let record: GameOperationRecord
+    let storageVolume: GameStorageVolume?
+    var id: String { record.id }
+}
+
+struct GameInstallQueueJournal {
+    let file: URL
+
+    func load() throws -> [QueuedGameInstall] {
+        guard let data = try GameScriptFiles.read(file, missingAllowed: true) else { return [] }
+        let entries = try JSONDecoder().decode([QueuedGameInstall].self, from: data)
+        try validate(entries)
+        return entries
+    }
+
+    private func validate(_ entries: [QueuedGameInstall]) throws {
+        for (index, entry) in entries.enumerated() {
+            try entry.record.validate()
+            let conflict = try entries.prefix(index).contains { previous in
+                if previous.id == entry.id { return true }
+                return try previous.record.conflicts(productID: entry.record.productID,
+                                                      destination: entry.record.destination)
+            }
+            guard entry.record.kind != .uninstall, !conflict else { throw GameScriptError.storage }
+        }
+    }
+
+    func save(_ entries: [QueuedGameInstall]) throws {
+        try validate(entries)
+        try GameScriptFiles.writePrivate(JSONEncoder().encode(entries), to: file)
     }
 }
 

@@ -207,27 +207,37 @@ struct LiveSettingsView: View {
                     Label("General", systemImage: "gearshape")
                 }
                 .tag(SettingsTab.general)
+                .accessibilityIdentifier("xodus.settings.tab.general")
 
             EnginesSettingsTab(state: state, session: session, dismiss: { dismiss() })
                 .tabItem {
                     Label("Engines", systemImage: "cpu")
                 }
                 .tag(SettingsTab.engines)
+                .accessibilityIdentifier("xodus.settings.tab.engines")
 
             AccountSettingsTab(state: state, session: session)
                 .tabItem {
                     Label("Account", systemImage: "person.crop.circle")
                 }
                 .tag(SettingsTab.account)
+                .accessibilityIdentifier("xodus.settings.tab.account")
 
             AdvancedSettingsTab(session: session)
                 .tabItem {
                     Label("Advanced", systemImage: "gearshape.2")
                 }
                 .tag(SettingsTab.advanced)
+                .accessibilityIdentifier("xodus.settings.tab.advanced")
         }
         .frame(width: 540, height: 450)
         .navigationTitle(selectedTab.rawValue)
+        .onExitCommand { dismiss() }
+        .background {
+            Button("Close Settings") { dismiss() }
+                .keyboardShortcut(.cancelAction)
+                .hidden()
+        }
         .task {
             await state.runtimeSettings.refreshCrossOverDependency()
         }
@@ -329,7 +339,7 @@ struct EnginesSettingsTab: View {
                     HStack(spacing: 12) {
                         Picker("Default Engine:", selection: Binding(
                             get: { RuntimeProviderKind(rawValue: defaultProvider) },
-                            set: { defaultProvider = $0?.rawValue ?? "" })) {
+                            set: { EngineDefaults.setDefaultEngine($0) })) {
                             Text("Calimocho (Wine 11) — Free / Open-source").tag(Optional(RuntimeProviderKind.calimocho))
                             if state.runtimeSettings.crossOverDependency.isVerified {
                                 Text("CrossOver — Detected").tag(Optional(RuntimeProviderKind.crossover))
@@ -339,11 +349,13 @@ struct EnginesSettingsTab: View {
                         .labelsHidden()
                         .pickerStyle(.menu)
                         .frame(width: 320)
+                        .accessibilityIdentifier("xodus.settings.engine.picker")
 
                         Button("Refresh") {
                             Task { await state.runtimeSettings.refreshCrossOverDependency() }
                         }
                         .controlSize(.small)
+                        .accessibilityIdentifier("xodus.settings.engine.refresh")
                     }
                 }
 
@@ -354,29 +366,8 @@ struct EnginesSettingsTab: View {
                     Text("Available Engines")
                         .font(.headline)
 
-                    // Calimocho Row
-                    HStack(alignment: .center, spacing: 12) {
-                        Image(systemName: "cpu")
-                            .font(.title2)
-                            .foregroundStyle(Color.accentColor)
-                            .frame(width: 28)
-                        VStack(alignment: .leading, spacing: 2) {
-                            HStack {
-                                Text("Calimocho 0.6 (Wine 11.20)")
-                                    .font(.body.bold())
-                                Spacer()
-                                Text(state.gptkOnboarding.isInstalled ? "Ready" : "Installed")
-                                    .font(.caption.bold())
-                                    .foregroundStyle(Color.accentColor)
-                            }
-                            Text("Free, open-source Windows translation layer built from LGPL source.")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .padding(10)
-                    .background(Color.primary.opacity(0.04))
-                    .cornerRadius(8)
+                    CalimochoSettingsRow(controller: state.calimochoEngine,
+                                          configuration: session.nativeInstallStatusConfiguration)
 
                     // CrossOver Row
                     HStack(alignment: .center, spacing: 12) {
@@ -422,36 +413,7 @@ struct EnginesSettingsTab: View {
                     .background(Color.primary.opacity(0.04))
                     .cornerRadius(8)
 
-                    // Apple Game Porting Toolkit (D3DMetal) Row
-                    HStack(alignment: .center, spacing: 12) {
-                        Image(systemName: "gamecontroller")
-                            .font(.title2)
-                            .foregroundStyle(Color.orange)
-                            .frame(width: 28)
-                        VStack(alignment: .leading, spacing: 2) {
-                            HStack {
-                                Text("Apple Game Porting Toolkit (D3DMetal)")
-                                    .font(.body.bold())
-                                Spacer()
-                                Text(state.gptkOnboarding.isInstalled ? "Ready" : "Setup Required")
-                                    .font(.caption.bold())
-                                    .foregroundStyle(state.gptkOnboarding.isInstalled ? .green : .secondary)
-                            }
-                            HStack {
-                                Text("Apple's Direct3D 12 Metal translation library.")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                Spacer()
-                                Button(state.gptkOnboarding.isInstalled ? "Reinstall…" : "Setup…") {
-                                    state.gptkOnboarding.isPresented = true
-                                }
-                                .controlSize(.small)
-                            }
-                        }
-                    }
-                    .padding(10)
-                    .background(Color.primary.opacity(0.04))
-                    .cornerRadius(8)
+                    GPTKStagingSettingsRow(controller: state.gptkOnboarding)
                 }
 
                 Divider()
@@ -493,6 +455,88 @@ struct EnginesSettingsTab: View {
                 await state.runtimeSettings.refreshCrossOverDependency()
             }
         }
+    }
+}
+
+struct CalimochoSettingsRow: View {
+    @ObservedObject var controller: CalimochoDefaultEngineController
+    let configuration: BackendConfiguration?
+
+    var statusText: String {
+        switch controller.state {
+        case .waiting, .skipped: "Not checked"
+        case .working: "Preparing"
+        case .ready: "Verified"
+        case .failed: "Needs attention"
+        }
+    }
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "cpu")
+                .font(.title2)
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 28)
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text("Calimocho 0.6 (Wine 11.20)")
+                        .font(.body.bold())
+                    Spacer()
+                    Text(statusText)
+                        .font(.caption.bold())
+                        .foregroundStyle(controller.isReady ? Color.accentColor : Color.secondary)
+                        .accessibilityIdentifier("xodus.settings.calimocho.status")
+                }
+                Text("Free, open-source Windows translation layer built from LGPL source.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                CalimochoPreparationControls(controller: controller, configuration: configuration)
+            }
+        }
+        .padding(10)
+        .background(Color.primary.opacity(0.04))
+        .cornerRadius(8)
+    }
+}
+
+struct GPTKStagingSettingsRow: View {
+    @ObservedObject var controller: GPTKOnboardingController
+
+    static func statusText(isInstalled: Bool) -> String {
+        isInstalled ? "Files staged" : "Setup required"
+    }
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 12) {
+            Image(systemName: "gamecontroller")
+                .font(.title2)
+                .foregroundStyle(Color.orange)
+                .frame(width: 28)
+            VStack(alignment: .leading, spacing: 2) {
+                HStack {
+                    Text("Apple Game Porting Toolkit (D3DMetal)")
+                        .font(.body.bold())
+                    Spacer()
+                    Text(Self.statusText(isInstalled: controller.isInstalled))
+                        .font(.caption.bold())
+                        .foregroundStyle(.secondary)
+                }
+                HStack {
+                    Text("Optional, separately staged Apple files. This does not verify Calimocho or a game.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer()
+                    Button(controller.isInstalled ? "Reinstall…" : "Setup…") {
+                        controller.isPresented = true
+                    }
+                    .controlSize(.small)
+                }
+            }
+        }
+        .padding(10)
+        .background(Color.primary.opacity(0.04))
+        .cornerRadius(8)
     }
 }
 
@@ -661,8 +705,10 @@ struct AdvancedSettingsTab: View {
                     HStack(spacing: 12) {
                         TextField("Market (e.g. US)", text: $session.market)
                             .frame(width: 140)
+                            .accessibilityIdentifier("xodus.settings.catalog.market")
                         TextField("Language (e.g. en-US)", text: $session.language)
                             .frame(width: 160)
+                            .accessibilityIdentifier("xodus.settings.catalog.language")
                         Button("Apply") {
                             Task { await session.refreshCatalog(state.query) }
                         }

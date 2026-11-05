@@ -139,12 +139,13 @@ final class NativeMinecraft: ObservableObject {
 
 struct NativeMinecraftCard<Artwork: View>: View {
     @ObservedObject private var minecraft = NativeMinecraft.shared
+    @Binding var showsDetails: Bool
+    var focusReturn: (FocusState<String?>.Binding, String)? = nil
     @ViewBuilder let artwork: () -> Artwork
-    @State private var showsDetails = false
 
     var body: some View {
         GameCard(title: "Minecraft: Java Edition", openLabel: "Details for",
-                     open: { showsDetails = true }, artwork: artwork) {
+                     focusReturn: focusReturn, open: { showsDetails = true }, artwork: artwork) {
             Label(minecraft.installation.version.map { "Native launcher · \($0)" } ?? "Native launcher",
                   systemImage: "desktopcomputer")
                 .help(minecraft.installation.path ?? "Official macOS Minecraft Launcher")

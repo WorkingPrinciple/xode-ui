@@ -5,7 +5,7 @@ import SwiftUI
 import XodusManagement
 import XodusCredentials
 
-private actor PCGamesMockTransport: PCGamesTransport {
+actor PCGamesMockTransport: PCGamesTransport {
     var responses: [PCGamesHTTPResponse]
     private(set) var requests: [URLRequest] = []
 
@@ -21,7 +21,7 @@ private actor PCGamesMockTransport: PCGamesTransport {
     func append(_ more: [PCGamesHTTPResponse]) { responses += more }
 }
 
-private actor PCGamesMockStore: PCGamesRefreshStore {
+actor PCGamesMockStore: PCGamesRefreshStore {
     var token: String?
     private(set) var saved: [String] = []
     private(set) var reads = 0
@@ -392,34 +392,53 @@ enum PCGamesChecks {
         }
     }
 
+    private static func response(_ value: [String: Any], status: Int = 200) throws -> PCGamesHTTPResponse {
+        PCGamesHTTPResponse(status: status, data: try JSONSerialization.data(withJSONObject: value))
+    }
+
+    private static func item(_ id: String, kind: String = "Game", status: String = "Active", trial: Bool = false) -> [String: Any] {
+        ["productId": id, "productKind": kind, "status": status, "isTrial": trial,
+         "ignoredProviderField": "not an entitlement"]
+    }
+
+    private static func page(_ items: [[String: Any]], cursor: String? = nil) throws -> PCGamesHTTPResponse {
+        var value: [String: Any] = ["items": items]
+        if let cursor { value["continuationToken"] = cursor }
+        return try response(value)
+    }
+
+    private static func catalogProduct(_ id: String, platform: String = "Windows.Desktop", title: String = "Neutral Game") -> [String: Any] {
+        ["ProductId": id, "ProductType": "Game", "ProductKind": "Game",
+         "LocalizedProperties": [["ProductTitle": title, "Images": [
+            ["ImagePurpose": "Poster", "Uri": "//store-images.s-microsoft.com/image/poster", "Width": 100, "Height": 200],
+            ["ImagePurpose": "BoxArt", "Uri": "//store-images.s-microsoft.com/image/square", "Width": 100, "Height": 100]]]],
+         "DisplaySkuAvailabilities": [["Sku": ["Properties": ["Packages": [
+            ["PlatformDependencies": [["PlatformName": platform]]]]]]]]]
+    }
+
+    private static func authResponses(uhs: String = "123", storeUHS: String = "123",
+                                      xid: String = "456") throws -> [PCGamesHTTPResponse] {
+        [try response(["Token": "neutral-user", "DisplayClaims": ["xui": [["uhs": uhs]]]]),
+         try response(["Token": "neutral-xbox", "DisplayClaims": ["xui": [["uhs": uhs, "xid": xid]]]]),
+         try response(["Token": "neutral-store", "DisplayClaims": ["xui": [["uhs": storeUHS]]]])]
+    }
+
+    static func partialLibraryController() async throws -> PCGamesController {
+        let first = "FIXTURE00001", second = "FIXTURE00002"
+        let transport = PCGamesMockTransport([try response([
+            "access_token": "neutral-access", "refresh_token": "neutral-refresh"
+        ])] + (try authResponses()) + [try page([item(first), item(second)]),
+                                       try response(["Products": [catalogProduct(first)]])])
+        let controller = PCGamesController(store: PCGamesMockStore("neutral-refresh"),
+            client: PCGamesClient(transport: transport))
+        await controller.restorePresence()
+        controller.refresh()
+        await controller.waitForOperation()
+        return controller
+    }
+
     static func run(check: (Bool, String) -> Void) async throws {
         try await unifiedAccountChecks(check: check)
-        func response(_ value: [String: Any], status: Int = 200) throws -> PCGamesHTTPResponse {
-            PCGamesHTTPResponse(status: status, data: try JSONSerialization.data(withJSONObject: value))
-        }
-        func item(_ id: String, kind: String = "Game", status: String = "Active", trial: Bool = false) -> [String: Any] {
-            ["productId": id, "productKind": kind, "status": status, "isTrial": trial,
-             "ignoredProviderField": "not an entitlement"]
-        }
-        func page(_ items: [[String: Any]], cursor: String? = nil) throws -> PCGamesHTTPResponse {
-            var value: [String: Any] = ["items": items]
-            if let cursor { value["continuationToken"] = cursor }
-            return try response(value)
-        }
-        func catalogProduct(_ id: String, platform: String = "Windows.Desktop", title: String = "Neutral Game") -> [String: Any] {
-            ["ProductId": id, "ProductType": "Game", "ProductKind": "Game",
-             "LocalizedProperties": [["ProductTitle": title, "Images": [
-                ["ImagePurpose": "Poster", "Uri": "//store-images.s-microsoft.com/image/poster", "Width": 100, "Height": 200],
-                ["ImagePurpose": "BoxArt", "Uri": "//store-images.s-microsoft.com/image/square", "Width": 100, "Height": 100]]]],
-             "DisplaySkuAvailabilities": [["Sku": ["Properties": ["Packages": [
-                ["PlatformDependencies": [["PlatformName": platform]]]]]]]]]
-        }
-        func authResponses(uhs: String = "123", storeUHS: String = "123",
-                           xid: String = "456") throws -> [PCGamesHTTPResponse] {
-            [try response(["Token": "neutral-user", "DisplayClaims": ["xui": [["uhs": uhs]]]]),
-             try response(["Token": "neutral-xbox", "DisplayClaims": ["xui": [["uhs": uhs, "xid": xid]]]]),
-             try response(["Token": "neutral-store", "DisplayClaims": ["xui": [["uhs": storeUHS]]]])]
-        }
         let first = "FIXTURE00001", second = "FIXTURE00002", third = "FIXTURE00003"
         let fixturePage = try page([item(first), item(first), item(second, status: "Expired"), item(third, trial: true)])
         let parsed = try JSONDecoder().decode(PCGamesCollectionPage.self, from: fixturePage.data)
@@ -611,18 +630,16 @@ enum PCGamesChecks {
             accessToken: "neutral", market: "US", language: "en-US")
         check(incompleteShelf.games.map(\.id) == [first] && incompleteShelf.excludedCount == 0,
               "S4: Incomplete unrelated rows do not fail the joined shelf or inflate hidden-game count")
-        let partialTransport = PCGamesMockTransport([try response([
-            "access_token": "neutral-access", "refresh_token": "neutral-refresh"
-        ])] + (try authResponses()) + [try page([item(first), item(second)]),
-                                       try response(["Products": [catalogProduct(first)]])])
-        let partialController = PCGamesController(store: PCGamesMockStore("neutral-refresh"),
-            client: PCGamesClient(transport: partialTransport))
-        await partialController.restorePresence()
-        partialController.refresh()
-        await partialController.waitForOperation()
+        let partialController = try await partialLibraryController()
         check(partialController.snapshot?.unresolvedCount == 1 && !partialController.accessIsCurrent
               && partialController.accessIsCurrent(for: first) && partialController.resolutionNotice != nil,
               "REQ88: Unrelated unresolved metadata does not stale the resolved account library")
+        let readiness = ReadinessLibraryRow(library: partialController)
+        // REQ-185: Distinguish reported records from verified current status, without inferring payment, tier, renewal or complete Library coverage.
+        check(readiness.statusTitle == "1 PC game found"
+              && readiness.statusDetail.contains("Some game details are unavailable")
+              && readiness.statusDetail.contains("Saved items may be included"),
+              "REQ-185: Setup labels the existing partial Library without claiming full coverage")
         check(!partialController.accessIsCurrent(for: second)
               && !partialController.accessIsCurrent(for: "NOTHELD00001")
               && partialController.installAccessNotice(for: first) == nil

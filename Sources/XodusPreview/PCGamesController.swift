@@ -67,12 +67,49 @@ final class PCGamesController: ObservableObject {
     private(set) var usesUnifiedAccount = false
     private var lastAutomaticAttempt: (account: String, date: Date)?
     private var snapshotScope: String?
+    struct GamePassReport {
+        let account: String
+        let scope: String
+        let checkedAt: Date
+        let productIDs: [String]?
+
+        func matches(account: String?, scope: String?) -> Bool {
+            self.account == account && self.scope == scope
+        }
+    }
+    @Published private var gamePassReport: GamePassReport?
     private let logger = Logger(subsystem: "io.github.dragoshont.xodus", category: "pc-library")
 
     func useUnifiedAccount(_ session: LiveSession) {
-        guard !busy, !restoringPresence else { return }
+        guard !usesUnifiedAccount || unifiedSession !== session else { return }
+        let old = operation
+        let needsJoin = busy || restoringPresence
+        let token = UUID()
+        generation = token
         unifiedSession = session
         usesUnifiedAccount = true
+        snapshot = nil
+        snapshotScope = nil
+        gamePassReport = nil
+        error = nil
+        needsSignIn = false
+        needsKeychainApproval = false
+        presenceUnavailable = false
+        legacyKeychainRetained = false
+        sheetPresented = false
+        deviceCode = nil
+        hasSavedSignIn = session.hasConfirmedSignIn
+        restored = true
+        guard needsJoin else { return }
+        busy = true
+        // Join any legacy credential write already in flight; never replay it.
+        operation = Task { [self] in
+            await old?.value
+            guard generation == token else { return }
+            restoringPresence = false
+            finish(token)
+            await refreshInBackground()
+        }
     }
 
     var representedGames: [PCGame] {
@@ -98,8 +135,22 @@ final class PCGamesController: ObservableObject {
     var accessIsCurrent: Bool {
         snapshot?.isComplete == true && accountAccessIsCurrent
     }
-    private var accountAccessIsCurrent: Bool {
-        accountReadiness == .ready
+    var accountAccessIsCurrent: Bool {
+        snapshot != nil && accountReadiness == .ready
+    }
+    var currentAcquisitionIDs: Set<String> {
+        guard accountAccessIsCurrent, let snapshot else { return [] }
+        return Set(snapshot.games.map(\.id)).subtracting(snapshot.unresolvedIDs)
+    }
+    var currentReportedGamePassEntitlements: [String]? {
+        currentGamePassEntitlementsCheckedAt != nil ? gamePassReport?.productIDs : nil
+    }
+    var currentGamePassEntitlementsCheckedAt: Date? {
+        guard !busy, !accountDisconnecting, !terminating, usesUnifiedAccount,
+              unifiedSession?.hasConfirmedSignIn == true, unifiedSession?.accountCountryReady == true,
+              gamePassReport?.matches(account: unifiedSession?.accountHash,
+                                      scope: unifiedSession?.accountCatalogScope) == true else { return nil }
+        return gamePassReport?.checkedAt
     }
     var accountReadiness: PCGamesAccountReadiness {
         if accountDisconnecting || terminating { return .closing }
@@ -310,18 +361,24 @@ final class PCGamesController: ObservableObject {
         generation = token
         busy = true
         error = nil
+        gamePassReport = nil
         operation = Task { [self, weak session] in
             defer { finish(token) }
+            var requestScope = session?.accountCatalogScope
             do {
                 guard let session else { return }
                 if !session.accountCountryReady { await session.refreshAccountCountry() }
                 try current(token)
+                guard session.hasConfirmedSignIn, session.accountHash == account else {
+                    throw CancellationError()
+                }
                 guard session.accountCountryReady else {
                     error = session.accountCountryError ?? "Confirm your account country to load your PC library."
                     return
                 }
                 let market = session.market, language = session.language
                 let scope = session.accountCatalogScope
+                requestScope = scope
                 if snapshotScope != scope { snapshot = nil }
                 snapshotScope = scope
                 // This task has not entered readUnifiedAccount yet, so accountBusy cannot include itself.
@@ -348,7 +405,16 @@ final class PCGamesController: ObservableObject {
                 let collection = try read.payload.decode(OdeAccountCollection.self)
                 try collection.validate()
                 try current(token)
-                logger.notice("Account collection candidates: \(collection.items.count), purchased: \(collection.items.filter { $0.acquisitionKind == .purchased }.count), subscription: \(collection.items.filter { $0.acquisitionKind == .subscription }.count), unknown: \(collection.items.filter { $0.acquisitionKind == .unknown }.count)")
+                guard session.hasConfirmedSignIn, session.accountHash == account,
+                      read.accountHash == account, session.accountCatalogScope == scope else {
+                    throw CancellationError()
+                }
+                guard let checkedAt = ISO8601DateFormatter().date(from: read.checkedAt) else {
+                    throw ManagementError.invalidPayload
+                }
+                gamePassReport = GamePassReport(account: account, scope: scope, checkedAt: checkedAt,
+                                                productIDs: collection.reportedGamePassEntitlements)
+                logger.notice("Account collection received")
                 let kinds = Dictionary(uniqueKeysWithValues: collection.items.map { ($0.productID, $0.acquisitionKind) })
                 let result = try await client.resolveCollection(
                     ids: collection.items.map(\.productID), kinds: kinds,
@@ -358,21 +424,24 @@ final class PCGamesController: ObservableObject {
                               !self.terminating, !self.accountDisconnecting,
                               session.hasConfirmedSignIn, session.accountHash == read.accountHash,
                               session.accountCatalogScope == scope else { return }
-                        self.snapshot = partial.retainingUnresolved(from: self.snapshot)
+                        self.snapshot = partial.withReportedGamePassEntitlements(collection.reportedGamePassEntitlements, checkedAt: checkedAt)
+                            .retainingUnresolved(from: self.snapshot)
                     }
                 try current(token)
                 guard session.hasConfirmedSignIn, session.accountHash == read.accountHash else {
                     throw PCGamesError.identityMismatch
                 }
                 guard session.accountCatalogScope == scope else { throw CancellationError() }
-                snapshot = result.retainingUnresolved(from: snapshot)
-                logger.notice("Account PC resolution: \(result.games.count) games, \(result.excludedCount) excluded, \(result.unresolvedCount) unresolved")
+                snapshot = result.withReportedGamePassEntitlements(collection.reportedGamePassEntitlements, checkedAt: checkedAt)
+                    .retainingUnresolved(from: snapshot)
+                logger.notice("Account PC resolution completed")
                 hasSavedSignIn = true
                 needsSignIn = false
             } catch is CancellationError { }
             catch {
-                guard generation == token, !terminating else { return }
-                if accountHash != session?.accountHash || session?.hasConfirmedSignIn != true { snapshot = nil }
+                guard generation == token, !terminating, !accountDisconnecting,
+                      session?.hasConfirmedSignIn == true, session?.accountHash == account,
+                      requestScope == session?.accountCatalogScope else { return }
                 if error as? PCGamesError == .libraryReadBusy {
                     self.error = PCGamesError.libraryReadBusy.localizedDescription
                 } else if error as? ManagementError == .authenticatedReadFailed(.responseInvalid) {
@@ -394,6 +463,7 @@ final class PCGamesController: ObservableObject {
         old?.cancel()
         snapshot = nil
         snapshotScope = nil
+        gamePassReport = nil
         lastAutomaticAttempt = nil
         hasSavedSignIn = false
         restored = false

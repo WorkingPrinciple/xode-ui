@@ -1,0 +1,172 @@
+name: Qualified release packages
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  package:
+    runs-on: [self-hosted, xcode-27]
+    environment: release
+    outputs:
+      version: ${{ steps.package.outputs.version }}
+      commit: ${{ steps.package.outputs.commit }}
+    env:
+      TAG: ${{ github.ref_name }}
+      EXPECTED_COMMIT: ${{ github.sha }}
+      RELEASE_APP: ${{ vars.RELEASE_APP_PATH }}
+      RELEASE_ADMISSION: ${{ vars.RELEASE_ADMISSION_RECEIPT_PATH }}
+      RELEASE_ADMISSION_SHA256: ${{ vars.RELEASE_ADMISSION_RECEIPT_SHA256 }}
+      RELEASE_APP_SHA256: ${{ vars.RELEASE_APP_TREE_SHA256 }}
+      RELEASE_DMG_SIGNING_IDENTITY: ${{ vars.RELEASE_SIGNING_IDENTITY_SHA1 }}
+      RELEASE_NOTARY_PROFILE: ${{ vars.RELEASE_NOTARY_PROFILE }}
+      RELEASE_DMG_RECOVERY_ROOT: ${{ vars.RELEASE_DMG_RECOVERY_ROOT }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Package immutable qualified app for this tag
+        id: package
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 tools/release_workflow.py preflight
+          source_tree=$(git rev-parse 'HEAD^{tree}')
+          app=$(python3 tools/release_workflow.py qualified-app)
+          dist_root=$(mktemp -d "$RUNNER_TEMP/ode-release-dist.XXXXXX")
+          printf 'DMG_TRUST_EVIDENCE=%s\n' "$dist_root/assets/dmg-trust-evidence/receipt.json" >> "$GITHUB_ENV"
+          version=${TAG#v}
+          # Never rebuild/re-sign the app. Only the newly created DMG is signed,
+          # notarized, stapled and assessed before its final checksum is emitted.
+          codesign --verify --deep --strict "$app"
+          sh tools/package_release.sh "$app" "$version" "$dist_root/assets" \
+            "$RELEASE_ADMISSION" "$RELEASE_APP_SHA256" "$RELEASE_ADMISSION_SHA256" \
+            "$EXPECTED_COMMIT" "$source_tree" WorkingPrinciple/xode-ui
+          printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
+          printf 'commit=%s\n' "$EXPECTED_COMMIT" >> "$GITHUB_OUTPUT"
+          printf 'DIST=%s\n' "$dist_root/assets" >> "$GITHUB_ENV"
+      - name: Retain sanitized DMG trust evidence, including failures
+        if: always() && env.DMG_TRUST_EVIDENCE != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: dmg-trust-evidence
+          path: ${{ env.DMG_TRUST_EVIDENCE }}
+          if-no-files-found: warn
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qualified-release-assets
+          path: |
+            ${{ env.DIST }}/Ode-to-X-v${{ steps.package.outputs.version }}-macos-arm64.dmg
+            ${{ env.DIST }}/Ode-to-X-v${{ steps.package.outputs.version }}-macos-arm64.zip
+            ${{ env.DIST }}/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    needs: package
+    runs-on: [self-hosted, xcode-27]
+    environment: release-publication
+    permissions:
+      contents: write
+    env:
+      TAG: ${{ github.ref_name }}
+      VERSION: ${{ needs.package.outputs.version }}
+      EXPECTED_COMMIT: ${{ needs.package.outputs.commit }}
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Prepare isolated asset directory
+        run: |
+          dist=$(mktemp -d "$RUNNER_TEMP/ode-release-publish.XXXXXX")
+          printf 'DIST=%s\n' "$dist" >> "$GITHUB_ENV"
+      - uses: actions/download-artifact@v4
+        with:
+          name: qualified-release-assets
+          path: ${{ env.DIST }}
+      - name: Verify and attach exact assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          command -v gh >/dev/null 2>&1 || {
+            printf 'GitHub CLI 2.102.1 must be provisioned on the publication runner\n' >&2
+            exit 1
+          }
+          gh_version=$(gh --version) || {
+            printf 'GitHub CLI version check failed\n' >&2
+            exit 1
+          }
+          gh_version=${gh_version%%$'\n'*}
+          [[ "$gh_version" =~ ^gh\ version\ 2\.102\.1\ \([0-9]{4}-[0-9]{2}-[0-9]{2}\)$ ]] || {
+            printf 'GitHub CLI version mismatch: require exactly 2.102.1\n' >&2
+            exit 1
+          }
+          cd "$DIST"
+          [[ "$TAG" == "v$VERSION" && "$VERSION" =~ ^[0-9][0-9A-Za-z.+-]*$ ]]
+          base="Ode-to-X-v$VERSION-macos-arm64"
+          awk -v dmg="$base.dmg" -v zip="$base.zip" '
+            BEGIN { expected[dmg]=1; expected[zip]=1 }
+            {
+              if (NF!=2 || length($1)!=64 || $1 !~ /^[0-9a-f]+$/ ||
+                  $0!=$1 "  " $2 || !($2 in expected) || seen[$2]++) bad=1
+            }
+            END { for (name in expected) if (seen[name]!=1) bad=1; exit bad }
+          ' SHA256SUMS.txt
+          shasum -a 256 -c SHA256SUMS.txt
+          set -- "$base.dmg" "$base.zip" SHA256SUMS.txt
+          for file in "$@"; do test -s "$file" && test ! -L "$file"; done
+          # Resolve both lightweight refs and annotated tag objects afresh after
+          # approval. Missing refs, API errors and noncommit objects fail closed.
+          verify_tag_commit() {
+            [[ "$EXPECTED_COMMIT" =~ ^[0-9a-f]{40}$ ]] || return 1
+            local object kind sha resolved depth
+            object=$(gh api "repos/$GH_REPO/git/ref/tags/$TAG" \
+              --jq '.object.type + " " + .object.sha') || return 1
+            for ((depth=0; depth<8; depth++)); do
+              read -r kind sha <<< "$object"
+              [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || return 1
+              case "$kind" in
+                commit)
+                  [[ "$sha" == "$EXPECTED_COMMIT" ]] || {
+                    printf 'Release tag moved away from admitted commit %s\n' "$EXPECTED_COMMIT" >&2
+                    return 1
+                  }
+                  resolved=$(gh api "repos/$GH_REPO/git/commits/$sha" --jq .sha) || return 1
+                  [[ "$resolved" == "$EXPECTED_COMMIT" ]] || return 1
+                  return 0 ;;
+                tag)
+                  object=$(gh api "repos/$GH_REPO/git/tags/$sha" \
+                    --jq '.object.type + " " + .object.sha') || return 1 ;;
+                *) return 1 ;;
+              esac
+            done
+            printf 'Release tag annotation depth exceeded\n' >&2
+            return 1
+          }
+          # This job executes no checked-out repository source with its write token.
+          response="$DIST/release-lookup"
+          if gh api --include "repos/$GH_REPO/releases/tags/$TAG" > "$response" 2>&1; then
+            existing=$(gh release view "$TAG" --json assets --jq '.assets[].name')
+            for file in "$@"; do
+              if printf '%s\n' "$existing" | grep -Fxq "$file"; then
+                printf 'Refusing to overwrite release asset %s\n' "$file" >&2
+                exit 1
+              fi
+            done
+            verify_tag_commit
+            gh release upload "$TAG" "$@"
+          elif grep -Eq '^HTTP/[^ ]+ 404 ' "$response"; then
+            verify_tag_commit
+            gh release create "$TAG" "$@" --verify-tag --title "Ode to X $TAG" \
+              --notes "Verify macOS arm64 downloads using SHA256SUMS.txt."
+          else
+            cat "$response" >&2
+            exit 1
+          fi

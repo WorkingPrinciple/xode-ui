@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import CryptoKit
+import Darwin
 import Foundation
 import XodusCore
 import XodusManagement
@@ -470,6 +471,27 @@ struct NativeLaunchConfiguration {
     let profile: NativeTitleLaunchProfile?
     let shims: NativeShimReference
     var admittedSelection: AdmittedEngineSelection? = nil
+    var wineBridgeSelection: NativeWineBridgeSelection? = nil
+
+    static func resolveWineBridge(game: InstalledGame, selection: NativeWineBridgeSelection,
+                                  defaults: UserDefaults = .standard,
+                                  evidence: MacGameEvidence.Game? = nil) throws -> Self {
+        guard try NativeTitleLaunchProfile.read(productID: game.storeId, defaults: defaults,
+                    provider: .calimocho, evidence: evidence) == nil,
+              try NativeCandidateLaunchCatalogue.row(productID: game.storeId) == nil,
+              defaults.string(forKey: "Xodus.lifecycle.fallback.\(game.storeId)") == nil else {
+            throw NativeWineBridgeError.rejected("this title has a provider-specific recipe or fallback")
+        }
+        let localRuntime = try defaults.data(forKey: "Xodus.lifecycle.runtime")
+            .map { try JSONDecoder().decode(NativeLocalRuntime.self, from: $0).reference }
+        guard let runtime = NativeRuntimePins.approved ?? localRuntime else {
+            throw NativeLaunchError.runtimeNotQualified
+        }
+        try selection.validateUnusedPrefix()
+        return Self(engine: selection.candidate.engine, registry: selection.registry,
+                    prefix: selection.prefix, runtime: runtime, profile: nil, shims: .approved,
+                    wineBridgeSelection: selection)
+    }
 
     static func validateOverride(_ selection: AdmittedEngineSelection, game: InstalledGame,
                                  defaults: UserDefaults = .standard) throws {
@@ -483,33 +505,86 @@ struct NativeLaunchConfiguration {
         }
     }
 
+    static func explicitSelection(game: InstalledGame) throws -> AdmittedEngineSelection? {
+        if let override = game.engineOverrideV2 {
+            guard override.version == 2, override.chosenAt.timeIntervalSince1970.isFinite else {
+                throw NativeLaunchError.selectionChanged
+            }
+            return override.selection
+        }
+        return nil
+    }
+
+    static func defaultPrefix(gameID: UUID, engine: String,
+                              home: URL = FileManager.default.homeDirectoryForCurrentUser) throws -> URL {
+        guard engine.range(of: "^[A-Za-z0-9._-]{1,128}$", options: .regularExpression) != nil,
+              engine != ".", engine != ".." else { throw NativeLaunchError.engineUnavailable }
+        let parent = home.appendingPathComponent("Library/Application Support/Xodus/Prefixes/\(gameID.uuidString)")
+        let prefix = parent.appendingPathComponent(engine)
+        try GameScriptFiles.checkPath(parent, allowMissing: true)
+        var info = stat()
+        if lstat(parent.path, &info) == 0 {
+            let children = try FileManager.default.contentsOfDirectory(at: parent, includingPropertiesForKeys: nil)
+            for child in children where child.lastPathComponent != engine {
+                var childInfo = stat()
+                guard lstat(child.path, &childInfo) == 0 else { throw NativeLaunchError.prefixConflict }
+                if childInfo.st_mode & S_IFMT == S_IFDIR {
+                    if try FileManager.default.contentsOfDirectory(atPath: child.path).isEmpty { continue }
+                } else if child.lastPathComponent.hasPrefix("."),
+                          childInfo.st_mode & S_IFMT == S_IFREG { continue }
+                throw NativeLaunchError.migrationRequired(
+                    "An existing prefix for this game remains at \(child.path). Select its matching engine or review prefix migration before using \(engine). Ode did not move, delete or reuse saves.")
+            }
+        } else if errno != ENOENT { throw NativeLaunchError.prefixConflict }
+        return prefix
+    }
+
     @MainActor static func resolveDefault(game: InstalledGame, configuration: BackendConfiguration,
                                provider: RuntimeProviderKind?, defaults: UserDefaults = .standard,
                                runtime: NativeRuntimeReference? = NativeRuntimePins.approved,
                                evidence: MacGameEvidence.Game? = nil,
                                engineDefaults: NativeEngineDefaults? = nil) async throws -> Self {
-        guard provider == nil || provider == .calimocho else { throw NativeLaunchError.providerPolicy }
+        let explicit = try explicitSelection(game: game)
+        guard explicit != nil || provider == nil || provider == .calimocho else { throw NativeLaunchError.providerPolicy }
+        let expected = NativeEngineDefaults.PreferenceSnapshot(defaults)
         let profile = try NativeTitleLaunchProfile.read(productID: game.storeId, defaults: defaults,
                                                        provider: .calimocho, evidence: evidence)
-        let saved = try defaults.data(forKey: NativeEngineDefaults.preferenceKey)
-            .map { try JSONDecoder().decode(AdmittedEngineSelection.self, from: $0) }
-        let catalog = try engineDefaults ?? NativeEngineDefaults.read()
+        // Global-default reads and drift checks apply only when the global default is actually used.
+        let usesGlobalDefault = explicit == nil && profile?.engine == nil
+        let maySave = usesGlobalDefault ? try NativeEngineDefaults.mayPrepareAutomatically(defaults: defaults) : false
         let selection: AdmittedEngineSelection
-        if let override = game.engineOverrideV2 {
-            guard override.version == 2, override.chosenAt.timeIntervalSince1970.isFinite else {
-                throw NativeLaunchError.selectionChanged
-            }
-            selection = override.selection
+        if let explicit {
+            selection = explicit
             try validateOverride(selection, game: game, defaults: defaults)
         } else if let titleEngine = profile?.engine {
-            guard let binding = catalog.bindings.first(where: { $0.engineName == titleEngine }),
-                  profile?.registrySHA256.map({ $0 == binding.registrySha256 }) ?? true else {
-                throw NativeLaunchError.engineUnavailable
+            let catalog = try engineDefaults ?? NativeEngineDefaults.read()
+            guard let binding = catalog.bindings.first(where: { $0.engineName == titleEngine }) else {
+                throw NativeLaunchError.migrationRequired(
+                    "This title requires its pinned engine \(titleEngine), which is not available in the engine catalogue. Restore that exact configuration; the recipe and prefix were not moved to the new default.")
             }
-            selection = try await binding.inspect(configuration: configuration)
-        } else if let saved {
+            do {
+                selection = try await binding.inspect(configuration: configuration)
+            } catch is CancellationError { throw CancellationError() }
+            catch let failure as EngineInspectionError {
+                throw NativeLaunchError.titleEngineInspectionFailed(titleEngine, failure)
+            }
+            catch {
+                throw NativeLaunchError.migrationRequired(
+                    "This title requires its pinned engine \(titleEngine). Its preflight failed: \(error.localizedDescription) Restore the matching configuration; no recipe or prefix was transplanted.")
+            }
+            guard profile?.registrySHA256.map({ $0 == selection.inspection.registrySha256 }) ?? true else {
+                throw NativeLaunchError.selectionChanged
+            }
+        } else if let saved = try NativeEngineDefaults.saved(defaults: defaults), !maySave {
             selection = saved
+        } else if !maySave {
+            guard defaults.object(forKey: AdmittedEngineSelection.preferenceKey) != nil else {
+                throw NativeLaunchError.migrationRequired(
+                    "A saved registry or engine choice needs review in Engines. Ode did not replace it with its automatic Calimocho default.")
+            }
+            selection = try AdmittedEngineSelection.read(defaults: defaults)
         } else {
+            let catalog = try engineDefaults ?? NativeEngineDefaults.read()
             guard let binding = catalog.bindings.first(where: { $0.engineName == catalog.defaultEngine }) else {
                 throw NativeLaunchError.engineNotSelected
             }
@@ -517,18 +592,35 @@ struct NativeLaunchConfiguration {
         }
         guard let engine = selection.inspection.engineName,
               let digest = selection.inspection.registrySha256 else { throw NativeLaunchError.engineUnavailable }
+        // Check before persisting a replacement default, not after silently selecting a new prefix.
+        if profile?.preservedPrefixPath == nil {
+            _ = try defaultPrefix(gameID: game.id, engine: engine)
+            if maySave {
+                for previousHome in try NativeEngineDefaults.previousAutomaticHomes(defaults: defaults)
+                    where previousHome.path != FileManager.default.homeDirectoryForCurrentUser.path {
+                    let oldPrefix = try defaultPrefix(gameID: game.id, engine: engine, home: previousHome)
+                    if FileManager.default.fileExists(atPath: oldPrefix.path),
+                       try !FileManager.default.contentsOfDirectory(atPath: oldPrefix.path).isEmpty {
+                        throw NativeLaunchError.migrationRequired(
+                            "An existing prefix remains at \(oldPrefix.path) in the previous home. Review its location before creating a new prefix. No saves were moved or deleted.")
+                    }
+                }
+            }
+        }
         try await EngineInspectionClient().validateLaunch(configuration: configuration, arguments: [
             "--registry", selection.registryPath, "--engine", engine, "--expected-registry-sha256", digest
         ], selection: selection)
-        if game.engineOverrideV2 == nil, saved == nil {
+        if maySave {
+            let catalog = try engineDefaults ?? NativeEngineDefaults.read()
             guard let binding = catalog.bindings.first(where: { $0.engineName == catalog.defaultEngine }) else {
                 throw NativeLaunchError.engineNotSelected
             }
             let defaultSelection = engine == binding.engineName ? selection : try await binding.inspect(configuration: configuration)
-            defaults.set(try JSONEncoder().encode(defaultSelection), forKey: NativeEngineDefaults.preferenceKey)
-            if provider == nil { EngineDefaults.setDefaultEngine(.calimocho, defaults) }
+            try NativeEngineDefaults.commitAutomatic(defaultSelection, expected: expected, defaults: defaults)
         }
-        // Per-game records are retained as history, never used to route a current launch.
+        guard NativeEngineDefaults.PreferenceSnapshot(defaults) == expected || maySave else {
+            throw NativeLaunchError.automaticSelectionChanged
+        }
         var effective = game
         effective.engineOverride = .calimocho
         effective.engineSelection = selection
@@ -638,9 +730,8 @@ struct NativeLaunchConfiguration {
                 throw NativeLaunchError.configurationConflict
             }
         }
-        let prefix = profile?.preservedPrefixPath.map { URL(fileURLWithPath: NativeTitleLaunchProfile.expand($0)) }
-            ?? qualified?.prefix ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(
-            "Library/Application Support/Xodus/Prefixes/\(game.id.uuidString)/\(engineName)")
+        let prefix = try profile?.preservedPrefixPath.map { URL(fileURLWithPath: NativeTitleLaunchProfile.expand($0)) }
+            ?? qualified?.prefix ?? defaultPrefix(gameID: game.id, engine: engineName)
         try GameScriptFiles.checkPath(prefix, allowMissing: true)
         if let selected = profile?.shimDirectory, selected != shims.directory.path {
             throw NativeLaunchError.invalidProfile
@@ -678,6 +769,18 @@ struct NativeLaunchConfiguration {
 
     func arguments() async throws -> [String] {
         _ = try await prefixNotice()
+        if let bridge = wineBridgeSelection {
+            guard admittedSelection == nil, profile == nil, registry == bridge.registry,
+                  prefix == bridge.prefix, engine == bridge.candidate.engine else {
+                throw NativeWineBridgeError.rejected("the diagnostic launch configuration changed")
+            }
+            let dll = try await runtime.validate()
+            try await shims.validate()
+            return ["--engine", engine, "--registry", registry.path,
+                    "--expected-registry-sha256", bridge.candidate.registrySHA256,
+                    "--prefix", prefix.path, "--runtime-dll", dll.path, "--shim-dir", shims.directory.path,
+                    "--no-auto-dismiss", "--timeout-seconds", "120"]
+        }
         if admittedSelection != nil {
             guard profile?.prefixRegistryImports == nil, profile?.prefixOverlays == nil,
                   profile?.dllOverrides == nil else { throw NativeLaunchError.invalidProfile }
@@ -698,6 +801,10 @@ struct NativeLaunchConfiguration {
     }
 
     func prefixNotice() async throws -> String? {
+        if let bridge = wineBridgeSelection {
+            try bridge.validateUnusedPrefix()
+            return "Experimental native Wine diagnostic; a new Ode-owned prefix is used. Gameplay and compatibility are unverified."
+        }
         guard let selection = admittedSelection else { return nil }
         return try await Task.detached {
             try GameScriptFiles.checkPath(prefix, allowMissing: true)
@@ -731,11 +838,19 @@ struct NativeLaunchConfiguration {
 
 enum NativeLaunchError: Error, LocalizedError {
     case candidateBlocked(String)
+    case migrationRequired(String)
+    case titleEngineInspectionFailed(String, EngineInspectionError)
+    case automaticSelectionChanged
     case runtimeNotQualified, registryMissing, engineNotSelected, engineUnavailable, invalidProfile, shimsUnavailable,
          installationNotReady, configurationConflict, legacyLauncher, prefixConflict, providerPolicy,
          selectionChanged, providerNotAdmitted
     var errorDescription: String? {
         switch self {
+        case .migrationRequired(let reason): reason
+        case .titleEngineInspectionFailed(let engine, let failure):
+            "This title requires its pinned engine \(engine). Its preflight failed: \(failure.localizedDescription) Restore the matching configuration; no recipe or prefix was transplanted."
+        case .automaticSelectionChanged:
+            "The engine choice changed while Calimocho was being checked. Your saved choice was preserved. Retry with the current selection."
         case .candidateBlocked(let reason): reason
         case .runtimeNotQualified:
             "Choose the local primary and legacy runtime pair in Runtime settings before playing. Experimental local runtimes do not require release qualification."

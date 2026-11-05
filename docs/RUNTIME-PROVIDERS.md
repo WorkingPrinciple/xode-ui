@@ -1,5 +1,81 @@
 # Runtime provider configuration v1
 
+## External game handoffs (REQ-178/179/182/187)
+
+Highball, Porting Kit and Heroic are provider-owned handoffs, not native Xbox
+engine admissions. They do not change normal Play, the selected Calimocho
+engine, per-game engine choices, title recipes, Xbox account checks or backend
+contracts. Ode neither redistributes these apps nor treats detection as game
+compatibility.
+
+The Engines screen checks canonical app locations in `/Applications` and
+`~/Applications`, bounded bundle metadata, the executable and the expected
+publisher Developer ID signature:
+
+| Product | Bundle identifier | Publisher team |
+| --- | --- | --- |
+| Highball | `app.highball.Highball` | `B95M7DARU4` |
+| Porting Kit | `com.paulthetall.portingkit` | `45WEPZ3433` |
+| Heroic | `com.heroicgameslauncher.hgl` | `DLB2RYLUDX` |
+
+An installed game's **Actions > External launchers…** stores an explicit
+per-game target:
+
+- **Highball:** `highball://play/steam/<appID>`,
+  `highball://play/epic/<appName>` or `highball://play/pin/<bottle>/<UUID>`.
+  The adapter accepts only the reviewed game-link forms; it does not read
+  per-install tokens or accept launcher-install actions, arbitrary arguments,
+  or query parameters.
+- **Porting Kit:** select an existing game `.app`, not the manager or a raw
+  Wine executable. The selected wrapper must contain `WineskinLauncher` and an
+  existing wrapper-owned prefix. It is opened normally through Launch Services;
+  its identity is user-selected and is not certified by Ode.
+- **Heroic:** use `heroic://launch/<runner>/<gameID>` or the protocol's shortcut
+  form with an explicit `legendary`, `gog`, `nile` or `sideload` runner. Extra
+  arguments, alternate executables, credentials and unspecified stores are
+  refused.
+
+A confirmed handoff is only a request to the external app. Ode does not claim
+that its game started, track its process or playtime, update game history, or
+record gameplay. Removing a link changes only that saved association.
+
+The separate **Native Wine diagnostic** is optional and is not an external
+handoff or Calimocho admission. It is limited to explicit source-pinned
+Highball r27 or Heroic toolkit 3.0-3 exports, requires the paired native CLI,
+a freshly inspected `genericWine` record and a separately configured local
+primary/legacy runtime pair. It uses a fresh Ode-owned prefix, the normal
+account-bound staging/lifecycle and bounded diagnostic arguments. It does not
+transfer title recipes, use Porting Kit's manager as a runtime, enable normal
+Play, qualify compatibility or infer gameplay. No backend, provider or game
+operation is performed by source discovery alone.
+
+The native Highball bridge fails closed. Highball 0.10.22 supports
+`HIGHBALL_HOME` as a process-environment override with precedence over the
+shared `Application Support/Highball/config.json`. Ode cannot prove the
+selected Highball process's effective environment or bind an inspected export
+to that process's active store without inspecting provider process state. The
+native bridge therefore refuses Highball before using any exported runtime or
+licence record; it does not treat an export's historical
+`observedAcceptedLicenses` as current consent, invoke Highball, inspect process
+environment, or change provider state. Users can use Highball's own supported
+flow. Apple's non-commercial and no-modification terms remain applicable.
+Relevant vendor interfaces are Highball 0.10.22's
+[shared paths](https://github.com/gauthierpiarrette/highball/blob/v0.10.22/Sources/HighballKit/Paths.swift),
+[engine store](https://github.com/gauthierpiarrette/highball/blob/v0.10.22/Sources/HighballKit/EngineStore.swift)
+and [CLI source](https://github.com/gauthierpiarrette/highball/blob/v0.10.22/Sources/highball/main.swift).
+
+Porting Kit has no native Wine bridge in this candidate. Official Porting Kit
+material describes a [Wineskin wrapper workflow](https://www.portingkit.com/about);
+the verified Porting Kit 7.0.2
+installation established the manager identity and a rendered manager window,
+not a usable Wine runtime. No selected provider-created wrapper or exact
+current Wine/server, renderer, dependency and licence closure is present in the
+evidence. The existing external wrapper handoff is not a native runtime path.
+Do not infer one from the manager, a wrapper filename or a guessed bundle
+layout; implement this bridge only after that real runtime closure and a
+supported way to invoke it are identified. The vendor also describes Wineskin
+as the base of its wrapper workflow in its [Wineskin information page](https://www.portingkit.com/newwineskin).
+
 ## Engine management source candidate (REQ-79/80)
 
 Settings now puts **Calimocho** and **CrossOver** first as provider choices to
@@ -7,9 +83,28 @@ understand and acquire, not two simultaneous effective defaults. CrossOver's
 existing publisher-signature check reports observed version/build/location.
 Its Get action opens the [official CodeWeavers portal](https://www.codeweavers.com/crossover/download);
 Ode does not download, redistribute, purchase or accept a licence.
-Calimocho has no verified public binary distribution. Its
-[official source](https://github.com/dragoshont/calimocho) is guidance, not an
-installer. A source checkout or a Wine-looking filename never means installed.
+The source candidate prepares the pinned published Calimocho `0.1120.4.6`
+release automatically when Calimocho is the default. Ode downloads it from the
+publisher rather than bundling or redistributing it. The ZIP is size- and
+SHA-256-pinned, extracted to private staging, and never replaces an existing
+engine. The paired backend verifies the manifest, files, links, signatures and
+local registry before reporting it verified. The release includes Apple
+D3DMetal under its non-commercial licence. Download failure and damaged or
+conflicting files remain visible and do not trigger another provider. A source
+checkout or a Wine-looking filename never means installed. This describes
+source behavior, not game or release qualification.
+
+Automatic preparation saves the default only if provider, registry and saved
+selections still match the values captured before work started. An explicit
+Settings choice, including choosing the same provider again, invalidates
+automatic provenance. Preparation alongside an explicit choice does not make
+the new engine the default. Existing per-game choices and title recipes keep
+their exact engine binding. Different nonempty prefixes block automatic
+migration; Ode does not move or delete saves.
+
+Verification checks cancellation between filesystem and signature operations.
+Kernel-blocked operations are not claimed interruptible. Quit cancels
+preparation and waits for owned work; if it cannot stop safely, quit is refused.
 
 Registered engines are read locally from `Xodus.lifecycle.registry`. All
 records remain visible, including missing executables, failed/pending smoke
@@ -19,30 +114,34 @@ only the launch service verifies the complete registered artifacts. No provider
 row grants whole-provider game qualification. Refresh retires stale observations
 on errors and offers retry. Choosing a registry performs no installation.
 
-For account-bound native launches, `Xodus.lifecycle.engine.crossover` and
-`Xodus.lifecycle.engine.standaloneWine` select exact records of the matching
-kind. A CrossOver preference cannot silently point at generic free Wine.
-The existing optional `Xodus.defaultEngine` and per-game `engineOverride` remain
-in use. Pinned title recipes retain their exact engine/graphics binding; their
-existing precedence is not replaced by these preferences. Unpinned per-game
-choices override the default; a missing explicit record refuses launch.
-Legacy imported-game executable/bottle registrations remain separate and are
-labelled accordingly. No prefix, bottle or save is migrated by Settings.
+For account-bound native launches, the historical
+`Xodus.lifecycle.engine.crossover` and `Xodus.lifecycle.engine.standaloneWine`
+records do not admit Calimocho or enable a native Play fallback. A CrossOver
+preference cannot silently point at generic free Wine.
+The optional `Xodus.defaultEngine` remains in use. Account-bound native launches
+read per-game choices from `engineOverrideV2`, not the historical
+`engineOverride` or `engineSelection` fields. Those older fields remain stored
+without modification. Pinned title recipes retain their exact engine/graphics
+binding. An explicit V2 choice overrides the default and is freshly admitted;
+a missing explicit record refuses launch. Legacy imported-game executable and
+bottle registrations remain separate and are labelled accordingly. No prefix,
+bottle or save is migrated by Settings.
 
 The separate, account-free **source-only** `engine-inspect` v1 consumer matches
 producer `ce6e6d56c880698303afdc587f7f65f09e284849`:
 `docs/contracts/engine-inspect-v1.schema.json` and `docs/LIFECYCLE-CLI.md` in the
 private backend repository. It is not a management operation or runtime-plan
 capability. `engine-inspect --contract-version 1` must explicitly advertise
-`engineAdmissionV1` before a registry inspection is attempted. The installed
-CLI3121 does not implement it and is not replaced by this work.
+`engineAdmissionV1` before a registry inspection is attempted. The older
+CLI3121 did not implement it; a candidate needs a reviewed, source-matched
+backend that includes the release admission.
 
 An optional schema1 declaration
 `"provider":{"id":"calimocho","contract_version":1}` is **untrusted**.
 Only the supporting backend's independently reviewed admission manifest and
 complete artifact validation can return `admittedProvider:"calimocho"`.
-The production manifest is currently empty: there is no production-admitted
-Calimocho selection or downloadable release claimed here. Generic records,
+The candidate backend admits its exact legacy records and the pinned published
+`calimocho-11.20-4.0b3-06` release after complete validation. Generic records,
 including existing source-built Wine records without a declaration, stay Wine.
 No substring heuristic, self-trusted manifest or app-only allowlist is used.
 
@@ -97,25 +196,30 @@ implementation: retain the grouped macOS Form; prominent provider observations
 and real acquisition actions; configured default and exact registry selection;
 progressive disclosure for legacy bottles, graphics declarations and diagnostics.
 Use standard Pickers, buttons, selectable locations, semantic text and adaptive
-action rows, with explicit missing/checking/error/unsupported states. Actual
-download UI is withheld until a trusted distribution exists. Source/native
-render evidence, installed delivery and product acceptance are separate gates.
+action rows, with explicit missing/checking/error/unsupported states. The
+proposal withheld downloading until a trusted distribution was available.
+Source/native render evidence, installed delivery and product acceptance remain
+separate gates.
 
 ## Persisted launch selection (M3)
 
 ### Current Calimocho execution policy (REQ95 / COR110)
 
-Current Play accepts only an explicitly selected, admitted Calimocho configuration.
+Current native Xbox Play accepts only an admitted Calimocho configuration.
+When no explicit provider or engine was selected, the pinned published
+Calimocho release is the default. Existing explicit provider and per-game
+choices remain authoritative.
 CrossOver, GPTK and generic Wine records remain historical data; detecting them or
 retaining an old preference does not permit execution or automatic substitution.
 No default is invented by CrossOver detection.
 
-Selecting Calimocho for a game persists the complete `engineSelection` alongside
-`engineOverride` in the private installed-game list: registry path and byte digest,
-engine name, admission result, Wine digest and wineserver digest. Reload uses that
-game's saved tuple, not the current global registry or default admission.
-Clearing an override clears its tuple without changing the independent default.
-An enum-only Calimocho choice cannot be saved or launched.
+Selecting Calimocho for a game persists the complete selection in
+`engineOverrideV2` in the private installed-game list: registry path and byte
+digest, engine name, admission result, Wine digest and wineserver digest. Reload
+uses that game's saved V2 tuple, not the current global registry or default
+admission. **Use default** clears only the V2 choice, leaving historical fields
+and the independent default unchanged. An enum-only Calimocho choice cannot be
+saved or launched.
 
 The resolver reads that exact registry, matches the actual Wine/server fields,
 and refuses changed bytes, missing/unusable artifacts, unadmitted selections,

@@ -32,6 +32,8 @@ final class InstalledGamesController: ObservableObject {
     @Published private(set) var installationErrors: [UUID: String] = [:]
     @Published private(set) var playLogs: [UUID: URL] = [:]
     @Published private(set) var playNotices: [UUID: String] = [:]
+    @Published private(set) var externalHandoffMessages: [UUID: String] = [:]
+    @Published private(set) var externalHandoffGameID: UUID?
     @Published private(set) var stoppingGameID: UUID?
     @Published private(set) var launchStarted = false
     @Published private(set) var launchableIDs: Set<UUID> = []
@@ -418,11 +420,60 @@ final class InstalledGamesController: ObservableObject {
 
     nonisolated static func nativeLaunchFailureMessage(_ error: Error) -> String {
         if error is EngineInspectionError { return InstalledGameActionCopy.launchUnavailable }
+        if let failure = error as? NativeWineBridgeError { return failure.localizedDescription }
         if let failure = error as? NativeLaunchError {
-            if case .installationNotReady = failure { return failure.localizedDescription }
+            switch failure {
+            case .installationNotReady, .providerPolicy: return failure.localizedDescription
+            default: break
+            }
             return InstalledGameActionCopy.launchUnavailable
         }
         return InstalledGameActionCopy.launchUnavailable
+    }
+
+    static func performNativePreflight(productID: String,
+                                       _ operation: () async throws -> Void) async -> Error? {
+        do {
+            try await operation()
+            return nil
+        } catch {
+            launchLog.error("Play failed before launch: \(productID, privacy: .public)")
+            recordNativeLaunchFailure(error)
+            return error
+        }
+    }
+
+    nonisolated static func publicEngineInspectionReason(_ error: Error) -> String? {
+        let inspection: EngineInspectionError
+        if let direct = error as? EngineInspectionError {
+            inspection = direct
+        } else if let launch = error as? NativeLaunchError,
+                  case .titleEngineInspectionFailed(_, let cause) = launch {
+            inspection = cause
+        } else {
+            return nil
+        }
+        guard case .rejected(let failure) = inspection,
+              failure.code == "ENGINE_INSPECTION_FAILED" else { return nil }
+        switch failure.message {
+        case "Wine must be an existing absolute executable path":
+            return failure.message
+        case let message where message.hasPrefix("Engine preflight: Wine entrypoint does not match its registered SHA256: "):
+            return "Wine executable does not match the selected engine"
+        case "ENGINE_RELEASE_FILE_DIGEST_MISMATCH":
+            return "A Calimocho engine file no longer matches the verified release"
+        default:
+            return nil
+        }
+    }
+
+    static func recordNativeLaunchFailure(_ error: Error) {
+        let detail = error.localizedDescription
+        if let publicReason = publicEngineInspectionReason(error) {
+            launchLog.error("Native launch failed. \(publicReason, privacy: .public). Restore the selected engine files or choose a verified build in Engines. Detail: \(detail, privacy: .private)")
+        } else {
+            launchLog.error("Native launch failed. Detail: \(detail, privacy: .private)")
+        }
     }
 
     nonisolated static func sessionLog(runID: String, directory: URL) -> URL? {
@@ -433,6 +484,56 @@ final class InstalledGamesController: ObservableObject {
 
     func showLog(for game: InstalledGame) {
         if let url = playLogs[game.id] { NSWorkspace.shared.activateFileViewerSelecting([url]) }
+    }
+
+    func canUseExternalHandoff(_ game: InstalledGame) -> Bool {
+        loaded && !editing && !choosing && !mutationActive && !accountDisconnecting
+            && !applicationTerminating && runningGameID == nil && externalHandoffGameID == nil
+            && games.contains(where: { $0.id == game.id })
+    }
+
+    func setExternalHandoff(_ target: String?, provider: ExternalGameProvider, for game: InstalledGame) async {
+        guard canUseExternalHandoff(game) else { return }
+        editing = true
+        defer { editing = false }
+        do {
+            if provider == .portingKit, let target {
+                _ = try await Task.detached(priority: .utility) {
+                    try ExternalGameHandoff.portingKitWrapper(URL(fileURLWithPath: target))
+                }.value
+            }
+            guard !applicationTerminating, !accountDisconnecting, loaded else { return }
+            applySavedGames(try await store.setExternalHandoff(id: game.id, provider: provider, target: target))
+            externalHandoffMessages[game.id] = target == nil
+                ? "\(provider.label) handoff removed. Its game files haven't changed."
+                : "\(provider.label) handoff saved. Xbox launch settings haven't changed."
+        } catch {
+            externalHandoffMessages[game.id] = error.localizedDescription
+        }
+    }
+
+    func openExternalHandoff(_ provider: ExternalGameProvider, for game: InstalledGame) async {
+        guard canUseExternalHandoff(game) else { return }
+        guard let handoff = games.first(where: { $0.id == game.id })?.externalHandoffs?
+            .first(where: { $0.provider == provider }) else {
+            externalHandoffMessages[game.id] = ExternalHandoffError.noSelection.localizedDescription
+            return
+        }
+        externalHandoffGameID = game.id
+        defer { externalHandoffGameID = nil }
+        do {
+            try await handoff.open {
+                self.loaded && !self.accountDisconnecting && !self.applicationTerminating
+                    && !self.mutationActive && self.runningGameID == nil
+                    && self.games.first(where: { $0.id == game.id })?.externalHandoffs?.contains(handoff) == true
+            }
+            guard loaded, !accountDisconnecting, !applicationTerminating else { return }
+            externalHandoffMessages[game.id] =
+                "Request handed to \(provider.label). Confirm any prompts there. Game launch and gameplay aren't verified; this external session isn't tracked by Ode."
+        } catch {
+            guard loaded, !applicationTerminating else { return }
+            externalHandoffMessages[game.id] = "Couldn't hand off to \(provider.label): \(error.localizedDescription)"
+        }
     }
 
     func setAccountAccessAllowed(_ allowed: Bool, message: String? = nil) {
@@ -478,13 +579,27 @@ final class InstalledGamesController: ObservableObject {
         await play(game, historicalFixture: false)
     }
 
+    var wineBridgeConfiguration: BackendConfiguration? {
+        usesUnifiedAccount ? unifiedSession?.nativeLifecycleConfiguration : nil
+    }
+
+    func canTestWineBridge(_ game: InstalledGame) -> Bool {
+        canUseExternalHandoff(game) && usesUnifiedAccount && canRequestPlay(game.storeId)
+            && !serviceSignInActive && !runtimeRepairActive && stoppingGameID == nil
+    }
+
+    func testWineBridge(_ game: InstalledGame, selection: NativeWineBridgeSelection) async {
+        await play(game, historicalFixture: false, wineBridgeSelection: selection)
+    }
+
 #if !XODUS_SHIPPING
     func playHistoricalFixture(_ game: InstalledGame) async {
         await play(game, historicalFixture: true)
     }
 #endif
 
-    private func play(_ game: InstalledGame, historicalFixture: Bool) async {
+    private func play(_ game: InstalledGame, historicalFixture: Bool,
+                      wineBridgeSelection: NativeWineBridgeSelection? = nil) async {
         Self.launchLog.notice("Play requested: \(game.storeId, privacy: .public)")
         guard loaded, !editing, !choosing, runningGameID == nil, stoppingGameID == nil, !applicationTerminating,
               mutationGameID != game.id, !serviceSignInActive, !runtimeRepairActive, !accountDisconnecting,
@@ -512,7 +627,11 @@ final class InstalledGamesController: ObservableObject {
             return
         }
         if usesUnifiedAccount {
-            await playNative(game)
+            await playNative(game, wineBridgeSelection: wineBridgeSelection)
+            return
+        }
+        guard wineBridgeSelection == nil else {
+            playErrors[game.id] = "Reconnect your Xbox account before using the native Wine diagnostic."
             return
         }
         guard historicalFixture || (game.engineOverride ?? defaultEngine()) == .calimocho else {
@@ -738,7 +857,8 @@ final class InstalledGamesController: ObservableObject {
         }
     }
 
-    private func playNative(_ game: InstalledGame) async {
+    private func playNative(_ game: InstalledGame,
+                            wineBridgeSelection: NativeWineBridgeSelection? = nil) async {
         guard let session = unifiedSession, let configuration = session.nativeLifecycleConfiguration,
               let account = session.accountHash else {
             playErrors[game.id] = "Reconnect your Xbox account before playing this installation."
@@ -749,15 +869,22 @@ final class InstalledGamesController: ObservableObject {
         runningGameID = game.id
         playState = .launching
         launchStarted = false
-        do {
+        let preflightFailure = await Self.performNativePreflight(productID: game.storeId) {
             guard await inspectNativeInstallation(game)?.status == .complete else {
                 throw NativeLaunchError.installationNotReady
             }
-            let launch = try await NativeLaunchConfiguration.resolveDefault(game: game, configuration: configuration,
-                provider: defaultEngine(),
-                evidence: MacGameEvidenceStore.shared.games[game.storeId])
+            let launch: NativeLaunchConfiguration
+            if let wineBridgeSelection {
+                launch = try NativeLaunchConfiguration.resolveWineBridge(game: game, selection: wineBridgeSelection,
+                    evidence: MacGameEvidenceStore.shared.games[game.storeId])
+            } else {
+                launch = try await NativeLaunchConfiguration.resolveDefault(game: game, configuration: configuration,
+                    provider: defaultEngine(), evidence: MacGameEvidenceStore.shared.games[game.storeId])
+            }
             Self.launchLog.notice("Effective launch: \(game.storeId, privacy: .public); engine=\(launch.engine, privacy: .public); registry=\(launch.registry.path, privacy: .public); prefix=\(launch.prefix.path, privacy: .public)")
-            guard launch.admittedSelection != nil else { throw NativeLaunchError.providerPolicy }
+            guard launch.admittedSelection != nil || launch.wineBridgeSelection != nil else {
+                throw NativeLaunchError.providerPolicy
+            }
             let arguments = try await launch.arguments()
             let prefixNotice = try await launch.prefixNotice()
             let executables = try MicrosoftGameConfig.read(folder: URL(fileURLWithPath: game.folder)).executables
@@ -779,11 +906,16 @@ final class InstalledGamesController: ObservableObject {
                         gameDirectory: URL(fileURLWithPath: game.folder), runID: runID,
                         launchArguments: arguments, launchEnvironment: launch.profile?.launchEnvironment ?? [:],
                         unsetLaunchEnvironment: launch.profile?.unsetEnvironment ?? [],
-                        engineSelection: launch.admittedSelection, onStarted: {
+                        engineSelection: launch.admittedSelection, wineBridgeSelection: launch.wineBridgeSelection,
+                        onStarted: {
                             Self.launchLog.notice("Launcher started: \(game.storeId, privacy: .public), engine \(launch.engine, privacy: .public)")
                             launchStarted = true
-                            playState = .playing
-                            recordSession(gameID: game.id, startedAt: startedAt, seconds: nil)
+                            if wineBridgeSelection == nil {
+                                playState = .playing
+                                recordSession(gameID: game.id, startedAt: startedAt, seconds: nil)
+                            } else {
+                                playNotices[game.id] = "Native Wine diagnostic running. A launcher process is not verified gameplay."
+                            }
                             if let pid = nativeLauncher.processIdentifier {
                                 nativeForegroundTask = Task {
                                     let activated = await NativeGameForeground.activate(launcherPID: pid, title: game.title,
@@ -791,7 +923,8 @@ final class InstalledGamesController: ObservableObject {
                                         self.runToken == token && self.nativeLauncher.isRunning
                                             && self.stoppingGameID == nil && !self.applicationTerminating
                                     }
-                                    if !activated, runToken == token, nativeLauncher.isRunning {
+                                    if !activated, wineBridgeSelection == nil,
+                                       runToken == token, nativeLauncher.isRunning {
                                         playNotices[game.id] = "Click the game window to bring it to the front."
                                     }
                                 }
@@ -802,10 +935,17 @@ final class InstalledGamesController: ObservableObject {
                     nativeForegroundTask = nil
                     let duration = clock.duration(to: .now).components
                     guard runToken == token else { return }
-                    recordSession(gameID: game.id, startedAt: startedAt,
-                        seconds: Double(duration.seconds) + Double(duration.attoseconds) / 1e18)
+                    if wineBridgeSelection == nil {
+                        recordSession(gameID: game.id, startedAt: startedAt,
+                            seconds: Double(duration.seconds) + Double(duration.attoseconds) / 1e18)
+                    }
                     let stoppedByUser = stopToken == token
                     finished(token: token, gameID: game.id, status: result.exitCode)
+                    if wineBridgeSelection != nil {
+                        playNotices[game.id] = result.success
+                            ? "Native Wine diagnostic finished. Gameplay and compatibility remain unverified."
+                            : "Native Wine diagnostic failed. Gameplay and compatibility remain unverified; review its log."
+                    }
                     playLogs[game.id] = URL(fileURLWithPath: result.logDirectory)
                     playErrors[game.id] = result.launchFailureMessage(stoppedByUser: stoppedByUser)
                     if !result.success {
@@ -815,6 +955,9 @@ final class InstalledGamesController: ObservableObject {
                 } catch NativeLifecycleCancellation.launchStopped {
                     let stoppedByUser = stopToken == token
                     finished(token: token, gameID: game.id, status: 0)
+                    if wineBridgeSelection != nil {
+                        playNotices[game.id] = "Native Wine diagnostic stopped. Gameplay and compatibility remain unverified."
+                    }
                     playErrors[game.id] = stoppedByUser ? nil : InstalledGameActionCopy.launchUnavailable
                     playLogs[game.id] = nativeLauncher.stateDirectory
                     if let result = nativeLauncher.completedResult, !result.success {
@@ -822,15 +965,21 @@ final class InstalledGamesController: ObservableObject {
                     }
                 } catch {
                     finished(token: token, gameID: game.id, status: 1)
-                    playErrors[game.id] = Self.nativeLaunchFailureMessage(error)
+                    if wineBridgeSelection != nil {
+                        playNotices[game.id] = "Native Wine diagnostic ended without a complete result. Gameplay and compatibility remain unverified."
+                    }
+                    Self.recordNativeLaunchFailure(error)
+                    playErrors[game.id] = wineBridgeSelection == nil
+                        ? Self.nativeLaunchFailureMessage(error) : error.localizedDescription
                     playLogs[game.id] = nativeLauncher.stateDirectory
                 }
                 nativeLaunchTask = nil
             }
-        } catch {
+        }
+        if let error = preflightFailure {
             finished(token: token, gameID: game.id, status: 1)
-            playErrors[game.id] = Self.nativeLaunchFailureMessage(error)
-            Self.launchLog.error("Play failed before launch: \(game.storeId, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            playErrors[game.id] = wineBridgeSelection == nil
+                ? Self.nativeLaunchFailureMessage(error) : error.localizedDescription
         }
     }
 

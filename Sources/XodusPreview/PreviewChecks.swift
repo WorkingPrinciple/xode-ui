@@ -83,6 +83,57 @@ enum PreviewChecks {
             }
         }
 
+        var axes = LibraryControllerAxisState()
+        check(axes.update(x: 0, y: 0).isEmpty
+              && axes.update(x: 1, y: 0) == [.right]
+              && axes.update(x: 1, y: 0).isEmpty
+              && axes.update(x: 0, y: 0).isEmpty
+              && axes.update(x: -1, y: 1) == [.left, .up],
+              "REQ-190: Directional input moves once per press and rearms after release")
+        let navigationSections: [LibraryControllerNavigation.Section] = [
+            .init(ids: ["recent-1", "recent-2"], columns: 2),
+            .init(ids: ["a", "b", "c", "d", "e"], columns: 3),
+            .init(ids: ["local", "native"], columns: 3)
+        ]
+        func moved(_ current: String?, _ move: LibraryControllerMove) -> String? {
+            LibraryControllerNavigation.target(current: current, move: move, sections: navigationSections)
+        }
+        check(moved(nil, .down) == "recent-1" && moved("recent-1", .right) == "recent-2"
+              && moved("recent-2", .right) == "recent-2" && moved("recent-2", .down) == "b",
+              "REQ-190: Controller starts at a real visible game and traverses the recent shelf")
+        check(moved("c", .down) == "e" && moved("e", .up) == "b"
+              && moved("e", .down) == "native" && moved("native", .up) == "e",
+              "REQ-190: Grid navigation clamps partial rows and crosses installed sections")
+        check(moved("c", .right) == "c" && moved("d", .left) == "d"
+              && moved("missing", .left) == "recent-1"
+              && LibraryControllerNavigation.target(current: nil, move: .down, sections: []) == nil,
+              "REQ-190: Row edges, removed focus and an empty Library remain bounded")
+        check(LibraryGridLayout.controllerColumns(width: 170) == 1
+              && LibraryGridLayout.controllerColumns(width: 558) == 3
+              && LibraryGridLayout.controllerColumns(width: .infinity) == 1,
+              "REQ-190: Controller grid columns use the same adaptive minimum and spacing")
+        check(LibraryControllerHint(direction: nil, activate: nil, back: nil).labels ==
+              ["Directional pad name unavailable", "View details button name unavailable",
+               "Close Library details button name unavailable"]
+              && LibraryControllerHint(direction: "Pad", activate: "Cross", back: "Circle").labels ==
+              ["Pad: Browse games", "Cross: View details", "Circle: Close Library details"],
+              "REQ-190: Controller hints use system names without guessing missing mappings")
+        let controller = LibraryControllerInput()
+        controller.start()
+        check(controller.isMonitoring && (controller.connectedCount > 0) == (controller.hint != nil),
+              "REQ-190: Monitoring reflects currently connected extended controllers")
+        controller.stop()
+        check(!controller.isMonitoring && controller.connectedCount == 0 && controller.hint == nil,
+              "REQ-190: Stopping monitoring removes the current controller state")
+        let firstWindowController = LibraryControllerInput.shared
+        let secondWindowController = LibraryControllerInput.shared
+        firstWindowController.start()
+        secondWindowController.start()
+        firstWindowController.stop()
+        check(secondWindowController.isMonitoring,
+              "REQ-190: Closing one Library window leaves the other controller subscription active")
+        secondWindowController.stop()
+
         let state = AppState()
         let welcomeSession = LiveSession()
         welcomeSession.errorMessage = "Xcode not configured: private developer-path sentinel"
