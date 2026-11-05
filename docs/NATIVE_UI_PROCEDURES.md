@@ -152,6 +152,17 @@ to relabel or replace those redistributed artifacts. The sealed-input verifier,
 ownership/mode checks, shipping exclusions and signing/qualification gates remain
 required. Building/checking source does not authorize signing or installing it.
 
+COR405 removes the legacy standalone Account > Engines sheet and its duplicate
+default/installation controls. Account and menu Engines actions and readiness
+setup now open/focus the existing Settings scene with **Engines** selected,
+even when another Settings tab was already selected. General, Engines, Account
+and Advanced retain their tab identifiers. Registry selection and local game
+runtime/profile/evidence controls remain under **Advanced registry and game
+runtime** in Settings > Engines; no separate window or legacy Engines shell is
+created. Readiness observes actual Calimocho verification, not staged toolkit
+files. This is UI/routing cleanup only: physical engine versions, registries,
+prefixes, saves and retained evidence are not removed or migrated.
+
 COR137 keeps lifecycle cancellation operation-specific: user Stop of a launch
 returns to Play without installation/download recovery text. Install cancellation
 retains its existing partial-file guidance. A clean Wine exit followed only by

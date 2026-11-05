@@ -126,9 +126,9 @@ enum PreviewChecks {
               "Ordinary startup and correctly shaped explicit check/review arguments remain supported")
         check(state.destination == .library && !state.showsRecentActivity,
               "Live startup opens the PC Library without claiming ownership or selecting activity")
-        state.openAccount(.engines)
-        check(state.showingAccount && state.accountDestination == .engines && !state.showingSetup,
-              "P6 Engines opens through the shared Account hub without adding a primary navigation tab")
+        state.openEngineSettings(open: {})
+        check(!state.showingAccount && state.settingsTab == .engines && !state.showingSetup,
+              "COR405 Engines targets canonical tabbed Settings without opening an Account sheet")
         state.showingAccount = false
         state.accountDestination = .account
         state.navigate(.library)

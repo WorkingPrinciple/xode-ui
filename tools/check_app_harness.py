@@ -47,6 +47,30 @@ class AppHarnessSourceChecks(unittest.TestCase):
             self.assertIn(key, runner)
         self.assertIn("postToPid(process.processIdentifier)", runner)
 
+    def test_engines_has_only_canonical_tabbed_settings_route(self):
+        source = ROOT / "Sources/XodusPreview"
+        settings = (source / "LiveAccountView.swift").read_text()
+        self.assertIn("TabView(selection: $state.settingsTab)", settings)
+        self.assertIn("state.openEngineSettings(open: openSettings.callAsFunction)", settings)
+        self.assertIn('DisclosureGroup("Advanced registry and game runtime")', settings)
+        self.assertIn("NativeEngineSettings(", settings)
+        app = (source / "XodusPreviewApp.swift").read_text()
+        self.assertEqual(app.count("EngineSettingsButton(state: state)"), 2)
+        self.assertIn("LiveSettingsView()", app.split("        Settings {", 1)[1])
+        self.assertIn("state.openEngineSettings(open: openSettings.callAsFunction)",
+                      (source / "XboxCompanionViews.swift").read_text())
+        setup = (source / "OdeReadinessSetupView.swift").read_text()
+        self.assertIn("EngineSettingsButton(state: state)", setup)
+        self.assertIn("calimocho.isVerified", setup)
+        self.assertNotIn("gptk.isInstalled", setup)
+        for path in source.glob("*.swift"):
+            text = path.read_text()
+            self.assertNotIn("struct EnginesView:", text, path.name)
+            self.assertNotIn("struct RuntimeInstallationPicker:", text, path.name)
+            self.assertNotIn("struct EngineProviderOverview:", text, path.name)
+            self.assertNotIn("openAccount(.engines)", text, path.name)
+        self.assertFalse((source / "RuntimeInstallationPicker.swift").exists())
+
     def test_release_hold_and_local_only_packager(self):
         workflow = (ROOT / ".github/workflows/release.yml").read_text()
         self.assertIn("tags: ['v*']", workflow)

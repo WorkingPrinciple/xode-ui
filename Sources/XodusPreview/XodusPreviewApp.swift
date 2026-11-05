@@ -321,7 +321,7 @@ struct XodusPreviewApp: App {
                 Button("My Consoles") { state.openAccount(.consoles) }
                     .disabled(state.fixtureMode || !session.hasConfirmedSignIn)
                     .keyboardShortcut("c", modifiers: [.command, .shift])
-                Button("Engines") { state.openAccount(.engines) }
+                EngineSettingsButton(state: state)
                     .disabled(state.fixtureMode || !session.hasConfirmedSignIn)
                     .keyboardShortcut("e", modifiers: [.command, .shift])
                 Button("Return to live Ode to X") {
@@ -340,7 +340,7 @@ struct XodusPreviewApp: App {
                 Button("My Consoles") { state.openAccount(.consoles) }
                     .disabled(!session.hasConfirmedSignIn)
                     .keyboardShortcut("c", modifiers: [.command, .shift])
-                Button("Engines") { state.openAccount(.engines) }
+                EngineSettingsButton(state: state)
                     .disabled(!session.hasConfirmedSignIn)
                     .keyboardShortcut("e", modifiers: [.command, .shift])
 #endif

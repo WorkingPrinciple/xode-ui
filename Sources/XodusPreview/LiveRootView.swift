@@ -131,7 +131,7 @@ struct LiveRootView: View {
                     runtime: state.runtimeSettings,
                     operations: state.gameOperations,
                     installed: state.installedGames,
-                    gptk: state.gptkOnboarding,
+                    calimocho: state.calimochoEngine,
                     onComplete: {
                         state.completeReadinessSetup()
                     }

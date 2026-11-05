@@ -17,8 +17,14 @@ enum AccountDestination: String, CaseIterable, Identifiable {
     case profile = "Profile"
     case achievements = "Achievements"
     case consoles = "My Consoles"
-    case engines = "Engines"
     var id: String { rawValue }
+}
+
+enum SettingsTab: String, Hashable, CaseIterable {
+    case general = "General"
+    case engines = "Engines"
+    case account = "Account"
+    case advanced = "Advanced"
 }
 
 #if !XODUS_SHIPPING
@@ -76,6 +82,7 @@ final class AppState: ObservableObject {
     @Published var showingAccount = false
     @Published var accountDestination: AccountDestination = .account
     @Published var showingSetup = false
+    @Published var settingsTab: SettingsTab = .engines
     @Published var readinessSetupCompleted: Bool {
         didSet {
             UserDefaults.standard.set(readinessSetupCompleted, forKey: "Xodus.readinessSetupCompleted")
@@ -227,6 +234,14 @@ final class AppState: ObservableObject {
         showingSetup = false
         accountDestination = destination
         showingAccount = true
+    }
+
+    func openEngineSettings(open: () -> Void) {
+        settingsTab = .engines
+        showingSetup = false
+        showingAccount = false
+        accountDestination = .account
+        open()
     }
 
     func loadRecentActivityIfVisible(session: LiveSession) async {

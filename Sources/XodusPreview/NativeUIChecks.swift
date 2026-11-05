@@ -876,7 +876,7 @@ enum NativeUIChecks {
         check(gameAccess.window == nil && !state.gameOperations.serviceBusy
               && state.gameOperations.serviceStatus == nil,
               "Detached Xbox game-service actions create no window or authentication request")
-        for route in [AccountDestination.profile, .achievements, .consoles, .engines] {
+        for route in [AccountDestination.profile, .achievements, .consoles] {
             state.accountDestination = route
             let destination = NSHostingView(rootView: LiveAccountView(refreshStatusOnAppear: false)
                 .environmentObject(state).environmentObject(session))

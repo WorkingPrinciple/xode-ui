@@ -68,6 +68,7 @@ struct XboxProminentButton: ViewModifier {
 
 struct AccountHubDestinations: View {
     @EnvironmentObject private var state: AppState
+    @Environment(\.openSettings) private var openSettings
 
     var body: some View {
             VStack(alignment: .leading, spacing: 16) {
@@ -77,7 +78,16 @@ struct AccountHubDestinations: View {
                 Divider()
                 destination(.consoles, symbol: "xbox.logo", detail: "Your Xbox consoles")
                 Divider()
-                destination(.engines, symbol: "gearshape.2", detail: "Mac runtime configuration")
+                Button {
+                    state.openEngineSettings(open: openSettings.callAsFunction)
+                } label: {
+                    HStack {
+                        Label("Engines", systemImage: "gearshape.2")
+                        Spacer()
+                        Text("Settings").foregroundStyle(.secondary)
+                    }
+                }
+                .accessibilityIdentifier("xodus.account.engines")
             }
             .padding(.top, 2)
     }
@@ -621,31 +631,6 @@ struct XboxConsolesView: View {
                 .padding(.top, 2)
             }
         }
-    }
-}
-
-// Keep property-wrapper state unambiguous with SDKs that also export a State macro.
-private typealias EngineViewState<Value> = SwiftUI.State<Value>
-
-struct EnginesView: View {
-    @EnvironmentObject private var state: AppState
-    @EnvironmentObject private var session: LiveSession
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("Engines").font(.title2.bold())
-            Text("CrossOver readiness is observed independently from declared Wine, GPTK and graphics components. Experimental configurations remain explicitly labelled.")
-                .font(.callout).foregroundStyle(.secondary)
-            Form {
-                RuntimeProviderSection(settings: state.runtimeSettings, backendPath: session.backendPath)
-                Section("Launch routing") {
-                    RuntimeInstallationPicker(settings: state.runtimeSettings, backendPath: session.backendPath)
-                }
-            }
-            .formStyle(.grouped)
-            .frame(minHeight: 440)
-        }
-        .task { await state.runtimeSettings.refreshCrossOverDependency() }
     }
 }
 

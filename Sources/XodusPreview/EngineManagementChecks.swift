@@ -373,7 +373,8 @@ enum EngineManagementChecks {
         await settings.refreshCrossOverDependency()
         for width in [CGFloat(440), CGFloat(560)] {
             for appearance in [NSAppearance.Name.aqua, .darkAqua] {
-                let host = NSHostingView(rootView: EngineProviderOverview(settings: settings, allowsCheck: false)
+                let host = NSHostingView(rootView: NativeEngineSettings(
+                    allowsFileReads: false, backendPath: "", observation: EngineRegistryObservation())
                     .padding().frame(width: width, height: 600, alignment: .topLeading)
                     .background(Color(nsColor: .windowBackgroundColor))
                     .environment(\.colorScheme, appearance == .darkAqua ? .dark : .light))
@@ -382,7 +383,7 @@ enum EngineManagementChecks {
                 host.frame = CGRect(x: 0, y: 0, width: width, height: 600)
                 host.layoutSubtreeIfNeeded()
                 check(host.window == nil && host.fittingSize.height <= 600,
-                      "REQ79 native provider rows fit \(Int(width))pt \(appearance.rawValue) without a live window")
+                      "COR405 canonical Settings registry controls fit \(Int(width))pt \(appearance.rawValue) without a live window")
                 if let destination = ProcessInfo.processInfo.environment["XODUS_ENGINE_RENDER_DIRECTORY"] {
                     let output = URL(fileURLWithPath: destination)
                         .appendingPathComponent("providers-\(Int(width))-\(appearance.rawValue).png")

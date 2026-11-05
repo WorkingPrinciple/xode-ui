@@ -173,8 +173,6 @@ struct LiveAccountView: View {
             XboxAchievementsView(companion: companion, status: state.gameOperations.serviceStatus)
         case .consoles:
             XboxConsolesView(companion: companion)
-        case .engines:
-            EnginesView()
         }
     }
 
@@ -185,23 +183,15 @@ struct LiveAccountView: View {
 }
 
 struct LiveSettingsView: View {
-    enum SettingsTab: String, Hashable, CaseIterable {
-        case general = "General"
-        case engines = "Engines"
-        case account = "Account"
-        case advanced = "Advanced"
-    }
-
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var state: AppState
     @EnvironmentObject private var session: LiveSession
     @Environment(\.openWindow) private var openWindow
     @StateObject private var artwork = AccountInteraction()
     @AppStorage("Xodus.heroAnimationsEnabled") private var heroAnimationsEnabled = true
-    @State private var selectedTab: SettingsTab = .engines
 
     var body: some View {
-        TabView(selection: $selectedTab) {
+        TabView(selection: $state.settingsTab) {
             GeneralSettingsTab(artwork: artwork, heroAnimationsEnabled: $heroAnimationsEnabled, openWindow: openWindow)
                 .tabItem {
                     Label("General", systemImage: "gearshape")
@@ -232,7 +222,7 @@ struct LiveSettingsView: View {
                 .accessibilityIdentifier("xodus.settings.tab.advanced")
         }
         .frame(width: 540, height: 450)
-        .navigationTitle(selectedTab.rawValue)
+        .navigationTitle(state.settingsTab.rawValue)
         .onExitCommand { dismiss() }
         .background {
             Button("Close Settings") { dismiss() }
@@ -326,6 +316,7 @@ struct EnginesSettingsTab: View {
 
     @AppStorage(EngineDefaults.defaultEngineKey) private var defaultProvider = ""
     @AppStorage("Xodus.lifecycle.engine.calimocho") private var calimochoRecord = ""
+    @StateObject private var registryObservation = EngineRegistryObservation()
 
     var body: some View {
         ScrollView {
@@ -421,6 +412,11 @@ struct EnginesSettingsTab: View {
                                     .controlSize(.small)
                                 }
                             }
+                            if !state.runtimeSettings.crossOverDependency.isVerified {
+                                Link("Get CrossOver from CodeWeavers", destination: CrossOverDependencyState.trialDownloadURL)
+                                    .font(.caption)
+                                    .accessibilityIdentifier("xodus.engines.crossover.get")
+                            }
                         }
                     }
                     .padding(10)
@@ -467,10 +463,12 @@ struct EnginesSettingsTab: View {
                         dismiss()
                         state.showingSetup = true
                     }
-                    Spacer()
-                    Button("Advanced Registry…") {
-                        state.openAccount(.engines)
-                    }
+                }
+                DisclosureGroup("Advanced registry and game runtime") {
+                    NativeEngineSettings(
+                        allowsFileReads: !state.runtimeSettings.applicationTerminating && !calimochoEngine.isWorking,
+                        backendPath: session.backendPath, observation: registryObservation)
+                        .padding(.top, 8)
                 }
             }
             .padding(.horizontal, 28)
@@ -497,6 +495,17 @@ struct EnginesSettingsTab: View {
             Task {
                 await state.runtimeSettings.refreshCrossOverDependency()
             }
+        }
+    }
+}
+
+struct EngineSettingsButton: View {
+    @ObservedObject var state: AppState
+    @Environment(\.openSettings) private var openSettings
+
+    var body: some View {
+        Button("Engines") {
+            state.openEngineSettings(open: openSettings.callAsFunction)
         }
     }
 }

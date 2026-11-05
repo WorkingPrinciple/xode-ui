@@ -10,12 +10,8 @@ struct OdeReadinessSetupView: View {
     @ObservedObject var runtime: RuntimeProviderSettings
     @ObservedObject var operations: GameOperationsController
     @ObservedObject var installed: InstalledGamesController
-    @ObservedObject var gptk: GPTKOnboardingController
+    @ObservedObject var calimocho: CalimochoEngineController
     let onComplete: () -> Void
-
-    private var calimochoVersionLabel: String {
-        "Calimocho 0.6 (Wine 11.20)"
-    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -116,19 +112,16 @@ struct OdeReadinessSetupView: View {
                             Text("Windows Execution Engine")
                                 .font(.headline)
                                 .foregroundStyle(.primary)
-                            Text("You need access to an engine for Windows games to run. You can set up multiple engines, but each game runs on one engine at a time (configurable in Settings). Set up at least one engine below to proceed:")
+                            Text("Download, verify and choose your Windows game engine in Settings > Engines. Each game keeps its own engine choice; game qualification is separate.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
 
-                        // Path 1: CrossOver (Standalone)
-                        crossOverCard
-
-                        Divider()
-
-                        // Path 2: Calimocho (Open-Source Engine with Apple D3DMetal subpart)
-                        calimochoCard
+                        LabeledContent("Calimocho", value: calimocho.state.label)
+                        LabeledContent("CrossOver", value: runtime.crossOverDependency.isVerified ? "Detected" : "Not verified")
+                        EngineSettingsButton(state: state)
+                            .accessibilityIdentifier("xodus.setup.enginesSettings")
                     }
                     .padding(.horizontal, 40)
                     .padding(.vertical, 20)
@@ -166,7 +159,6 @@ struct OdeReadinessSetupView: View {
         .background(Color(NSColor.windowBackgroundColor))
         .task {
             await runtime.refreshCrossOverDependency()
-            gptk.preflightLocalDetection()
             _ = await session.ensureReady()
             if state.pcGames.representedGames.isEmpty {
                 await state.pcGames.loadOnAppear()
@@ -178,95 +170,19 @@ struct OdeReadinessSetupView: View {
     }
 
     private var hasAtLeastOneEngine: Bool {
-        runtime.crossOverDependency.isVerified || gptk.isInstalled
+        runtime.crossOverDependency.isVerified || calimocho.isVerified
     }
 
     private var footerStatusText: String {
-        if runtime.crossOverDependency.isVerified && gptk.isInstalled {
-            return "CrossOver and Calimocho are ready. You can choose either in Settings."
+        if runtime.crossOverDependency.isVerified && calimocho.isVerified {
+            return "Calimocho is verified and CrossOver is detected. Choose your default in Settings."
         } else if runtime.crossOverDependency.isVerified {
-            return "CrossOver 26.3 is ready. You can enter your game library now."
-        } else if gptk.isInstalled {
-            return "Calimocho is ready with Apple D3DMetal. You can enter your game library now."
+            return "CrossOver is detected. You can enter your game library now."
+        } else if calimocho.isVerified {
+            return "Calimocho artifact verified. Game qualification is separate."
         } else {
-            return "Set up at least one engine above to enter your game library."
+            return "Set up an engine in Settings to enter your game library."
         }
     }
 
-    // MARK: - Path 1: CrossOver Card (Standalone)
-
-    @ViewBuilder
-    private var crossOverCard: some View {
-        HStack(alignment: .top, spacing: 14) {
-            Image(systemName: runtime.crossOverDependency.isVerified ? "checkmark.circle.fill" : "circle")
-                .font(.title3)
-                .foregroundStyle(runtime.crossOverDependency.isVerified ? Color.accentColor : Color.secondary)
-                .frame(width: 24)
-                .padding(.top, 2)
-
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 8) {
-                    Text("CrossOver 26.3")
-                        .font(.body.weight(.medium))
-                    Text("Third-party paid engine")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Text("A popular, well-trusted paid third-party engine by CodeWeavers. Completely standalone with built-in Windows translation and DirectX 12 support.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            Spacer()
-
-            if runtime.crossOverDependency.isVerified {
-                Text("Verified")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-            } else {
-                Link("Get CrossOver", destination: CrossOverDependencyState.trialDownloadURL)
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-            }
-        }
-        .padding(.vertical, 2)
-    }
-
-    // MARK: - Path 2: Calimocho Card (with Apple Game Porting Toolkit subpart)
-
-    @ViewBuilder
-    private var calimochoCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            // Main Calimocho row
-            HStack(alignment: .top, spacing: 14) {
-                Image(systemName: gptk.isInstalled ? "checkmark.circle.fill" : "circle")
-                    .font(.title3)
-                    .foregroundStyle(gptk.isInstalled ? Color.accentColor : Color.secondary)
-                    .frame(width: 24)
-                    .padding(.top, 2)
-
-                VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: 8) {
-                        Text(calimochoVersionLabel)
-                            .font(.body.weight(.medium))
-                        Text("Open-source engine")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    Text("Free Wine 11 runtime built from source, included with Ode to X.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-
-                Text(gptk.isInstalled ? "Verified" : "Setup Required")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.vertical, 2)
-
-            // Subpart: Apple Game Porting Toolkit (One more remaining step)
-            GPTKOnboardingView(controller: gptk, showsHeader: false)
-                .padding(.leading, 38)
-        }
-    }
 }
