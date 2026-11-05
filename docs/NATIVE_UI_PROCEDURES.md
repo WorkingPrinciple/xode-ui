@@ -309,7 +309,11 @@ permanent errors and mutation commands are never automatically replayed here.
 Session unbinding cancels owned coalesced reads and their backoff waits.
 After recovery is exhausted, Library keeps available games visible and provides
 an accessible **Retry game details** button beside its concise notice, even when
-the collection header is hidden. Existing account/generation and busy gates
+the collection header is hidden. Successful public-catalog omissions remain
+unresolved but show an informational note without Retry. Mixed omissions and
+failed requests retain Retry with copy that does not promise to resolve omissions.
+An explicit refresh can still recheck the full collection; successful descriptors
+remain reusable. Existing account/generation and busy gates
 still govern that explicit reload. `--library-access-check` exercises synthetic
 read recovery and cancellation; `--self-check` renders native recovery layouts.
 These are source checks, not installed network-failure acceptance.

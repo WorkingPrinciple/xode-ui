@@ -35,6 +35,19 @@ private struct InstallSheetFixtureView: View {
 
 @MainActor
 enum NativeUIChecks {
+    static func checkLibraryDetailRecovery(check: (Bool, String) -> Void) {
+        for (failures, omissions) in [(0, 1), (1, 0), (1, 1)] {
+            let snapshot = PCGamesSnapshot(games: [], excludedCount: 0, updatedAt: .distantPast,
+                detailFailureCount: failures, detailOmissionCount: omissions)
+            let notice = snapshot.detailResolutionNotice
+            let recovery = LibraryDetailsRecoveryNotice(message: notice ?? "",
+                retry: snapshot.canRetryDetails ? {} : nil)
+            check(notice != nil && (recovery.retry != nil) == (failures > 0)
+                  && (notice?.contains("public catalog") == true) == (omissions > 0),
+                  "REQ220: Library detail recovery distinguishes \(failures) failed batches from \(omissions) catalog omissions")
+        }
+    }
+
     static func checkUnifiedGameServiceStatus(check: (Bool, String) -> Void) {
         let connected = GameServiceSignInActions.unifiedStatus(accountUnavailable: false, error: nil)
         check(connected.symbol == "checkmark.circle" && connected.notice == nil,
@@ -180,7 +193,7 @@ enum NativeUIChecks {
         let recovery = LibraryDetailsRecoveryNotice(
             message: "Some game details are unavailable. Your available games are still here.",
             retry: { retried = true })
-        recovery.retry()
+        recovery.retry?()
         check(retried, "REQ98 Library recovery has a real retry action independent of the hidden collection header")
         for width in [CGFloat(220), 380] {
             let renderer = ImageRenderer(content: recovery.frame(width: width, alignment: .leading)

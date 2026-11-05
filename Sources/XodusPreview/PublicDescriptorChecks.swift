@@ -322,7 +322,8 @@ enum PublicDescriptorChecks {
         let partial = try await partialClient.resolveCollection(ids: many, kinds: [many[20]: .subscription], candidateCount: 21,
             market: "US", language: "en-US", accountHash: "account-a", progress: { progress.append($0) })
         check(partial.games.count == 20 && partial.unresolvedIDs == [many[20]]
-              && partial.unresolvedCount == 1 && partial.excludedCount == 0 && !partial.isComplete,
+              && partial.unresolvedCount == 1 && partial.excludedCount == 0 && !partial.isComplete
+              && partial.detailFailureCount == 1 && partial.detailOmissionCount == 0 && partial.canRetryDetails,
               "Failed second batch preserves twenty useful PC records and one explicit unresolved candidate")
         check(progress.count == 3 && progress[1].games.count == 20 && progress[1].unresolvedCount == 1,
               "Useful collection metadata publishes after its first batch, before all batches finish")
@@ -352,8 +353,17 @@ enum PublicDescriptorChecks {
         let missingClient = PCGamesClient(transport: missingTransport)
         let missing = try await missingClient.resolveCollection(ids: sample,
             kinds: [:], candidateCount: 3, market: "US", language: "en-US")
-        check(missing.games.count == 2 && missing.unresolvedIDs == [sample[1]] && missing.excludedCount == 0,
+        check(missing.games.count == 2 && missing.unresolvedIDs == [sample[1]] && missing.excludedCount == 0
+              && missing.detailOmissionCount == 1 && missing.detailFailureCount == 0 && !missing.canRetryDetails,
               "A partial response's omission is unresolved, not non-PC classification or authoritative removal")
+        let mixedTransport = DescriptorTransport()
+        await mixedTransport.configure(failures: [1], omitted: [many[0]])
+        let mixed = try await PCGamesClient(transport: mixedTransport).resolveCollection(
+            ids: many, kinds: [:], candidateCount: many.count, market: "US", language: "en-US")
+        check(mixed.detailFailureCount == 1 && mixed.detailOmissionCount == 1
+              && mixed.unresolvedCount == 2 && mixed.canRetryDetails
+              && mixed.detailResolutionNotice?.contains("may not resolve those") == true,
+              "REQ220: Mixed catalog omissions and failed batches retain Retry only as recovery for failed requests")
         await missingTransport.configure()
         let recovered = try await missingClient.resolveCollection(ids: sample, kinds: [:], candidateCount: 3,
             market: "US", language: "en-US")

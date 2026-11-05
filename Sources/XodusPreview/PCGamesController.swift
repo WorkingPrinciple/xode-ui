@@ -87,9 +87,9 @@ final class PCGamesController: ObservableObject {
     }
     var accountHash: String? { snapshot?.boundAccountHash ?? snapshot?.accountID.flatMap(XboxAccountBinding.hash) }
     var resolutionNotice: String? {
-        guard !busy, let snapshot, snapshot.detailFailureCount > 0 else { return nil }
-        return "Some game details are unavailable. Your available games are still here."
+        busy ? nil : snapshot?.detailResolutionNotice
     }
+    var canRetryDetails: Bool { !busy && snapshot?.canRetryDetails == true }
     var retainedLibraryNotice: String? {
         guard error != nil, let snapshot else { return nil }
         return snapshot.isComplete ? "Showing the last complete library."

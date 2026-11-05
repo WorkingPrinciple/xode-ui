@@ -4,15 +4,17 @@ import XodusManagement
 
 struct LibraryDetailsRecoveryNotice: View {
     let message: String
-    let retry: () -> Void
+    let retry: (() -> Void)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(message).font(.callout).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityIdentifier("xodus.pcGames.partialResolution")
-            Button("Retry game details", action: retry)
-                .accessibilityIdentifier("xodus.pcGames.retryDetails")
+            if let retry {
+                Button("Retry game details", action: retry)
+                    .accessibilityIdentifier("xodus.pcGames.retryDetails")
+            }
         }
         .accessibilityElement(children: .contain)
     }
@@ -60,7 +62,8 @@ struct PCGamesView: View {
                     .accessibilityIdentifier("xodus.pcGames.legacyKeychainRetained")
             }
             if let notice = library.resolutionNotice {
-                LibraryDetailsRecoveryNotice(message: notice, retry: { library.refresh() })
+                LibraryDetailsRecoveryNotice(message: notice,
+                    retry: library.canRetryDetails ? { library.refresh() } : nil)
                     .disabled(library.busy || library.restoringPresence || library.needsKeychainApproval)
             }
             if library.presenceUnavailable {

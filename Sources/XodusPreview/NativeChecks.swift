@@ -56,6 +56,7 @@ enum NativeChecks {
         do {
             if engineSelectionOnly || gameOperationsOnly || accountPresentationOnly {
                 NativeUIChecks.checkUnifiedGameServiceStatus(check: check)
+                NativeUIChecks.checkLibraryDetailRecovery(check: check)
             }
             if engineSelectionOnly {
                 try NativeLifecycleChecks.launchOutcomeChecks(check: check)

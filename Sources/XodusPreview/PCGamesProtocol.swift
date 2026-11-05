@@ -244,6 +244,19 @@ struct PCGamesSnapshot: Sendable {
     let unresolvedCount: Int
     let unresolvedKinds: [String: PCGameAcquisitionKind]
     let detailFailureCount: Int
+    let detailOmissionCount: Int
+    var canRetryDetails: Bool { detailFailureCount > 0 }
+    var detailResolutionNotice: String? {
+        if canRetryDetails {
+            return "Some game details are unavailable. Your available games are still here."
+                + (detailOmissionCount > 0
+                   ? " The public catalog also has no details for some titles; retrying failed requests may not resolve those."
+                   : "")
+        }
+        return detailOmissionCount > 0
+            ? "The public catalog has no details for some titles in your library. Your available games are still here."
+            : nil
+    }
     var isComplete: Bool { unresolvedCount == 0 }
     func hasResolvedGame(_ productID: String) -> Bool {
         !unresolvedIDs.contains(productID) && games.contains { $0.id == productID }
@@ -251,7 +264,8 @@ struct PCGamesSnapshot: Sendable {
 
     init(games: [PCGame], excludedCount: Int, updatedAt: Date, accountID: String? = nil,
          boundAccountHash: String? = nil, unresolvedIDs: Set<String> = [], unresolvedCount: Int = 0,
-         unresolvedKinds: [String: PCGameAcquisitionKind] = [:], detailFailureCount: Int? = nil) {
+         unresolvedKinds: [String: PCGameAcquisitionKind] = [:], detailFailureCount: Int? = nil,
+         detailOmissionCount: Int = 0) {
         self.games = games
         self.excludedCount = excludedCount
         self.updatedAt = updatedAt
@@ -261,6 +275,7 @@ struct PCGamesSnapshot: Sendable {
         self.unresolvedCount = unresolvedCount
         self.unresolvedKinds = unresolvedKinds
         self.detailFailureCount = detailFailureCount ?? unresolvedCount
+        self.detailOmissionCount = detailOmissionCount
     }
 
     func retainingUnresolved(from previous: Self?) -> Self {
@@ -275,7 +290,8 @@ struct PCGamesSnapshot: Sendable {
             $0.title.localizedStandardCompare($1.title) == .orderedAscending
         }, excludedCount: excludedCount, updatedAt: updatedAt, accountID: accountID,
             boundAccountHash: boundAccountHash, unresolvedIDs: unresolvedIDs, unresolvedCount: unresolvedCount,
-            unresolvedKinds: unresolvedKinds, detailFailureCount: detailFailureCount)
+            unresolvedKinds: unresolvedKinds, detailFailureCount: detailFailureCount,
+            detailOmissionCount: detailOmissionCount)
     }
 }
 
@@ -734,6 +750,7 @@ struct PCGamesClient: Sendable {
         var games: [PCGame] = []
         var unresolved = Set(ids)
         var detailFailures = Set<String>()
+        var detailOmissions = Set<String>()
         var excluded = 0
         var completedBatches = 0
         func snapshot() -> PCGamesSnapshot {
@@ -741,7 +758,7 @@ struct PCGamesClient: Sendable {
                 excludedCount: excluded, updatedAt: Date(), accountID: accountID, boundAccountHash: accountHash,
                 unresolvedIDs: unresolved, unresolvedCount: candidateCount - ids.count + unresolved.count,
                 unresolvedKinds: kinds.filter { unresolved.contains($0.key) },
-                detailFailureCount: detailFailures.count)
+                detailFailureCount: detailFailures.count, detailOmissionCount: detailOmissions.count)
         }
         if !ids.isEmpty { await progress?(snapshot()) }
         for start in stride(from: 0, to: ids.count, by: 20) {
@@ -752,7 +769,7 @@ struct PCGamesClient: Sendable {
                 guard products.count <= batch.count,
                       Set(products.map(\.ProductId)).count == products.count,
                       products.allSatisfy({ batch.contains($0.ProductId) }) else { throw PCGamesError.invalidResponse }
-                detailFailures.formUnion(Set(batch).subtracting(products.map(\.ProductId)))
+                detailOmissions.formUnion(Set(batch).subtracting(products.map(\.ProductId)))
                 games += products.compactMap(\.game).map {
                     PCGame(id: $0.id, title: $0.title, artwork: $0.artwork, acquisitionKind: kinds[$0.id] ?? .unknown)
                 }
