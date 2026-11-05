@@ -17,7 +17,9 @@ final class InstalledGamesController: ObservableObject {
     private var productAccessObservation: AnyCancellable?
     @Published private(set) var games: [InstalledGame] = []
     @Published private(set) var loading = false
-    @Published private(set) var editing = false
+    @Published private(set) var editing = false {
+        didSet { if editing { registryRevision &+= 1 } }
+    }
     @Published private(set) var choosing = false
     @Published private(set) var loaded = false
     @Published private(set) var error: String?
@@ -46,7 +48,9 @@ final class InstalledGamesController: ObservableObject {
     @Published private(set) var pendingDiscoveryRoots: Set<String> = []
     @Published private(set) var discoveringMounts = false
     @Published private(set) var mutationGameID: UUID?
-    @Published private(set) var mutationActive = false
+    @Published private(set) var mutationActive = false {
+        didSet { if mutationActive { registryRevision &+= 1 } }
+    }
     /// Per-game update availability, recomputed from installed versions vs. `availableVersions`.
     @Published private(set) var updateStatuses: [UUID: UpdateStatus] = [:]
     /// Available package versions keyed by store id. Integration point for the catalog /
@@ -91,6 +95,8 @@ final class InstalledGamesController: ObservableObject {
     private var lastEngineOverrideInspection: ContinuousClock.Instant?
     private var refreshingReadiness = false
     private var readinessRefreshRequested = false
+    private var discovering = false
+    private var registryRevision: UInt64 = 0
     private var stopConfirmed = false
     private var process: Process?
     private var sessionPersistence: Task<Void, Never>?
@@ -201,11 +207,14 @@ final class InstalledGamesController: ObservableObject {
     }
 
     func discoverNativeInstallations(root: URL? = nil) async {
-        guard usesUnifiedAccount, loaded, !editing, !choosing, !mutationActive,
+        guard usesUnifiedAccount, loaded, !editing, !choosing, !mutationActive, !discovering,
               !accountDisconnecting, !applicationTerminating else { return }
+        discovering = true
+        defer { discovering = false }
         _ = await unifiedSession?.ensureReady()
-        editing = true
-        defer { editing = false }
+        guard !Task.isCancelled, loaded, !editing, !choosing, !mutationActive,
+              !accountDisconnecting, !applicationTerminating else { return }
+        var observedRevision = registryRevision
         let entries = games
         let directory = root ?? discoveryRoot
         let installLocation = installLocation
@@ -314,6 +323,10 @@ final class InstalledGamesController: ObservableObject {
                         throw GameInstallationDiscoveryError.identityChanged
                     }
                     try Task.checkCancellation()
+                    // A foreground edit or operation supersedes this read-only scan.
+                    guard !editing, !choosing, !mutationActive, registryRevision == observedRevision else { return }
+                    editing = true
+                    defer { editing = false; observedRevision = registryRevision }
                     guard !accountDisconnecting, !applicationTerminating, unifiedSession?.accountHash == account,
                           !games.contains(where: { $0.folder == candidate.folder.path }) else { return }
                     let config = candidate.config
@@ -649,11 +662,11 @@ final class InstalledGamesController: ObservableObject {
                   !applicationTerminating else { return }
             let ttl: Duration = installationStatuses[game.id]?.status == .complete ? .seconds(120) : .seconds(15)
             if let last = nativeInspectionDates[game.id], ContinuousClock.now < last.advanced(by: ttl) { continue }
-            _ = await inspectNativeInstallation(game)
+            _ = await inspectNativeInstallation(game, background: true)
         }
     }
 
-    private func inspectNativeInstallation(_ game: InstalledGame) async -> NativeInstallationStatus? {
+    private func inspectNativeInstallation(_ game: InstalledGame, background: Bool = false) async -> NativeInstallationStatus? {
         let mountedStorageRoots = mountedStorageRoots
         let unavailable: Bool
         do {
@@ -705,11 +718,15 @@ final class InstalledGamesController: ObservableObject {
                                 gameDirectory: URL(fileURLWithPath: game.folder))
         }
         nativeInspectionTasks[game.id] = task
-        installationErrors[game.id] = nil
-        checkingInstallations.insert(game.id)
+        // Revalidation keeps the verified Play action until a new result changes readiness.
+        let revalidatingPlayable = background && installationStatuses[game.id]?.action == .play
+        if !revalidatingPlayable {
+            installationErrors[game.id] = nil
+            checkingInstallations.insert(game.id)
+        }
         defer {
             nativeInspectionTasks[game.id] = nil
-            checkingInstallations.remove(game.id)
+            if !revalidatingPlayable { checkingInstallations.remove(game.id) }
         }
         do {
             let result = try await withTaskCancellationHandler {
