@@ -538,9 +538,14 @@ Verified working badge or automatic evidence-based engine selection.
 The generic wine-stable route showed splash logos followed by a black window
 in run `86f694f5`; that is not gameplay success. Brotato now has an explicit
 Apple GPTK 4.0b3/default-COM profile, runtime 7106's pinned primary/legacy pair,
-the standard pinned native-web shims and `Brotato.exe`. Explicit title-profile
-engines take priority over generic provider defaults; existing provider-specific
-NMS profiles still select their own distinct recipes.
+the historical standard native-web shim profile and `Brotato.exe`. A separate
+COR-425 Calimocho-only local candidate binds source-built XCurl plus the existing
+CA bundle and leaves Windows.Web on Wine's builtin implementation; its two-file
+directory is outside the app bundle. The candidate is distinct from the
+historical DLL tuple and has no title-launch, gameplay, save-retention or
+ordinary-quit acceptance. Explicit title-profile engines take priority over
+generic provider defaults; existing provider-specific NMS profiles still select
+their own distinct recipes.
 The new route keeps the app's installation-specific prefix, not the old
 `430e9c33` proof prefix. Historical ebd56e gameplay/save evidence does not prove
 this a1aade app route; a separate approved live regression is still required.

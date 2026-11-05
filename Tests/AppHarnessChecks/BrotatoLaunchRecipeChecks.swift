@@ -14,6 +14,8 @@ final class BrotatoLaunchRecipeChecks: XCTestCase {
         XCTAssertNil(profile.preservedPrefixPath, "A fresh title-isolated prefix is not a historical save claim")
         XCTAssertEqual(profile.registrySHA256,
             "fe35dba8938abbe3ca921cc4f92abd65ec8a539b1bac20ac5cf58a18213ce48d")
+        XCTAssertEqual(profile.sourceRecipeSHA256,
+            "8e71ce9f47efe4573eba7ac327c7f248e88e7087561c7fe1db1747ff7430f429")
         XCTAssertEqual(profile.arguments, ["--exe", "Brotato.exe", "--no-auto-dismiss"])
         XCTAssertEqual(profile.environment, [:])
         XCTAssertEqual(Set(profile.unsetEnvironment ?? []),
@@ -22,6 +24,30 @@ final class BrotatoLaunchRecipeChecks: XCTestCase {
             "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8")
         XCTAssertEqual(profile.runtime?.legacySHA256,
             "cfe7e5f837fabc51b8066809ca69c2ee0a7852512afbb1979190ec495b0b8b96")
+        let candidate = try XCTUnwrap(NativeTitleLaunchProfile.bundledProfiles().first {
+            $0.productID == "9P9VNSQK1W3K" && $0.provider == .calimocho
+        })
+        XCTAssertEqual(candidate.engine, profile.engine)
+        XCTAssertEqual(candidate.registrySHA256, profile.registrySHA256)
+        XCTAssertEqual(candidate.sourceRecipe, profile.sourceRecipe)
+        XCTAssertEqual(candidate.shimSet, NativeShimReference.brotatoSourceCandidateID)
+        XCTAssertEqual(candidate.shimDirectory.map(NativeTitleLaunchProfile.expand),
+                       NativeShimReference.brotatoSourceCandidate.directory.path)
+        XCTAssertEqual(candidate.sourceRecipeSHA256, profile.sourceRecipeSHA256)
+        XCTAssertEqual(candidate.candidateManifest, "A8 candidate-manifest.json")
+        XCTAssertEqual(candidate.candidateManifestSHA256,
+            "1b22d36c4ce2eddbf5c3dd1e84c43ab5c9bcf5b7bb52bd14ff1ab6bc6a5ab983")
+        XCTAssertEqual(candidate.diagnosticReceiptSHA256,
+            "0d6fd570654b4952e22b2f3ac2c02c6ec0f25c0a19745b9b775b3d80a0f4c3d1")
+        XCTAssertEqual(candidate.runtime?.primarySHA256, profile.runtime?.primarySHA256)
+        XCTAssertEqual(candidate.runtime?.legacySHA256, profile.runtime?.legacySHA256)
+        XCTAssertFalse(NativeShimReference.brotatoSourceCandidate.hashes.keys.contains("windows.web.dll"))
+        XCTAssertEqual(Set(NativeShimReference.brotatoSourceCandidate.hashes.keys), ["XCurl.dll", "cacert.pem"])
+        XCTAssertNil(candidate.preservedPrefixPath)
+        XCTAssertEqual(candidate.arguments, profile.arguments)
+        XCTAssertEqual(candidate.environment, [:])
+        XCTAssertEqual(Set(candidate.unsetEnvironment ?? []),
+            ["XODUS_PRIVATE_RUNTIME_COM_STA", "XODUS_PRIVATE_CALLER_OWNS_COM"])
         let nms = try XCTUnwrap(NativeTitleLaunchProfile.bundledProfiles().first {
             $0.productID == "BQVQTL3PCH05" && $0.provider == nil
         })
@@ -67,6 +93,8 @@ final class BrotatoLaunchRecipeChecks: XCTestCase {
         XCTAssertEqual(launch.engine, "calimocho-11.20-4.0b3-06")
         XCTAssertEqual(launch.admittedSelection?.inspection.registrySha256,
             "fe35dba8938abbe3ca921cc4f92abd65ec8a539b1bac20ac5cf58a18213ce48d")
+        XCTAssertEqual(launch.shims.directory, NativeShimReference.brotatoSourceCandidate.directory)
+        XCTAssertEqual(launch.shims.hashes, NativeShimReference.brotatoSourceCandidate.hashes)
         XCTAssertFalse(FileManager.default.fileExists(atPath: prefix.path),
                        "Resolution must not create a prefix or launch Wine")
         XCTAssertEqual(defaults.dictionaryRepresentation() as NSDictionary, before)

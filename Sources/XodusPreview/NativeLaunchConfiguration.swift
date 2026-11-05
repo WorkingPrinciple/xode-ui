@@ -111,6 +111,7 @@ struct NativeLocalRuntime: Codable {
 struct NativeShimReference: Sendable {
     let directory: URL
     let hashes: [String: String]
+    static let brotatoSourceCandidateID = "brotato-xcurl-source-schannel-candidate-01"
 
     static let approved = Self(directory: URL(fileURLWithPath: NSHomeDirectory())
         .appendingPathComponent("Library/Application Support/Ode to X/Engines/profiles/native-web-shims-v1"),
@@ -120,8 +121,18 @@ struct NativeShimReference: Sendable {
             "cacert.pem": "a41b5d356aea97a529fe27e0f7316d2f9d946d75927476cf9cf1b90637d00505"
         ])
 
+    static let brotatoSourceCandidate = Self(directory: URL(fileURLWithPath: NSHomeDirectory())
+        .appendingPathComponent("Library/Application Support/Ode to X/Engines/profiles/brotato-xcurl-source-schannel-v1"),
+        hashes: [
+            "XCurl.dll": "5a0e410a4d769d623d86df1ea94031c0fb559b4a9787df910ceccf68e673a3a0",
+            "cacert.pem": "a41b5d356aea97a529fe27e0f7316d2f9d946d75927476cf9cf1b90637d00505"
+        ])
+
     func validate() async throws {
-        guard Set(hashes.keys) == ["windows.web.dll", "XCurl.dll", "cacert.pem"] else {
+        let isApprovedSet = Set(hashes.keys) == Set(Self.approved.hashes.keys)
+        let isBrotatoCandidate = directory == Self.brotatoSourceCandidate.directory
+            && hashes == Self.brotatoSourceCandidate.hashes
+        guard isApprovedSet || isBrotatoCandidate else {
             throw NativeLaunchError.shimsUnavailable
         }
         let names = try await Task.detached {
@@ -213,6 +224,12 @@ struct NativeTitleLaunchProfile: Codable {
     let productID: String
     var engine: String?
     let shimDirectory: String?
+    var shimSet: String? = nil
+    var sourceRecipe: String? = nil
+    var sourceRecipeSHA256: String? = nil
+    var candidateManifest: String? = nil
+    var candidateManifestSHA256: String? = nil
+    var diagnosticReceiptSHA256: String? = nil
     var environment: [String: String]
     var unsetEnvironment: [String]? = nil
     var crossOverEnvironment: [String: String]? = nil
@@ -350,9 +367,20 @@ struct NativeTitleLaunchProfile: Codable {
         }
         let mirrored = crossOverEnvironment ?? [:]
         if productID == "9P9VNSQK1W3K" {
+            let sourceCandidate = shimSet == NativeShimReference.brotatoSourceCandidateID
+            let validShimBinding = sourceCandidate
+                ? shimDirectory.map(Self.expand) == NativeShimReference.brotatoSourceCandidate.directory.path
+                    && candidateManifest == "A8 candidate-manifest.json"
+                    && candidateManifestSHA256 == "1b22d36c4ce2eddbf5c3dd1e84c43ab5c9bcf5b7bb52bd14ff1ab6bc6a5ab983"
+                    && diagnosticReceiptSHA256 == "0d6fd570654b4952e22b2f3ac2c02c6ec0f25c0a19745b9b775b3d80a0f4c3d1"
+                : shimDirectory == nil && shimSet == nil && candidateManifest == nil
+                    && candidateManifestSHA256 == nil && diagnosticReceiptSHA256 == nil
             guard engine == "calimocho-11.20-4.0b3-06",
                   registrySHA256 == "fe35dba8938abbe3ca921cc4f92abd65ec8a539b1bac20ac5cf58a18213ce48d",
-                  preservedPrefixPath == nil, shimDirectory == nil,
+                  preservedPrefixPath == nil,
+                  sourceRecipe == "${HOME}/src/copilot-worktrees/calimocho/dragoshont-refactored-guacamole/build/release-01/sweep/regression-06/brotato-calimocho-11.20-4.0b3-06-114205/regression.json",
+                  sourceRecipeSHA256 == "8e71ce9f47efe4573eba7ac327c7f248e88e7087561c7fe1db1747ff7430f429",
+                  validShimBinding,
                   executable == "Brotato.exe", noAutoDismiss == true, timeoutSeconds == nil,
                   environment.isEmpty, mirrored.isEmpty,
                   Set(unsetEnvironment ?? []) == ["XODUS_PRIVATE_RUNTIME_COM_STA", "XODUS_PRIVATE_CALLER_OWNS_COM"],
@@ -404,8 +432,12 @@ struct NativeTitleLaunchProfile: Codable {
                   dllOverrideEvidence?.scope.isEmpty == false else { throw NativeLaunchError.invalidProfile }
         } else if dllOverrideEvidence != nil { throw NativeLaunchError.invalidProfile }
         if let directory = shimDirectory {
-            guard directory.hasPrefix("/") else { throw NativeLaunchError.invalidProfile }
-            try GameScriptFiles.checkPath(URL(fileURLWithPath: directory))
+            let expandedDirectory = Self.expand(directory)
+            guard expandedDirectory.hasPrefix("/") else { throw NativeLaunchError.invalidProfile }
+            let allowUnstagedCandidate = productID == "9P9VNSQK1W3K"
+                && shimSet == NativeShimReference.brotatoSourceCandidateID
+            try GameScriptFiles.checkPath(URL(fileURLWithPath: expandedDirectory),
+                                          allowMissing: allowUnstagedCandidate)
         }
     }
 
@@ -570,6 +602,15 @@ struct NativeLaunchConfiguration {
         }
         var profile = try NativeTitleLaunchProfile.read(productID: game.storeId, defaults: defaults,
                                                        provider: provider, evidence: evidence)
+        let launchShims: NativeShimReference
+        switch profile?.shimSet {
+        case .some(NativeShimReference.brotatoSourceCandidateID):
+            launchShims = .brotatoSourceCandidate
+        case .none:
+            launchShims = shims
+        default:
+            throw NativeLaunchError.invalidProfile
+        }
         if let selected, let engine = profile?.engine, engine != selected.inspection.engineName {
             throw NativeLaunchError.configurationConflict
         }
@@ -658,7 +699,8 @@ struct NativeLaunchConfiguration {
             ?? qualified?.prefix ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(
             "Library/Application Support/Xodus/Prefixes/\(game.id.uuidString)/\(engineName)")
         try GameScriptFiles.checkPath(prefix, allowMissing: true)
-        if let selected = profile?.shimDirectory, selected != shims.directory.path {
+        if let selected = profile?.shimDirectory,
+           NativeTitleLaunchProfile.expand(selected) != launchShims.directory.path {
             throw NativeLaunchError.invalidProfile
         }
         var admitted = selected
@@ -672,7 +714,7 @@ struct NativeLaunchConfiguration {
             admitted = selection
         }
         return Self(engine: engineName, registry: registryURL, prefix: prefix, runtime: runtime,
-                        profile: profile, shims: shims, admittedSelection: admitted)
+                        profile: profile, shims: launchShims, admittedSelection: admitted)
     }
 
     static func selectEngine(registry: NativeEngineRegistry, provider: RuntimeProviderKind?,
@@ -786,9 +828,9 @@ enum NativeLaunchError: Error, LocalizedError {
         case .engineUnavailable:
             "The selected registry engine is no longer available. Restore it or choose another engine in Runtime settings."
         case .invalidProfile:
-            "The title's local launch profile is invalid. Check its product ID and use the verified native-web-shims-v1 folder, separate from the game runtime."
+            "The title's local launch profile is invalid. Check its product ID and verified title-specific shim folder, separate from the game runtime."
         case .shimsUnavailable:
-            "The native sign-in components are missing or have changed. Restore native-web-shims-v1 before playing."
+            "The title's verified launch shim files are missing or have changed. Restore the selected title-specific shim folder before playing."
         case .installationNotReady:
             "This installation isn't verified complete. Check it, resume the download or repair it before playing."
         }
