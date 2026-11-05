@@ -9,17 +9,25 @@ import subprocess
 import sys
 
 from release_admission import verify_release_admission
+from release_dmg_trust import persistent_root
 
 
 def preflight(environment=os.environ):
     required = ("TAG", "EXPECTED_COMMIT", "RELEASE_APP", "RELEASE_ADMISSION",
-                "RELEASE_ADMISSION_SHA256", "RELEASE_APP_SHA256")
+                "RELEASE_ADMISSION_SHA256", "RELEASE_APP_SHA256",
+                "RELEASE_DMG_SIGNING_IDENTITY", "RELEASE_NOTARY_PROFILE", "RELEASE_DMG_RECOVERY_ROOT")
     missing = [key for key in required if not environment.get(key)]
     if missing:
         raise ValueError("Missing release prerequisites: " + ", ".join(missing))
     tag = environment["TAG"]
     if not re.fullmatch(r"v[0-9][0-9A-Za-z.+-]*", tag):
         raise ValueError("Invalid version tag")
+    if not re.fullmatch(r"[0-9a-fA-F]{40}", environment["RELEASE_DMG_SIGNING_IDENTITY"]):
+        raise ValueError("Invalid DMG signing certificate SHA1")
+    profile = environment["RELEASE_NOTARY_PROFILE"]
+    if profile.startswith("-") or any(ord(c) < 32 for c in profile):
+        raise ValueError("Invalid notary Keychain profile")
+    persistent_root(environment)
     with Path("tools/Info.plist").open("rb") as source:
         version = plistlib.load(source)["CFBundleShortVersionString"]
     if tag != "v" + version:

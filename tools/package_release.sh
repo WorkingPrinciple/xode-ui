@@ -1,6 +1,6 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-3.0-only
-# Local archive generation only. CI, signing and publication remain on hold.
+# Package an admitted app; sign/notarize only the new distribution DMG.
 set -eu
 fail() { printf 'package_release: %s\n' "$1" >&2; exit 1; }
 [ "$#" -eq 9 ] || {
@@ -67,9 +67,22 @@ case "$executable" in ''|.|..|*/*) fail "invalid executable name" ;; esac
 archs=$(lipo -archs "$app/Contents/MacOS/$executable") || fail "cannot inspect executable architectures"
 case " $archs " in *' arm64 '*) ;; *) fail "executable has no arm64 slice" ;; esac
 codesign --verify --deep --strict "$app"
+python3 - <<'PY'
+import os
+import re
+identity = os.environ.get("RELEASE_DMG_SIGNING_IDENTITY", "")
+profile = os.environ.get("RELEASE_NOTARY_PROFILE", "")
+if not re.fullmatch(r"[0-9A-Fa-f]{40}", identity):
+    raise SystemExit("package_release: require exact RELEASE_DMG_SIGNING_IDENTITY certificate SHA1")
+if not profile or profile.startswith("-") or any(ord(c) < 32 for c in profile):
+    raise SystemExit("package_release: require RELEASE_NOTARY_PROFILE for the runner's existing Keychain profile")
+PY
+python3 "$script_dir/release_dmg_trust.py" preflight
 
 # Reserve a new output directory; publish no success manifest on partial failure.
 mkdir -m 700 "$outdir"
+mkdir -m 700 "$outdir/dmg-trust-evidence"
+trust="$outdir/dmg-trust-evidence"
 stage=$(mktemp -d "$outdir/.package-stage.XXXXXX")
 mounted=0
 hdiutil_uncertain=0
@@ -116,6 +129,13 @@ ln -s /Applications "$stage/dmg/Applications"
 base="Ode-to-X-v$version-macos-arm64"
 run_hdiutil create -quiet -volname "Ode to X $version" -srcfolder "$stage/dmg" -format UDZO "$stage/$base.dmg"
 [ -s "$stage/$base.dmg" ] || fail "missing DMG"
+codesign --sign "$RELEASE_DMG_SIGNING_IDENTITY" --timestamp "$stage/$base.dmg" \
+    > "$trust/sign.log" 2>&1 || fail "DMG signing failed; inspect $trust/sign.log"
+codesign --verify --strict "$stage/$base.dmg" \
+    > "$trust/signed-verify.log" 2>&1 || fail "signed DMG verification failed"
+# The helper captures exact signed bytes in owner-managed persistent storage,
+# obtains the submission ID before waiting, and retains uncertain operations.
+python3 "$script_dir/release_dmg_trust.py" "$stage/$base.dmg" "$trust"
 run_hdiutil verify -quiet "$stage/$base.dmg"
 mkdir "$stage/dmg-mounted"
 mounted=1

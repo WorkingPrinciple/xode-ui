@@ -24,7 +24,8 @@ class ReleaseWorkflowChecks(unittest.TestCase):
                 preflight({})
             env = {key: "synthetic" for key in (
                 "TAG", "EXPECTED_COMMIT", "RELEASE_APP", "RELEASE_ADMISSION", "RELEASE_ADMISSION_SHA256",
-                "RELEASE_APP_SHA256")}
+                "RELEASE_APP_SHA256", "RELEASE_DMG_SIGNING_IDENTITY", "RELEASE_NOTARY_PROFILE",
+                "RELEASE_DMG_RECOVERY_ROOT")}
             with self.assertRaisesRegex(ValueError, "Invalid version tag"):
                 preflight(env)
             git.assert_not_called()
@@ -36,7 +37,9 @@ class ReleaseWorkflowChecks(unittest.TestCase):
                 app, receipt, app_hash, receipt_hash = admission_checks.ReleaseAdmissionChecks().fixture(root)
                 environment = {"TAG": "v0.2.0", "EXPECTED_COMMIT": "a" * 40,
                     "RELEASE_APP": str(app), "RELEASE_ADMISSION": str(receipt),
-                    "RELEASE_APP_SHA256": app_hash, "RELEASE_ADMISSION_SHA256": receipt_hash}
+                    "RELEASE_APP_SHA256": app_hash, "RELEASE_ADMISSION_SHA256": receipt_hash,
+                    "RELEASE_DMG_SIGNING_IDENTITY": "a" * 40, "RELEASE_NOTARY_PROFILE": "synthetic",
+                    "RELEASE_DMG_RECOVERY_ROOT": "/synthetic/persistent"}
                 if case == "changed-app":
                     (app / "Contents/MacOS/Fixture").write_bytes(b"new signing bytes")
                 if case == "changed-evidence":
@@ -47,7 +50,8 @@ class ReleaseWorkflowChecks(unittest.TestCase):
                     if arguments[-1] == "HEAD^{tree}":
                         return ("c" if case == "stale-source" else "b") * 40
                     return "a" * 40
-                with patch("release_workflow.subprocess.check_output", side_effect=git):
+                with patch("release_workflow.subprocess.check_output", side_effect=git), \
+                        patch("release_workflow.persistent_root"):
                     if case == "valid":
                         self.assertEqual(qualified_app(environment), app)
                         # The same immutable input is passed to the existing packager;
@@ -68,6 +72,16 @@ class ReleaseWorkflowChecks(unittest.TestCase):
         self.assertLess(package.index("tools/release_workflow.py qualified-app"),
                         package.index("sh tools/package_release.sh"))
         self.assertIn("codesign --verify --deep --strict", package)
+        self.assertIn("RELEASE_DMG_SIGNING_IDENTITY: ${{ vars.RELEASE_SIGNING_IDENTITY_SHA1 }}", package)
+        self.assertIn("RELEASE_NOTARY_PROFILE: ${{ vars.RELEASE_NOTARY_PROFILE }}", package)
+        self.assertIn("RELEASE_DMG_RECOVERY_ROOT: ${{ vars.RELEASE_DMG_RECOVERY_ROOT }}", package)
+        self.assertIn("if: always() && env.DMG_TRUST_EVIDENCE != ''", package)
+        self.assertIn('assets/dmg-trust-evidence/receipt.json" >> "$GITHUB_ENV"', package)
+        self.assertIn("path: ${{ env.DMG_TRUST_EVIDENCE }}", package)
+        self.assertNotIn("submitted.dmg", package)
+        self.assertNotIn("path: ${{ env.RELEASE_DMG_RECOVERY_ROOT }}", package)
+        self.assertLess(package.index("sh tools/package_release.sh"),
+                        package.index("actions/upload-artifact"))
         self.assertNotIn("contents: write", package)
         self.assertNotIn("actions/checkout", publish)
         self.assertIn("contents: write", publish)
@@ -76,9 +90,35 @@ class ReleaseWorkflowChecks(unittest.TestCase):
         self.assertIn("printf 'commit=%s\\n' \"$EXPECTED_COMMIT\" >> \"$GITHUB_OUTPUT\"", package)
         self.assertIn("EXPECTED_COMMIT: ${{ needs.package.outputs.commit }}", publish)
 
+    def test_publication_prerequisite_with_installed_cli_and_missing_cli(self):
+        block = WORKFLOW.split("      - name: Verify and attach exact assets\n", 1)[1]
+        script = textwrap.dedent(block.split("        run: |\n", 1)[1])
+        prerequisite, publication = script.split('cd "$DIST"\n', 1)
+        self.assertIn("gh --version", prerequisite)
+        self.assertNotIn("gh api", prerequisite)
+        self.assertNotIn("gh release", prerequisite)
+        self.assertIn("gh api", publication)
+        actual = subprocess.run(["gh", "--version"], capture_output=True, text=True, timeout=10)
+        self.assertEqual(actual.returncode, 0, actual.stderr)
+        self.assertRegex(actual.stdout.splitlines()[0], r"^gh version 2\.102\.1 \(")
+        result = subprocess.run(["/bin/bash", "-c", prerequisite],
+                                capture_output=True, text=True, timeout=10)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        missing_environment = {**os.environ, "PATH": "/usr/bin:/bin"}
+        tools = subprocess.run(
+            ["/bin/bash", "-c", "command -v awk && ! command -v gh"],
+            env=missing_environment, capture_output=True, text=True, timeout=10)
+        self.assertEqual(tools.returncode, 0, tools.stdout + tools.stderr)
+        self.assertIn("/usr/bin/awk", tools.stdout)
+        missing = subprocess.run(["/bin/bash", "-c", prerequisite],
+                                 env=missing_environment, capture_output=True, text=True, timeout=10)
+        self.assertNotEqual(missing.returncode, 0)
+        self.assertIn("GitHub CLI 2.102.1 must be provisioned", missing.stderr)
+
     def test_publish_exact_manifest_and_release_failure_paths(self):
         block = WORKFLOW.split("      - name: Verify and attach exact assets\n", 1)[1]
         script = textwrap.dedent(block.split("        run: |\n", 1)[1])
+        script = 'set -euo pipefail\ncd "$DIST"\n' + script.split('cd "$DIST"\n', 1)[1]
         for case in ("valid", "annotated", "missing", "duplicate", "tampered", "collision", "auth", "absent",
                      "moved-tag", "missing-tag", "tag-auth", "bad-tag-object", "tag-cycle", "missing-commit",
                      "moved-create", "missing-create"):

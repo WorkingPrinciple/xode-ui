@@ -82,7 +82,7 @@ class AppHarnessSourceChecks(unittest.TestCase):
             self.assertNotIn("openAccount(.engines)", text, path.name)
         self.assertFalse((source / "RuntimeInstallationPicker.swift").exists())
 
-    def test_release_hold_and_local_only_packager(self):
+    def test_qualified_packager_trusts_only_the_distribution_dmg(self):
         workflow = (ROOT / ".github/workflows/release.yml").read_text()
         self.assertIn("tags: ['v*']", workflow)
         self.assertIn("tools/release_workflow.py qualified-app", workflow)
@@ -92,9 +92,15 @@ class AppHarnessSourceChecks(unittest.TestCase):
         self.assertIn("verify_release_admission", source)
         self.assertIn("run_hdiutil verify", source)
         self.assertIn("ditto -x -k", source)
-        self.assertNotIn("notarytool", source)
+        self.assertIn('codesign --sign "$RELEASE_DMG_SIGNING_IDENTITY" --timestamp "$stage/$base.dmg"', source)
+        self.assertIn("release_dmg_trust.py", source)
         self.assertNotIn("codesign --force", source)
         self.assertNotIn("gh release", source)
+        trust = (ROOT / "tools/release_dmg_trust.py").read_text()
+        self.assertIn('"notarytool", "submit"', trust)
+        self.assertIn('"notarytool", "wait"', trust)
+        self.assertIn('"stapler", verb', trust)
+        self.assertIn('"spctl", "--assess"', trust)
 
     def test_operator_prompt_precedes_unified_auth_construction(self):
         source = (ROOT / "Sources/XodusPreview/RealAccountScenarioChecks.swift").read_text()

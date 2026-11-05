@@ -2,116 +2,93 @@
 
 ## Purpose and authorization
 
-### Issue 62: immutable qualified app, archive and tag-workflow source
+### Issue 62: immutable qualified app and trusted distribution DMG
 
-COR-389 / REQ-172 supersedes the earlier prohibition on writing tag-workflow
-source. `.github/workflows/release.yml` declares a `v*` tag pipeline; actual
-signed qualification and publication through it have not yet been observed.
-The package job consumes an immutable app already
-built/signed through the separately authorized app-build process (for example
-the existing `tools/build_app.sh` controlled-pair contract) and independently
-qualified for the exact tag commit. It never rebuilds or re-signs that input.
-The publication job receives only
-the three exact assets, verifies exact checksum coverage, and uploads to the
-matching release (or creates it with `--verify-tag`); collisions and API/auth
-errors fail rather than overwrite or create a release speculatively.
-Write-token publication runs no checked-out repository code.
-Publication carries the admitted package commit across the job/approval boundary.
-Immediately before upload or creation it reads the live tag ref, peels annotated
-tag objects (at most eight levels), verifies the resolved commit exists and
-requires exact equality with that admitted commit. Missing/moved tags,
-unresolvable objects and API/auth errors reject without publication. This
-preflight does not provide an atomic GitHub tag-lock; protected immutable tags
-are still required to prevent a concurrent move after the final check.
+`.github/workflows/release.yml` declares a `v*` tag pipeline; no hosted release
+or Apple operation is established by this source change. The package job
+consumes an immutable app already built, signed and independently qualified for
+the exact tag commit. It never rebuilds or re-signs the app. It signs and
+timestamps only the newly created distribution DMG, verifies that signature,
+submits it using the runner's existing notarytool Keychain profile, waits for
+the exact returned submission ID, and proceeds only after Apple reports
+`Accepted`. It then staples and validates the DMG, verifies its signature,
+assesses it with Gatekeeper, and computes checksums over the final bytes.
 
-Required runner/repository inputs are listed in `tools/release_workflow.py`:
-canonical `RELEASE_APP_PATH`, exact tag commit, independent
-`RELEASE_ADMISSION_RECEIPT_PATH`, `RELEASE_APP_TREE_SHA256` and
-`RELEASE_ADMISSION_RECEIPT_SHA256`. These pin the same signed app, its source
-and genuine qualification/redistribution evidence. No signing identity is
-needed by the tag job because it never signs.
-Protected `release` and `release-publication` environments
-must be configured by the owner; declaring environment names does not create
-approval rules. No embedded signing credentials or approval synthesis exists.
-The source checkout/tag/version must agree and be clean.
+The helper `tools/release_dmg_trust.py` stores the exact submitted DMG and
+private command diagnostics in an owner-only persistent recovery root. It
+records the submission ID before waiting and never automatically retries an
+uncertain submission; any prior incomplete attempt blocks another until an
+operator reconciles it. the package job's always-run artifact step uploads only an allowlisted
+sanitized receipt when one was written, including incomplete attempts. It does not contain the
+private recovery directory, command output, Keychain profile or submitted DMG.
+The receipt artifact is retained for seven days.
 
-**Same-build handoff:** build/sign once outside the tag job, qualify those
-exact signed bytes under REQ-53/54, preserve the resulting app and evidence on
-the controlled runner, and pin their identities in the protected release
-configuration. Tagging that exact source commit packages those bytes, not a
-timestamp-changed rebuild. `qualified-app` verifies the actual app/evidence
-against the tag commit/tree/version; the packager independently rechecks it
-and compares its snapshot and recovered archives. This does not require
-requalifying identical bytes, nor can a prior receipt approve changed bytes.
+Required repository variables are `RELEASE_APP_PATH`,
+`RELEASE_ADMISSION_RECEIPT_PATH`, `RELEASE_APP_TREE_SHA256`,
+`RELEASE_ADMISSION_RECEIPT_SHA256`, `RELEASE_SIGNING_IDENTITY_SHA1`,
+`RELEASE_NOTARY_PROFILE` and `RELEASE_DMG_RECOVERY_ROOT`. The controlled macOS
+runner must already have the matching signing identity/private key, the named
+notarytool Keychain profile, Xcode command-line tools and Apple connectivity.
+The recovery root must be a canonical absolute, persistent directory owned by
+the runner user with mode `0700`, outside temporary/workspace storage, and
+contain an owner-only `0600` `.ode-dmg-recovery.json` retention policy. The
+workflow neither provisions signing credentials nor changes Keychain access
+controls or security prompts. Protected `release` and `release-publication`
+environments must be configured by the owner; declaring their names does not
+create approval rules.
 
-**Genuine remaining operation:** an authorized operator must perform actual
-product qualification and rights/redistribution review for the chosen signed
-app and supply the resulting evidence. The repository has an integrity/binding
-verifier, not an automated product/legal approval producer. The JSON adapter
-records existing independent results; it cannot grant authority or replace
-those operations. No such qualification, signature, notarization, publication
-or protected-environment configuration is claimed by source/stub tests.
+The publication runner must also have **GitHub CLI (`gh`) exactly 2.102.1**
+provisioned separately. Before any GitHub API or release command, the publish
+script requires `gh` on `PATH`, a successful `gh --version`, and the exact
+2.102.1 version banner. Missing, failing, malformed or different versions
+reject before publication. The workflow installs nothing. The publication job
+receives only the DMG, ZIP and checksum manifest, verifies exact checksum
+coverage and the live tag's identity, and refuses collisions or API/auth
+errors rather than overwriting or creating a release speculatively. Before
+upload or creation it reads the live tag ref, peels annotated tag objects (at
+most eight levels), verifies the resolved commit exists and requires exact
+equality with the admitted package commit. Missing/moved tags, unresolvable
+objects and API/auth errors reject without publication. This check is not an
+atomic tag lock; protected immutable tags are still required to prevent a
+concurrent move after the final check. The write-token job runs no checked-out
+repository code.
 
-`tools/package_release.sh` packages an **already built, signed and separately
-admitted** app with `hdiutil` and `ditto`; it never builds, signs, notarizes,
-uploads, installs or launches an app. The `v*` workflow exists, but its execution
-requires the real protected-environment configuration, admitted signed app and
-qualification evidence described above, together with release/publication
-authorization. Source and fixture checks do not establish genuine signed-release
-acceptance or native product qualification. An unsigned fixture is not a
-distribution candidate.
-
-When separately authorized, invoke from the admitted clean source checkout:
-
-```sh
-sh tools/package_release.sh /absolute/Ode.app 0.2.0 /canonical/parent/new-output \
-  /absolute/admission.json APP_TREE_SHA256 RECEIPT_SHA256 SOURCE_COMMIT SOURCE_TREE \
-  WorkingPrinciple/xode-ui
-```
-
-The output directory must not exist, must be outside the app and must have an
-existing canonical parent. The tool verifies origin, exact HEAD/tree and clean
-source before output creation.
-Origin admission accepts only the exact canonical repository HTTPS forms with
-or without `.git` (including actions/checkout's suffix-free form), or its exact
-SSH URL; lookalike or different repositories still reject.
-Admission JSON schema 1 binds `source`
-(`repository`, `commit`, `tree`) and `app` (`sha256`, `version`).
+`release_workflow.py qualified-app` and `package_release.sh` independently
+verify the pinned app and admission receipt against the clean source checkout,
+canonical repository origin, tag commit/tree and app version. Admission schema
+1 binds `source` (`repository`, `commit`, `tree`) and `app` (`sha256`, `version`).
 `releaseQualification` and `provenanceRedistributionReview` each pin an evidence
-receipt's relative `receipt` path and `sha256`. Each evidence receipt binds the
-same source/app, its `kind`, `schemaVersion: 1`, `status: "accepted"` and a
-nonempty `evidence` array of relative `path`/`sha256` pairs. Missing, changed,
-duplicate-key, out-of-root and unaccepted evidence fails closed. These receipts
-must come from genuine independent qualification/review; matching JSON/digests
-prove binding and integrity, **not authenticity or authority to release**.
+receipt's relative `receipt` path and `sha256`; each binds the same source/app,
+its `kind`, `schemaVersion: 1`, `status: "accepted"` and a nonempty `evidence`
+array of relative `path`/`sha256` pairs. Missing, changed, duplicate-key,
+out-of-root or unaccepted evidence rejects. These receipts must come from
+genuine independent qualification/review: matching JSON/digests prove binding
+and integrity, **not authenticity or authority to release**.
 
 The app-tree digest covers sorted paths, entry types, modes, file sizes/bytes
 and symlink text, including the bundle root mode. Special files and escaping or
 unresolved symlinks are rejected; contained framework symlinks remain supported.
 Version must match Info.plist and the main executable must have an arm64 slice.
 `codesign --verify --deep --strict` precedes archiving and verifies the snapshot
-and recovered apps. Both the verified/mounted read-only DMG and extracted ZIP
-must reproduce the admitted tree; input changes during copying/packaging fail.
-Failed/partial mounts are treated as mounted until detach succeeds; a failed
-detach preserves the stage and reports its location instead of deleting through
-a mountpoint.
+and recovered apps. Both the read-only mounted DMG and extracted ZIP must
+reproduce the admitted app tree; input changes during packaging fail. Failed or
+partial mounts are treated as mounted until detach succeeds; a failed detach
+preserves the stage rather than deleting through a mountpoint.
 
-Source-status command failure is rejected even when Git writes no stdout.
-All hdiutil operations run through an owned-child timeout wrapper: create,
-verify and attach have 120-second execution budgets, detach has five seconds,
-and termination/reaping waits have two additional one-second bounds. Normal
-detach and trap cleanup use the same wrapper. Timeout/interruption reports
-uncertain mount state; cleanup never recursively removes a possibly mounted
-stage without a successful detach. Interrupted cleanup preserves the stage.
+All hdiutil operations use an owned-child timeout wrapper: create, verify and
+attach have 120-second execution budgets, detach has five seconds, and
+termination/reaping waits have two additional one-second bounds. Timeout or
+interruption reports uncertain mount state; cleanup never removes a possibly
+mounted stage without successful detach.
 
 Successful output is `Ode-to-X-v<version>-macos-arm64.dmg`,
-`Ode-to-X-v<version>-macos-arm64.zip` and checked `SHA256SUMS.txt`. The manifest is
-published last; partial outputs without it are not successful packages.
-`python3 tools/check_release_admission.py` exercises admission and archive
-round-trips with **stub Apple tools only**, including signature/architecture,
-archive corruption, dirty/wrong source, output-path and mount-cleanup failures.
-It is not genuine hdiutil, code-signature, Gatekeeper or notarization evidence.
-Real inputs and scoped local-packaging authorization are still required.
+`Ode-to-X-v<version>-macos-arm64.zip` and checked `SHA256SUMS.txt`; the
+manifest is published last. `python3 tools/check_release_admission.py` covers
+admission, packaging, recovery, signing/notary ordering and sanitized evidence
+with **synthetic fixtures and stub Apple tools only**. The workflow source check
+tests publication wiring and the installed/missing CLI prerequisite. These are
+not genuine signing, notarization, Gatekeeper, publication or native product
+qualification evidence.
 
 ### REQ103 r7 source candidate: Stop lifecycle and orphan safety
 

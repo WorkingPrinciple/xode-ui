@@ -25,6 +25,9 @@ jobs:
       RELEASE_ADMISSION: ${{ vars.RELEASE_ADMISSION_RECEIPT_PATH }}
       RELEASE_ADMISSION_SHA256: ${{ vars.RELEASE_ADMISSION_RECEIPT_SHA256 }}
       RELEASE_APP_SHA256: ${{ vars.RELEASE_APP_TREE_SHA256 }}
+      RELEASE_DMG_SIGNING_IDENTITY: ${{ vars.RELEASE_SIGNING_IDENTITY_SHA1 }}
+      RELEASE_NOTARY_PROFILE: ${{ vars.RELEASE_NOTARY_PROFILE }}
+      RELEASE_DMG_RECOVERY_ROOT: ${{ vars.RELEASE_DMG_RECOVERY_ROOT }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -38,8 +41,10 @@ jobs:
           source_tree=$(git rev-parse 'HEAD^{tree}')
           app=$(python3 tools/release_workflow.py qualified-app)
           dist_root=$(mktemp -d "$RUNNER_TEMP/ode-release-dist.XXXXXX")
+          printf 'DMG_TRUST_EVIDENCE=%s\n' "$dist_root/assets/dmg-trust-evidence/receipt.json" >> "$GITHUB_ENV"
           version=${TAG#v}
-          # Do not rebuild or re-sign: qualification belongs to these exact bytes.
+          # Never rebuild/re-sign the app. Only the newly created DMG is signed,
+          # notarized, stapled and assessed before its final checksum is emitted.
           codesign --verify --deep --strict "$app"
           sh tools/package_release.sh "$app" "$version" "$dist_root/assets" \
             "$RELEASE_ADMISSION" "$RELEASE_APP_SHA256" "$RELEASE_ADMISSION_SHA256" \
@@ -47,6 +52,14 @@ jobs:
           printf 'version=%s\n' "$version" >> "$GITHUB_OUTPUT"
           printf 'commit=%s\n' "$EXPECTED_COMMIT" >> "$GITHUB_OUTPUT"
           printf 'DIST=%s\n' "$dist_root/assets" >> "$GITHUB_ENV"
+      - name: Retain sanitized DMG trust evidence, including failures
+        if: always() && env.DMG_TRUST_EVIDENCE != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: dmg-trust-evidence
+          path: ${{ env.DMG_TRUST_EVIDENCE }}
+          if-no-files-found: warn
+          retention-days: 7
       - uses: actions/upload-artifact@v4
         with:
           name: qualified-release-assets
@@ -82,6 +95,19 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          command -v gh >/dev/null 2>&1 || {
+            printf 'GitHub CLI 2.102.1 must be provisioned on the publication runner\n' >&2
+            exit 1
+          }
+          gh_version=$(gh --version) || {
+            printf 'GitHub CLI version check failed\n' >&2
+            exit 1
+          }
+          gh_version=${gh_version%%$'\n'*}
+          [[ "$gh_version" =~ ^gh\ version\ 2\.102\.1\ \([0-9]{4}-[0-9]{2}-[0-9]{2}\)$ ]] || {
+            printf 'GitHub CLI version mismatch: require exactly 2.102.1\n' >&2
+            exit 1
+          }
           cd "$DIST"
           [[ "$TAG" == "v$VERSION" && "$VERSION" =~ ^[0-9][0-9A-Za-z.+-]*$ ]]
           base="Ode-to-X-v$VERSION-macos-arm64"
