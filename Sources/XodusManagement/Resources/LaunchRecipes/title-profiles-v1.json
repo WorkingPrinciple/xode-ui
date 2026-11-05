@@ -37,17 +37,19 @@
       "version": 1,
       "productID": "9P9VNSQK1W3K",
       "title": "Brotato",
-      "qualification": "CLI-only WORKING_CANDIDATE from ebd56e; a1aade generic route failed, Apple4 app-route regression with 3ea56ed1 pending, no WORKING promotion",
-      "sourceRecipe": "${HOME}/Library/Application Support/XodusCLI/proofs/s3-brotato-retention-02/invocation.json",
-      "sourceRecipeSHA256": "a2858fb02420e6c36f974aa8fe5f70a2d8ad3ee9154c6408bd9999b910cb3414",
-      "engine": "apple-gptk-4.0b3",
+      "qualification": "COR216 historical Calimocho06 CLI menu/ordinary-close observation only; restored engine/runtime/shim/executable route on a title-isolated prefix. Current app/gameplay/save proof remains unverified.",
+      "sourceRecipe": "${HOME}/src/copilot-worktrees/calimocho/dragoshont-refactored-guacamole/build/release-01/sweep/regression-06/brotato-calimocho-11.20-4.0b3-06-114205/regression.json",
+      "sourceRecipeSHA256": "8e71ce9f47efe4573eba7ac327c7f248e88e7087561c7fe1db1747ff7430f429",
+      "historicalRegistrySHA256": "67da35b778dfe4c87e3e94778b83ed82fb8f4bc23111799c096d961688884aad",
+      "registrySHA256": "fe35dba8938abbe3ca921cc4f92abd65ec8a539b1bac20ac5cf58a18213ce48d",
+      "registryBindingNote": "Current provider-admitted fe35 registry preserves the historical67da Wine/server paths, executable hashes and environment; metadata/provider admission differs, so this is not byte-identical historical replay or current gameplay qualification.",
+      "engine": "calimocho-11.20-4.0b3-06",
       "executable": "Brotato.exe",
       "noAutoDismiss": true,
       "environment": {},
       "unsetEnvironment": [
         "XODUS_PRIVATE_RUNTIME_COM_STA",
-        "XODUS_PRIVATE_CALLER_OWNS_COM",
-        "CX_APPLEGPTK_LIBD3DSHARED_PATH"
+        "XODUS_PRIVATE_CALLER_OWNS_COM"
       ],
       "runtime": {
         "primaryPath": "${HOME}/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll",
