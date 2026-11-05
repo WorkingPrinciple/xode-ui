@@ -33,7 +33,11 @@ class TrustFailure(Exception):
         }
 
     def exit_status(self):
-        return 124 if self.timed_out else 1
+        if self.timed_out:
+            return 124
+        if self.reason == "operation_interrupted":
+            return 130 if self.exit_code is None else self.exit_code
+        return 1
 
     def diagnostic(self):
         parts = [f"DMG trust failed at {self.stage}: {self.reason}"]
@@ -292,4 +296,6 @@ if __name__ == "__main__":
         print(error.diagnostic(), file=sys.stderr)
         sys.exit(error.exit_status())
     except (OSError, ValueError, KeyError, subprocess.SubprocessError):
-        sys.exit("1:DMG trust failed at preflight: invalid recovery configuration")
+        print("DMG trust failed at recovery-preflight: persistent_recovery_configuration_invalid",
+              file=sys.stderr)
+        sys.exit(1)

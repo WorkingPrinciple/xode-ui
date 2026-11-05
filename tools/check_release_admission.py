@@ -11,6 +11,7 @@ import tempfile
 import unittest
 
 from release_admission import app_tree_sha256, verify_release_admission
+from release_dmg_trust import TrustFailure
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -126,7 +127,10 @@ class ReleaseAdmissionChecks(unittest.TestCase):
             "plutil": 'printf "Fixture\\n"',
             "lipo": '[ "$CASE" != architecture ] || { echo x86_64; exit; }; echo arm64',
             "codesign": '''echo "$*" >> "$CONTROL/codesign-calls"
-    [ "$CASE" != signature ]''',
+if [ "$CASE" = signature ]; then
+    echo "codesign verification failed for admitted app" >&2
+    exit 1
+fi''',
         }
         for name, body in scripts.items():
             path = bin_path / name
@@ -152,13 +156,67 @@ class ReleaseAdmissionChecks(unittest.TestCase):
             self.assertIn("RELEASE_DMG_SIGNING_IDENTITY", result.stderr)
             self.assertFalse((root / "output").exists())
 
+    def test_trust_failure_receipt_diagnostic_and_exit_status(self):
+        interrupted = TrustFailure("wait", "operation_interrupted", 130)
+        self.assertEqual(interrupted.receipt(), {
+            "stage": "wait", "reason": "operation_interrupted",
+            "exitCode": 130, "timedOut": False,
+        })
+        self.assertEqual(interrupted.diagnostic(),
+                         "DMG trust failed at wait: operation_interrupted; command exit 130")
+        self.assertEqual(interrupted.exit_status(), 130)
+
+        timeout = TrustFailure("wait", "command_timeout", 124, timed_out=True, attempt="dmg-safe")
+        self.assertEqual(timeout.receipt(), {
+            "stage": "wait", "reason": "command_timeout",
+            "exitCode": 124, "timedOut": True,
+        })
+        self.assertEqual(timeout.diagnostic(),
+                         "DMG trust failed at wait: command_timeout; command exit 124; timed out; reconcile attempt dmg-safe")
+        self.assertEqual(timeout.exit_status(), 124)
+        self.assertNotIn("RELEASE_NOTARY_PROFILE", timeout.diagnostic())
+        self.assertNotIn("/private/", timeout.diagnostic())
+
+    def test_trust_cli_rejects_bad_arguments_without_path_or_prefix_leak(self):
+        result = subprocess.run(
+            ["python3", str(ROOT / "tools/release_dmg_trust.py"), "unexpected"],
+            capture_output=True, text=True, timeout=10)
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(result.stderr.strip(),
+                         "DMG trust failed at invocation: invalid_arguments")
+        self.assertNotIn("1:", result.stderr)
+        self.assertNotIn(str(ROOT), result.stderr)
+
+    def test_trust_cli_reports_sanitized_recovery_preflight_failure(self):
+        environment = dict(os.environ)
+        environment.pop("RELEASE_DMG_RECOVERY_ROOT", None)
+        result = subprocess.run(
+            ["python3", str(ROOT / "tools/release_dmg_trust.py"), "preflight"],
+            env=environment, capture_output=True, text=True, timeout=10)
+        self.assertEqual(result.returncode, 1)
+        self.assertEqual(
+            result.stderr.strip(),
+            "DMG trust failed at recovery-preflight: persistent_recovery_configuration_invalid")
+        self.assertNotIn("1:", result.stderr)
+        self.assertNotIn(str(ROOT), result.stderr)
+
     def test_packaging_failures_never_publish_success_manifest(self):
-        for case in ("origin", "origin-lookalike", "source-commit", "source-tree", "dirty",
-                     "signature", "architecture"):
+        expected_errors = {
+            "origin": "source origin repository mismatch",
+            "origin-lookalike": "source origin repository mismatch",
+            "source-commit": "source commit mismatch",
+            "source-tree": "source tree mismatch",
+            "dirty": "packaging tool source must be frozen and clean",
+            "signature": "codesign verification failed for admitted app",
+            "architecture": "executable has no arm64 slice",
+        }
+        for case, message in expected_errors.items():
             with self.subTest(case=case), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory).resolve()
                 result = self.package(root, self.fixture(root), case)
                 self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertIn(message, result.stderr)
+                self.assertNotIn("RELEASE_DMG_SIGNING_IDENTITY", result.stderr)
                 self.assertFalse((root / "output/SHA256SUMS.txt").exists())
                 self.assertFalse((root / "output").exists())
 
