@@ -387,7 +387,8 @@ struct NativeTitleLaunchProfile: Codable {
                   sourceRecipeSHA256 == "8e71ce9f47efe4573eba7ac327c7f248e88e7087561c7fe1db1747ff7430f429",
                   validShimBinding,
                   executable == "Brotato.exe", noAutoDismiss == true, timeoutSeconds == nil,
-                  environment.isEmpty, mirrored.isEmpty,
+                  environment == (sourceCandidate
+                    ? ["WINEDEBUG": "-all,+timestamp,+loaddll,+seh"] : [:]), mirrored.isEmpty,
                   Set(unsetEnvironment ?? []) == ["XODUS_PRIVATE_RUNTIME_COM_STA", "XODUS_PRIVATE_CALLER_OWNS_COM"],
                   runtime?.primaryPath == "${HOME}/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll",
                   runtime?.primarySHA256 == "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8",
