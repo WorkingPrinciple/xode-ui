@@ -105,6 +105,11 @@ access. Account-bound lifecycle access still requires confirmed sign-in and the
 negotiated account capability; title recipe, registry, runtime and prefix checks
 remain separate and unchanged. A detected-only engine message is not itself
 evidence of an account or connection failure.
+Library hero scroll-target writeback publishes only an actual target change.
+Repeated writes of the same ID (including `nil`) must not invalidate the entire
+retained Library during SwiftUI scroll commits. `LibraryHeroWritebackChecks`
+checks this with the production selection object and SwiftUI binding; it does
+not substitute for repeating the installed registry chooser after a native hang.
 `swift test --filter CalimochoInstalledReleaseChecks` checks
 the real installed release/CLI where present using isolated preference suites,
 without modifying the installed engine, real preferences, game files or saves.

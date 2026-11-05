@@ -98,7 +98,15 @@ final class LibrarySelection: ObservableObject {
     @Published var filter: LibraryFilter = .all
     @Published var sort: LibrarySort = .title
     @Published var recentGameID: UUID?
-    @Published var heroID: String?
+    @Published private var selectedHeroID: String?
+    var heroID: String? {
+        get { selectedHeroID }
+        set {
+            // ScrollView can write its current target back during a graph commit.
+            guard selectedHeroID != newValue else { return }
+            selectedHeroID = newValue
+        }
+    }
     // ScrollView owns live scrolling; retaining its target must not invalidate the whole tab.
     var scrollID: String?
     var collectionHeaderFrame = CGRect.zero
