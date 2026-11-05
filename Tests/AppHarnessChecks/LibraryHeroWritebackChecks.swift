@@ -5,6 +5,27 @@ import XCTest
 @testable import XodusPreview
 
 final class LibraryHeroWritebackChecks: XCTestCase {
+    func testPhysicalHeroPageObservationAtRealViewportWidths() {
+        for width in [CGFloat(320), 650, 1200] {
+            for index in 0..<6 {
+                XCTAssertEqual(HeroPageSnap.pageIndex(contentMinX: -CGFloat(index) * width,
+                    pageWidth: width, count: 6), index)
+            }
+            XCTAssertEqual(HeroPageSnap.pageIndex(contentMinX: -2.49 * width,
+                pageWidth: width, count: 6), 2)
+            XCTAssertEqual(HeroPageSnap.pageIndex(contentMinX: -2.51 * width,
+                pageWidth: width, count: 6), 3)
+            XCTAssertEqual(HeroPageSnap.pageIndex(contentMinX: width,
+                pageWidth: width, count: 6), 0)
+            XCTAssertEqual(HeroPageSnap.pageIndex(contentMinX: -6 * width,
+                pageWidth: width, count: 6), 5)
+        }
+        XCTAssertNil(HeroPageSnap.pageIndex(contentMinX: 0, pageWidth: 0, count: 6))
+        XCTAssertNil(HeroPageSnap.pageIndex(contentMinX: .nan, pageWidth: 1200, count: 6))
+        XCTAssertNil(HeroPageSnap.pageIndex(contentMinX: 0, pageWidth: .infinity, count: 6))
+        XCTAssertNil(HeroPageSnap.pageIndex(contentMinX: 0, pageWidth: 1200, count: 0))
+    }
+
     @MainActor
     func testScrollPositionWritebackPublishesOnlyActualHeroChanges() {
         let selection = LibrarySelection()

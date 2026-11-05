@@ -8,6 +8,20 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 class AppHarnessSourceChecks(unittest.TestCase):
+    def test_library_hero_scroll_observation_does_not_issue_scroll_commands(self):
+        source = (ROOT / "Sources/XodusPreview/LiveLibraryView.swift").read_text()
+        carousel = source.split("    private var heroCarousel:", 1)[1].split(
+            "    private func hero(", 1)[0]
+        self.assertNotIn(".scrollPosition(", carousel)
+        self.assertIn("ScrollViewReader { pager in", carousel)
+        self.assertIn("HeroPageSnap.pageIndex(", carousel)
+        self.assertIn(".scrollTargetBehavior(HeroPageSnap())", carousel)
+        observation = carousel.split("} action: { index in", 1)[1].split(
+            ".scrollIndicators", 1)[0]
+        self.assertIn("selection.heroID = heroGames[index].id", observation)
+        self.assertNotIn("scrollTo", observation)
+        self.assertEqual(carousel.count("pager.scrollTo("), 3)
+
     def test_current_service_configuration_is_not_a_historical_game_recipe_pin(self):
         source = (ROOT / "Sources/XodusPreview/LiveSession.swift").read_text()
         factories = source.split("    var nativeLifecycleConfiguration:", 1)[1].split(

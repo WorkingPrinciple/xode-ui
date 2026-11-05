@@ -36,6 +36,7 @@ struct LiveLibraryView: View {
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOver
     @FocusedValue(\.libraryHeroInteraction) private var heroInteraction
     @State private var heroVisible = false
+    @Namespace private var heroScrollSpace
     @State private var lowPower = ProcessInfo.processInfo.isLowPowerModeEnabled
     @State private var detailFocusReturnID: String?
     @FocusState private var focusedGameID: String?
@@ -347,23 +348,40 @@ struct LiveLibraryView: View {
     }
 
     private var heroCarousel: some View {
-        ZStack(alignment: .bottom) {
-                ScrollView(.horizontal) {
-                    LazyHStack(spacing: 0) {
-                        ForEach(heroGames) { game in
-                            hero(game, selected: selection.heroID == game.id)
-                                .containerRelativeFrame(.horizontal).id(game.id)
+        let coordinateSpace = heroScrollSpace
+        let pageCount = heroGames.count
+        return ScrollViewReader { pager in
+            ZStack(alignment: .bottom) {
+                GeometryReader { viewport in
+                    let pageWidth = viewport.size.width
+                    ScrollView(.horizontal) {
+                        LazyHStack(spacing: 0) {
+                            ForEach(heroGames) { game in
+                                hero(game, selected: selection.heroID == game.id)
+                                    .containerRelativeFrame(.horizontal).id(game.id)
+                            }
+                        }
+                        .scrollTargetLayout()
+                        .onGeometryChange(for: Int?.self) { geometry in
+                            HeroPageSnap.pageIndex(
+                                contentMinX: geometry.frame(in: .named(coordinateSpace)).minX,
+                                pageWidth: pageWidth, count: pageCount)
+                        } action: { index in
+                            guard let index, heroGames.indices.contains(index) else { return }
+                            selection.heroID = heroGames[index].id
                         }
                     }
-                    .scrollTargetLayout()
+                    .scrollIndicators(.never).scrollTargetBehavior(HeroPageSnap())
+                    .coordinateSpace(name: coordinateSpace)
                 }
-                .scrollIndicators(.never).scrollTargetBehavior(HeroPageSnap())
-                .scrollPosition(id: $selection.heroID, anchor: .leading)
                 if heroGames.count > 1 {
                     HStack(spacing: 4) {
                         ForEach(heroGames) { game in
                             Button {
-                                withAnimation(reduceMotion ? nil : .smooth(duration: 0.35)) { selection.heroID = game.id }
+                                withAnimation(reduceMotion ? nil : .smooth(duration: 0.35)) {
+                                    selection.heroID = game.id
+                                    pager.scrollTo(game.id, anchor: .leading)
+                                }
                             } label: {
                                 Circle().fill(selection.heroID == game.id ? Color.primary : Color.secondary.opacity(0.55))
                                     .frame(width: 8, height: 8).frame(width: 22, height: 22)
@@ -376,27 +394,32 @@ struct LiveLibraryView: View {
                     }
                     .padding(.bottom, 18)
                 }
-        }
-        .frame(height: 460).clipped()
-        .focusedValue(\.libraryHeroInteraction, true)
-        .modifier(HeroScrollVisibility { heroVisible = $0 })
-        .onReceive(NotificationCenter.default.publisher(for: .NSProcessInfoPowerStateDidChange)) { _ in
-            lowPower = ProcessInfo.processInfo.isLowPowerModeEnabled
-        }
-        .onHover { selection.heroHovered = $0 }
-        .onChange(of: heroGames.map(\.id), initial: true) { _, ids in
-            if selection.heroID.map({ !ids.contains($0) }) ?? true { selection.heroID = ids.first }
-        }
-        .task(id: "\(heroGames.map(\.id).joined(separator: ",")):\(heroMotionAllowed):\(reduceMotion):\(heroVisible):\(heroInteraction == true):\(voiceOver):\(lowPower)") {
-            guard allowsStartupTasks, heroMotionAllowed, heroVisible, !reduceMotion,
-                  heroInteraction != true, !voiceOver, !lowPower else { return }
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(9))
-                guard !Task.isCancelled, !selection.heroHovered, !selection.heroPlaying,
-                      heroVisible, heroInteraction != true, heroGames.count > 1 else { continue }
-                let ids = heroGames.map(\.id)
-                let next = ids.firstIndex(of: selection.heroID ?? "").map { ids[($0 + 1) % ids.count] } ?? ids[0]
-                withAnimation(.smooth(duration: 0.6)) { selection.heroID = next }
+            }
+            .frame(height: 460).clipped()
+            .focusedValue(\.libraryHeroInteraction, true)
+            .modifier(HeroScrollVisibility { heroVisible = $0 })
+            .onReceive(NotificationCenter.default.publisher(for: .NSProcessInfoPowerStateDidChange)) { _ in
+                lowPower = ProcessInfo.processInfo.isLowPowerModeEnabled
+            }
+            .onHover { selection.heroHovered = $0 }
+            .onChange(of: heroGames.map(\.id), initial: true) { _, ids in
+                if selection.heroID.map({ !ids.contains($0) }) ?? true { selection.heroID = ids.first }
+                if let id = selection.heroID { pager.scrollTo(id, anchor: .leading) }
+            }
+            .task(id: "\(heroGames.map(\.id).joined(separator: ",")):\(heroMotionAllowed):\(reduceMotion):\(heroVisible):\(heroInteraction == true):\(voiceOver):\(lowPower)") {
+                guard allowsStartupTasks, heroMotionAllowed, heroVisible, !reduceMotion,
+                      heroInteraction != true, !voiceOver, !lowPower else { return }
+                while !Task.isCancelled {
+                    try? await Task.sleep(for: .seconds(9))
+                    guard !Task.isCancelled, !selection.heroHovered, !selection.heroPlaying,
+                          heroVisible, heroInteraction != true, heroGames.count > 1 else { continue }
+                    let ids = heroGames.map(\.id)
+                    let next = ids.firstIndex(of: selection.heroID ?? "").map { ids[($0 + 1) % ids.count] } ?? ids[0]
+                    withAnimation(.smooth(duration: 0.6)) {
+                        selection.heroID = next
+                        pager.scrollTo(next, anchor: .leading)
+                    }
+                }
             }
         }
     }

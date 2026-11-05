@@ -742,6 +742,12 @@ struct LibraryHeroControlSize: ViewModifier {
 }
 
 struct HeroPageSnap: ScrollTargetBehavior {
+    static func pageIndex(contentMinX: CGFloat, pageWidth: CGFloat, count: Int) -> Int? {
+        guard count > 0, pageWidth.isFinite, pageWidth > 0, contentMinX.isFinite else { return nil }
+        let page = min(max(0, (-contentMinX / pageWidth).rounded()), CGFloat(count - 1))
+        return Int(page)
+    }
+
     func updateTarget(_ target: inout ScrollTarget, context: TargetContext) {
         guard context.axes.contains(.horizontal) else { return }
         target.rect.origin.x = Self.offset(original: context.originalTarget.rect.minX,

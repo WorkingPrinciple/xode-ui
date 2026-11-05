@@ -110,6 +110,16 @@ Repeated writes of the same ID (including `nil`) must not invalidate the entire
 retained Library during SwiftUI scroll commits. `LibraryHeroWritebackChecks`
 checks this with the production selection object and SwiftUI binding; it does
 not substitute for repeating the installed registry chooser after a native hang.
+The installed diagnostic reproduction additionally showed distinct valid hero
+IDs cycling through the two-way scroll binding after registry acceptance, with
+a stable list and viewport. Library hero scrolling therefore separates commands
+from observation: page controls, automatic paging and collection restoration
+use `ScrollViewReader`; physical page geometry updates the retained selection
+without issuing a scroll command. The existing snap threshold, media selection
+and outer Library scroll retention remain. Focused geometry and source-wiring
+checks do not establish native recovery. Repeat accepted and cancelled registry
+choosers on the installed candidate, then verify manual and automatic hero
+paging and retained Library position before calling this hang resolved.
 `swift test --filter CalimochoInstalledReleaseChecks` checks
 the real installed release/CLI where present using isolated preference suites,
 without modifying the installed engine, real preferences, game files or saves.
