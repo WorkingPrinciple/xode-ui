@@ -247,6 +247,7 @@ struct GeneralSettingsTab: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Game Storage")
                         .font(.headline)
+                        .accessibilityAddTraits(.isHeader)
                     GameInstallLocationSettings()
                 }
 
@@ -256,6 +257,7 @@ struct GeneralSettingsTab: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Interface & Artwork")
                         .font(.headline)
+                        .accessibilityAddTraits(.isHeader)
                     Toggle("Animate featured game artwork", isOn: $heroAnimationsEnabled)
                     Text("Trailers start when you point at the featured artwork and keep playing while it's visible. Reduce Motion uses the poster instead.")
                         .font(.caption)
@@ -278,7 +280,10 @@ struct GeneralSettingsTab: View {
                             }
                         }
                         .disabled(artwork.clearingArtwork)
-                        if artwork.clearingArtwork { ProgressView().controlSize(.small) }
+                        if artwork.clearingArtwork {
+                            ProgressView().controlSize(.small)
+                                .accessibilityLabel("Clearing downloaded artwork")
+                        }
                         if let notice = artwork.artworkNotice { Text(notice).font(.caption).foregroundStyle(.secondary) }
                         if let error = artwork.artworkError { Text(error).font(.caption).foregroundStyle(.red) }
                     }
@@ -290,6 +295,7 @@ struct GeneralSettingsTab: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("About Ode to X")
                         .font(.headline)
+                        .accessibilityAddTraits(.isHeader)
                     HStack(spacing: 12) {
                         Text(Self.versionDescription())
                             .font(.caption)
@@ -337,6 +343,7 @@ struct EnginesSettingsTab: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Default Execution Engine")
                         .font(.headline)
+                        .accessibilityAddTraits(.isHeader)
                     Text("Select which engine runs Windows games by default. You can also override this per-game from each title's menu.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -370,6 +377,7 @@ struct EnginesSettingsTab: View {
                             Task { await state.runtimeSettings.refreshCrossOverDependency() }
                         }
                         .controlSize(.small)
+                        .accessibilityLabel("Refresh available engines")
                         .accessibilityIdentifier("xodus.settings.engine.refresh")
                     }
                 }
@@ -380,6 +388,7 @@ struct EnginesSettingsTab: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Available Engines")
                         .font(.headline)
+                        .accessibilityAddTraits(.isHeader)
 
                     // Calimocho Row
                     CalimochoSettingsRow(controller: state.calimochoEngine,
@@ -416,12 +425,14 @@ struct EnginesSettingsTab: View {
                                     chooseCrossOver()
                                 }
                                 .controlSize(.small)
+                                .accessibilityLabel("Locate CrossOver application")
                                 if EngineDefaults.crossOverApplication() != nil {
                                     Button("Reset") {
                                         EngineDefaults.setCrossOverApplication(nil)
                                         Task { await state.runtimeSettings.refreshCrossOverDependency() }
                                     }
                                     .controlSize(.small)
+                                    .accessibilityLabel("Reset CrossOver application location")
                                 }
                             }
                             if !state.runtimeSettings.crossOverDependency.isVerified {
@@ -660,6 +671,7 @@ struct AccountSettingsTab: View {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Xbox Live Account")
                             .font(.headline)
+                            .accessibilityAddTraits(.isHeader)
                         HStack {
                             Image(systemName: "person.crop.circle.fill")
                                 .font(.title)
@@ -685,6 +697,7 @@ struct AccountSettingsTab: View {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Store Country & Region")
                             .font(.headline)
+                            .accessibilityAddTraits(.isHeader)
                         AccountCountrySettings()
                     }
 
@@ -694,6 +707,7 @@ struct AccountSettingsTab: View {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Subscriptions & Library")
                             .font(.headline)
+                            .accessibilityAddTraits(.isHeader)
                         GameServiceAccountView(operations: state.gameOperations, library: state.pcGames)
                     }
                 }
@@ -715,6 +729,7 @@ struct AdvancedSettingsTab: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Backend Engine Connection")
                         .font(.headline)
+                        .accessibilityAddTraits(.isHeader)
                     HStack {
                         Text("CLI Executable:")
                             .foregroundStyle(.secondary)
@@ -760,6 +775,7 @@ struct AdvancedSettingsTab: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Installation & Game Inspection")
                         .font(.headline)
+                        .accessibilityAddTraits(.isHeader)
                     HStack {
                         Button("Inspect Game Folder…") {
                             session.chooseInstallationFolder()
@@ -782,6 +798,7 @@ struct AdvancedSettingsTab: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Store Catalog Scope")
                         .font(.headline)
+                        .accessibilityAddTraits(.isHeader)
                     HStack(spacing: 12) {
                         TextField("Market (e.g. US)", text: $session.market)
                             .frame(width: 140)
@@ -802,6 +819,7 @@ struct AdvancedSettingsTab: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Diagnostics")
                         .font(.headline)
+                        .accessibilityAddTraits(.isHeader)
                     HStack {
                         Button("Preview Diagnostic Summary…") {
                             Task { await session.previewDiagnostics() }
