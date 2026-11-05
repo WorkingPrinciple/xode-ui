@@ -20,6 +20,22 @@ enum LibraryGridLayout {
     }
 }
 
+struct LibraryGamesRow<Content: View>: View {
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        ScrollView(.horizontal) {
+            LazyHStack(alignment: .top, spacing: 24) {
+                content()
+                    .frame(width: 200, alignment: .topLeading)
+            }
+            .scrollTargetLayout()
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        .scrollTargetBehavior(.viewAligned)
+    }
+}
+
 struct ContinuePlayingScrollView<Content: View>: View {
     @ViewBuilder let content: () -> Content
 
