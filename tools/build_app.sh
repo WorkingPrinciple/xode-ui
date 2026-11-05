@@ -76,7 +76,11 @@ fi
 python3 tools/signing_identity.py preflight "$@"
 test "$(git rev-parse HEAD)" = "$source"
 test "$(git rev-parse 'HEAD^{tree}')" = "$tree"
-if [ -n "$(git status --porcelain --untracked-files=normal)" ]; then
+source_status=$(git status --porcelain --untracked-files=normal) || {
+    printf '%s\n' 'Could not inspect source status; packaging rejected.' >&2
+    exit 1
+}
+if [ -n "$source_status" ]; then
     printf '%s\n' 'Packaging requires an independently approved frozen clean source commit.' >&2
     exit 1
 fi
