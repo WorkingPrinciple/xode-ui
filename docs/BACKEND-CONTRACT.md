@@ -136,6 +136,19 @@ Allowed progression: queued -> downloading -> verifying -> extracting -> committ
 
 ## Explicit failures
 
+Authenticated reads (`auth.verify`, `ode.account.read`, `ode.runtime.verify`) and
+recent-library reads distinguish provider throttling from authorization rejection
+and transport failure. Stage `throttled` uses `NETWORK_UNAVAILABLE`,
+`retryable: true`, and the exact message `Authenticated read failed: throttled.`
+(or `Recent library read failed: throttled.`). Details retain the corresponding
+`authenticatedReadFailure` or `recentLibraryFailure` category and may include
+`retryAfterSeconds`, a nonnegative UInt64 integer admitted only for `throttled`.
+The app preserves the full provider interval and displays wait guidance, not an
+entitlement denial or an instruction to reconnect. The hint is not capped or
+converted into a shorter caller timeout. Account-wide scope, long-wait interaction
+and restart persistence are separate owner decisions; this wire admission does
+not establish those policies or genuine-provider/installed recovery acceptance.
+
 ```json
 {"kind":"result","protocol":{"major":1,"minor":0},"requestID":"req-002","ok":false,"error":{"code":"INSUFFICIENT_SPACE","message":"More free space is required on the selected volume.","retryable":true,"details":{"requiredBytes":8192,"availableBytes":4096}}}
 ```

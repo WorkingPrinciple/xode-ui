@@ -158,12 +158,12 @@ final class InstalledProductAccess: ObservableObject {
                     facts[id] = Fact(value: value, checkedAt: checkedAt)
                     scheduleExpiry()
                     if errors[id] != nil { errors[id] = nil }
-                    logger.notice("Product access \(id, privacy: .public): \(value.access.rawValue, privacy: .public)")
+                    logger.notice("stage=productAccess result=received")
                 } catch is CancellationError { return }
                 catch {
                     guard generation == epoch, accountHash == account else { return }
                     errors[id] = LiveSession.describe(error)
-                    logger.error("Product access \(id, privacy: .public) failed: \(LiveSession.describe(error), privacy: .public)")
+                    logger.error("stage=productAccess result=failed")
                 }
                 do { try await Task.sleep(for: .milliseconds(100)) }
                 catch { return }

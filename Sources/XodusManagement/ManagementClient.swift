@@ -404,13 +404,15 @@ public actor ManagementClient {
                 guard let stage = AuthenticatedReadFailure(error: error) else {
                     throw ManagementError.invalidPayload
                 }
-                failure = .authenticatedReadFailed(stage)
+                failure = .authenticatedReadFailed(stage,
+                    retryAfterSeconds: error["details"]?["retryAfterSeconds"]?.uint64)
             } else if waiter.command == .libraryRecent,
                       error["details"]?["category"]?.string == "recentLibraryFailure" {
                 guard let stage = RecentLibraryFailure(error: error) else {
                     throw ManagementError.invalidPayload
                 }
-                failure = .recentLibraryFailed(stage)
+                failure = .recentLibraryFailed(stage,
+                    retryAfterSeconds: error["details"]?["retryAfterSeconds"]?.uint64)
             } else if waiter.command == .discover, code == "PACKAGE_UNAVAILABLE", let details = error["details"] {
                 try validator.validate(details, definition: "failedDiscoveryData")
                 failure = .discoveryFailed(try details.decode(CatalogDiscovery.self))

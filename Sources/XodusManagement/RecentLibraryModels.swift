@@ -55,18 +55,18 @@ public struct RecentLibrarySnapshot: Codable, Equatable, Sendable {
 
 public enum RecentLibraryFailure: String, CaseIterable, Equatable, Sendable {
     case credentialUnavailable, profileChanged, authExchangeFailed, authRejected
-    case transportFailed, responseInvalid
+    case transportFailed, responseInvalid, throttled
 
     public var code: String {
         switch self {
         case .credentialUnavailable, .profileChanged, .authExchangeFailed: "AUTH_INVALID"
         case .authRejected: "ACCESS_REVOKED"
-        case .transportFailed: "NETWORK_UNAVAILABLE"
+        case .transportFailed, .throttled: "NETWORK_UNAVAILABLE"
         case .responseInvalid: "INTEGRITY_FAILED"
         }
     }
 
-    public var retryable: Bool { self == .authExchangeFailed || self == .transportFailed }
+    public var retryable: Bool { self == .authExchangeFailed || self == .transportFailed || self == .throttled }
     public var message: String { "Recent library read failed: \(rawValue)." }
     public var details: JSONValue {
         .object(["category": .string("recentLibraryFailure"), "stage": .string(rawValue)])
@@ -74,9 +74,12 @@ public enum RecentLibraryFailure: String, CaseIterable, Equatable, Sendable {
 
     public init?(error: JSONValue) {
         guard let object = error.object, Set(object.keys) == ["code", "message", "retryable", "details"],
-              let details = object["details"]?.object, Set(details.keys) == ["category", "stage"],
+              let details = object["details"]?.object,
+              Set(details.keys).isSubset(of: ["category", "stage", "retryAfterSeconds"]),
               details["category"]?.string == "recentLibraryFailure",
               let stage = details["stage"]?.string, let failure = Self(rawValue: stage),
+              details["retryAfterSeconds"] == nil
+                || (failure == .throttled && details["retryAfterSeconds"]?.uint64 != nil),
               object["code"]?.string == failure.code, object["message"]?.string == failure.message,
               object["retryable"]?.boolean == failure.retryable else { return nil }
         self = failure

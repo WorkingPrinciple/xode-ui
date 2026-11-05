@@ -82,8 +82,8 @@ public enum ManagementError: Error, Equatable, Sendable, LocalizedError {
     case backendStopped(Int32), backendError(String, retryable: Bool), invalidEvent
     case discoveryFailed(CatalogDiscovery)
     case queryFailed(CatalogQuery)
-    case authenticatedReadFailed(AuthenticatedReadFailure)
-    case recentLibraryFailed(RecentLibraryFailure)
+    case authenticatedReadFailed(AuthenticatedReadFailure, retryAfterSeconds: UInt64? = nil)
+    case recentLibraryFailed(RecentLibraryFailure, retryAfterSeconds: UInt64? = nil)
 
     public var errorDescription: String? {
         switch self {
@@ -116,8 +116,14 @@ public enum ManagementError: Error, Equatable, Sendable, LocalizedError {
         case .backendError(let code, _): "Xodus reported \(code). No success was assumed."
         case .discoveryFailed: "The attempted public products could not be checked. Their failures are listed; no empty owned library or successful discovery was assumed."
         case .queryFailed: "The Store search results could not be checked. Their failures are listed; no successful empty search or ownership was assumed."
-        case .authenticatedReadFailed(let failure): failure.message
-        case .recentLibraryFailed(let failure): failure.message
+        case .authenticatedReadFailed(.throttled, let seconds), .recentLibraryFailed(.throttled, let seconds):
+            if let seconds {
+                "Microsoft is limiting requests. Wait \(seconds) seconds before checking again."
+            } else {
+                "Microsoft is limiting requests. Wait before checking again."
+            }
+        case .authenticatedReadFailed(let failure, _): failure.message
+        case .recentLibraryFailed(let failure, _): failure.message
         case .invalidEvent: "The activity stream is inconsistent. Reload the authoritative snapshot."
         }
     }
