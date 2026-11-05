@@ -851,7 +851,7 @@ final class InstalledGamesController: ObservableObject {
         } catch {
             finished(token: token, gameID: game.id, status: 1)
             playErrors[game.id] = Self.nativeLaunchFailureMessage(error)
-            Self.launchLog.error("Play failed before launch: \(game.storeId, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            Self.launchLog.error("stage=launchPreflight result=failed")
         }
     }
 
