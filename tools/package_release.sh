@@ -1,6 +1,6 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-3.0-only
-# Local archive generation only. CI, signing and publication remain on hold.
+# Archive generation only; never signs, notarizes, installs or publishes.
 set -eu
 fail() { printf 'package_release: %s\n' "$1" >&2; exit 1; }
 [ "$#" -eq 9 ] || {
