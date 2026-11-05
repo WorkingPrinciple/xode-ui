@@ -349,7 +349,19 @@ struct NativeTitleLaunchProfile: Codable {
                 && !path.split(separator: "/", omittingEmptySubsequences: false).contains(where: { ["", ".", ".."].contains(String($0)) })
         }
         let mirrored = crossOverEnvironment ?? [:]
-        if preservedPrefixPath != nil || registrySHA256 != nil {
+        if productID == "9P9VNSQK1W3K" {
+            guard engine == "calimocho-11.20-4.0b3-06",
+                  registrySHA256 == "fe35dba8938abbe3ca921cc4f92abd65ec8a539b1bac20ac5cf58a18213ce48d",
+                  preservedPrefixPath == nil, shimDirectory == nil,
+                  executable == "Brotato.exe", noAutoDismiss == true, timeoutSeconds == nil,
+                  environment.isEmpty, mirrored.isEmpty,
+                  Set(unsetEnvironment ?? []) == ["XODUS_PRIVATE_RUNTIME_COM_STA", "XODUS_PRIVATE_CALLER_OWNS_COM"],
+                  runtime?.primaryPath == "${HOME}/Library/Application Support/Ode to X/Runtime/candidates/7106d0712618544b130e8c0ebcb0881ebd663155e14c24a698445746b82ca51b/xgameruntime.dll",
+                  runtime?.primarySHA256 == "6c9d97d3b1690c6c314d303be5d6da82f630808fc33a57395c8e102216a802a8",
+                  runtime?.legacySHA256 == "cfe7e5f837fabc51b8066809ca69c2ee0a7852512afbb1979190ec495b0b8b96",
+                  requiredFiles == nil, prefixRegistryImports == nil, prefixOverlays == nil,
+                  dllOverrides == nil else { throw NativeLaunchError.invalidProfile }
+        } else if preservedPrefixPath != nil || registrySHA256 != nil {
             guard productID == "BQVQTL3PCH05",
                   engine == "calimocho-wine11.20-gptk4b3-tls-vulkan-private",
                   preservedPrefixPath == "${HOME}/Library/Application Support/XodusCLI/prefixes/req71-nms-calimocho-port11b-v1",
@@ -523,7 +535,7 @@ struct NativeLaunchConfiguration {
         try await EngineInspectionClient().validateLaunch(configuration: configuration, arguments: [
             "--registry", selection.registryPath, "--engine", engine, "--expected-registry-sha256", digest
         ], selection: selection)
-        if game.engineOverrideV2 == nil, saved == nil {
+        if game.engineOverrideV2 == nil, saved == nil, profile?.productID != "9P9VNSQK1W3K" {
             guard let binding = catalog.bindings.first(where: { $0.engineName == catalog.defaultEngine }) else {
                 throw NativeLaunchError.engineNotSelected
             }
