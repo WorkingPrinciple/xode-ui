@@ -182,6 +182,19 @@ execution, ordinary gameplay/quit or game download/uninstall/reinstall acceptanc
 
 ### Updater failure, cancellation and choice preservation
 
+`CalimochoReleaseUpdateChecks.testFresh06DownloadExtractionCancelAndRetryPreserves04Choice`
+adds the fresh-acquisition path: obtain genuine04 from its retained ZIP in a
+new isolated root, explicitly select it, download06 through the production
+anonymous HTTPS downloader without a cached archive, cancel while its real
+ditto process is running, and require joined cleanup with no published06.
+Retry through the production controller downloads06 again, extracts and admits
+it, then switches the unchanged explicit04 default. The check retains the
+five relevant isolated preferences before cancellation, after cancellation
+and after retry, plus both real inspection records. Old04 registry bytes and
+full backend admission must remain unchanged. This check creates no title
+record or override and proves neither installed UI behavior nor explicit-title
+choice preservation.
+
 The real request-cancellation check starts the production anonymous HTTPS
 downloader in an isolated root, cancels after staging begins, and requires
 **Canceled**, unchanged preferences, no published06/staging residue and released

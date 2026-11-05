@@ -159,6 +159,101 @@ final class CalimochoReleaseUpdateChecks: XCTestCase {
     }
 
     @MainActor
+    func testFresh06DownloadExtractionCancelAndRetryPreserves04Choice() async throws {
+        let configuration = try configuration()
+        let olderArchive = artifactDirectory.appendingPathComponent(CalimochoRelease.release04.rawValue + "-macos.zip")
+        guard FileManager.default.fileExists(atPath: olderArchive.path) else {
+            throw XCTSkip("The genuine published04 archive is required.")
+        }
+        let directory = artifactDirectory.appendingPathComponent("calimocho-fresh06-\(UUID().uuidString)")
+        let engines = directory.appendingPathComponent("Engines")
+        let registries = directory.appendingPathComponent("Registries")
+        let installer = CalimochoReleaseInstaller()
+        let older = try await installer.obtain(.release04, root: engines, registries: registries,
+            configuration: configuration, cachedArchive: olderArchive) { print("Fresh-path04: \($0)") }
+        let olderRegistry = try Data(contentsOf: URL(fileURLWithPath: older.registryPath))
+        let domain = "io.github.dragoshont.ode.fresh06.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
+        defer { defaults.removePersistentDomain(forName: domain) }
+        let controller = CalimochoEngineController(defaults: defaults, root: engines, registries: registries)
+        controller.refresh(configuration: configuration, selectAsDefault: true)
+        await controller.waitForRefresh()
+        XCTAssertEqual(try AdmittedEngineSelection.read(defaults: defaults), older)
+        let before = defaults.dictionaryRepresentation() as NSDictionary
+        let preferenceKeys = [EngineDefaults.defaultEngineKey, NativeEngineDefaults.preferenceKey,
+                              AdmittedEngineSelection.preferenceKey, "Xodus.lifecycle.registry",
+                              "Xodus.lifecycle.engine.calimocho"]
+        func retainChoice(_ name: String) throws {
+            let values = Dictionary(uniqueKeysWithValues: preferenceKeys.compactMap { key in
+                defaults.object(forKey: key).map { (key, $0) }
+            })
+            try PropertyListSerialization.data(fromPropertyList: values, format: .xml, options: 0)
+                .write(to: directory.appendingPathComponent(name + ".plist"))
+        }
+        try retainChoice("choice-before")
+        let newerEngine = engines.appendingPathComponent(CalimochoRelease.release06.rawValue)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: newerEngine.path))
+        var acquisitionFinished = false
+        let acquisition = Task {
+            defer { acquisitionFinished = true }
+            return try await installer.obtain(.release06, root: engines, registries: registries,
+                                              configuration: configuration) { print("Fresh06 canceled attempt: \($0)") }
+        }
+        let deadline = ContinuousClock.now.advanced(by: .seconds(900))
+        while !installer.hasOwnedProcess, !acquisitionFinished, ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(1))
+        }
+        let extracting = installer.hasOwnedProcess
+        acquisition.cancel()
+        do {
+            _ = try await acquisition.value
+            XCTFail("Fresh06 extraction must have been canceled")
+        } catch is CancellationError {
+        } catch {
+            XCTFail("Fresh06 acquisition failed before the intended extraction cancellation: \(error)")
+        }
+        XCTAssertTrue(extracting, "Cancellation must reach the actual ditto process after a genuine network download")
+        XCTAssertFalse(installer.hasUnjoinedWork)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: newerEngine.path))
+        XCTAssertFalse(try FileManager.default.contentsOfDirectory(atPath: engines.path).contains {
+            $0.hasPrefix(".calimocho-install-")
+        })
+        XCTAssertEqual(defaults.dictionaryRepresentation() as NSDictionary, before)
+        XCTAssertEqual(try Data(contentsOf: URL(fileURLWithPath: older.registryPath)), olderRegistry)
+        try retainChoice("choice-after-cancel")
+        guard extracting else { try await installer.close(); return }
+
+        let installed = InstalledGamesController(store: InstalledGameStore(file: directory.appendingPathComponent("games.json")),
+                                                discoveryRoot: directory.appendingPathComponent("Games"))
+        await installed.load()
+        let operations = GameOperationsController(installed: installed)
+        controller.obtainLatest(configuration: configuration, operations: operations)
+        await controller.waitForRefresh()
+        guard case .verified(let newer) = controller.state else {
+            return XCTFail("Fresh06 retry through the production controller failed: \(controller.state)")
+        }
+        XCTAssertEqual(newer.inspection.engineName, CalimochoRelease.release06.rawValue)
+        XCTAssertEqual(try AdmittedEngineSelection.read(defaults: defaults), newer)
+        XCTAssertEqual(EngineDefaults.defaultEngine(defaults), .calimocho)
+        XCTAssertFalse(installed.mutationActive)
+        XCTAssertFalse(installed.runtimeRepairActive)
+        XCTAssertFalse(try FileManager.default.contentsOfDirectory(atPath: engines.path).contains {
+            $0.hasPrefix(".calimocho-install-")
+        })
+        XCTAssertEqual(try Data(contentsOf: URL(fileURLWithPath: older.registryPath)), olderRegistry)
+        try retainChoice("choice-after-retry")
+        let preserved = try await installer.obtain(.release04, root: engines, registries: registries,
+            configuration: configuration) { print("Fresh-path preserved04: \($0)") }
+        XCTAssertEqual(preserved, older)
+        try JSONEncoder().encode(newer.inspection).write(to: directory.appendingPathComponent("inspection06.json"))
+        try JSONEncoder().encode(older.inspection).write(to: directory.appendingPathComponent("inspection04.json"))
+        let stopped = await controller.shutdownForApplicationTermination()
+        XCTAssertTrue(stopped)
+        try await installer.close()
+        print("Fresh06 network download/extraction cancel and fresh retry evidence: \(directory.path). No title override was created or tested.")
+    }
+
+    @MainActor
     func testRealReleaseCheckCancellationReportsCancellation() async throws {
         let domain = "io.github.dragoshont.ode.check-cancel.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
