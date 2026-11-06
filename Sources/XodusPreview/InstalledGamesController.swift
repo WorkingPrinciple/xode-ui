@@ -20,6 +20,8 @@ final class InstalledGamesController: ObservableObject {
     @Published private(set) var editing = false {
         didSet { if editing { registryRevision &+= 1 } }
     }
+    private var adoptingNativeInstallation = false
+    var editingBlocksPlay: Bool { editing && !adoptingNativeInstallation }
     @Published private(set) var choosing = false
     @Published private(set) var loaded = false
     @Published private(set) var error: String?
@@ -326,8 +328,13 @@ final class InstalledGamesController: ObservableObject {
                     try Task.checkCancellation()
                     // A foreground edit or operation supersedes this read-only scan.
                     guard !editing, !choosing, !mutationActive, registryRevision == observedRevision else { return }
+                    adoptingNativeInstallation = true
                     editing = true
-                    defer { editing = false; observedRevision = registryRevision }
+                    defer {
+                        editing = false
+                        adoptingNativeInstallation = false
+                        observedRevision = registryRevision
+                    }
                     guard !accountDisconnecting, !applicationTerminating, unifiedSession?.accountHash == account,
                           !games.contains(where: { $0.folder == candidate.folder.path }) else { return }
                     let config = candidate.config
@@ -503,7 +510,7 @@ final class InstalledGamesController: ObservableObject {
 
     private func play(_ game: InstalledGame, historicalFixture: Bool) async {
         Self.launchLog.notice("Play requested: \(game.storeId, privacy: .public)")
-        guard loaded, !editing, !choosing, runningGameID == nil, stoppingGameID == nil, !applicationTerminating,
+        guard loaded, !editingBlocksPlay, !choosing, runningGameID == nil, stoppingGameID == nil, !applicationTerminating,
               mutationGameID != game.id, !serviceSignInActive, !runtimeRepairActive, !accountDisconnecting,
               canRequestPlay(game.storeId), games.contains(game) else {
             let message = !accountAccessAllowed ? accountAccessMessage

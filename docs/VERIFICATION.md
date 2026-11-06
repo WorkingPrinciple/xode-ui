@@ -27,6 +27,15 @@ retain cached Play until an authoritative native result arrives (120-second
 complete-state cooldown, longer if queries fail). Launch still rechecks the
 installation before starting; no immediate folder-deletion revocation is claimed. evidence
 
+The discovery-adoption follow-up retains the existing registry edit fence but
+exempts that background adoption from Play's edit-busy guard in both presentation
+and dispatch. Foreground edits retain their original guard. The existing real
+filesystem/store harness observes an already-launchable native entry while a
+different complete entry is published during adoption, then verifies that actual
+foreground removal still blocks Play and releases its fence. This case is source
+test evidence only until a non-destructive installed adoption is observed; prior
+detail-page continuity is not continuous Library hero evidence.
+
 Foundation recorded 2026-10-03; subsequent native/read-only milestones are
 identified separately below. Source checks, real lifecycle results and external
 gameplay observations are distinguished explicitly.

@@ -351,7 +351,7 @@ struct InstalledPlayButton: View {
                    : canStop ? !library.canStop(game) || !operations.canStartMutation
                   : needsRepair ? !operations.canStartMutation || !library.accountAccessAllowed
                     || library.runningGameID != nil || library.stoppingGameID != nil
-                  : library.runningGameID != nil || library.stoppingGameID != nil || library.editing || library.choosing
+                  : library.runningGameID != nil || library.stoppingGameID != nil || library.editingBlocksPlay || library.choosing
                   || library.mutationGameID == game.id || library.serviceSignInActive || library.runtimeRepairActive
                   || library.checkingInstallations.contains(game.id)
                   || library.accountDisconnecting || !library.canRequestPlay(game.storeId))

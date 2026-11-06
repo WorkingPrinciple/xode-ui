@@ -462,6 +462,36 @@ enum InstalledGameChecks {
         check(observed.candidates.isEmpty && observed.errors.count == 1,
               "COR105: Discovery stops at the existing 512-child bound rather than scanning an unbounded root")
         completesRemainingInstallation = true
+        controller.recordNativeInspectionResult(verified, for: existing, background: true)
+        check(controller.launchableIDs.contains(existing.id),
+              "COR466: Adoption continuity starts with an already-ready, launchable game")
+        var adoptionPreservedPlay: [Bool] = []
+        var observedAdoptionFence = false
+        let adoptionObservation = controller.$games.sink { updated in
+            if updated.contains(where: { $0.storeId == "FIXTURE00005" }) {
+                observedAdoptionFence = observedAdoptionFence || controller.editing
+                adoptionPreservedPlay.append(!controller.editingBlocksPlay
+                    && controller.launchableIDs.contains(existing.id)
+                    && controller.installationStatuses[existing.id] == verified)
+            }
+        }
+        await controller.discoverNativeInstallations()
+        adoptionObservation.cancel()
+        check(observedAdoptionFence && !adoptionPreservedPlay.isEmpty && adoptionPreservedPlay.allSatisfy { $0 },
+              "COR466: Adopting a different complete native game never blocks the already-ready game's Play")
+        var foregroundEditBlockedPlay = false
+        let removalObservation = controller.$games.sink { updated in
+            if !updated.contains(where: { $0.storeId == "FIXTURE00005" }) {
+                foregroundEditBlockedPlay = controller.editingBlocksPlay
+            }
+        }
+        if let adopted = controller.games.first(where: { $0.storeId == "FIXTURE00005" }) {
+            await controller.remove(adopted)
+        }
+        removalObservation.cancel()
+        check(foregroundEditBlockedPlay && !controller.editing && !controller.editingBlocksPlay,
+              "COR466: Actual foreground removal still blocks Play and releases its edit fence on completion")
+        controller.recordNativeInspectionFailure(existing.id, background: false, message: "Source check reset")
         discoveryInterleaving = { await controller.remove(existing) }
         await controller.discoverNativeInstallations()
         discoveryInterleaving = nil
