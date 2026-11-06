@@ -364,6 +364,7 @@ enum InstalledGameChecks {
             reasonCode: nil, detail: nil, filesTotal: nil, contentID: nil)
         controller.recordNativeInspectionResult(verified, for: existing, background: true)
         let retainedPlay = controller.launchableIDs.contains(existing.id)
+        check(retainedPlay, "COR466: The per-file regression starts with an actually launchable native entry")
         let registeredFolder = URL(fileURLWithPath: existing.folder)
         let temporarilyUnreadable = root.appendingPathComponent("temporarily-unreadable-native-folder")
         try FileManager.default.moveItem(at: registeredFolder, to: temporarilyUnreadable)
@@ -373,6 +374,14 @@ enum InstalledGameChecks {
               && controller.packageErrors[existing.id] == nil
               && controller.installationErrors[existing.id] != nil,
               "COR466: A transient real native checkFolder failure keeps verified Play and reports a background diagnostic, not Repair")
+        let authoritativeMissing = NativeInstallationStatus(version: 1, operation: "install-status",
+            product: existing.storeId, runID: UUID().uuidString, gameDirectory: existing.folder,
+            logDirectory: "", resultPath: "", success: true, exitCode: 0, errorCode: nil,
+            status: .missing, reasonCode: nil, detail: nil, filesTotal: nil, contentID: nil)
+        controller.recordNativeInspectionResult(authoritativeMissing, for: existing, background: true)
+        check(controller.installationStatuses[existing.id]?.action == .install
+              && !controller.launchableIDs.contains(existing.id),
+              "COR466: An authoritative native missing result after a retained filesystem failure revokes Play")
         try FileManager.default.moveItem(at: temporarilyUnreadable, to: registeredFolder)
         controller.recordNativeInspectionFailure(existing.id, background: false, message: "Source check reset")
         await controller.discoverNativeInstallations()

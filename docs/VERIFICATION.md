@@ -20,6 +20,12 @@ without promoting that error to package Repair. Authoritative partial/missing
 results and unavailable drives still revoke Play. The existing filesystem harness
 temporarily moves only its own registered test folder, reproduces checkFolder
 failure through discovery/readiness, then restores it; no provider is substituted. evidence
+It asserts the entry is actually launchable before inducing that failure, and
+an authoritative missing result afterward revokes Play. `checkFolder` currently
+collapses filesystem-read failures into one error, so a deleted/moved folder can
+retain cached Play until an authoritative native result arrives (120-second
+complete-state cooldown, longer if queries fail). Launch still rechecks the
+installation before starting; no immediate folder-deletion revocation is claimed. evidence
 
 Foundation recorded 2026-10-03; subsequent native/read-only milestones are
 identified separately below. Source checks, real lifecycle results and external
