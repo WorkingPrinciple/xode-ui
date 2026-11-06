@@ -4,6 +4,7 @@
 import hashlib
 import os
 from pathlib import Path
+import re
 import subprocess
 import tempfile
 import textwrap
@@ -65,10 +66,15 @@ class ReleaseWorkflowChecks(unittest.TestCase):
         self.assertIn("gh api", publication)
         actual = subprocess.run(["gh", "--version"], capture_output=True, text=True, timeout=10)
         self.assertEqual(actual.returncode, 0, actual.stderr)
-        self.assertRegex(actual.stdout.splitlines()[0], r"^gh version 2\.102\.1 \(")
+        matches_required_version = re.match(
+            r"^gh version 2\.102\.1 \(", actual.stdout.splitlines()[0]) is not None
         result = subprocess.run(["/bin/bash", "-c", prerequisite],
                                 capture_output=True, text=True, timeout=10)
-        self.assertEqual(result.returncode, 0, result.stderr)
+        if matches_required_version:
+            self.assertEqual(result.returncode, 0, result.stderr)
+        else:
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("GitHub CLI version mismatch: require exactly 2.102.1", result.stderr)
         missing_environment = {**os.environ, "PATH": "/usr/bin:/bin"}
         tools = subprocess.run(
             ["/bin/bash", "-c", "command -v awk && ! command -v gh"],

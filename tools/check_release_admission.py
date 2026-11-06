@@ -17,6 +17,14 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 class ReleaseAdmissionChecks(unittest.TestCase):
+    @staticmethod
+    def environment_without_trust_configuration():
+        environment = dict(os.environ)
+        for key in ("RELEASE_DMG_SIGNING_IDENTITY", "RELEASE_NOTARY_PROFILE",
+                    "RELEASE_DMG_RECOVERY_ROOT"):
+            environment.pop(key, None)
+        return environment
+
     def fixture(self, root):
         app = root / "Ode to X.app"
         (app / "Contents/MacOS").mkdir(parents=True)
@@ -140,7 +148,8 @@ fi''',
 
     def package(self, root, inputs, case="valid", output=None):
         app, receipt, app_hash, receipt_hash = inputs
-        environment = dict(os.environ, CASE=case, CONTROL=str(root), FIXTURE_APP=str(app),
+        environment = self.environment_without_trust_configuration()
+        environment.update(CASE=case, CONTROL=str(root), FIXTURE_APP=str(app),
                            PATH=str(self.stub_tools(root)) + os.pathsep + os.environ["PATH"])
         return subprocess.run(
             ["sh", str(ROOT / "tools/package_release.sh"), str(app), "0.2.0",
@@ -157,6 +166,15 @@ fi''',
             self.assertFalse((root / "output").exists())
 
     def test_trust_failure_receipt_diagnostic_and_exit_status(self):
+        failure = TrustFailure("final-signature", "command_failed", 1)
+        self.assertEqual(failure.receipt(), {
+            "stage": "final-signature", "reason": "command_failed",
+            "exitCode": 1, "timedOut": False,
+        })
+        self.assertEqual(failure.diagnostic(),
+                         "DMG trust failed at final-signature: command_failed; command exit 1")
+        self.assertEqual(failure.exit_status(), 1)
+
         interrupted = TrustFailure("wait", "operation_interrupted", 130)
         self.assertEqual(interrupted.receipt(), {
             "stage": "wait", "reason": "operation_interrupted",
@@ -180,6 +198,7 @@ fi''',
     def test_trust_cli_rejects_bad_arguments_without_path_or_prefix_leak(self):
         result = subprocess.run(
             ["python3", str(ROOT / "tools/release_dmg_trust.py"), "unexpected"],
+            env=self.environment_without_trust_configuration(),
             capture_output=True, text=True, timeout=10)
         self.assertEqual(result.returncode, 1)
         self.assertEqual(result.stderr.strip(),
@@ -188,8 +207,7 @@ fi''',
         self.assertNotIn(str(ROOT), result.stderr)
 
     def test_trust_cli_reports_sanitized_recovery_preflight_failure(self):
-        environment = dict(os.environ)
-        environment.pop("RELEASE_DMG_RECOVERY_ROOT", None)
+        environment = self.environment_without_trust_configuration()
         result = subprocess.run(
             ["python3", str(ROOT / "tools/release_dmg_trust.py"), "preflight"],
             env=environment, capture_output=True, text=True, timeout=10)

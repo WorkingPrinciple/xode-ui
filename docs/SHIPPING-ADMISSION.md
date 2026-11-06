@@ -85,16 +85,34 @@ Successful output is `Ode-to-X-v<version>-macos-arm64.dmg`,
 `Ode-to-X-v<version>-macos-arm64.zip` and checked `SHA256SUMS.txt`; the
 manifest is published last. `python3 tools/check_release_admission.py` covers the admission verifier and
 the packager's fail-closed rejection when DMG trust configuration is absent.
-The archive round-trip and hanging-detach tests present at base
-`41d530fe` are not run through this notary-gated packager. Their cases require
-the package to reach DMG creation/assessment after notarization; no Apple
-signing, notarization, stapling or Gatekeeper substitutes are authorized for
-this source slice, and no real Apple operation was run. The same restriction
-leaves the historical `dmg-invalid`, `dmg-corrupt`, `zip-corrupt`,
-`detach-fail` and `partial-attach` packaging cases uncovered. Recovery-state,
-concurrency, timeout and detailed trust-failure behavior remain unverified by
-executed tests. The workflow check covers source wiring, tag/ref/publication
-controls and the installed/missing `gh` prerequisite.
+The base `41d530fe` tests `test_stub_round_trip_and_checksums` and
+`test_hanging_detach_is_bounded_and_preserves_uncertain_mount`, plus the
+`dmg-invalid`, `dmg-corrupt`, `zip-corrupt`, `detach-fail` and `partial-attach`
+matrix cases and their cleanup/hdiutil-call assertions, were removed and
+remain uncovered. DMG creation and signing precede the trust helper; mounted
+archive verification, detach and ZIP checks follow it. Reaching those later
+phases now requires completing the trust helper. No new Apple signing,
+notarization, stapling or Gatekeeper substitutes are authorized, and no real
+Apple operation was run. The still-used `bounded_hdiutil.py` therefore has no
+executed behavioral coverage in this slice.
+
+The base workflow test `test_same_qualified_bytes_and_stale_evidence_rejection`
+(valid input, changed app, stale source and changed evidence) was also removed.
+Workflow preflight requires real provisioned persistent storage before checking
+version, HEAD, cleanliness, SHA and input paths. Those checks, qualified-app
+argument binding and signing-identity/profile format validation have no executed
+coverage here; no persistence bypass or host storage was introduced.
+Changed/stale/tampered evidence rejection remains covered directly in the
+admission verifier.
+
+TrustFailure receipt/diagnostic/exit mapping (124/130/1), invalid CLI arguments
+and recovery-preflight failure are directly tested. Real stage production,
+locking/concurrency, signal delivery, in-flight timeouts and recovery-state
+behavior remain unverified. The workflow check covers source wiring,
+tag/ref/publication controls and the installed/missing `gh` prerequisite.
+Its expected result follows the real host version: only exactly `2.102.1`
+passes the publication prerequisite; other installed versions must fail closed.
+Passing this test does not mean the host is provisioned for publication.
 These checks do not prove genuine signing, notarization, Gatekeeper,
 publication or native product qualification.
 
