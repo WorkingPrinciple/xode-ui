@@ -684,9 +684,13 @@ struct InstalledGameActions: View {
             InstalledGameManagement(library: library, operations: operations, game: game)
         } label: {
             if heroStyle {
-                Image(systemName: "ellipsis").font(.title3.weight(.semibold))
-                    .frame(width: 28, height: 28).accessibilityHidden(true)
-            } else { Image(systemName: "ellipsis").accessibilityHidden(true) }
+                Label("Actions for \(game.title)", systemImage: "ellipsis")
+                    .labelStyle(.iconOnly).font(.title3.weight(.semibold))
+                    .frame(width: 28, height: 28)
+            } else {
+                Label("Actions for \(game.title)", systemImage: "ellipsis")
+                    .labelStyle(.iconOnly)
+            }
         }
         .menuIndicator(usesGlass ? .hidden : .automatic)
         .modifier(LibraryActionStyle(primary: false, usesGlass: usesGlass))

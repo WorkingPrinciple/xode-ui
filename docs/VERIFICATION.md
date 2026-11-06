@@ -24,6 +24,21 @@ The dated [UI continuation specification](UI-CONTINUATION-SPEC.md) records the
 classification evidence and open F/A/T/UI/game requirements. Read it before
 inferring present readiness from the historical candidate reports below.
 
+## Installed Actions menu naming (REQ-225, source candidate)
+
+The native Menu label now uses a title-bearing, icon-only `Label` rather than an
+accessibility-hidden ellipsis image. This supplies "Actions for <game title>" at
+the label seam without replacing the native menu, its content, action guards or
+hero sizing.
+
+`swift test --filter 'InstalledGameActionsAccessibilityChecks|InstalledGameRefreshChecks'`
+covers compact hero/ordinary menu layout and the existing discovery guards.
+The native title/description check explicitly skips when a never-shown SwiftUI
+host exposes no accessibility children. That skip is not naming acceptance:
+the installed menu must still be observed exposing the title-specific native AX
+name, with the same Play/menu behavior. No app installation or foreground input
+is part of these source checks.
+
 ## Current catalogue, local runtime and Mac evidence (2026-10-22)
 
 S4 data commits `8401a51`, `ab2951c` and `e315aaf` are integrated unchanged.
