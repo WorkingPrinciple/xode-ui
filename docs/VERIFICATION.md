@@ -19,6 +19,15 @@ single-flight discovery and concurrent edits/operations. These are source checks
 not installed-product evidence. Continuous observation of the same installed hero
 across refresh is still required for Play availability and View game position.
 
+COR-466 also retains the last verified readiness on background storage/query
+errors, while surfacing the error separately. Successful missing/partial results
+and explicit checks still update eligibility. Native refresh passes are
+single-flight and attempted checks, including cancellations, receive the existing
+retry interval. Cancellation of a disappearing Library task no longer creates an
+import-failure banner. The focused controller transition check covers retained
+status/launchability on timeout/busy outcomes and real missing/partial transitions;
+it is a source-state test, not a game launch or installed NFS acceptance.
+
 The dated [UI continuation specification](UI-CONTINUATION-SPEC.md) records the
 23 October source/installed divergence, failed current scroll acceptance,
 classification evidence and open F/A/T/UI/game requirements. Read it before

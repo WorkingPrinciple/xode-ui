@@ -88,6 +88,7 @@ final class InstalledGamesController: ObservableObject {
     private var nativeForegroundTask: Task<Void, Never>?
     private var nativeInspectionTasks: [UUID: Task<NativeInstallationStatus, Error>] = [:]
     private var nativeInspectionDates: [UUID: ContinuousClock.Instant] = [:]
+    private var refreshingNativeStatuses = false
     private var playingTask: Task<Void, Never>?
     private var runToken: UUID?
     private var stopToken: UUID?
@@ -342,7 +343,10 @@ final class InstalledGamesController: ObservableObject {
             discoveryError = failures.isEmpty ? nil : "Some installed folders couldn't be imported. " + failures.joined(separator: " ")
             await refreshLaunchableGames()
         } catch is CancellationError {
-            discoveryError = "Installed-folder discovery was cancelled. Existing games haven't been removed."
+            // A disappearing Library cancels its task; it is not a failed import.
+            if !Task.isCancelled {
+                discoveryError = "Installed-folder discovery was cancelled. Existing games haven't been removed."
+            }
         } catch {
             discoveryError = "Installed folders couldn't be read. \(error.localizedDescription)"
         }
@@ -654,9 +658,11 @@ final class InstalledGamesController: ObservableObject {
     }
 
     func refreshNativeInstallationStatuses() async {
-        guard loaded, !editing, !choosing, !mutationActive, !accountDisconnecting,
+        guard !refreshingNativeStatuses, loaded, !editing, !choosing, !mutationActive, !accountDisconnecting,
               !applicationTerminating, runningGameID == nil, stoppingGameID == nil,
               unifiedSession?.nativeInstallStatusConfiguration != nil else { return }
+        refreshingNativeStatuses = true
+        defer { refreshingNativeStatuses = false }
         for game in games where requiresNativeInstallationStatus(game) {
             guard !Task.isCancelled, !mutationActive, !editing, runningGameID == nil,
                   !applicationTerminating else { return }
@@ -667,6 +673,8 @@ final class InstalledGamesController: ObservableObject {
     }
 
     private func inspectNativeInstallation(_ game: InstalledGame, background: Bool = false) async -> NativeInstallationStatus? {
+        // Back off attempts as well as successes, including cancelled slow storage reads.
+        nativeInspectionDates[game.id] = ContinuousClock.now
         let mountedStorageRoots = mountedStorageRoots
         let unavailable: Bool
         do {
@@ -675,10 +683,9 @@ final class InstalledGamesController: ObservableObject {
             }
         } catch {
             guard loaded, !applicationTerminating, games.contains(game) else { return nil }
-            installationStatuses[game.id] = nil
-            nativeInspectionDates[game.id] = nil
-            launchableIDs.remove(game.id)
-            installationErrors[game.id] = "The game drive couldn't be checked. \(error.localizedDescription)"
+            guard !Task.isCancelled else { return nil }
+            recordNativeInspectionFailure(game.id, background: background,
+                message: "The game drive couldn't be checked. \(error.localizedDescription)")
             return nil
         }
         guard loaded, !applicationTerminating, games.contains(game) else { return nil }
@@ -718,41 +725,63 @@ final class InstalledGamesController: ObservableObject {
                                 gameDirectory: URL(fileURLWithPath: game.folder))
         }
         nativeInspectionTasks[game.id] = task
-        // Revalidation keeps the verified Play action until a new result changes readiness.
-        let revalidatingPlayable = background && installationStatuses[game.id]?.action == .play
-        if !revalidatingPlayable {
+        // A background attempt is not a new readiness result.
+        let revalidatingKnown = Self.retainsNativeReadiness(background: background,
+            hasVerifiedStatus: installationStatuses[game.id] != nil)
+        if !revalidatingKnown {
             installationErrors[game.id] = nil
             checkingInstallations.insert(game.id)
         }
         defer {
             nativeInspectionTasks[game.id] = nil
-            if !revalidatingPlayable { checkingInstallations.remove(game.id) }
+            if !revalidatingKnown { checkingInstallations.remove(game.id) }
         }
         do {
             let result = try await withTaskCancellationHandler {
                 try await task.value
             } onCancel: { task.cancel() }
             guard !Task.isCancelled, !applicationTerminating, loaded, games.contains(game) else { return nil }
-            installationStatuses[game.id] = result
-            installationErrors[game.id] = result.success ? nil : result.explanation
+            recordNativeInspectionResult(result, for: game, background: background)
             nativeInspectionDates[game.id] = ContinuousClock.now
-            if result.status == .complete && NativeCandidateLaunchCatalogue.issue(productID: game.storeId,
-                evidence: MacGameEvidenceStore.shared.games[game.storeId]) == nil {
-                launchableIDs.insert(game.id)
-                packageErrors[game.id] = nil
-            } else { launchableIDs.remove(game.id) }
             return result
         } catch is CancellationError {
             return nil
         } catch {
             guard !Task.isCancelled else { return nil }
             guard !applicationTerminating, loaded, games.contains(game) else { return nil }
-            installationStatuses[game.id] = nil
-            installationErrors[game.id] = NativeInstallationQuery.failureMessage(error)
+            recordNativeInspectionFailure(game.id, background: background,
+                message: NativeInstallationQuery.failureMessage(error))
             nativeInspectionDates[game.id] = ContinuousClock.now
-            launchableIDs.remove(game.id)
             return nil
         }
+    }
+
+    static func retainsNativeReadiness(background: Bool, hasVerifiedStatus: Bool) -> Bool {
+        background && hasVerifiedStatus
+    }
+
+    func recordNativeInspectionFailure(_ id: UUID, background: Bool, message: String) {
+        if !Self.retainsNativeReadiness(background: background, hasVerifiedStatus: installationStatuses[id] != nil) {
+            installationStatuses[id] = nil
+            launchableIDs.remove(id)
+        }
+        installationErrors[id] = message
+    }
+
+    func recordNativeInspectionResult(_ result: NativeInstallationStatus, for game: InstalledGame, background: Bool) {
+        if Self.retainsNativeReadiness(background: background,
+            hasVerifiedStatus: installationStatuses[game.id] != nil), !result.success {
+            recordNativeInspectionFailure(game.id, background: background,
+                message: result.explanation ?? "The installation couldn't be checked.")
+            return
+        }
+        installationStatuses[game.id] = result
+        installationErrors[game.id] = result.success ? nil : result.explanation
+        if result.success, result.status == .complete && NativeCandidateLaunchCatalogue.issue(productID: game.storeId,
+            evidence: MacGameEvidenceStore.shared.games[game.storeId]) == nil {
+            launchableIDs.insert(game.id)
+            packageErrors[game.id] = nil
+        } else { launchableIDs.remove(game.id) }
     }
 
     private func playNative(_ game: InstalledGame) async {
@@ -1277,8 +1306,9 @@ final class InstalledGamesController: ObservableObject {
         guard case .success(let result) = outcome else {
             if case .failure(let error) = outcome {
                 for game in entries {
-                    packageErrors[game.id] = "The game location couldn't be checked. \(error.localizedDescription)"
-                    launchableIDs.remove(game.id)
+                    guard !(error is CancellationError) else { continue }
+                    recordNativeInspectionFailure(game.id, background: true,
+                        message: "The game location couldn't be checked. \(error.localizedDescription)")
                 }
             }
             return
