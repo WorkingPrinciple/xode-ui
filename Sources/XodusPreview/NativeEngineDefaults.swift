@@ -23,6 +23,9 @@ struct NativeEngineDefaults: Decodable {
             let result = try await inspector.inspect(executable: configuration.executable,
                 registry: registry, engine: engineName, expectedDigest: registrySha256,
                 executableIdentity: configuration.executableIdentity)
+            if !result.ready, let failure = result.error {
+                throw EngineInspectionError.rejected(failure)
+            }
             let selection = AdmittedEngineSelection(registryPath: path, inspection: result)
             try selection.validate(registryPath: path, engineName: engineName, registryDigest: registrySha256)
             guard result.wineSha256 == wineSha256, result.wineserverSha256 == wineserverSha256 else {
