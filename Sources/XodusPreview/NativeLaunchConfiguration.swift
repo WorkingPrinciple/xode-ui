@@ -535,6 +535,17 @@ struct NativeTitleLaunchProfile: Codable {
         return result
     }
 
+    func brotatoWeb03SetupDirectory() throws -> URL {
+        guard productID == "9P9VNSQK1W3K", provider == .calimocho,
+              shimSet == NativeShimReference.brotatoWeb03CandidateID else {
+            throw NativeLaunchError.invalidProfile
+        }
+        try validate(productID: productID)
+        _ = try validatedLaunchEnvironment()
+        guard let registration = prefixRegistryImports?.first else { throw NativeLaunchError.invalidProfile }
+        return registration.url.deletingLastPathComponent()
+    }
+
     func registryForLaunch(base: URL, engine: String, outputDirectory: URL? = nil) async throws -> URL {
         try validate(productID: productID)
         for file in (requiredFiles ?? []) + (prefixRegistryImports ?? []) + (prefixOverlays ?? []) {
@@ -823,22 +834,45 @@ struct NativeLaunchConfiguration {
         throw NativeLaunchError.engineNotSelected
     }
 
+    func admittedSetupArguments() throws -> [String] {
+        guard let admittedSelection else { return [] }
+        guard profile?.prefixRegistryImports != nil || profile?.prefixOverlays != nil
+                || profile?.dllOverrides != nil else { return [] }
+        guard let profile, profile.engine == engine else { throw NativeLaunchError.invalidProfile }
+        let directory = try profile.brotatoWeb03SetupDirectory()
+        let original = try NativeEngineRegistry.read(registry)
+        guard original.byteDigest == profile.registrySHA256 else { throw NativeLaunchError.invalidProfile }
+        try admittedSelection.validate(registryPath: registry.path, engineName: engine,
+                                       registryDigest: original.byteDigest)
+        return ["--brotato-web03-setup-dir", directory.path]
+    }
+
     func arguments() async throws -> [String] {
         _ = try await prefixNotice()
-        if admittedSelection != nil {
-            guard profile?.prefixRegistryImports == nil, profile?.prefixOverlays == nil,
-                  profile?.dllOverrides == nil else { throw NativeLaunchError.invalidProfile }
+        let setupArguments = try admittedSetupArguments()
+        if !setupArguments.isEmpty, let profile {
+            for file in (profile.prefixRegistryImports ?? []) + (profile.prefixOverlays ?? []) {
+                try await file.validate()
+            }
+            let directory = try profile.brotatoWeb03SetupDirectory()
+            let files = try FileManager.default.contentsOfDirectory(atPath: directory.path)
+            guard Set(files) == ["Vector.reg", "Windows.Web.dll", "wintypes.dll"] else {
+                throw NativeLaunchError.invalidProfile
+            }
         }
         let dll = try await runtime.validate()
         try await shims.validate()
-        let selectedRegistry = try await profile?.registryForLaunch(base: registry, engine: engine) ?? registry
+        let selectedRegistry = setupArguments.isEmpty
+            ? try await profile?.registryForLaunch(base: registry, engine: engine) ?? registry
+            : registry
         if let admittedSelection {
             guard selectedRegistry == registry, let digest = admittedSelection.inspection.registrySha256 else {
                 throw NativeLaunchError.engineUnavailable
             }
             return ["--engine", engine, "--registry", selectedRegistry.path,
                     "--expected-registry-sha256", digest, "--prefix", prefix.path,
-                    "--runtime-dll", dll.path, "--shim-dir", shims.directory.path] + (profile?.arguments ?? [])
+                    "--runtime-dll", dll.path, "--shim-dir", shims.directory.path]
+                + (profile?.arguments ?? []) + setupArguments
         }
         return ["--engine", engine, "--registry", selectedRegistry.path, "--prefix", prefix.path,
                 "--runtime-dll", dll.path, "--shim-dir", shims.directory.path] + (profile?.arguments ?? [])

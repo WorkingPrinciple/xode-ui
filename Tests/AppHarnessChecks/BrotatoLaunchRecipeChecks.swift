@@ -150,6 +150,10 @@ final class BrotatoLaunchRecipeChecks: XCTestCase {
         XCTAssertEqual(launch.shims.directory, NativeShimReference.brotatoSourceCandidate.directory)
         XCTAssertEqual(launch.shims.hashes, NativeShimReference.brotatoSourceCandidate.hashes)
         let candidateProfile = try XCTUnwrap(launch.profile)
+        XCTAssertEqual(try launch.admittedSetupArguments(), [
+            "--brotato-web03-setup-dir",
+            NSHomeDirectory() + "/Library/Application Support/Ode to X/Engines/profiles/brotato-web03-native-vector-v1"
+        ])
         let candidateEnvironment = try candidateProfile.validatedLaunchEnvironment()
         let recipeDirectory = try XCTUnwrap(candidateEnvironment["XODE_RECIPES_DIR"])
         let recipeURL = URL(fileURLWithPath: recipeDirectory).appendingPathComponent("9P9VNSQK1W3K.json")
@@ -180,6 +184,91 @@ final class BrotatoLaunchRecipeChecks: XCTestCase {
         XCTAssertEqual(implicit.prefix, prefix)
         XCTAssertEqual(defaults.dictionaryRepresentation() as NSDictionary, cleared,
                        "A frozen title route must not select or inspect an unrelated global default")
+    }
+
+    @MainActor
+    func testWeb03AdmissionReachesMissingSetupFileWithoutReplacingRegistry() async throws {
+        let configuration = try configuration()
+        let game = try installedGame()
+        let suite = "io.github.dragoshont.ode.brotato-web03-admission.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let launch = try await NativeLaunchConfiguration.resolveDefault(
+            game: game, configuration: configuration, provider: .calimocho, defaults: defaults)
+        let profile = try XCTUnwrap(launch.profile)
+        let registration = try XCTUnwrap(profile.prefixRegistryImports?.first)
+        guard !FileManager.default.fileExists(atPath: registration.url.path) else {
+            throw XCTSkip("The real setup registration exists; no artifact is removed for this check.")
+        }
+        do {
+            _ = try await launch.arguments()
+            XCTFail("The absent pinned setup registration must refuse argument construction")
+        } catch {
+            XCTAssertEqual(error as? GameScriptError, .invalidDestination,
+                           "Exact Web03 admission must reach missing-file path verification, not invalidProfile")
+        }
+        XCTAssertEqual(launch.registry.path, launch.admittedSelection?.registryPath)
+        XCTAssertEqual(launch.admittedSelection?.inspection.registrySha256,
+                       "fe35dba8938abbe3ca921cc4f92abd65ec8a539b1bac20ac5cf58a18213ce48d")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: launch.prefix.path))
+    }
+
+    @MainActor
+    func testWeb03SetupAdmissionRejectsChangesToExactTuple() async throws {
+        let configuration = try configuration()
+        let game = try installedGame()
+        let suite = "io.github.dragoshont.ode.brotato-web03-tuple.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let launch = try await NativeLaunchConfiguration.resolveDefault(
+            game: game, configuration: configuration, provider: .calimocho, defaults: defaults)
+        let original = try XCTUnwrap(launch.profile)
+        var changedHash = original
+        let registration = try XCTUnwrap(original.prefixRegistryImports?.first)
+        changedHash.prefixRegistryImports = [.init(path: registration.path, sha256: String(repeating: "0", count: 64))]
+        var extraOverlay = original
+        extraOverlay.prefixOverlays?.append(try XCTUnwrap(original.prefixOverlays?.first))
+        var changedDestination = original
+        let overlay = try XCTUnwrap(original.prefixOverlays?.first)
+        changedDestination.prefixOverlays?[0] = .init(
+            path: overlay.path, sha256: overlay.sha256, destination: "drive_c/windows/system32/other.dll")
+        var changedRecipe = original
+        changedRecipe.engineRecipeSHA256 = "9b53f2ad3a5d82a22433f09dc41a45f6e3db401072c3d9e4734c361fd6340c9b"
+        var changedID = original
+        changedID.shimSet = NativeShimReference.brotatoSourceCandidateID
+        var extraOverride = original
+        extraOverride.dllOverrides = "windows.web=b"
+        var missingSetup = original
+        missingSetup.prefixRegistryImports = nil
+        for profile in [changedHash, extraOverlay, changedDestination, changedRecipe,
+                        changedID, extraOverride, missingSetup] {
+            let invalid = NativeLaunchConfiguration(engine: launch.engine, registry: launch.registry,
+                prefix: launch.prefix, runtime: launch.runtime, profile: profile, shims: launch.shims,
+                admittedSelection: launch.admittedSelection)
+            XCTAssertThrowsError(try invalid.admittedSetupArguments()) { error in
+                guard case NativeLaunchError.invalidProfile = error else {
+                    return XCTFail("Expected exact invalidProfile refusal, got \(error)")
+                }
+            }
+        }
+        let otherSelection = try await inspect(.release04, configuration: configuration)
+        let otherRegistry = NativeLaunchConfiguration(engine: launch.engine,
+            registry: URL(fileURLWithPath: otherSelection.registryPath), prefix: launch.prefix,
+            runtime: launch.runtime, profile: original, shims: launch.shims,
+            admittedSelection: otherSelection)
+        XCTAssertThrowsError(try otherRegistry.admittedSetupArguments()) { error in
+            guard case NativeLaunchError.invalidProfile = error else {
+                return XCTFail("Web03 must refuse an admitted non-fe35 registry, got \(error)")
+            }
+        }
+        var ordinary = original
+        ordinary.prefixRegistryImports = nil
+        ordinary.prefixOverlays = nil
+        let noSetup = NativeLaunchConfiguration(engine: launch.engine, registry: launch.registry,
+            prefix: launch.prefix, runtime: launch.runtime, profile: ordinary, shims: launch.shims,
+            admittedSelection: launch.admittedSelection)
+        XCTAssertEqual(try noSetup.admittedSetupArguments(), [])
+        XCTAssertFalse(FileManager.default.fileExists(atPath: launch.prefix.path))
     }
 
     @MainActor
