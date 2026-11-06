@@ -13,6 +13,14 @@ The clock-state check covers an attempt longer than its TTL. A retained Play
 action exposes background diagnostics with a warning badge, native help and
 accessibility value; the badge overlays rather than resizing the action. evidence
 
+The independent cross-family review found the same invalidation on individual
+filesystem reads inside a successful probe. Native entries with successful cached
+status now retain it across those per-entry failures and expose a diagnostic,
+without promoting that error to package Repair. Authoritative partial/missing
+results and unavailable drives still revoke Play. The existing filesystem harness
+temporarily moves only its own registered test folder, reproduces checkFolder
+failure through discovery/readiness, then restores it; no provider is substituted. evidence
+
 Foundation recorded 2026-10-03; subsequent native/read-only milestones are
 identified separately below. Source checks, real lifecycle results and external
 gameplay observations are distinguished explicitly.

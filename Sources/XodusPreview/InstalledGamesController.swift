@@ -727,7 +727,7 @@ final class InstalledGamesController: ObservableObject {
         nativeInspectionTasks[game.id] = task
         // A background attempt is not a new readiness result.
         let revalidatingKnown = Self.retainsNativeReadiness(background: background,
-            hasVerifiedStatus: installationStatuses[game.id] != nil)
+            hasVerifiedStatus: installationStatuses[game.id]?.success == true)
         if !revalidatingKnown {
             installationErrors[game.id] = nil
             checkingInstallations.insert(game.id)
@@ -770,7 +770,7 @@ final class InstalledGamesController: ObservableObject {
     }
 
     func recordNativeInspectionFailure(_ id: UUID, background: Bool, message: String) {
-        if !Self.retainsNativeReadiness(background: background, hasVerifiedStatus: installationStatuses[id] != nil) {
+        if !Self.retainsNativeReadiness(background: background, hasVerifiedStatus: installationStatuses[id]?.success == true) {
             installationStatuses[id] = nil
             launchableIDs.remove(id)
         }
@@ -779,7 +779,7 @@ final class InstalledGamesController: ObservableObject {
 
     func recordNativeInspectionResult(_ result: NativeInstallationStatus, for game: InstalledGame, background: Bool) {
         if Self.retainsNativeReadiness(background: background,
-            hasVerifiedStatus: installationStatuses[game.id] != nil), !result.success {
+            hasVerifiedStatus: installationStatuses[game.id]?.success == true), !result.success {
             recordNativeInspectionFailure(game.id, background: background,
                 message: result.explanation ?? "The installation couldn't be checked.")
             return
@@ -1332,14 +1332,23 @@ final class InstalledGamesController: ObservableObject {
             installationErrors[id] = Self.driveUnavailableMessage
             nativeInspectionDates[id] = nil
         }
-        let nativeComplete = Set(installationStatuses.filter { $0.value.status == .complete }.map(\.key))
-            .intersection(result.7)
+        let retainedNative = Set(nativeIDs.filter {
+            installationStatuses[$0]?.success == true && result.3[$0] != nil && !unavailableDriveIDs.contains($0)
+        })
+        for id in retainedNative {
+            if let message = result.3[id] {
+                recordNativeInspectionFailure(id, background: true, message: message)
+            }
+        }
+        let nativeComplete = Set(installationStatuses.filter {
+            $0.value.success && $0.value.status == .complete
+        }.map(\.key)).intersection(result.7.union(retainedNative))
         let candidateBlocked = Set(games.filter {
             NativeCandidateLaunchCatalogue.issue(productID: $0.storeId,
                 evidence: MacGameEvidenceStore.shared.games[$0.storeId]) != nil
         }.map(\.id))
         launchableIDs = result.0.union(nativeComplete).intersection(games.map(\.id)).subtracting(candidateBlocked)
-        packageErrors = result.3
+        packageErrors = result.3.filter { !retainedNative.contains($0.key) }
         placeholderIDs = result.4.intersection(games.map(\.id))
         var latestSaved: [InstalledGame]?
         for (id, detected) in result.2 where games.contains(where: { $0.id == id && $0.packageType != detected }) {

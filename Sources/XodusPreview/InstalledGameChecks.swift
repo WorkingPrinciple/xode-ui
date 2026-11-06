@@ -358,6 +358,24 @@ enum InstalledGameChecks {
         controller.recordNativeInspectionCompletion(existing)
         controller.useUnifiedAccount(session)
         await controller.discoverNativeInstallations()
+        let verified = NativeInstallationStatus(version: 1, operation: "install-status", product: existing.storeId,
+            runID: UUID().uuidString, gameDirectory: existing.folder, logDirectory: "", resultPath: "",
+            success: true, exitCode: 0, errorCode: nil, status: .complete,
+            reasonCode: nil, detail: nil, filesTotal: nil, contentID: nil)
+        controller.recordNativeInspectionResult(verified, for: existing, background: true)
+        let retainedPlay = controller.launchableIDs.contains(existing.id)
+        let registeredFolder = URL(fileURLWithPath: existing.folder)
+        let temporarilyUnreadable = root.appendingPathComponent("temporarily-unreadable-native-folder")
+        try FileManager.default.moveItem(at: registeredFolder, to: temporarilyUnreadable)
+        await controller.discoverNativeInstallations()
+        check(controller.installationStatuses[existing.id] == verified
+              && controller.launchableIDs.contains(existing.id) == retainedPlay
+              && controller.packageErrors[existing.id] == nil
+              && controller.installationErrors[existing.id] != nil,
+              "COR466: A transient real native checkFolder failure keeps verified Play and reports a background diagnostic, not Repair")
+        try FileManager.default.moveItem(at: temporarilyUnreadable, to: registeredFolder)
+        controller.recordNativeInspectionFailure(existing.id, background: false, message: "Source check reset")
+        await controller.discoverNativeInstallations()
         check(Set(controller.games.map(\.folder)) == Set(folders.filter { $0.key != "FIXTURE00005" }.map(\.value.path))
               && Set(inspections) == Set(["FIXTURE00002", "FIXTURE00003", "FIXTURE00004", "FIXTURE00005"]),
               "COR105: Discovery scans original, saved default and recorded roots using exact product/folder completeness checks")
