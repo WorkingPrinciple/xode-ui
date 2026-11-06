@@ -80,6 +80,7 @@ class ReleaseWorkflowChecks(unittest.TestCase):
         block = WORKFLOW.split("      - name: Verify and attach exact assets\n", 1)[1]
         script = textwrap.dedent(block.split("        run: |\n", 1)[1])
         for case in ("valid", "annotated", "missing", "duplicate", "tampered", "collision", "auth", "absent",
+                     "wrong-gh-version",
                      "moved-tag", "missing-tag", "tag-auth", "bad-tag-object", "tag-cycle", "missing-commit",
                      "moved-create", "missing-create"):
             with self.subTest(case=case), tempfile.TemporaryDirectory() as directory:
@@ -103,6 +104,14 @@ class ReleaseWorkflowChecks(unittest.TestCase):
                 gh.write_text('''#!/bin/sh
 set -eu
 echo "$*" >> "$CALLS"
+if [ "$1" = "--version" ]; then
+  if [ "$CASE" = wrong-gh-version ]; then
+    echo "gh version 2.102.2 (2026-03-19)"
+  else
+    echo "gh version 2.102.1 (2026-03-19)"
+  fi
+  exit 0
+fi
 case "$1 $2" in
 "api repos/synthetic/unused/git/ref/tags/v0.2.0")
   case "$CASE" in
@@ -144,6 +153,8 @@ esac
                     self.assertNotEqual(result.returncode, 0)
                     self.assertNotIn("release upload", calls)
                     self.assertNotIn("release create", calls)
+                    if case == "wrong-gh-version":
+                        self.assertEqual(calls, "--version\n")
 
 
 if __name__ == "__main__":
