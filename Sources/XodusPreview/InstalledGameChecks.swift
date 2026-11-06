@@ -341,6 +341,15 @@ enum InstalledGameChecks {
             })
         let session = LiveSession()
         await controller.load()
+        var showedChecking = false
+        let checkingObservation = controller.$checkingInstallations.sink {
+            if $0.contains(existing.id) { showedChecking = true }
+        }
+        await controller.checkInstallation(existing)
+        check(showedChecking && !controller.checkingInstallations.contains(existing.id)
+              && controller.installationErrors[existing.id] != nil,
+              "COR467: An explicit native check publishes progress before storage/service work and resolves to an explicit error without a connected service")
+        checkingObservation.cancel()
         controller.useUnifiedAccount(session)
         await controller.discoverNativeInstallations()
         check(Set(controller.games.map(\.folder)) == Set(folders.filter { $0.key != "FIXTURE00005" }.map(\.value.path))

@@ -1002,18 +1002,22 @@ final class InstalledGamesController: ObservableObject {
     }
 
     func checkInstallation(_ game: InstalledGame) async {
+        guard !checkingInstallations.contains(game.id) else { return }
         guard loaded, !editing, !choosing, !mutationActive, !accountDisconnecting,
-              !applicationTerminating, runningGameID != game.id, games.contains(where: { $0.id == game.id }) else { return }
+              !applicationTerminating, runningGameID != game.id,
+              games.contains(where: { $0.id == game.id && $0.folder == game.folder }) else {
+            installationErrors[game.id] = "The installation can't be checked during the current library or account operation. Finish it and try again."
+            return
+        }
+        checkingInstallations.insert(game.id)
+        installationErrors[game.id] = nil
+        defer { checkingInstallations.remove(game.id) }
         if requiresNativeInstallationStatus(game) {
-            await refreshLaunchableGames()
-            guard !unavailableDriveIDs.contains(game.id),
-                  let current = games.first(where: { $0.id == game.id && $0.folder == game.folder }) else { return }
-            _ = await inspectNativeInstallation(current)
+            _ = await inspectNativeInstallation(game)
             return
         }
         editing = true
-        checkingInstallations.insert(game.id)
-        defer { checkingInstallations.remove(game.id); editing = false }
+        defer { editing = false }
         await refreshLaunchableGames()
     }
 

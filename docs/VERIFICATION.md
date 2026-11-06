@@ -1,5 +1,12 @@
 # Verification evidence
 
+COR-467: Explicit native Check installation publishes the existing disabled
+Checking installation progress before awaiting storage or service readiness.
+It checks only the selected installation through the real native query rather
+than first waiting for a whole-library scan, and rejected checks report an
+explicit error. The existing filesystem/controller check verifies the progress
+transition and service-disconnected error; this is not an installed click result. evidence
+
 Foundation recorded 2026-10-03; subsequent native/read-only milestones are
 identified separately below. Source checks, real lifecycle results and external
 gameplay observations are distinguished explicitly.
