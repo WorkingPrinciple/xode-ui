@@ -7,6 +7,12 @@ than first waiting for a whole-library scan, and rejected checks report an
 explicit error. The existing filesystem/controller check verifies the progress
 transition and service-disconnected error; this is not an installed click result. evidence
 
+COR-466 review follow-up: every attempt exit, including storage cancellation,
+records completion for retry backoff unless genuine invalidation cleared it.
+The clock-state check covers an attempt longer than its TTL. A retained Play
+action exposes background diagnostics with a warning badge, native help and
+accessibility value; the badge overlays rather than resizing the action. evidence
+
 Foundation recorded 2026-10-03; subsequent native/read-only milestones are
 identified separately below. Source checks, real lifecycle results and external
 gameplay observations are distinguished explicitly.

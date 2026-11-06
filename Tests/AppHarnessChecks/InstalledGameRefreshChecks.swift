@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import XCTest
 import Foundation
+import AppKit
+import SwiftUI
 @testable import XodusPreview
 
 final class InstalledGameRefreshChecks: XCTestCase {
@@ -19,7 +21,12 @@ final class InstalledGameRefreshChecks: XCTestCase {
         controller.recordNativeInspectionResult(complete, for: game, background: true)
         XCTAssertEqual(controller.installationStatuses[game.id], complete)
         let eligible = controller.launchableIDs.contains(game.id)
+        let button = InstalledPlayButton(library: controller,
+            operations: GameOperationsController(installed: controller), game: game)
+        let initialSize = NSHostingView(rootView: button.fixedSize()).fittingSize
         controller.recordNativeInspectionFailure(game.id, background: true, message: "Drive check timed out")
+        XCTAssertEqual(button.readinessDiagnostic, "Drive check timed out")
+        XCTAssertEqual(NSHostingView(rootView: button.fixedSize()).fittingSize, initialSize)
         XCTAssertEqual(controller.installationStatuses[game.id], complete)
         XCTAssertEqual(controller.launchableIDs.contains(game.id), eligible)
         XCTAssertEqual(controller.installationErrors[game.id], "Drive check timed out")

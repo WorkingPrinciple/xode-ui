@@ -350,6 +350,12 @@ enum InstalledGameChecks {
               && controller.installationErrors[existing.id] != nil,
               "COR467: An explicit native check publishes progress before storage/service work and resolves to an explicit error without a connected service")
         checkingObservation.cancel()
+        let longAttemptCompletion = ContinuousClock.now.advanced(by: .seconds(121))
+        controller.recordNativeInspectionCompletion(existing, at: longAttemptCompletion)
+        check(!controller.nativeInspectionIsDue(existing, at: longAttemptCompletion.advanced(by: .seconds(14)))
+              && controller.nativeInspectionIsDue(existing, at: longAttemptCompletion.advanced(by: .seconds(15))),
+              "COR466: A failed or cancelled attempt longer than its TTL backs off from completion, not the expired start")
+        controller.recordNativeInspectionCompletion(existing)
         controller.useUnifiedAccount(session)
         await controller.discoverNativeInstallations()
         check(Set(controller.games.map(\.folder)) == Set(folders.filter { $0.key != "FIXTURE00005" }.map(\.value.path))

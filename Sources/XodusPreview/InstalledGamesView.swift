@@ -245,6 +245,11 @@ struct InstalledPlayButton: View {
         library.installationStatuses[game.id]?.action ?? .check
     }
 
+    var readinessDiagnostic: String? {
+        guard nativeAction == .play, !canStop, !launching else { return nil }
+        return library.installationErrors[game.id]
+    }
+
     private var nativeActionTitle: String {
         if library.checkingInstallations.contains(game.id) { return "Checking installation…" }
         switch nativeAction {
@@ -354,12 +359,20 @@ struct InstalledPlayButton: View {
              : canStop ? "Stop \(game.title)" : launching ? "Launching \(game.title)"
             : !library.canRequestPlay(game.storeId) ? "Play \(game.title), game access hasn't been confirmed"
             : needsRepair ? "Repair \(game.title)" : "Play \(game.title)")
-        .help(opensAttention ? "Open \(game.title) to see installation, compatibility and launch availability"
+        .help(readinessDiagnostic ?? (opensAttention ? "Open \(game.title) to see installation, compatibility and launch availability"
               : !canStop && !library.canRequestPlay(game.storeId)
-                ? "This account's access to the game hasn't been confirmed." : "")
-        .accessibilityValue(library.stoppingGameID == game.id ? "Stopping" : launching ? "Launching" : "")
+                ? "This account's access to the game hasn't been confirmed." : ""))
+        .accessibilityValue(library.stoppingGameID == game.id ? "Stopping"
+                            : launching ? "Launching" : readinessDiagnostic ?? "")
         .accessibilityIdentifier(opensAttention ? "xodus.installed.attention"
                                 : canStop ? "xodus.installed.stop" : "xodus.installed.play")
+        .overlay(alignment: .topTrailing) {
+            if readinessDiagnostic != nil {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.caption2).foregroundStyle(.secondary)
+                    .offset(x: 4, y: -4).allowsHitTesting(false).accessibilityHidden(true)
+            }
+        }
         if let loadingTitle {
             OdeLoadingStatus(title: loadingTitle,
                 message: library.stoppingGameID == game.id ? nil : "Waiting for the game launcher.")

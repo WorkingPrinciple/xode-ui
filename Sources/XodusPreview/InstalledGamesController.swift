@@ -666,8 +666,7 @@ final class InstalledGamesController: ObservableObject {
         for game in games where requiresNativeInstallationStatus(game) {
             guard !Task.isCancelled, !mutationActive, !editing, runningGameID == nil,
                   !applicationTerminating else { return }
-            let ttl: Duration = installationStatuses[game.id]?.status == .complete ? .seconds(120) : .seconds(15)
-            if let last = nativeInspectionDates[game.id], ContinuousClock.now < last.advanced(by: ttl) { continue }
+            if !nativeInspectionIsDue(game) { continue }
             _ = await inspectNativeInstallation(game, background: true)
         }
     }
@@ -675,6 +674,7 @@ final class InstalledGamesController: ObservableObject {
     private func inspectNativeInstallation(_ game: InstalledGame, background: Bool = false) async -> NativeInstallationStatus? {
         // Back off attempts as well as successes, including cancelled slow storage reads.
         nativeInspectionDates[game.id] = ContinuousClock.now
+        defer { recordNativeInspectionCompletion(game) }
         let mountedStorageRoots = mountedStorageRoots
         let unavailable: Bool
         do {
@@ -742,7 +742,6 @@ final class InstalledGamesController: ObservableObject {
             } onCancel: { task.cancel() }
             guard !Task.isCancelled, !applicationTerminating, loaded, games.contains(game) else { return nil }
             recordNativeInspectionResult(result, for: game, background: background)
-            nativeInspectionDates[game.id] = ContinuousClock.now
             return result
         } catch is CancellationError {
             return nil
@@ -751,9 +750,19 @@ final class InstalledGamesController: ObservableObject {
             guard !applicationTerminating, loaded, games.contains(game) else { return nil }
             recordNativeInspectionFailure(game.id, background: background,
                 message: NativeInstallationQuery.failureMessage(error))
-            nativeInspectionDates[game.id] = ContinuousClock.now
             return nil
         }
+    }
+
+    func nativeInspectionIsDue(_ game: InstalledGame, at now: ContinuousClock.Instant = .now) -> Bool {
+        let ttl: Duration = installationStatuses[game.id]?.status == .complete ? .seconds(120) : .seconds(15)
+        guard let last = nativeInspectionDates[game.id] else { return true }
+        return now >= last.advanced(by: ttl)
+    }
+
+    func recordNativeInspectionCompletion(_ game: InstalledGame, at completed: ContinuousClock.Instant = .now) {
+        guard nativeInspectionDates[game.id] != nil else { return }
+        nativeInspectionDates[game.id] = completed
     }
 
     static func retainsNativeReadiness(background: Bool, hasVerifiedStatus: Bool) -> Bool {
