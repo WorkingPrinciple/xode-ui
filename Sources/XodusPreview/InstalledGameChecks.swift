@@ -6,6 +6,7 @@ import Foundation
 import ImageIO
 import SwiftUI
 import XodusCore
+import XodusManagement
 
 @MainActor
 enum InstalledGameChecks {
@@ -554,13 +555,40 @@ enum InstalledGameChecks {
               "REQ95: A launch/access refusal never becomes an installation-damage claim or repair action")
         try Data("<Game><Identity Name=\"Wrong\" Version=\"7.6.0.0\"/><StoreId>FIXTURE00001</StoreId></Game>".utf8)
             .write(to: folder.appendingPathComponent("MicrosoftGame.config"))
-        await controller.checkInstallation(game)
-        check(controller.packageErrors[game.id] != nil,
-              "REQ95: Native legacy records still reject a mismatched product identity")
         let historical = InstalledGamesController(store: store, inspectPackage: { _ in .msixvc })
         await historical.load()
         check(historical.packageErrors[game.id] != nil,
               "REQ95: Non-native historical launch paths still require their launcher")
+        print("REQ95: Supplementary direct-query proof only; checkInstallation connection routing remains unverified.")
+        guard let path = ProcessInfo.processInfo.environment["XODUS_ENGINE_INSPECTION_TEST_BACKEND"],
+              !path.isEmpty else {
+            check(false, "REQ95: Supplementary mismatch proof unexecuted: the source-bound genuine CLI selector is required; routing remains unverified")
+            return
+        }
+        let executable = URL(fileURLWithPath: path)
+        guard FileManager.default.isExecutableFile(atPath: executable.path),
+              let identity = NativeAuthHostBinding.forExecutable(executable) else {
+            check(false, "REQ95: Supplementary mismatch proof refused the unavailable or unidentifiable selected CLI; no fallback")
+            return
+        }
+        let configuration = BackendConfiguration(executable: executable,
+            stateDirectory: root, executableIdentity: identity)
+        print("REQ95: Selected genuine CLI \(executable.path), SHA256 \(identity.sha256).")
+        let query = NativeInstallationQuery()
+        let receipt = try await query.run(configuration: configuration, product: game.storeId,
+            gameDirectory: folder, stateDirectory: root.appendingPathComponent("mismatch-status"))
+        let bytes = try InstalledGameFiles.readRegular(URL(fileURLWithPath: receipt.resultPath),
+            maximumBytes: 1_048_576, privateFile: true)
+        print("REQ95: Genuine install-status receipt: \(String(decoding: bytes, as: UTF8.self))")
+        controller.recordNativeInspectionResult(receipt, for: game, background: false)
+        let status = controller.installationStatuses[game.id]
+        check(status == receipt && receipt.success && receipt.status == .partial
+              && receipt.reasonCode == "PRODUCT_MISMATCH" && receipt.action == .repair
+              && controller.installationErrors[game.id] == nil
+              && receipt.explanation == receipt.detail && receipt.detail?.isEmpty == false
+              && (controller.installationErrors[game.id] ?? status?.explanation) == receipt.detail
+              && !controller.launchableIDs.contains(game.id) && !query.isRunning,
+              "REQ95: Supplementary genuine product mismatch has a specific repair receipt and visible explanation; routing remains unverified")
     }
 
     static func run(check: (Bool, String) -> Void) async throws {

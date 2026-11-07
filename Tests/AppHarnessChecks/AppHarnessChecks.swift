@@ -4,6 +4,13 @@ import XodusCredentials
 @testable import XodusPreview
 
 final class AppHarnessChecks: XCTestCase {
+    @MainActor
+    func testSupplementaryNativeProductMismatchReceiptRoutingUnverified() async throws {
+        try await InstalledGameChecks.legacyNativeReadiness { passed, message in
+            XCTAssertTrue(passed, message)
+        }
+    }
+
     func testSandboxBrokerIssuesRotatesAndDeletesThroughAdapter() async throws {
         let broker = SandboxCredentialBroker()
         let direct = PCGamesMockStore("SYNTHETIC_DIRECT_MUST_NOT_BE_READ")
