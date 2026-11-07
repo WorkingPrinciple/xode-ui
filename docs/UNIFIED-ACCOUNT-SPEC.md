@@ -14,6 +14,15 @@ downloadability, compatibility or gameplay merely because authentication succeed
 
 ### Explicit sign-in recovery (REQ-234)
 
+The native helper has no application diagnostic-file sink (REQ-239). Provider
+URLs, requests, bridge messages, JavaScript results and account/credential
+payloads are not logged. Failure reporting remains limited to typed
+`HostFailure` values sent through the existing private control channel; normal
+helper stdout/stderr are redirected to `/dev/null`. Existing diagnostic files
+from older builds are outside this source correction and must not be inspected
+or treated as sanitized. Installed privacy acceptance requires a separately
+reviewed and deployed helper; this source change alone is not installed proof.
+
 The visible **Sign in with Xbox Live** recovery action refreshes unresolved saved
 status. If that refresh confirms a valid saved account, it preserves the account
 and returns without logout or a new login. Otherwise it awaits consolidated app
