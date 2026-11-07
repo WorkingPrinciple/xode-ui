@@ -14,6 +14,17 @@ downloadability, compatibility or gameplay merely because authentication succeed
 
 ### Explicit sign-in recovery (REQ-234)
 
+REQ-238 helper receipt: exit 65 means controller-owned failure or parent-loss
+teardown completed, not successful authentication. It is emitted only after
+stopping the owned browser/window, fencing the cancelled output task, and
+shutting down the private channel. Normal completion stays 0 and acknowledged
+user cancellation stays 2. Startup failures, signals and incomplete teardown do
+not produce this receipt. The producer must reap the bound helper before
+interpreting 65 as cleanup; no wire/schema or credential-result changes are made.
+The actual no-argument helper EOF-before-open path is checked with a fresh
+socketpair and no open frame or provider request. This is not proof of
+browser-open teardown, installed sign-in or full composed backend acceptance.
+
 The native helper has no application diagnostic-file sink (REQ-239). Provider
 URLs, requests, bridge messages, JavaScript results and account/credential
 payloads are not logged. Failure reporting remains limited to typed

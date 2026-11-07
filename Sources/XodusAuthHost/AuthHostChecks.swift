@@ -239,6 +239,7 @@ enum AuthHostChecks {
             _ = try expired.encode(.failed(.deadlineExpired), now: start.advanced(by: .milliseconds(2)))
             check(expired.terminal, "Expiry produces only a terminal failure, never an authorization-budget extension")
             try await channelChecks(check: check)
+            try await productionCleanupChecks(check: check)
             try await outputFenceChecks(check: check)
             try await windowCloseChecks(check: check)
             try await browserChecks(check: check)
@@ -249,6 +250,59 @@ enum AuthHostChecks {
         }
         print("\(count) private native-host checks, \(failures) failures. Detached synthetic WebKit only; no provider request.")
         return failures == 0
+    }
+
+    private static func productionCleanupChecks(check: (Bool, String) -> Void) async throws {
+        var path = [CChar](repeating: 0, count: 4096)
+        guard proc_pidpath(getpid(), &path, UInt32(path.count)) > 0 else { throw HostFailure.protocolInvalid }
+        let executable = URL(fileURLWithPath: String(cString: path))
+        for signal in [Int32(0), SIGTERM, SIGKILL] {
+            let sockets = try pair()
+            let process = Process()
+            process.executableURL = executable
+            process.arguments = []
+            process.standardInput = FileHandle(fileDescriptor: sockets[1], closeOnDealloc: false)
+            process.standardOutput = FileHandle.nullDevice
+            process.standardError = FileHandle.nullDevice
+            try process.run()
+            Darwin.close(sockets[1])
+            defer { Darwin.close(sockets[0]) }
+            if signal == 0 { shutdown(sockets[0], SHUT_WR) }
+            else { kill(process.processIdentifier, signal) }
+            let deadline = ContinuousClock.now.advanced(by: .seconds(5))
+            while process.isRunning, ContinuousClock.now < deadline {
+                try await Task.sleep(for: .milliseconds(10))
+            }
+            guard !process.isRunning else {
+                kill(process.processIdentifier, SIGKILL)
+                throw HostFailure.deadlineExpired
+            }
+            check(signal == 0
+                  ? process.terminationReason == .exit && process.terminationStatus == 65
+                  : process.terminationReason == .uncaughtSignal && process.terminationStatus != 65,
+                  signal == 0 ? "Real no-argument helper EOF before open acknowledges completed teardown with exit 65"
+                    : "Signal termination of the real unopened helper cannot acknowledge cleanup")
+        }
+        let invalid = Process()
+        invalid.executableURL = executable
+        invalid.arguments = ["--invalid-production-argument"]
+        invalid.standardInput = FileHandle.nullDevice
+        invalid.standardOutput = FileHandle.nullDevice
+        invalid.standardError = FileHandle.nullDevice
+        try invalid.run()
+        invalid.waitUntilExit()
+        check(invalid.terminationReason == .exit && invalid.terminationStatus == 64,
+              "Startup argument rejection preserves non-cleanup exit 64")
+        let nonSocket = Process()
+        nonSocket.executableURL = executable
+        nonSocket.arguments = []
+        nonSocket.standardInput = FileHandle.nullDevice
+        nonSocket.standardOutput = FileHandle.nullDevice
+        nonSocket.standardError = FileHandle.nullDevice
+        try nonSocket.run()
+        nonSocket.waitUntilExit()
+        check(nonSocket.terminationReason == .exit && nonSocket.terminationStatus == 1,
+              "Invalid startup channel cannot acknowledge completed controller teardown")
     }
 
     private static func pair() throws -> [Int32] {
