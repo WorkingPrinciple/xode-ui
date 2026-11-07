@@ -326,18 +326,60 @@ enum AuthHostChecks {
         _ process: Process, wait: Duration = .seconds(5), afterSpawn: () -> Void = {}
     ) async throws {
         try process.run()
-        defer {
-            if process.isRunning { kill(process.processIdentifier, SIGKILL) }
-            process.waitUntilExit()
-        }
-        afterSpawn()
-        let deadline = ContinuousClock.now.advanced(by: wait)
-        while process.isRunning, ContinuousClock.now < deadline {
+        let outcome: Result<Void, Error>
+        do {
+            afterSpawn()
+            let deadline = ContinuousClock.now.advanced(by: wait)
+            while process.isRunning, ContinuousClock.now < deadline {
+                try Task.checkCancellation()
+                try await Task.sleep(for: .milliseconds(10))
+            }
             try Task.checkCancellation()
-            try await Task.sleep(for: .milliseconds(10))
+            guard !process.isRunning else { throw HostFailure.deadlineExpired }
+            outcome = .success(())
+        } catch {
+            outcome = .failure(error)
         }
-        try Task.checkCancellation()
-        guard !process.isRunning else { throw HostFailure.deadlineExpired }
+        let cleanup = Task { @MainActor in
+            try await retireOwnedProductionProcess(process)
+        }
+        try await cleanup.value
+        try outcome.get()
+    }
+
+    private enum ProductionCleanupFailure: Error {
+        case signalRejected, exitUnconfirmed
+    }
+
+    private static var unresolvedProductionProcesses: [Process] = []
+
+    private static func retireOwnedProductionProcess(_ process: Process) async throws {
+        let signalRejected: Bool
+        if process.isRunning {
+            let result = kill(process.processIdentifier, SIGKILL)
+            signalRejected = result != 0 && errno != ESRCH
+        } else {
+            signalRejected = false
+        }
+        // This independent cleanup task is not cancelled with the interrupted check.
+        let deadline = ContinuousClock.now.advanced(by: .seconds(2))
+        do {
+            while process.isRunning, ContinuousClock.now < deadline {
+                try await Task.sleep(for: .milliseconds(10))
+            }
+        } catch {
+            unresolvedProductionProcesses.append(process)
+            print("FAIL: Owned production-check cleanup interrupted; ownership retained")
+            throw ProductionCleanupFailure.exitUnconfirmed
+        }
+        if signalRejected || process.isRunning {
+            unresolvedProductionProcesses.append(process)
+            print(signalRejected
+                  ? "FAIL: Owned production-check cleanup signal rejected; ownership retained"
+                  : "FAIL: Owned production-check exit unconfirmed within cleanup deadline; ownership retained")
+            throw signalRejected ? ProductionCleanupFailure.signalRejected
+                : ProductionCleanupFailure.exitUnconfirmed
+        }
     }
 
     private static func pair() throws -> [Int32] {

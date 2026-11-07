@@ -26,9 +26,13 @@ the shared teardown before exit 65; it cannot claim the completed acknowledgemen
 or exit 0. The close path keeps its terminal admission fence throughout teardown.
 The actual no-argument helper EOF-before-open path is checked with a fresh
 socketpair and no open frame or provider request. Every production-check child
-is owned immediately after spawn, with bounded normal waiting and mandatory
-kill-and-join on timeout, cancellation or error; socket cleanup also covers spawn
-failure. Timeout and cancellation checks use unopened real children. Controller
+is owned immediately after spawn, with bounded normal waiting and independently
+bounded cleanup on timeout, cancellation or error. Cleanup checks the kill result
+and observes process termination for at most two seconds without a synchronous
+unbounded join. A rejected signal or unconfirmed exit fails the check explicitly
+and retains unresolved process ownership; neither is reported as joined. Socket
+cleanup also covers spawn failure. Timeout and cancellation checks use unopened
+real children. Controller
 close/output-failure races are source-reviewed, not exercised by those checks.
 This is not proof of
 browser-open teardown, installed sign-in or full composed backend acceptance.
