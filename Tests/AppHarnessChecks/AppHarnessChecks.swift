@@ -300,6 +300,35 @@ final class AppHarnessChecks: XCTestCase {
         try FileManager.default.removeItem(at: root)
     }
 
+    @MainActor
+    func testREQ234UnconfirmedRetirementCannotOfferRepeatedReset() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("REQ234-terminal-\(UUID().uuidString)")
+        let executable = Bundle(for: Self.self).bundleURL.deletingLastPathComponent()
+            .appendingPathComponent("XodusManagementChecks")
+        let session = LiveSession(configuration: BackendConfiguration(
+            executable: executable, stateDirectory: root.appendingPathComponent("retirefailed")),
+            shutdownClient: { client in
+                guard await client.close() else { return false }
+                return await client.orderlyShutdownConfirmed
+            })
+        await session.connect()
+        let disconnected = await session.disconnect()
+        XCTAssertFalse(disconnected)
+        XCTAssertEqual(session.phase, .failed)
+        XCTAssertTrue(session.signInCleanupUnconfirmed)
+        XCTAssertFalse(session.canResetUnresolvedSignIn)
+        XCTAssertTrue(session.welcomeMessage.contains("Quit Ode"))
+        XCTAssertTrue(session.welcomeMessage.contains("close any still-open Microsoft sign-in window"))
+        let message = session.errorMessage
+        await session.resetUnresolvedSignInConnection()
+        XCTAssertEqual(session.errorMessage, message)
+        XCTAssertEqual(session.phase, .failed)
+        await session.connect()
+        XCTAssertEqual(session.phase, .failed)
+        try FileManager.default.removeItem(at: root)
+    }
+
     func testSandboxBrokerIssuesRotatesAndDeletesThroughAdapter() async throws {
         let broker = SandboxCredentialBroker()
         let direct = PCGamesMockStore("SYNTHETIC_DIRECT_MUST_NOT_BE_READ")

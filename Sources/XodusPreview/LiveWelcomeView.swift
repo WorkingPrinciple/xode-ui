@@ -30,7 +30,9 @@ struct LiveWelcomeView: View {
                             .frame(maxWidth: 360)
                             .accessibilityIdentifier("xodus.welcome.notice")
                     }
-                    if session.signInOutcomeUnresolved {
+                    if session.signInCleanupUnconfirmed {
+                        EmptyView()
+                    } else if session.signInOutcomeUnresolved {
                         if session.authentication?.flow != nil {
                             Button("Cancel sign-in") {
                                 Task { await state.cancelUnifiedSignIn(session: session) }
@@ -44,7 +46,7 @@ struct LiveWelcomeView: View {
                         Button("Reset sign-in connection") {
                             Task { await session.resetUnresolvedSignInConnection() }
                         }
-                        .disabled(session.accountBusy || session.connectionTransitioning)
+                        .disabled(!session.canResetUnresolvedSignIn)
                         .accessibilityIdentifier("xodus.welcome.resetSignIn")
                     } else if session.signInPending {
                         Button("Cancel sign-in") { Task { await state.cancelUnifiedSignIn(session: session) } }

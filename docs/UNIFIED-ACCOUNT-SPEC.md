@@ -64,6 +64,13 @@ and awaited `stop_auth`; its success maps to exit 0. SIGTERM/SIGKILL or nonzero
 parent exit is not evidence of consent-child cleanup and leaves the gate held
 with an explicit blocking error.
 
+If retirement observes a non-orderly dead process, this session records terminal
+unconfirmed cleanup. Reset is hidden and cannot re-close that same dead client;
+reconnect is blocked while ownership remains held. The visible next step is to
+quit Ode and close any still-open Microsoft sign-in window before reopening.
+These are manual recovery instructions, not a claim that any helper joined or
+that cleanup has been verified.
+
 **Nested-host limit:** producer `stop_auth` discards the worker exit status after
 reaping, including a force-killed management-auth-worker. That worker owns the
 native auth host and normally awaits `host.abort()`, but cannot do so after
@@ -81,6 +88,14 @@ unresolved flow uses cancellation rather than assuming terminal status stopped
 the worker. A confirmed pending flow keeps its
 consent hold until cancellation, terminal status or joined connection retirement.
 An unresolved polling outcome is not treated as confirmed cancellation.
+
+Other terminal statuses follow different producer paths: `poll_auth` reports
+cancelled/stage-unavailable only after worker `try_wait` returns an exit;
+`complete_auth` awaits reaping and `stop_auth` before publishing its outcome;
+preparation failures finish the flow before replying without a spawned child.
+Those paths establish the worker-level terminal contract, unlike early expiry.
+They still share the nested-host qualification above; no terminal status alone
+is claimed to prove all native consent UI descendants are gone (REQ-238).
 
 The source regression checks reuse the existing AppHarnessChecks management
 seams without new simulated backend behavior. The existing `humanwait` seam

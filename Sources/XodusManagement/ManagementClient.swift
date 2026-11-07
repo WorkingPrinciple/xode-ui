@@ -66,6 +66,7 @@ public actor ManagementClient {
     private var libraryReadNumber: UInt64 = 0
     private var stopped = false
     private var shutdownEscalated = false
+    public var processExitObserved: Bool { process.map { !$0.isRunning } ?? false }
     public var orderlyShutdownConfirmed: Bool {
         guard let process, !process.isRunning else { return false }
         return !shutdownEscalated && process.terminationReason == .exit && process.terminationStatus == 0

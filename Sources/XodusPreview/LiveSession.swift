@@ -130,6 +130,10 @@ final class LiveSession: ObservableObject {
     private var signInDeadline: ContinuousClock.Instant?
     private var signInOwner: UUID?
     @Published private(set) var signInOutcomeUnresolved = false
+    @Published private(set) var signInCleanupUnconfirmed = false
+    var canResetUnresolvedSignIn: Bool {
+        signInOutcomeUnresolved && !signInCleanupUnconfirmed && !accountBusy && !connectionTransitioning
+    }
     private var signInBeginRejected = false
     private var previousSignInFlowID: String?
     private var catalogTask: Task<Void, Never>?
@@ -392,6 +396,7 @@ final class LiveSession: ObservableObject {
         return "Sign-in hasn't been checked"
     }
     var accountJourneyMessage: String {
+        if signInCleanupUnconfirmed { return welcomeMessage }
         if signingOut { return "Removing Ode to X's saved sign-ins from this Mac. Please wait." }
         if signInOutcomeUnresolved { return welcomeMessage }
         if connectionTransitioning || accountStatusChecking { return "Checking whether your Microsoft sign-in is saved." }
@@ -435,6 +440,9 @@ final class LiveSession: ObservableObject {
         return nil
     }
     var welcomeMessage: String {
+        if signInCleanupUnconfirmed {
+            return "Ode couldn't confirm sign-in cleanup. Quit Ode and close any still-open Microsoft sign-in window before reopening. These manual steps are not verified cleanup; another sign-in is blocked in this session."
+        }
         if signingOut { return "Signing out of Ode to X. Waiting for saved sign-in removal to finish." }
         if signInOutcomeUnresolved {
             if phase == .failed, let errorMessage { return errorMessage }
@@ -483,6 +491,7 @@ final class LiveSession: ObservableObject {
         return accountLabel
     }
     var accountMessage: String {
+        if signInCleanupUnconfirmed { return welcomeMessage }
         if phase == .connecting { return "Connecting to Ode to X." }
         if signInOutcomeUnresolved { return welcomeMessage }
         guard isReady else { return "Ode to X couldn't connect. Open Settings to reconnect." }
@@ -1098,7 +1107,7 @@ final class LiveSession: ObservableObject {
     }
 
     func connect() async {
-        guard !applicationTerminating else { return }
+        guard !applicationTerminating, !signInCleanupUnconfirmed else { return }
         guard !connectionTransitioning, !backendPath.isEmpty else {
             if backendPath.isEmpty { errorMessage = "Choose your trusted app engine in Settings first." }
             return
@@ -1198,6 +1207,7 @@ final class LiveSession: ObservableObject {
     }
 
     private func retireClient() async -> Bool {
+        guard !signInCleanupUnconfirmed else { return false }
         descriptorMetricBaseline = nil
         descriptorMetricCounts = nil
         descriptorMetricIntervalCompleted = false
@@ -1294,9 +1304,11 @@ final class LiveSession: ObservableObject {
 
     private func finishRetirement(_ operation: ClosingOperation) async -> Bool {
         let closed = await operation.task.value
+        let exited = await operation.client.processExitObserved
+        let orderly = await operation.client.orderlyShutdownConfirmed
         let consentStopped: Bool
         if signInOwner == nil { consentStopped = true }
-        else { consentStopped = await operation.client.orderlyShutdownConfirmed }
+        else { consentStopped = orderly }
         if closingOperation?.id == operation.id {
             closingOperation = nil
             if closed && consentStopped {
@@ -1307,9 +1319,13 @@ final class LiveSession: ObservableObject {
                 // Keep the retiring client owned; no replacement can start without observing its exit.
                 phase = .failed
                 if signInOwner != nil { signInOutcomeUnresolved = true }
-                errorMessage = closed
+                if exited && !orderly {
+                    signInCleanupUnconfirmed = true
+                    errorMessage = welcomeMessage
+                } else { errorMessage = closed
                     ? "The sign-in service exited without confirmed consent cleanup. Another sign-in remains blocked; no consent-child cancellation was assumed."
                     : Self.describe(ManagementError.shutdownFailed)
+                }
             }
             updateConnectionTransition()
         }
@@ -1557,7 +1573,7 @@ final class LiveSession: ObservableObject {
     }
 
     func resetUnresolvedSignInConnection() async {
-        guard signInOutcomeUnresolved, !accountBusy, !connectionTransitioning else { return }
+        guard canResetUnresolvedSignIn else { return }
         if authentication?.flow != nil {
             await cancelSignIn()
             return
