@@ -43,9 +43,9 @@ final class CalimochoInstalledReleaseChecks: XCTestCase {
 
     @MainActor
     func testRealInstalledReleaseDetectionNeedsServiceBeforeSelection() async throws {
-        let release = try installedRelease()
-        let defaults = try isolatedDefaults(preferredRegistry: release.registry)
+        let defaults = try isolatedDefaults()
         defer { defaults.removePersistentDomain(forName: defaultsSuite) }
+        _ = try installedRelease(defaults: defaults)
         EngineDefaults.setDefaultEngine(.crossover, defaults)
         let before = defaults.dictionaryRepresentation() as NSDictionary
         let controller = CalimochoEngineController(defaults: defaults)
@@ -62,10 +62,10 @@ final class CalimochoInstalledReleaseChecks: XCTestCase {
 
     @MainActor
     func testRealCLIAdmitsInstalledReleaseAndOnlyExplicitSelectionWritesDefaults() async throws {
-        let release = try installedRelease()
-        let configuration = try installedConfiguration()
-        let defaults = try isolatedDefaults(preferredRegistry: release.registry)
+        let defaults = try isolatedDefaults()
         defer { defaults.removePersistentDomain(forName: defaultsSuite) }
+        let release = try installedRelease(defaults: defaults)
+        let configuration = try installedConfiguration()
         EngineDefaults.setDefaultEngine(.crossover, defaults)
         let before = defaults.dictionaryRepresentation() as NSDictionary
         let controller = CalimochoEngineController(defaults: defaults)
@@ -94,9 +94,9 @@ final class CalimochoInstalledReleaseChecks: XCTestCase {
 
     @MainActor
     func testRealInspectionFailureAndCancellationPreserveExplicitChoice() async throws {
-        let release = try installedRelease()
-        let defaults = try isolatedDefaults(preferredRegistry: release.registry)
+        let defaults = try isolatedDefaults()
         defer { defaults.removePersistentDomain(forName: defaultsSuite) }
+        _ = try installedRelease(defaults: defaults)
         EngineDefaults.setDefaultEngine(.crossover, defaults)
         let before = defaults.dictionaryRepresentation() as NSDictionary
         let executable = URL(fileURLWithPath: "/usr/bin/false")
@@ -118,10 +118,10 @@ final class CalimochoInstalledReleaseChecks: XCTestCase {
 
     @MainActor
     func testChoiceChangedDuringRealAdmissionIsNotOverwritten() async throws {
-        let release = try installedRelease()
-        let configuration = try installedConfiguration()
-        let defaults = try isolatedDefaults(preferredRegistry: release.registry)
+        let defaults = try isolatedDefaults()
         defer { defaults.removePersistentDomain(forName: defaultsSuite) }
+        _ = try installedRelease(defaults: defaults)
+        let configuration = try installedConfiguration()
         EngineDefaults.setDefaultEngine(.crossover, defaults)
         let controller = CalimochoEngineController(defaults: defaults)
         controller.refresh(configuration: configuration, selectAsDefault: true)
@@ -203,23 +203,25 @@ final class CalimochoInstalledReleaseChecks: XCTestCase {
 
     private let defaultsSuite = "io.github.dragoshont.ode.calimocho-checks.\(UUID().uuidString)"
 
-    private func isolatedDefaults(preferredRegistry: URL? = nil) throws -> UserDefaults {
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: defaultsSuite))
-        if let preferredRegistry {
-            defaults.set(preferredRegistry.path, forKey: "Xodus.lifecycle.registry")
-        }
-        return defaults
+    private func isolatedDefaults() throws -> UserDefaults {
+        try XCTUnwrap(UserDefaults(suiteName: defaultsSuite))
     }
 
-    private func installedRelease() throws -> CalimochoInstalledRelease {
+    private func installedRelease(defaults: UserDefaults? = nil) throws -> CalimochoInstalledRelease {
         let engine = CalimochoInstalledRelease.enginesRoot
             .appendingPathComponent(CalimochoInstalledRelease.engineName)
         guard FileManager.default.fileExists(atPath: engine.path) else {
             throw XCTSkip("The genuine pinned Calimocho release is not installed on this host.")
         }
-        let registry = try XCTUnwrap(matchingRegistryURLs().first,
-            "The genuine pinned Calimocho release has no matching registry record.")
-        return try CalimochoInstalledRelease.locate(preferredRegistry: registry.path)
+        do {
+            return try CalimochoInstalledRelease.locate()
+        } catch CalimochoInstalledRelease.Failure.ambiguousRegistry {
+            let registry = try XCTUnwrap(matchingRegistryURLs().first,
+                "The genuine pinned Calimocho release has no matching registry record.")
+            let release = try CalimochoInstalledRelease.locate(preferredRegistry: registry.path)
+            defaults?.set(release.registry.path, forKey: "Xodus.lifecycle.registry")
+            return release
+        }
     }
 
     private func matchingRegistryURLs() throws -> [URL] {
