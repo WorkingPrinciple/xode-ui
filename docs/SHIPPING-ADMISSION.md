@@ -1077,9 +1077,12 @@ only supported way to build a local candidate:
   explicitly selected signing identity. Before signer preflight or staging, it
   runs the existing release-candidate pin-consistency check so packaging and
   compiled startup admission cannot silently select different producers.
-- `tools/shipping_pair.py` still pins producer
+- The earlier `tools/shipping_pair.py` snapshot pinned producer
   `28f737df46b29cc195145425e3fd1397ebc09be3`, tree
-  `1273ddaa50a6b3e77647aabb5bb170b1b525c922`.
+  `1273ddaa50a6b3e77647aabb5bb170b1b525c922`. These are historical identities,
+  not current packaging inputs. Current producer admission is defined by
+  `tools/shipping_pair.py` and `Sources/XodusPreview/ShippingProducerPins.swift`,
+  whose consistency is checked before packaging.
 - `tools/verify_shipping_package.py` binds both packaged schemas to the exact
   checked-in source bytes and verifies those source files against `source.tar`.
   The management contract deliberately added one-account runtime authorization
