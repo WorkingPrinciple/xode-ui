@@ -1662,7 +1662,7 @@ enum MockBackend {
         do {
             let lifecycleDirectory = URL(fileURLWithPath: CommandLine.arguments[index + 1])
             let lifecycleScenario = ["retireslow", "retirefailed", "retirehello", "retiresnapshot", "authgate",
-                                     "savedpermission", "startupquery", "uifailures",
+                                     "savedpermission", "expiredpermission", "startupquery", "uifailures",
                                      "statuspermission", "foregroundexpired", "deadlinecompleted", "discoverybounded",
                                      "discoveryhundreds"].contains(scenario) || scenario.hasPrefix("recent") || scenario.hasPrefix("ode")
             func trace(_ entry: String) throws {
@@ -1993,7 +1993,7 @@ enum MockBackend {
                         }
                         continue
                     }
-                    if ["savedpermission", "startupquery", "uifailures", "statuspermission", "foregroundexpired",
+                    if ["savedpermission", "expiredpermission", "startupquery", "uifailures", "statuspermission", "foregroundexpired",
                         "discoveryhundreds", "discoverybounded"].contains(scenario) { try trace(command) }
                     if scenario == "foregroundexpired", command == "auth.status" {
                         profileReads += 1

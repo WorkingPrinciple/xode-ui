@@ -15,7 +15,9 @@ downloadability, compatibility or gameplay merely because authentication succeed
 ### Explicit sign-in recovery (REQ-234)
 
 The visible **Sign in with Xbox Live** recovery action refreshes unresolved saved
-status, then awaits consolidated app sign-out and a successful `auth.logout`
+status. If that refresh confirms a valid saved account, it preserves the account
+and returns without logout or a new login. Otherwise it awaits consolidated app
+sign-out and a successful `auth.logout`
 acknowledgement before issuing `auth.begin`. A `signedOut` status does not prove
 that the backend's retained account exchange has been removed, so it cannot skip
 logout. Missing logout support, failed cleanup or an unfinished flow prevents a
@@ -30,6 +32,12 @@ UI candidate must not claim to clear all Ode sign-in credentials. The auth host
 uses a non-persistent browser store; the UI does not clear browser cookies itself.
 Ordinary connection and saved-status reads do not call logout and retain valid
 saved sign-in. These are distinct from explicit recovery.
+
+Recovery binds the negotiated unified-account consumers before sign-out, even
+before the first successful login. It must not depend on the authenticated root
+view's later binding or accidentally require legacy PC-library/game-service
+sign-out helpers for a unified producer. Non-unified producers retain their
+existing consolidated legacy cleanup and explicit step-specific refusal messages.
 
 Producer-809 also deserializes the saved management store-user bundle during
 logout to preserve device material. A corrupt bundle can therefore block account

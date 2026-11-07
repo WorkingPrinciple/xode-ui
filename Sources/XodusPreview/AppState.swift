@@ -116,6 +116,14 @@ final class AppState: ObservableObject {
             && !pcGames.busy && !pcGames.restoringPresence && !runtimeSettings.planning
     }
 
+    func bindUnifiedAccount(session: LiveSession) {
+        guard session.supports(.odeAccountRead) else { return }
+        pcGames.useUnifiedAccount(session)
+        XboxCompanionController.shared.useUnifiedAccount(session)
+        if !gameOperations.usesUnifiedAccount { gameOperations.useUnifiedAccount(session) }
+        installedGames.useUnifiedAccount(session)
+    }
+
     func beginUnifiedSignIn(session: LiveSession) async {
         guard !unifiedSignInRequested else { return }
         unifiedSignInRequested = true
@@ -129,6 +137,7 @@ final class AppState: ObservableObject {
         guard !unifiedSignInRequested else { return }
         if !session.accountStatusCurrent {
             await session.refreshAccount()
+            if session.hasConfirmedSignIn { return }
         }
         guard canSignOut(session: session) else {
             if session.accountStatusCurrent, !session.accountBusy, !session.signInPending {
@@ -136,6 +145,7 @@ final class AppState: ObservableObject {
             }
             return
         }
+        bindUnifiedAccount(session: session)
         guard await signOut(session: session) else { return }
         await beginUnifiedSignIn(session: session)
     }

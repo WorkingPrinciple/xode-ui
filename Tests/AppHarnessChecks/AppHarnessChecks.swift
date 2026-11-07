@@ -8,6 +8,7 @@ final class AppHarnessChecks: XCTestCase {
     @MainActor
     private func withSignInSession(
         _ scenario: String,
+        bindUnifiedAccount: Bool = true,
         operation: (LiveSession, AppState, BackendConfiguration) async throws -> Void
     ) async throws {
         let root = FileManager.default.temporaryDirectory
@@ -25,13 +26,13 @@ final class AppHarnessChecks: XCTestCase {
             store: InstalledGameStore(file: root.appendingPathComponent("installed.json")))
         await installed.load()
         let library = PCGamesController()
-        library.useUnifiedAccount(session)
+        if bindUnifiedAccount { library.useUnifiedAccount(session) }
         let paths = GameScriptPaths(
             scripts: root.appendingPathComponent("scripts"), processed: root.appendingPathComponent("processed"),
             logs: root.appendingPathComponent("logs"), games: root.appendingPathComponent("games"),
             journal: root.appendingPathComponent("operation.json"))
         let state = AppState(installedGames: installed, pcGames: library, gameScriptPaths: paths)
-        state.gameOperations.useUnifiedAccount(session)
+        if bindUnifiedAccount { state.gameOperations.useUnifiedAccount(session) }
         await session.connect()
         await session.refreshAccount()
         do {
@@ -175,6 +176,70 @@ final class AppHarnessChecks: XCTestCase {
             XCTAssertTrue(session.hasConfirmedSignIn)
             XCTAssertEqual(session.accountHash, account)
             XCTAssertEqual(try self.authTrace(configuration), ["auth.status", "auth.status"])
+        }
+    }
+
+    @MainActor
+    func testREQ234RecoveryRefreshPreservesNewlyResolvedSavedAccount() async throws {
+        try await withSignInSession("savedpermission") { session, state, configuration in
+            let account = session.accountHash
+            await session.refreshAccount()
+            XCTAssertFalse(session.accountStatusCurrent)
+            XCTAssertEqual(session.accountStatusError, .credentialStoreUnavailable)
+            XCTAssertFalse(session.hasConfirmedSignIn)
+            await state.recoverUnifiedSignIn(session: session)
+            XCTAssertTrue(session.hasConfirmedSignIn)
+            XCTAssertEqual(session.accountHash, account)
+            XCTAssertEqual(try self.authTrace(configuration), ["auth.status", "auth.status", "auth.status"])
+            XCTAssertFalse(state.unifiedSignInRequested)
+            XCTAssertTrue(MicrosoftSignInGate.shared.available)
+        }
+    }
+
+    @MainActor
+    func testREQ234ExpiredRecoveryStillCleansBeforeBeginning() async throws {
+        try await withSignInSession("expiredpermission") { session, state, configuration in
+            XCTAssertEqual(session.currentCredentialState, .expired)
+            await session.refreshAccount()
+            XCTAssertFalse(session.accountStatusCurrent)
+            await state.recoverUnifiedSignIn(session: session)
+            XCTAssertEqual(try self.authTrace(configuration),
+                           ["auth.status", "auth.status", "auth.status", "auth.logout", "auth.begin"])
+            XCTAssertTrue(session.signInPending)
+            await state.cancelUnifiedSignIn(session: session)
+        }
+    }
+
+    @MainActor
+    func testREQ234NegotiatedUnifiedRecoveryDoesNotRequireLegacySignOut() async throws {
+        try await withSignInSession("odeempty", bindUnifiedAccount: false) { session, state, configuration in
+            XCTAssertTrue(session.supports(.odeAccountRead))
+            XCTAssertFalse(state.pcGames.usesUnifiedAccount)
+            let removed = await session.signOut()
+            XCTAssertTrue(removed)
+            await state.recoverUnifiedSignIn(session: session)
+            XCTAssertTrue(state.pcGames.usesUnifiedAccount)
+            XCTAssertTrue(state.gameOperations.usesUnifiedAccount)
+            XCTAssertTrue(session.appSignOutComplete)
+            XCTAssertNil(state.gameOperations.serviceError)
+            XCTAssertEqual(try self.authTrace(configuration), ["auth.status", "auth.logout", "auth.logout"])
+            XCTAssertTrue(MicrosoftSignInGate.shared.available)
+        }
+    }
+
+    @MainActor
+    func testREQ234NonUnifiedCleanupRefusalIdentifiesMissingLegacyHelper() async throws {
+        try await withSignInSession("authgate", bindUnifiedAccount: false) { session, state, configuration in
+            XCTAssertFalse(session.supports(.odeAccountRead))
+            await state.recoverUnifiedSignIn(session: session)
+            XCTAssertFalse(state.pcGames.usesUnifiedAccount)
+            XCTAssertFalse(state.gameOperations.usesUnifiedAccount)
+            XCTAssertEqual(try self.authTrace(configuration), ["auth.status"])
+            XCTAssertEqual(session.accountError, state.gameOperations.serviceError)
+            XCTAssertTrue(session.accountError?.contains("game-service sign-out helper") == true)
+            XCTAssertFalse(session.appSignOutComplete)
+            XCTAssertFalse(state.unifiedSignInRequested)
+            XCTAssertTrue(MicrosoftSignInGate.shared.available)
         }
     }
 
