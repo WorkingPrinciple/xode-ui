@@ -243,6 +243,63 @@ final class AppHarnessChecks: XCTestCase {
         }
     }
 
+    @MainActor
+    func testREQ234AmbiguousBeginReplyRetainsGateUntilJoinedRetirement() async throws {
+        try await withSignInSession("humanwait") { session, _, _ in
+            XCTAssertTrue(session.canSignIn)
+            await session.beginSignIn()
+            XCTAssertFalse(session.signInPending)
+            XCTAssertFalse(session.accountStatusCurrent)
+            XCTAssertFalse(session.accountBusy)
+            XCTAssertFalse(MicrosoftSignInGate.shared.available)
+            XCTAssertTrue(session.signInOutcomeUnresolved)
+            XCTAssertTrue(session.welcomeMessage.contains("Check status"))
+            XCTAssertTrue(session.welcomeMessage.contains("reset the sign-in connection"))
+            XCTAssertNotNil(session.accountError)
+            await session.refreshAccount()
+            XCTAssertFalse(MicrosoftSignInGate.shared.available,
+                           "A status with no matching flow cannot resolve an ambiguous begin")
+            await session.resetUnresolvedSignInConnection()
+            XCTAssertTrue(MicrosoftSignInGate.shared.available)
+            XCTAssertFalse(session.signInOutcomeUnresolved)
+            XCTAssertEqual(session.currentCredentialState, .signedOut)
+            XCTAssertFalse(session.appSignOutComplete)
+        }
+    }
+
+    @MainActor
+    func testREQ234ExpiredFlowRequiresStopAcknowledgementBeforeGateRelease() async throws {
+        try await withSignInSession("failedstage-expirycode") { session, _, _ in
+            await session.beginSignIn()
+            XCTAssertEqual(session.authentication?.flow?.error?.code, "AUTH_EXPIRED")
+            XCTAssertFalse(MicrosoftSignInGate.shared.available)
+            XCTAssertTrue(session.signInOutcomeUnresolved)
+            await session.cancelSignIn()
+            XCTAssertNotNil(session.accountError)
+            XCTAssertFalse(MicrosoftSignInGate.shared.available,
+                           "A cancellation response without the matching flow cannot establish stop acknowledgement")
+            let retired = await session.disconnect()
+            XCTAssertTrue(retired)
+            XCTAssertTrue(MicrosoftSignInGate.shared.available)
+        }
+    }
+
+    func testREQ234ForcedManagementExitDoesNotConfirmConsentCleanup() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("REQ234-forced-\(UUID().uuidString)")
+        let executable = Bundle(for: Self.self).bundleURL.deletingLastPathComponent()
+            .appendingPathComponent("XodusManagementChecks")
+        let client = try ManagementClient()
+        _ = try await client.connect(BackendConfiguration(
+            executable: executable, stateDirectory: root.appendingPathComponent("retirefailed")))
+        let exited = await client.close()
+        XCTAssertTrue(exited)
+        let orderly = await client.orderlyShutdownConfirmed
+        XCTAssertFalse(orderly, "Forced direct-process exit cannot prove consent-worker cleanup")
+        guard exited else { throw ManagementError.shutdownFailed }
+        try FileManager.default.removeItem(at: root)
+    }
+
     func testSandboxBrokerIssuesRotatesAndDeletesThroughAdapter() async throws {
         let broker = SandboxCredentialBroker()
         let direct = PCGamesMockStore("SYNTHETIC_DIRECT_MUST_NOT_BE_READ")

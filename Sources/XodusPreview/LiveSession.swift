@@ -129,6 +129,9 @@ final class LiveSession: ObservableObject {
     private let signInPollingBudget: Duration
     private var signInDeadline: ContinuousClock.Instant?
     private var signInOwner: UUID?
+    @Published private(set) var signInOutcomeUnresolved = false
+    private var signInBeginRejected = false
+    private var previousSignInFlowID: String?
     private var catalogTask: Task<Void, Never>?
     private var catalogWorkerID: UUID?
     private var queuedCatalog: CatalogRequest?
@@ -339,6 +342,7 @@ final class LiveSession: ObservableObject {
     var canSignIn: Bool {
         isReady && supports(.authBegin) && supports(.authCancel) && supports(.authStatus)
             && accountStatusCurrent && authentication?.state == .signedOut && !accountBusy && !signInPending
+            && !signInOutcomeUnresolved
     }
     var hasConfirmedSignIn: Bool {
         isReady && !signInPending && authentication?.state == .credentialPresent
@@ -389,6 +393,7 @@ final class LiveSession: ObservableObject {
     }
     var accountJourneyMessage: String {
         if signingOut { return "Removing Ode to X's saved sign-ins from this Mac. Please wait." }
+        if signInOutcomeUnresolved { return welcomeMessage }
         if connectionTransitioning || accountStatusChecking { return "Checking whether your Microsoft sign-in is saved." }
         if failedAccountAction == .signOut, accountError != nil {
             return "Sign-out didn't finish. Some Xbox Live details may remain on this Mac. Choose Sign in with Xbox Live to try again."
@@ -431,6 +436,10 @@ final class LiveSession: ObservableObject {
     }
     var welcomeMessage: String {
         if signingOut { return "Signing out of Ode to X. Waiting for saved sign-in removal to finish." }
+        if signInOutcomeUnresolved {
+            if phase == .failed, let errorMessage { return errorMessage }
+            return "Sign-in may have started, but its result couldn't be confirmed. Check status to find the active flow, or reset the sign-in connection before trying again. No cancellation or cleanup was assumed."
+        }
         if failedAccountAction == .signOut, let accountError { return accountError }
         if connectionTransitioning || accountStatusChecking { return "Checking your sign-in…" }
         if managementStateLocked { return ManagementError.stateLocked.localizedDescription }
@@ -475,6 +484,7 @@ final class LiveSession: ObservableObject {
     }
     var accountMessage: String {
         if phase == .connecting { return "Connecting to Ode to X." }
+        if signInOutcomeUnresolved { return welcomeMessage }
         guard isReady else { return "Ode to X couldn't connect. Open Settings to reconnect." }
         if accountStatusChecking {
             return "If macOS asks for Keychain access, respond in its permission window. Your saved sign-in is not being replaced."
@@ -703,6 +713,7 @@ final class LiveSession: ObservableObject {
     }
     var canDisconnectAccount: Bool {
         isReady && supports(.authLogout) && accountStatusCurrent && !accountBusy && !signInPending
+            && !signInOutcomeUnresolved
             && (authentication?.state == .signedOut || needsAccountDisconnect)
     }
     var catalogAtLimit: Bool { Set(products.map(\.id) + discoveryFailures.map(\.id)).count >= 512 }
@@ -1283,20 +1294,26 @@ final class LiveSession: ObservableObject {
 
     private func finishRetirement(_ operation: ClosingOperation) async -> Bool {
         let closed = await operation.task.value
+        let consentStopped: Bool
+        if signInOwner == nil { consentStopped = true }
+        else { consentStopped = await operation.client.orderlyShutdownConfirmed }
         if closingOperation?.id == operation.id {
             closingOperation = nil
-            if closed {
+            if closed && consentStopped {
                 releaseSignInGate(signInOwner)
                 client = nil
                 phase = .disconnected
             } else {
                 // Keep the retiring client owned; no replacement can start without observing its exit.
                 phase = .failed
-                errorMessage = Self.describe(ManagementError.shutdownFailed)
+                if signInOwner != nil { signInOutcomeUnresolved = true }
+                errorMessage = closed
+                    ? "The sign-in service exited without confirmed consent cleanup. Another sign-in remains blocked; no consent-child cancellation was assumed."
+                    : Self.describe(ManagementError.shutdownFailed)
             }
             updateConnectionTransition()
         }
-        return closed
+        return closed && consentStopped
     }
 
     private func connectionFailed(_ error: Error) async {
@@ -1328,10 +1345,26 @@ final class LiveSession: ObservableObject {
         do {
             let status = try await readAccountStatus(using: client, generation: token)
             guard token == generation, authToken == authenticationGeneration else { return }
+            if signInOutcomeUnresolved {
+                let newFlow = status.flow.map { $0.flowID != previousSignInFlowID } ?? false
+                guard newFlow || signInBeginRejected else {
+                    accountStatusCurrent = false
+                    accountError = welcomeMessage
+                    errorMessage = accountError
+                    failedAccountAction = .status
+                    return
+                }
+            }
             acceptAccountStatus(status)
             accountError = nil
             failedAccountAction = nil
             errorMessage = nil
+            if signInOutcomeUnresolved, let flow = status.flow, flow.state == .pending,
+               let owner = signInOwner {
+                signInOutcomeUnresolved = false
+                signInDeadline = ContinuousClock.now.advanced(by: signInPollingBudget)
+                pollSignIn(flowID: flow.flowID, generation: token, owner: owner)
+            }
         } catch {
             guard token == generation, authToken == authenticationGeneration else { return }
             clearRecentLibrary()
@@ -1358,7 +1391,7 @@ final class LiveSession: ObservableObject {
         return try await client.request(.authStatus).decode(AuthenticationStatus.self)
     }
 
-    private func acceptAccountStatus(_ status: AuthenticationStatus) {
+    private func acceptAccountStatus(_ status: AuthenticationStatus, consentStopped: Bool = false) {
         if let currentFlow = authentication?.flow, let incomingFlow = status.flow,
            currentFlow.flowID == incomingFlow.flowID,
            currentFlow.state != .pending, incomingFlow.state == .pending { return }
@@ -1374,7 +1407,9 @@ final class LiveSession: ObservableObject {
         }
         authentication = status
         if status.state != .signedOut { appSignOutComplete = false }
-        if status.flow?.state != .pending {
+        if status.flow?.error?.code == "AUTH_EXPIRED", signInOwner != nil, !consentStopped {
+            signInOutcomeUnresolved = true
+        } else if status.flow?.state != .pending {
             releaseSignInGate(signInOwner)
         }
         accountStatusCurrent = true
@@ -1461,10 +1496,8 @@ final class LiveSession: ObservableObject {
             return
         }
         signInOwner = owner
-        var pendingAdmitted = false
-        defer {
-            if !pendingAdmitted { releaseSignInGate(owner) }
-        }
+        previousSignInFlowID = authentication?.flow?.flowID
+        signInBeginRejected = false
         clearRecentLibrary()
         authenticationGeneration += 1
         let authToken = authenticationGeneration
@@ -1483,7 +1516,6 @@ final class LiveSession: ObservableObject {
             signInDeadline = ContinuousClock.now.advanced(by: signInPollingBudget)
             accountOperationBusy = false
             if flow.state == .pending {
-                pendingAdmitted = true
                 pollSignIn(flowID: flow.flowID, generation: token, owner: owner)
             }
         } catch {
@@ -1492,18 +1524,47 @@ final class LiveSession: ObservableObject {
             lastSignInFailure = SignInFailureSnapshot(requestError: error)
             accountOperationBusy = false
             accountStatusCurrent = false
-            if case let ManagementError.backendError(code, _) = error {
-                errorMessage = "Microsoft sign-in could not start. " + Self.describeSignInFailure(code: code)
-            } else { errorMessage = Self.describe(error) }
+            signInOutcomeUnresolved = true
+            if case let ManagementError.backendError(code, _) = error, code != "INVALID_TRANSITION" {
+                signInBeginRejected = true
+            } else if error as? ManagementError == .credentialStoreUnavailable {
+                signInBeginRejected = true
+            }
+            errorMessage = welcomeMessage + " " + Self.describe(error)
             accountError = errorMessage
             failedAccountAction = .signIn
+            if signInBeginRejected {
+                await refreshAccountState()
+                if token == generation, signInOwner == nil {
+                    accountStatusCurrent = false
+                    errorMessage = "Microsoft sign-in didn't complete. " + Self.describe(error)
+                    accountError = errorMessage
+                    failedAccountAction = .signIn
+                }
+            }
         }
     }
 
     private func releaseSignInGate(_ owner: UUID?) {
         guard let owner else { return }
         MicrosoftSignInGate.shared.release(owner)
-        if signInOwner == owner { signInOwner = nil }
+        if signInOwner == owner {
+            signInOwner = nil
+            signInOutcomeUnresolved = false
+            signInBeginRejected = false
+            previousSignInFlowID = nil
+        }
+    }
+
+    func resetUnresolvedSignInConnection() async {
+        guard signInOutcomeUnresolved, !accountBusy, !connectionTransitioning else { return }
+        if authentication?.flow != nil {
+            await cancelSignIn()
+            return
+        }
+        guard await disconnect() else { return }
+        await connect()
+        if isReady { await refreshAccount() }
     }
 
     private func pollSignIn(flowID: String, generation token: Int, owner: UUID?) {
@@ -1568,7 +1629,7 @@ final class LiveSession: ObservableObject {
     }
 
     func cancelSignIn() async {
-        guard let flow = authentication?.flow, flow.state == .pending, let client,
+        guard let flow = authentication?.flow, flow.state == .pending || signInOutcomeUnresolved, let client,
               supports(.authCancel), !accountBusy else { return }
         authenticationGeneration += 1
         let authToken = authenticationGeneration
@@ -1585,7 +1646,7 @@ final class LiveSession: ObservableObject {
             guard status.flow?.flowID == flow.flowID, status.flow?.state != .pending else {
                 throw ManagementError.invalidPayload
             }
-            acceptAccountStatus(status)
+            acceptAccountStatus(status, consentStopped: true)
             if status.flow?.state == .completed {
                 errorMessage = "Sign-in finished before cancellation. Your sign-in is saved; use Sign out to remove it."
             }

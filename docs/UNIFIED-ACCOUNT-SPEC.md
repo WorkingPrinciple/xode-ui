@@ -44,14 +44,54 @@ logout to preserve device material. A corrupt bundle can therefore block account
 removal. This candidate reports that cleanup failure and refuses to begin login;
 it does not repair corrupt storage or prove the owner's stored bundle is corrupt.
 
-Each begin attempt owns its own Microsoft consent-gate identity. Begin request
-errors and terminal results release that identity; connection/account epochs and
-flow identity fence obsolete responses. A confirmed pending flow keeps its
+Each begin attempt owns its own Microsoft consent-gate identity. Terminal
+results release that identity; connection/account epochs and flow identity fence
+obsolete responses. A producer rejection is reconciled by a subsequent status
+read after the rejection reply has settled. A no-flow status can release that
+rejected attempt only because the producer completed its rejection before that
+read; `INVALID_TRANSITION` is not treated as definitive rejection.
+
+Transport errors and invalid begin replies retain the gate. A no-flow or prior
+flow snapshot cannot settle those ambiguous outcomes: the original request may
+still start consent afterward. Welcome and Account expose Check status and
+Reset sign-in connection. A newly observed flow binds reconciliation and enables
+normal polling/cancellation; reset awaits joined management connection retirement
+before reconnecting and reading status, without logout or a new login. Failed
+retirement does not release the consent hold. With an owned consent attempt,
+retirement additionally requires normal direct-process exit 0 without shutdown
+escalation. For producer-809, successful `serve` returns only after task retirement
+and awaited `stop_auth`; its success maps to exit 0. SIGTERM/SIGKILL or nonzero
+parent exit is not evidence of consent-child cleanup and leaves the gate held
+with an explicit blocking error.
+
+**Nested-host limit:** producer `stop_auth` discards the worker exit status after
+reaping, including a force-killed management-auth-worker. That worker owns the
+native auth host and normally awaits `host.abort()`, but cannot do so after
+SIGKILL. Channel EOF is asynchronous, not a join receipt. Cancellation
+acknowledgement and orderly management exit therefore establish only the
+producer's worker-stop contract, not independently confirmed termination of
+all consent UI descendants. This UI-only candidate cannot prove that broader
+boundary with the existing wire contract; backend descendant-join evidence is
+required before treating it as full consent-process safety or product acceptance.
+
+An `AUTH_EXPIRED` terminal flow may precede child reaping in producer-809.
+It therefore retains ownership until matching `auth.cancel` acknowledgement
+(which awaits `stop_auth`) or confirmed orderly retirement. Reset for a known
+unresolved flow uses cancellation rather than assuming terminal status stopped
+the worker. A confirmed pending flow keeps its
 consent hold until cancellation, terminal status or joined connection retirement.
 An unresolved polling outcome is not treated as confirmed cancellation.
 
 The source regression checks reuse the existing AppHarnessChecks management
-seams without new simulated backend behavior. They are not proof of the installed
+seams without new simulated backend behavior. The existing `humanwait` seam
+returns a structurally valid auth response without a flow for begin; the consumer
+rejects it and the check verifies retained ownership through no-flow status and
+explicit joined reset. It does not spawn a consent child, so ambiguous failure
+after actual producer consent startup remains unexercised under this lane's
+no-new-fixtures/no-login constraints. Existing expired-flow and forced-retirement
+seams verify conservative holds and rejection of a forced direct-process exit;
+they do not exercise an actual expired live consent child or its successful
+cancellation acknowledgement. These checks are not proof of the installed
 failure's cause, backend late-commit safety, actual credential removal or fresh
 human login. Those remain coordinator-owned runtime acceptance in
 `dragoshont/dragos-core`, `projects/ode-to-x/SPEC.md`, REQ-234/COR-468–472.

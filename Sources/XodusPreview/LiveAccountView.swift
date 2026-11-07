@@ -115,6 +115,13 @@ struct LiveAccountView: View {
                             .accessibilityLabel("Check account status")
                             .accessibilityIdentifier("xodus.account.checkStatus")
                     } else { Button("Settings", action: openSettings.callAsFunction) }
+                    if session.signInOutcomeUnresolved {
+                        Button("Reset sign-in connection") {
+                            Task { await session.resetUnresolvedSignInConnection() }
+                        }
+                        .disabled(session.accountBusy || session.connectionTransitioning)
+                        .accessibilityIdentifier("xodus.account.resetSignIn")
+                    }
                     Button("Sign out of Xbox Live") {
                         interaction.confirmingSignOut = true
                     }

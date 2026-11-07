@@ -65,6 +65,11 @@ public actor ManagementClient {
     public var descriptorMetricsOptedIn: Bool { descriptorMetricsEnabled }
     private var libraryReadNumber: UInt64 = 0
     private var stopped = false
+    private var shutdownEscalated = false
+    public var orderlyShutdownConfirmed: Bool {
+        guard let process, !process.isRunning else { return false }
+        return !shutdownEscalated && process.terminationReason == .exit && process.terminationStatus == 0
+    }
     private var exitStatus: Int32?
     private var hello: ManagementHello?
     private var pending: [String: Pending] = [:]
@@ -669,7 +674,10 @@ public actor ManagementClient {
         if child.isRunning {
             Task {
                 try? await Task.sleep(for: .seconds(2))
-                if child.isRunning { child.terminate() }
+                if child.isRunning {
+                    self.shutdownEscalated = true
+                    child.terminate()
+                }
                 try? await Task.sleep(for: .seconds(2))
                 if child.isRunning { _ = kill(child.processIdentifier, SIGKILL) }
             }
