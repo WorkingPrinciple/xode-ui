@@ -73,6 +73,7 @@ else
     fi
     set -- --identity "$signer"
 fi
+python3 tools/check_release_candidate.py -k test_swift_resource_refresh_and_release_pins_agree
 python3 tools/signing_identity.py preflight "$@"
 test "$(git rev-parse HEAD)" = "$source"
 test "$(git rev-parse 'HEAD^{tree}')" = "$tree"

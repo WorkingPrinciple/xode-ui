@@ -1074,7 +1074,9 @@ only supported way to build a local candidate:
 
 - `tools/build_app.sh` requires exact app commit/tree, unsigned CLI hash/size,
   provenance hash/size, a clean source tree, an owned output directory and an
-  explicitly selected signing identity.
+  explicitly selected signing identity. Before signer preflight or staging, it
+  runs the existing release-candidate pin-consistency check so packaging and
+  compiled startup admission cannot silently select different producers.
 - `tools/shipping_pair.py` still pins producer
   `28f737df46b29cc195145425e3fd1397ebc09be3`, tree
   `1273ddaa50a6b3e77647aabb5bb170b1b525c922`.
