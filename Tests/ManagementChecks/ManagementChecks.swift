@@ -2111,6 +2111,7 @@ enum MockBackend {
                     }
                     if scenario == "authgate", command.hasPrefix("auth.") {
                         if command == "auth.status" { try trace("auth.status") }
+                        if command == "auth.logout" { try trace("auth.logout") }
                         var flowState = "pending"
                         let windowClosedMarker = lifecycleDirectory.appendingPathComponent("native-window-closed")
                         if command == "auth.begin" {

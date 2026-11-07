@@ -126,9 +126,17 @@ final class AppState: ObservableObject {
     }
 
     func recoverUnifiedSignIn(session: LiveSession) async {
-        if session.needsAccountDisconnect {
-            guard await signOut(session: session) else { return }
+        guard !unifiedSignInRequested else { return }
+        if !session.accountStatusCurrent {
+            await session.refreshAccount()
         }
+        guard canSignOut(session: session) else {
+            if session.accountStatusCurrent, !session.accountBusy, !session.signInPending {
+                session.reportSignInRecoveryBlocked()
+            }
+            return
+        }
+        guard await signOut(session: session) else { return }
         await beginUnifiedSignIn(session: session)
     }
 

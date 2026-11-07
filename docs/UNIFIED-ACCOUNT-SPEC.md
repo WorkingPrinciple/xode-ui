@@ -12,6 +12,42 @@ Microsoft sign-in for games, PC library, Xbox profile and achievements where the
 provider authorizes those capabilities. This document does not promise ownership,
 downloadability, compatibility or gameplay merely because authentication succeeds.
 
+### Explicit sign-in recovery (REQ-234)
+
+The visible **Sign in with Xbox Live** recovery action refreshes unresolved saved
+status, then awaits consolidated app sign-out and a successful `auth.logout`
+acknowledgement before issuing `auth.begin`. A `signedOut` status does not prove
+that the backend's retained account exchange has been removed, so it cannot skip
+logout. Missing logout support, failed cleanup or an unfinished flow prevents a
+new login; failure remains visible instead of claiming cleanup succeeded.
+
+Cleanup uses the existing backend account-removal contract. It removes Ode-owned
+user credentials and pending exchange state, not unrelated Keychain entries,
+global browser sessions, games, saves or prefixes. Producer-809 retains
+`dev_license` and `device-tokens`, which also participate in sign-in. Whether to
+remove that device registration needs an owner decision and backend work; this
+UI candidate must not claim to clear all Ode sign-in credentials. The auth host
+uses a non-persistent browser store; the UI does not clear browser cookies itself.
+Ordinary connection and saved-status reads do not call logout and retain valid
+saved sign-in. These are distinct from explicit recovery.
+
+Producer-809 also deserializes the saved management store-user bundle during
+logout to preserve device material. A corrupt bundle can therefore block account
+removal. This candidate reports that cleanup failure and refuses to begin login;
+it does not repair corrupt storage or prove the owner's stored bundle is corrupt.
+
+Each begin attempt owns its own Microsoft consent-gate identity. Begin request
+errors and terminal results release that identity; connection/account epochs and
+flow identity fence obsolete responses. A confirmed pending flow keeps its
+consent hold until cancellation, terminal status or joined connection retirement.
+An unresolved polling outcome is not treated as confirmed cancellation.
+
+The source regression checks reuse the existing AppHarnessChecks management
+seams without new simulated backend behavior. They are not proof of the installed
+failure's cause, backend late-commit safety, actual credential removal or fresh
+human login. Those remain coordinator-owned runtime acceptance in
+`dragoshont/dragos-core`, `projects/ode-to-x/SPEC.md`, REQ-234/COR-468–472.
+
 ### Fresh integrated local candidate (21 October, after policy correction)
 
 Subsequent owner-authorized interactive test: the owner explicitly requested

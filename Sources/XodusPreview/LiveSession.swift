@@ -128,7 +128,7 @@ final class LiveSession: ObservableObject {
     private let configuration: BackendConfiguration?
     private let signInPollingBudget: Duration
     private var signInDeadline: ContinuousClock.Instant?
-    private let signInOwner = UUID()
+    private var signInOwner: UUID?
     private var catalogTask: Task<Void, Never>?
     private var catalogWorkerID: UUID?
     private var queuedCatalog: CatalogRequest?
@@ -702,8 +702,8 @@ final class LiveSession: ObservableObject {
         return [.credentialPresent, .expired, .invalid].contains(state)
     }
     var canDisconnectAccount: Bool {
-        isReady && accountStatusCurrent && !accountBusy && !signInPending
-            && (authentication?.state == .signedOut || (supports(.authLogout) && needsAccountDisconnect))
+        isReady && supports(.authLogout) && accountStatusCurrent && !accountBusy && !signInPending
+            && (authentication?.state == .signedOut || needsAccountDisconnect)
     }
     var catalogAtLimit: Bool { Set(products.map(\.id) + discoveryFailures.map(\.id)).count >= 512 }
     var catalogHasQueryWarning: Bool {
@@ -1286,7 +1286,7 @@ final class LiveSession: ObservableObject {
         if closingOperation?.id == operation.id {
             closingOperation = nil
             if closed {
-                MicrosoftSignInGate.shared.release(signInOwner)
+                releaseSignInGate(signInOwner)
                 client = nil
                 phase = .disconnected
             } else {
@@ -1375,7 +1375,7 @@ final class LiveSession: ObservableObject {
         authentication = status
         if status.state != .signedOut { appSignOutComplete = false }
         if status.flow?.state != .pending {
-            MicrosoftSignInGate.shared.release(signInOwner)
+            releaseSignInGate(signInOwner)
         }
         accountStatusCurrent = true
         accountStatusError = nil
@@ -1455,12 +1455,19 @@ final class LiveSession: ObservableObject {
 
     func beginSignIn() async {
         guard canSignIn, let client else { return }
-        guard MicrosoftSignInGate.shared.acquire(signInOwner) else {
+        let owner = UUID()
+        guard MicrosoftSignInGate.shared.acquire(owner) else {
             accountError = "Finish or cancel the current Microsoft sign-in before starting another."
             return
         }
+        signInOwner = owner
+        var pendingAdmitted = false
+        defer {
+            if !pendingAdmitted { releaseSignInGate(owner) }
+        }
         clearRecentLibrary()
         authenticationGeneration += 1
+        let authToken = authenticationGeneration
         accountOperationBusy = true
         accountError = nil
         failedAccountAction = nil
@@ -1469,14 +1476,19 @@ final class LiveSession: ObservableObject {
         do {
             let status = try await client.request(.authBegin, params: ["accountScope": .string("default")])
                 .decode(AuthenticationStatus.self)
-            guard token == generation else { return }
+            guard token == generation, authToken == authenticationGeneration,
+                  signInOwner == owner else { return }
             guard let flow = status.flow else { throw ManagementError.invalidPayload }
             acceptAccountStatus(status)
             signInDeadline = ContinuousClock.now.advanced(by: signInPollingBudget)
             accountOperationBusy = false
-            if flow.state == .pending { pollSignIn(flowID: flow.flowID, generation: token) }
+            if flow.state == .pending {
+                pendingAdmitted = true
+                pollSignIn(flowID: flow.flowID, generation: token, owner: owner)
+            }
         } catch {
-            guard token == generation else { return }
+            guard token == generation, authToken == authenticationGeneration,
+                  signInOwner == owner else { return }
             lastSignInFailure = SignInFailureSnapshot(requestError: error)
             accountOperationBusy = false
             accountStatusCurrent = false
@@ -1488,14 +1500,22 @@ final class LiveSession: ObservableObject {
         }
     }
 
-    private func pollSignIn(flowID: String, generation token: Int) {
+    private func releaseSignInGate(_ owner: UUID?) {
+        guard let owner else { return }
+        MicrosoftSignInGate.shared.release(owner)
+        if signInOwner == owner { signInOwner = nil }
+    }
+
+    private func pollSignIn(flowID: String, generation token: Int, owner: UUID?) {
         authTask?.cancel()
         authTask = Task { [weak self] in
             let deadline = self?.signInDeadline ?? ContinuousClock.now.advanced(by: self?.signInPollingBudget ?? .seconds(600))
             do {
                 while !Task.isCancelled {
                     try await Task.sleep(for: .seconds(1))
-                    guard let self, token == self.generation, let client = self.client else { return }
+                    guard let self, token == self.generation, self.signInOwner == owner,
+                          self.authentication?.flow?.flowID == flowID,
+                          let client = self.client else { return }
                     if self.accountBusy { continue }
                     let finalCheck = ContinuousClock.now >= deadline
                     self.authenticationGeneration += 1
@@ -1504,6 +1524,7 @@ final class LiveSession: ObservableObject {
                     do { status = try await self.readAccountStatus(using: client, generation: token) }
                     catch {
                         guard token == self.generation, authToken == self.authenticationGeneration,
+                              self.signInOwner == owner,
                               !Task.isCancelled else { return }
                         self.accountStatusCurrent = false
                         self.accountStatusError = error as? ManagementError
@@ -1515,6 +1536,7 @@ final class LiveSession: ObservableObject {
                         return
                     }
                     guard token == self.generation, authToken == self.authenticationGeneration, !Task.isCancelled,
+                          self.signInOwner == owner,
                           self.authentication?.flow?.flowID == flowID,
                           self.authentication?.flow?.state == .pending else { return }
                     guard status.flow?.flowID == flowID else { throw ManagementError.invalidPayload }
@@ -1536,7 +1558,8 @@ final class LiveSession: ObservableObject {
             } catch is CancellationError {
                 return
             } catch {
-                guard let self, token == self.generation else { return }
+                guard let self, token == self.generation, self.signInOwner == owner,
+                      self.authentication?.flow?.flowID == flowID else { return }
                 self.errorMessage = Self.describe(error)
                 self.accountError = self.errorMessage
                 self.failedAccountAction = .status
@@ -1548,6 +1571,7 @@ final class LiveSession: ObservableObject {
         guard let flow = authentication?.flow, flow.state == .pending, let client,
               supports(.authCancel), !accountBusy else { return }
         authenticationGeneration += 1
+        let authToken = authenticationGeneration
         accountOperationBusy = true
         accountError = nil
         failedAccountAction = nil
@@ -1556,7 +1580,8 @@ final class LiveSession: ObservableObject {
         do {
             let status = try await client.request(.authCancel, params: ["flowID": .string(flow.flowID)])
                 .decode(AuthenticationStatus.self)
-            guard token == generation else { return }
+            guard token == generation, authToken == authenticationGeneration,
+                  authentication?.flow?.flowID == flow.flowID else { return }
             guard status.flow?.flowID == flow.flowID, status.flow?.state != .pending else {
                 throw ManagementError.invalidPayload
             }
@@ -1565,17 +1590,18 @@ final class LiveSession: ObservableObject {
                 errorMessage = "Sign-in finished before cancellation. Your sign-in is saved; use Sign out to remove it."
             }
         } catch {
-            guard token == generation else { return }
+            guard token == generation, authToken == authenticationGeneration,
+                  authentication?.flow?.flowID == flow.flowID else { return }
             if case ManagementError.backendError("INVALID_TRANSITION", _) = error {
                 errorMessage = "Sign-in is finishing. Checking the saved result before closing."
             } else { errorMessage = Self.describe(error) }
             accountError = errorMessage
             failedAccountAction = .cancellation
             if authentication?.flow?.flowID == flow.flowID, signInPending {
-                pollSignIn(flowID: flow.flowID, generation: token)
+                pollSignIn(flowID: flow.flowID, generation: token, owner: signInOwner)
             }
         }
-        if token == generation { accountOperationBusy = false }
+        if token == generation, authToken == authenticationGeneration { accountOperationBusy = false }
     }
 
     @discardableResult
@@ -1593,10 +1619,10 @@ final class LiveSession: ObservableObject {
             return false
         }
         defer { MicrosoftSignInGate.shared.release(signOutOwner) }
-        let launcherAlreadySignedOut = authentication?.state == .signedOut
         clearRecentLibrary()
         invalidateCatalogScope()
         authenticationGeneration += 1
+        let authToken = authenticationGeneration
         accountOperationBusy = true
         signingOut = true
         appSignOutComplete = false
@@ -1606,36 +1632,44 @@ final class LiveSession: ObservableObject {
         accountStatusCurrent = false
         let token = generation
         defer {
-            if token == generation {
+            if token == generation, authToken == authenticationGeneration {
                 accountOperationBusy = false
                 signingOut = false
             }
         }
         if let preparationError = await beforeDisconnect() {
-            guard token == generation else { return false }
+            guard token == generation, authToken == authenticationGeneration else { return false }
             errorMessage = preparationError
             accountError = errorMessage
             failedAccountAction = .signOut
             return false
         }
-        guard token == generation else { return false }
+        guard token == generation, authToken == authenticationGeneration else { return false }
         do {
-            if !launcherAlreadySignedOut {
-                let status = try await client.request(.authLogout).decode(AuthenticationStatus.self)
-                guard token == generation else { return false }
-                guard status.state == .signedOut else { throw ManagementError.invalidPayload }
-                authentication = status
+            let status = try await client.request(.authLogout).decode(AuthenticationStatus.self)
+            guard token == generation, authToken == authenticationGeneration else { return false }
+            guard status.state == .signedOut, status.flow?.state != .pending else {
+                throw ManagementError.invalidPayload
             }
+            authentication = status
             accountStatusCurrent = true
             diagnosticPreview = nil
             return true
         } catch {
-            guard token == generation else { return false }
+            guard token == generation, authToken == authenticationGeneration else { return false }
             errorMessage = "Ode to X couldn't confirm launcher sign-out. Some app sign-in data may already have been removed. Check account status before retrying. " + Self.describe(error)
             accountError = errorMessage
             failedAccountAction = .signOut
             return false
         }
+    }
+
+    func reportSignInRecoveryBlocked() {
+        errorMessage = supports(.authLogout)
+            ? "Ode to X can't clean up this sign-in while game or account work is active. Finish that work, then try Sign in again. No saved sign-in was removed."
+            : "This sign-in service doesn't support account cleanup. Use a matching app and sign-in service before trying again. No saved sign-in was removed."
+        accountError = errorMessage
+        failedAccountAction = .signOut
     }
 
     func confirmAppSignOut() {

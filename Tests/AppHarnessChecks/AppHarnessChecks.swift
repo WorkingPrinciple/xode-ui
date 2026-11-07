@@ -1,9 +1,183 @@
 // SPDX-License-Identifier: GPL-3.0-only
 import XCTest
 import XodusCredentials
+import XodusManagement
 @testable import XodusPreview
 
 final class AppHarnessChecks: XCTestCase {
+    @MainActor
+    private func withSignInSession(
+        _ scenario: String,
+        operation: (LiveSession, AppState, BackendConfiguration) async throws -> Void
+    ) async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("REQ234-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false)
+        let suite = "REQ234-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let executable = Bundle(for: Self.self).bundleURL.deletingLastPathComponent()
+            .appendingPathComponent("XodusManagementChecks")
+        let configuration = BackendConfiguration(
+            executable: executable, stateDirectory: root.appendingPathComponent(scenario))
+        let session = LiveSession(configuration: configuration, countryDefaults: defaults)
+        let installed = InstalledGamesController(
+            store: InstalledGameStore(file: root.appendingPathComponent("installed.json")))
+        await installed.load()
+        let library = PCGamesController()
+        library.useUnifiedAccount(session)
+        let paths = GameScriptPaths(
+            scripts: root.appendingPathComponent("scripts"), processed: root.appendingPathComponent("processed"),
+            logs: root.appendingPathComponent("logs"), games: root.appendingPathComponent("games"),
+            journal: root.appendingPathComponent("operation.json"))
+        let state = AppState(installedGames: installed, pcGames: library, gameScriptPaths: paths)
+        state.gameOperations.useUnifiedAccount(session)
+        await session.connect()
+        await session.refreshAccount()
+        do {
+            try await operation(session, state, configuration)
+        } catch {
+            guard await session.disconnect() else { throw ManagementError.shutdownFailed }
+            try FileManager.default.removeItem(at: root)
+            throw error
+        }
+        guard await session.disconnect() else { throw ManagementError.shutdownFailed }
+        try FileManager.default.removeItem(at: root)
+    }
+
+    private func authTrace(_ configuration: BackendConfiguration) throws -> [String] {
+        try String(contentsOf: configuration.stateDirectory.appendingPathComponent("lifecycle.log"),
+                   encoding: .utf8).split(separator: "\n").map(String.init).filter { $0.hasPrefix("auth.") }
+    }
+
+    @MainActor
+    private func waitForAccountOperation(_ session: LiveSession) async throws {
+        let deadline = ContinuousClock.now.advanced(by: .seconds(5))
+        while !session.accountBusy {
+            guard ContinuousClock.now < deadline else { throw ManagementError.requestTimedOut }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+    }
+
+    @MainActor
+    func testREQ234ExplicitRecoveryCleansSignedOutBeforeBeginning() async throws {
+        try await withSignInSession("authgate") { session, state, configuration in
+            XCTAssertEqual(session.currentCredentialState, .signedOut)
+            XCTAssertFalse(session.needsAccountDisconnect)
+            let recovery = Task { await state.recoverUnifiedSignIn(session: session) }
+            try await self.waitForAccountOperation(session)
+            await state.recoverUnifiedSignIn(session: session)
+            await recovery.value
+            XCTAssertEqual(try self.authTrace(configuration), ["auth.status", "auth.logout", "auth.begin"])
+            XCTAssertTrue(session.signInPending)
+            XCTAssertFalse(MicrosoftSignInGate.shared.available)
+            let firstFlow = session.authentication?.flow?.flowID
+            await state.cancelUnifiedSignIn(session: session)
+            XCTAssertTrue(MicrosoftSignInGate.shared.available)
+            await state.recoverUnifiedSignIn(session: session)
+            XCTAssertNotEqual(session.authentication?.flow?.flowID, firstFlow)
+            XCTAssertEqual(try self.authTrace(configuration),
+                           ["auth.status", "auth.logout", "auth.begin", "auth.cancel", "auth.logout", "auth.begin"])
+            await state.cancelUnifiedSignIn(session: session)
+        }
+    }
+
+    @MainActor
+    func testREQ234SignedOutStillRequiresLogoutAcknowledgement() async throws {
+        try await withSignInSession("authgate") { session, _, configuration in
+            let removed = await session.signOut()
+            XCTAssertTrue(removed)
+            XCTAssertEqual(try self.authTrace(configuration), ["auth.status", "auth.logout"])
+            XCTAssertTrue(session.accountStatusCurrent)
+            XCTAssertTrue(MicrosoftSignInGate.shared.available)
+        }
+    }
+
+    @MainActor
+    func testREQ234CleanupFailureBlocksRecovery() async throws {
+        try await withSignInSession("uifailures") { session, state, configuration in
+            await state.recoverUnifiedSignIn(session: session)
+            XCTAssertEqual(try self.authTrace(configuration), ["auth.status", "auth.logout"])
+            XCTAssertNotNil(session.accountError)
+            XCTAssertFalse(session.accountStatusCurrent)
+            XCTAssertFalse(state.unifiedSignInRequested)
+            XCTAssertFalse(session.appSignOutComplete)
+            XCTAssertTrue(MicrosoftSignInGate.shared.available)
+        }
+    }
+
+    @MainActor
+    func testREQ234BlockedCleanupIsVisibleAndDoesNotMutateAccount() async throws {
+        try await withSignInSession("authgate") { session, state, configuration in
+            try state.installedGames.reserveMutation(gameID: nil)
+            defer { state.installedGames.releaseMutation() }
+            await state.recoverUnifiedSignIn(session: session)
+            XCTAssertEqual(try self.authTrace(configuration), ["auth.status"])
+            XCTAssertNotNil(session.accountError)
+            XCTAssertEqual(session.welcomeNotice, session.accountError)
+            XCTAssertFalse(state.unifiedSignInRequested)
+            XCTAssertEqual(session.currentCredentialState, .signedOut)
+            XCTAssertTrue(MicrosoftSignInGate.shared.available)
+        }
+    }
+
+    @MainActor
+    func testREQ234BeginRequestErrorReleasesConsentGate() async throws {
+        try await withSignInSession("beginfail") { session, _, _ in
+            XCTAssertTrue(session.canSignIn)
+            await session.beginSignIn()
+            XCTAssertNotNil(session.accountError)
+            XCTAssertFalse(session.accountBusy)
+            XCTAssertFalse(session.accountStatusCurrent)
+            XCTAssertTrue(MicrosoftSignInGate.shared.available)
+            await session.refreshAccount()
+            let removed = await session.signOut()
+            XCTAssertTrue(removed, "Failed begin must not block explicit cleanup after a fresh status read")
+        }
+    }
+
+    @MainActor
+    func testREQ234TerminalBeginReleasesConsentGate() async throws {
+        try await withSignInSession("failedflow") { session, _, _ in
+            await session.beginSignIn()
+            XCTAssertEqual(session.authentication?.flow?.state, .failed)
+            XCTAssertFalse(session.accountBusy)
+            XCTAssertTrue(MicrosoftSignInGate.shared.available)
+        }
+    }
+
+    @MainActor
+    func testREQ234RetiredBeginCannotPublishIntoReplacementConnection() async throws {
+        try await withSignInSession("authgate") { session, _, _ in
+            let beginning = Task { await session.beginSignIn() }
+            try await self.waitForAccountOperation(session)
+            let disconnected = await session.disconnect()
+            XCTAssertTrue(disconnected)
+            await session.connect()
+            await session.refreshAccount()
+            await beginning.value
+            XCTAssertEqual(session.currentCredentialState, .signedOut)
+            XCTAssertNil(session.authentication?.flow)
+            XCTAssertFalse(session.accountBusy)
+            XCTAssertTrue(MicrosoftSignInGate.shared.available)
+        }
+    }
+
+    @MainActor
+    func testREQ234OrdinaryReconnectPreservesSavedAccountWithoutLogout() async throws {
+        try await withSignInSession("savedpermission") { session, _, configuration in
+            XCTAssertTrue(session.hasConfirmedSignIn)
+            let account = session.accountHash
+            let disconnected = await session.disconnect()
+            XCTAssertTrue(disconnected)
+            await session.connect()
+            await session.refreshAccount()
+            XCTAssertTrue(session.hasConfirmedSignIn)
+            XCTAssertEqual(session.accountHash, account)
+            XCTAssertEqual(try self.authTrace(configuration), ["auth.status", "auth.status"])
+        }
+    }
+
     func testSandboxBrokerIssuesRotatesAndDeletesThroughAdapter() async throws {
         let broker = SandboxCredentialBroker()
         let direct = PCGamesMockStore("SYNTHETIC_DIRECT_MUST_NOT_BE_READ")
