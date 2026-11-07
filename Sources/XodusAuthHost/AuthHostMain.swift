@@ -145,7 +145,14 @@ final class AuthHostController: NSObject, NSApplicationDelegate, NSWindowDelegat
                 try await drainOutput()
                 try await send(.closed(disposition))
             }
-            catch { await channel.stop(); exit(1) }
+            catch let failure as HostFailure {
+                await finishTeardown(failure: failure)
+                return
+            }
+            catch {
+                await finishTeardown(failure: .protocolInvalid)
+                return
+            }
             await channel.stop()
             exit(disposition.exitCode)
         }
@@ -212,6 +219,10 @@ final class AuthHostController: NSObject, NSApplicationDelegate, NSWindowDelegat
     private func finish(failure: HostFailure) async {
         guard !ending else { return }
         ending = true
+        await finishTeardown(failure: failure)
+    }
+
+    private func finishTeardown(failure: HostFailure) async {
         stopView()
         let pendingOutput = outputTask
         pendingOutput?.cancel()

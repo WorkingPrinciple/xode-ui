@@ -258,24 +258,16 @@ enum AuthHostChecks {
         let executable = URL(fileURLWithPath: String(cString: path))
         for signal in [Int32(0), SIGTERM, SIGKILL] {
             let sockets = try pair()
+            defer { sockets.forEach { Darwin.close($0) } }
             let process = Process()
             process.executableURL = executable
             process.arguments = []
             process.standardInput = FileHandle(fileDescriptor: sockets[1], closeOnDealloc: false)
             process.standardOutput = FileHandle.nullDevice
             process.standardError = FileHandle.nullDevice
-            try process.run()
-            Darwin.close(sockets[1])
-            defer { Darwin.close(sockets[0]) }
-            if signal == 0 { shutdown(sockets[0], SHUT_WR) }
-            else { kill(process.processIdentifier, signal) }
-            let deadline = ContinuousClock.now.advanced(by: .seconds(5))
-            while process.isRunning, ContinuousClock.now < deadline {
-                try await Task.sleep(for: .milliseconds(10))
-            }
-            guard !process.isRunning else {
-                kill(process.processIdentifier, SIGKILL)
-                throw HostFailure.deadlineExpired
+            try await runOwnedProductionProcess(process) {
+                if signal == 0 { shutdown(sockets[0], SHUT_WR) }
+                else { kill(process.processIdentifier, signal) }
             }
             check(signal == 0
                   ? process.terminationReason == .exit && process.terminationStatus == 65
@@ -289,8 +281,7 @@ enum AuthHostChecks {
         invalid.standardInput = FileHandle.nullDevice
         invalid.standardOutput = FileHandle.nullDevice
         invalid.standardError = FileHandle.nullDevice
-        try invalid.run()
-        invalid.waitUntilExit()
+        try await runOwnedProductionProcess(invalid)
         check(invalid.terminationReason == .exit && invalid.terminationStatus == 64,
               "Startup argument rejection preserves non-cleanup exit 64")
         let nonSocket = Process()
@@ -299,10 +290,54 @@ enum AuthHostChecks {
         nonSocket.standardInput = FileHandle.nullDevice
         nonSocket.standardOutput = FileHandle.nullDevice
         nonSocket.standardError = FileHandle.nullDevice
-        try nonSocket.run()
-        nonSocket.waitUntilExit()
+        try await runOwnedProductionProcess(nonSocket)
         check(nonSocket.terminationReason == .exit && nonSocket.terminationStatus == 1,
               "Invalid startup channel cannot acknowledge completed controller teardown")
+
+        for cancel in [false, true] {
+            let sockets = try pair()
+            defer { sockets.forEach { Darwin.close($0) } }
+            let process = Process()
+            process.executableURL = executable
+            process.arguments = []
+            process.standardInput = FileHandle(fileDescriptor: sockets[1], closeOnDealloc: false)
+            process.standardOutput = FileHandle.nullDevice
+            process.standardError = FileHandle.nullDevice
+            let owned = Task {
+                try await runOwnedProductionProcess(process, wait: .milliseconds(50)) {
+                    kill(process.processIdentifier, SIGSTOP)
+                    if cancel { withUnsafeCurrentTask { $0?.cancel() } }
+                }
+            }
+            do {
+                try await owned.value
+                check(false, "Interrupted unopened helper check fails rather than claiming cleanup")
+            } catch {
+                check((cancel ? error is CancellationError : error as? HostFailure == .deadlineExpired)
+                      && !process.isRunning && process.terminationReason == .uncaughtSignal
+                      && process.terminationStatus == SIGKILL,
+                      cancel ? "Cancelled unopened helper check kills and joins its owned process"
+                        : "Timed-out unopened helper check kills and joins its owned process")
+            }
+        }
+    }
+
+    private static func runOwnedProductionProcess(
+        _ process: Process, wait: Duration = .seconds(5), afterSpawn: () -> Void = {}
+    ) async throws {
+        try process.run()
+        defer {
+            if process.isRunning { kill(process.processIdentifier, SIGKILL) }
+            process.waitUntilExit()
+        }
+        afterSpawn()
+        let deadline = ContinuousClock.now.advanced(by: wait)
+        while process.isRunning, ContinuousClock.now < deadline {
+            try Task.checkCancellation()
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        try Task.checkCancellation()
+        guard !process.isRunning else { throw HostFailure.deadlineExpired }
     }
 
     private static func pair() throws -> [Int32] {

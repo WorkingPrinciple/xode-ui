@@ -21,8 +21,16 @@ shutting down the private channel. Normal completion stays 0 and acknowledged
 user cancellation stays 2. Startup failures, signals and incomplete teardown do
 not produce this receipt. The producer must reap the bound helper before
 interpreting 65 as cleanup; no wire/schema or credential-result changes are made.
+Failure while draining output or writing a close acknowledgement also completes
+the shared teardown before exit 65; it cannot claim the completed acknowledgement
+or exit 0. The close path keeps its terminal admission fence throughout teardown.
 The actual no-argument helper EOF-before-open path is checked with a fresh
-socketpair and no open frame or provider request. This is not proof of
+socketpair and no open frame or provider request. Every production-check child
+is owned immediately after spawn, with bounded normal waiting and mandatory
+kill-and-join on timeout, cancellation or error; socket cleanup also covers spawn
+failure. Timeout and cancellation checks use unopened real children. Controller
+close/output-failure races are source-reviewed, not exercised by those checks.
+This is not proof of
 browser-open teardown, installed sign-in or full composed backend acceptance.
 
 The native helper has no application diagnostic-file sink (REQ-239). Provider
