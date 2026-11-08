@@ -106,11 +106,18 @@ final class LibraryCatalogArtwork: ObservableObject {
         if generation == epoch { detailPending[id] = nil }
     }
 
-    func load(ids: [String], market: String, language: String, refresh: Bool = false) async {
+    struct LoadResult {
+        let images: [String: Images]
+        let errors: [String: String]
+        let error: String?
+    }
+
+    @discardableResult
+    func load(ids: [String], market: String, language: String, refresh: Bool = false) async -> LoadResult? {
         guard let market = PCGamesClient.market(market) else {
             retireScope()
             error = "Confirm your account country before loading game details."
-            return
+            return nil
         }
         let nextScope = "\(market):\(PCGamesClient.language(language).lowercased())"
         let epoch = enterScope(nextScope)
@@ -119,19 +126,22 @@ final class LibraryCatalogArtwork: ObservableObject {
         defer { if generation == epoch { settlePending(marked) } }
         while let pending {
             await pending.value
-            guard !Task.isCancelled, generation == epoch else { return }
+            guard !Task.isCancelled, generation == epoch else { return nil }
         }
-        guard !Task.isCancelled, generation == epoch else { return }
+        guard !Task.isCancelled, generation == epoch else { return nil }
         let time = now()
         let ids = Set(ids.filter(PCGamesClient.validProductID))
             .filter { refresh || (requested[$0].map { $0 <= time } ?? true) }.sorted()
-        guard !ids.isEmpty else { return }
+        guard !ids.isEmpty else { return nil }
+        var completed: LoadResult?
         let token = UUID()
         let task = Task {
             defer {
                 if generation == epoch, pendingID == token { pending = nil }
             }
             do {
+                var resultImages: [String: Images] = [:]
+                var resultErrors: [String: String] = [:]
                 for start in stride(from: 0, to: ids.count, by: 20) {
                     try Task.checkCancellation()
                     let batch = Array(ids[start..<min(start + 20, ids.count)])
@@ -141,6 +151,9 @@ final class LibraryCatalogArtwork: ObservableObject {
                     guard !Task.isCancelled, generation == epoch else { return }
                     let parsed = try await Self.parseResponse(data, batch: batch, market: market, language: language)
                     guard !Task.isCancelled, generation == epoch else { return }
+                    resultImages.merge(parsed.images, uniquingKeysWith: { _, new in new })
+                    resultErrors.merge(failures, uniquingKeysWith: { _, new in new })
+                    resultErrors.merge(parsed.errors, uniquingKeysWith: { _, new in new })
                     if parsed.rejectedDetailPayload {
                         logger.warning("Optional public detail payload was rejected; library identity and artwork remain separate.")
                     }
@@ -158,18 +171,23 @@ final class LibraryCatalogArtwork: ObservableObject {
                 }
                 if generation == epoch {
                     let failures = await descriptors.failures(ids: ids, market: market, language: language)
+                    guard !Task.isCancelled, generation == epoch else { return }
                     error = failures.isEmpty ? nil : "Some public game details couldn't be loaded. Try again."
+                    completed = LoadResult(images: resultImages, errors: resultErrors, error: error)
                 }
             } catch is CancellationError { }
             catch {
                 guard generation == epoch else { return }
                 self.error = (error as? PCGamesError)?.localizedDescription
                     ?? "Game artwork and details couldn't be loaded. Check your connection and try again."
+                completed = LoadResult(images: [:], errors: [:], error: self.error)
             }
         }
         pending = task
         pendingID = token
         await task.value
+        guard !Task.isCancelled, generation == epoch else { return nil }
+        return completed
     }
 
     struct ParsedResponse: Sendable {

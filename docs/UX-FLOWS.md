@@ -389,6 +389,12 @@ for account/selected-edition resolution, separately from Mac package support.
 The approved Figma composition, toolbar and existing protected actions remain;
 no native walkthrough of this source correction has occurred.
 
+**Fresh public facts:** A completed public-details request returns its own
+products and failures separately from retained display artwork. An HTTP 200
+batch that omits a requested product does not return an older PC-package fact;
+consumers requiring fresh evidence must use the returned result, not the image
+cache. Omission is unknown evidence, not a negative package or access grant.
+
 **Unavailable release metadata:** Detail omits the release-date row for the
 observed Microsoft catalog placeholder `9998-12-30T00:00:00.0000000Z`
 (including equivalent timestamp representations), absent/malformed timestamps

@@ -4,7 +4,32 @@ import XodusManagement
 
 @MainActor
 enum InstalledProductAccessChecks {
+    static func checkLogging(check: (Bool, String) -> Void) throws {
+        let sources = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+        let allowedLogging: [String: Set<String>] = [
+            "InstalledProductAccess.swift": [
+                #"logger.error("Installed product access scan exceeds the 100-product bound")"#,
+                #"logger.notice("stage=product-access status=complete")"#,
+                #"logger.error("stage=product-access status=failed")"#
+            ],
+            "PCGamesController.swift": [
+                #"logger.warning("Account collection admission timed out before dispatch")"#,
+                #"logger.notice("Account collection dispatch")"#,
+                #"logger.notice("stage=account-collection status=complete")"#,
+                #"logger.notice("stage=account-pc-resolution status=complete")"#
+            ]
+        ]
+        for (file, allowed) in allowedLogging {
+            let source = try String(contentsOf: sources.appendingPathComponent(file), encoding: .utf8)
+            let statements = source.split(separator: "\n").map { $0.trimmingCharacters(in: .whitespaces) }
+                .filter { $0.contains("logger.") }
+            check(Set(statements) == allowed && statements.count == allowed.count,
+                  "REQ160 source-bound \(file) logs only closed stages/statuses, never account-derived values or raw failures")
+        }
+    }
+
     static func run(check: (Bool, String) -> Void) async throws {
+        try checkLogging(check: check)
         let account = String(repeating: "a", count: 64)
         let other = String(repeating: "b", count: 64)
         let product = "9NGLST31DG26"
