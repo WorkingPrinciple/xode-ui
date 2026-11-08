@@ -45,7 +45,7 @@ enum LibraryAccessChecks {
         check(HalloweenShelf.isActive(on: dstMonday.addingTimeInterval(-1), timeZone: losAngeles)
               && !HalloweenShelf.isActive(on: dstMonday, timeZone: losAngeles),
               "REQ89: Local Sunday stays inclusive across daylight-saving transition, ending exactly at Monday")
-        check(InstalledGameActionCopy.title(incomplete: false, installationIssue: false, launchIssue: false) == "View details",
+        check(InstalledGameActionCopy.title(incomplete: false, installationIssue: false, launchIssue: false) == "Play",
               "An app-wide launch gate is not labelled as a broken game")
         check(OfflineGameCompatibility.snapshot?.products.isEmpty == false
               && OfflineGameCompatibility.snapshot?.products.values.allSatisfy({ !$0.antiCheat.isEmpty }) == true,
@@ -423,9 +423,9 @@ enum LibraryAccessChecks {
               && OfflineGameCompatibility.publisherEvidence(for: "9PB301R051CQ")?.scope.contains("Windows") == true
               && OfflineGameCompatibility.publisherEvidence(for: "BQVQTL3PCH05") == nil,
               "Publisher evidence is Store-ID/title bound, preserves mode/platform scope, and leaves NMS unknown")
-        check(InstalledGameActionCopy.title(incomplete: true, installationIssue: false, launchIssue: false) == "Install required"
-              && InstalledGameActionCopy.title(incomplete: false, installationIssue: true, launchIssue: false) == "Check installation"
-              && InstalledGameActionCopy.title(incomplete: false, installationIssue: false, launchIssue: true) == "Review launch issue",
+        check(InstalledGameActionCopy.title(incomplete: true, installationIssue: false, launchIssue: false) == "Download"
+              && InstalledGameActionCopy.title(incomplete: false, installationIssue: true, launchIssue: false) == "Download"
+              && InstalledGameActionCopy.title(incomplete: false, installationIssue: false, launchIssue: true) == "Play",
               "Installed actions name the specific recovery rather than a generic warning")
         let feedID = "00000000-0000-4000-8000-000000000001"
         let recentIDs = try GamePassCollectionSource.productIDs(Data("""

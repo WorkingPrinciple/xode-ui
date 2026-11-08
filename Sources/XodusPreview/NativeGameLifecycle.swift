@@ -49,9 +49,9 @@ struct NativeGameResult: Codable, Equatable, Sendable {
               self.gameDirectory == gameDirectory.path,
               self.exitCode == exitCode, success == (exitCode == 0),
               success ? errorCode == nil : Self.failureCodes.contains(errorCode ?? ""),
-              logDirectory == stateDirectory.appendingPathComponent("runs/\(runID)").path,
-              resultPath == URL(fileURLWithPath: logDirectory).appendingPathComponent("result.json").path,
-              progressPath == URL(fileURLWithPath: logDirectory).appendingPathComponent("progress.jsonl").path else {
+              logDirectory == stateDirectory.appendingPathComponent("runs/\(runID)", isDirectory: true).path,
+              resultPath == URL(fileURLWithPath: logDirectory, isDirectory: true).appendingPathComponent("result.json", isDirectory: false).path,
+              progressPath == URL(fileURLWithPath: logDirectory, isDirectory: true).appendingPathComponent("progress.jsonl", isDirectory: false).path else {
             throw GameScriptError.invalidReceipt
         }
     }
@@ -202,8 +202,8 @@ final class NativeGameLifecycle {
     var isRunning: Bool { process?.isRunning == true }
     var processIdentifier: Int32? { process?.isRunning == true ? process?.processIdentifier : nil }
 
-    static func directory(runID: String) -> URL {
-        URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(
+    nonisolated static func directory(runID: String) -> URL {
+        URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true).appendingPathComponent(
             "Library/Application Support/Xodus/Lifecycle/\(runID)", isDirectory: true)
     }
 
@@ -301,15 +301,15 @@ final class NativeGameLifecycle {
         return result
     }
 
-    static func readResult(state: URL, operation: String, product: String,
+    nonisolated static func readResult(state: URL, operation: String, product: String,
                            gameDirectory: URL, exitCode: Int32? = nil) throws -> NativeGameResult {
-        let bytes = try InstalledGameFiles.readRegular(state.appendingPathComponent("launcher-result.json"),
+        let bytes = try InstalledGameFiles.readRegular(state.appendingPathComponent("launcher-result.json", isDirectory: false),
                                                        maximumBytes: 1_048_576, privateFile: true)
         let value = try JSONDecoder().decode(NativeGameResult.self, from: bytes)
         try value.validate(operation: operation, product: product, gameDirectory: gameDirectory,
                            stateDirectory: state, exitCode: exitCode ?? value.exitCode)
-        try GameScriptFiles.checkPath(URL(fileURLWithPath: value.resultPath))
-        let persisted = try InstalledGameFiles.readRegular(URL(fileURLWithPath: value.resultPath),
+        try GameScriptFiles.checkPath(URL(fileURLWithPath: value.resultPath, isDirectory: false))
+        let persisted = try InstalledGameFiles.readRegular(URL(fileURLWithPath: value.resultPath, isDirectory: false),
                                                           maximumBytes: 1_048_576, privateFile: true)
         guard try JSONDecoder().decode(NativeGameResult.self, from: persisted) == value else {
             throw GameScriptError.statusMismatch

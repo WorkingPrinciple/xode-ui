@@ -192,10 +192,7 @@ struct LiveRootView: View {
         .task(id: accountRecoveryAllowed) {
             if accountRecoveryAllowed {
                 if unifiedAccountMode {
-                    state.pcGames.useUnifiedAccount(session)
-                    companion.useUnifiedAccount(session)
-                    state.gameOperations.useUnifiedAccount(session)
-                    state.installedGames.useUnifiedAccount(session)
+                    state.bindUnifiedAccount(session: session)
                 }
                 if !session.isReady {
                     await session.connect()

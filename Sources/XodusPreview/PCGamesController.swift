@@ -62,6 +62,7 @@ final class PCGamesController: ObservableObject {
     private var restored = false
     private var terminating = false
     private var attemptedAutomaticLoad = false
+    private var lastPresenceRetry: Date?
     private let signInOwner = UUID()
     private weak var unifiedSession: LiveSession?
     private(set) var usesUnifiedAccount = false
@@ -193,6 +194,17 @@ final class PCGamesController: ObservableObject {
     }
 
     func refreshInBackground(now: Date = Date()) async {
+        if !usesUnifiedAccount {
+            guard presenceUnavailable, !busy, !restoringPresence, !accountDisconnecting, !terminating,
+                  lastPresenceRetry.map({ now.timeIntervalSince($0) >= 60 }) ?? true else { return }
+            lastPresenceRetry = now
+            await restorePresence()
+            if restored {
+                await loadOnAppear()
+                await waitForOperation()
+            }
+            return
+        }
         guard usesUnifiedAccount, !busy, !accountDisconnecting, !terminating,
               let session = unifiedSession, session.hasConfirmedSignIn,
               let account = session.accountHash else { return }

@@ -63,7 +63,7 @@ final class GameOperationsController: ObservableObject {
     private let installed: InstalledGamesController
     private let paths: GameScriptPaths
     private let installLocationDefaults: UserDefaults?
-    private let storageProbe = GameStorageProbe()
+    let storageProbe = GameStorageProbe()
     private var preparationGeneration = UUID()
     private let mutationRunner: GameScriptRunner
     private let serviceRunner: GameScriptRunner
@@ -890,9 +890,11 @@ final class GameOperationsController: ObservableObject {
         }
     }
 
-    func checkExistingInstallations() async {
+    func checkExistingInstallations(for game: PCGame? = nil) async {
         await installed.discoverNativeInstallations()
-        error = installed.discoveryError
+        if let game { feedbackProductID = game.id }
+        error = installed.discoveryError ?? (game.map { installationCheckRequired(for: $0) } == true
+            ? "This game's download location isn't available yet." : nil)
     }
 
     func installDestination(for game: PCGame, root: URL? = nil) async throws -> URL {
@@ -1139,7 +1141,7 @@ final class GameOperationsController: ObservableObject {
                                    destination: record.destination) else {
                     throw GameScriptError.invalidReceipt
                 }
-                try await installed.registerNativeInstallation(folder: URL(fileURLWithPath: record.destination),
+                try await installed.registerNativeInstallation(folder: URL(fileURLWithPath: record.destination, isDirectory: true),
                                                                expectedStoreID: record.productID)
                 notice = record.kind == .repair ? "\(record.title) was repaired." : "\(record.title) was installed."
             }
@@ -1306,14 +1308,20 @@ final class GameOperationsController: ObservableObject {
         guard recoveryRequired, let record = operation, !checkingRecovery, mutationTask == nil else { return }
         checkingRecovery = true
         defer { checkingRecovery = false }
+        let accountGeneration = gamePassGeneration
+        let session = unifiedSession
+        let accountAtStart = nativeAccount
         do {
             if let account = record.nativeAccountHash {
                 guard account == nativeAccount else { throw GameScriptError.runtimeUnavailable }
-                let result = try NativeGameLifecycle.readResult(state: NativeGameLifecycle.directory(runID: record.id),
-                    operation: record.kind.nativeOperation, product: record.productID,
-                    gameDirectory: URL(fileURLWithPath: record.destination))
-                log = URL(fileURLWithPath: result.logDirectory)
-                try await completeNative(record, result: result)
+                let observation = try await readNativeRecovery(record)
+                guard !Task.isCancelled, !terminating, accountGeneration == gamePassGeneration,
+                      unifiedSession === session, nativeAccount == account,
+                      operation?.id == record.id, operation?.nativeAccountHash == account,
+                      operation?.destination == record.destination, operation?.kind == record.kind,
+                      operation?.productID == record.productID else { return }
+                log = observation.log
+                try await completeNative(record, result: observation.result)
                 return
             }
             let outcome = try await Task.detached {
@@ -1326,7 +1334,23 @@ final class GameOperationsController: ObservableObject {
             }.value
             log = outcome.log
             try await complete(record, outcome: outcome)
-        } catch { self.error = Self.message(error) }
+        } catch {
+            if record.nativeAccountHash != nil {
+                guard !Task.isCancelled, !terminating, operation?.id == record.id,
+                      accountGeneration == gamePassGeneration, unifiedSession === session,
+                      nativeAccount == accountAtStart else { return }
+            }
+            self.error = Self.message(error)
+        }
+    }
+
+    func readNativeRecovery(_ record: GameOperationRecord) async throws -> (result: NativeGameResult, log: URL) {
+        try await storageProbe.read(key: "native-recovery:" + record.id) {
+            let result = try NativeGameLifecycle.readResult(state: NativeGameLifecycle.directory(runID: record.id),
+                operation: record.kind.nativeOperation, product: record.productID,
+                gameDirectory: URL(fileURLWithPath: record.destination, isDirectory: true))
+            return (result, URL(fileURLWithPath: result.logDirectory, isDirectory: true))
+        }
     }
 
     func showLog() { if let log { NSWorkspace.shared.activateFileViewerSelecting([log]) } }

@@ -47,13 +47,26 @@ are excluded from hero recommendations. Hero media loads automatically.
 as well as account-held titles, without relabelling local records as Owned or
 granting launch access. Account ownership and subscription evidence remain
 separate. Cards show title and a concise action, not package/entitlement columns
-or an idle "Checking access" status. Local problems offer **Install required**,
-**Check installation**, or **Review launch issue** and open normal game detail
-for that exact installation. An app-wide launch gate offers **View details**;
-it is not presented as a broken installation or a compatibility verdict. Safe local
-folder/launch-file checks run automatically there. Repair/full installation uses
-the existing guarded flow only when available; registry removal requires
-confirmation and preserves files/saves. Technical details stay behind disclosure.
+or an idle "Checking access" status. Game actions are **Play** and **Download**;
+**Stop** and **Cancel** are reserved for in-progress operations. Unresolved
+readiness offers no action until automatic checks resolve it. A genuine
+readiness failure shows a concise game-unavailable explanation, not filesystem
+or project diagnostics. The visible Library retries readiness with backoff even
+while the service is disconnected; no readiness or launch access is invented.
+Play/download failures also have plain-language feedback, with Sign in only
+when an account reconnection is needed.
+Download retains the existing ownership, destination and mutation guards,
+including discovery admission before consent. Library diagnostics, manual
+check/retry controls and the game overflow menu are not presented. Background
+metadata refresh and filesystem checks retry through the visible Library's
+existing lifecycle, without clearing account sign-in or game data.
+Library presence/details and account-country reads have no manual retry/check
+button. Necessary country selection/confirmation and Sign in/Sign out remain.
+Legacy saved-sign-in presence failures retry metadata automatically without
+reading tokens for presence. A recovered saved sign-in continues the existing
+collection-load lifecycle; confirmed absence returns to the existing Sign in
+action without starting authentication. Hero and Continue Playing
+have no extra View buttons or menus; tapping the tile itself may open details.
 
 **Catalogue collections and runtime selection:** Library has no detached
 "Library details" footer. Official Xbox PC collection labels and feed identifiers

@@ -7,7 +7,6 @@ import Foundation
 @main
 struct AuthHostMain {
     @MainActor static func main() {
-        authHostLog("AuthHostMain started with args: \(CommandLine.arguments)")
 #if !XODUS_SHIPPING
         if CommandLine.arguments.dropFirst() == ["--self-check"] {
             Task { exit(await AuthHostChecks.run() ? 0 : 1) }
@@ -78,12 +77,9 @@ final class AuthHostController: NSObject, NSApplicationDelegate, NSWindowDelegat
 #endif
 
     func start() {
-        authHostLog("AuthHostController start")
         readTask = Task {
             do {
-                authHostLog("AuthHostController reading first frame from channel")
                 let first = try await channel.read(deadline: .now.advanced(by: .seconds(5)))
-                authHostLog("AuthHostController received first frame: \(first.count) bytes")
                 try await accept(CommandFrame(first))
                 while !ending {
                     guard let deadline = session.deadline else { throw HostFailure.protocolInvalid }
@@ -92,18 +88,16 @@ final class AuthHostController: NSObject, NSApplicationDelegate, NSWindowDelegat
                     try await accept(CommandFrame(data))
                 }
             } catch let failure as HostFailure {
-                authHostLog("AuthHostController start caught HostFailure: \(failure)")
                 if failure == .channelClosed { workerUnavailable = true }
                 await finish(failure: failure)
             } catch {
-                authHostLog("AuthHostController start caught error: \(error)")
                 await finish(failure: .protocolInvalid)
             }
         }
     }
 
     private func accept(_ frame: CommandFrame) async throws {
-        authHostLog("AuthHostController accept sequence=\(frame.sequence)")
+        guard !ending, !outputFailed else { throw HostFailure.channelClosed }
         try session.accept(frame)
         switch frame.command {
         case .open(_, let request, let userAgent):
@@ -129,7 +123,7 @@ final class AuthHostController: NSObject, NSApplicationDelegate, NSWindowDelegat
             window.isReleasedWhenClosed = false
             self.window = window
             try await send(.ready)
-            guard !ending else { return }
+            guard !ending, !outputFailed else { return }
             guard ContinuousClock.now < deadline else { throw HostFailure.deadlineExpired }
             try browser.load(request, userAgent: userAgent)
             window.center()
@@ -139,7 +133,7 @@ final class AuthHostController: NSObject, NSApplicationDelegate, NSWindowDelegat
             guard let browser else { throw HostFailure.protocolInvalid }
             try await drainOutput()
             try await send(.ready)
-            guard !ending else { return }
+            guard !ending, !outputFailed else { return }
             guard let deadline = session.deadline, ContinuousClock.now < deadline else {
                 throw HostFailure.deadlineExpired
             }
@@ -151,40 +145,50 @@ final class AuthHostController: NSObject, NSApplicationDelegate, NSWindowDelegat
                 try await drainOutput()
                 try await send(.closed(disposition))
             }
-            catch { await channel.stop(); exit(1) }
+            catch let failure as HostFailure {
+                await finishTeardown(failure: failure)
+                return
+            }
+            catch {
+                await finishTeardown(failure: .protocolInvalid)
+                return
+            }
             await channel.stop()
             exit(disposition.exitCode)
         }
     }
 
     private func received(_ data: LegacyDA) {
-        authHostLog("AuthHostController received DA tokens")
-        guard !ending, !workerUnavailable else { return }
+        guard !ending, !workerUnavailable, !outputFailed else { return }
         let previous = outputTask
         outputTask = Task {
             await previous?.value
-            guard !ending, !workerUnavailable else { return }
+            guard !ending, !workerUnavailable, !outputFailed else { return }
             do { try await send(.da(data)) }
             catch let failure as HostFailure {
                 outputFailed = true
-                await finish(failure: failure)
+                Task { await finish(failure: failure) }
             }
             catch {
                 outputFailed = true
-                await finish(failure: .protocolInvalid)
+                Task { await finish(failure: .protocolInvalid) }
             }
         }
     }
 
     private func browserFailed(_ failure: HostFailure) {
-        authHostLog("AuthHostController browserFailed: \(failure)")
         guard !ending else { return }
         Task { await finish(failure: failure) }
     }
 
     private func send(_ result: HostResult) async throws {
-        authHostLog("AuthHostController send result: \(result)")
         guard !workerUnavailable else { throw HostFailure.channelClosed }
+        if outputFailed {
+            switch result {
+            case .failed, .cancelled: break
+            default: throw HostFailure.channelClosed
+            }
+        }
         let data = try session.encode(result)
         let deadline: ContinuousClock.Instant
         switch result {
@@ -213,21 +217,30 @@ final class AuthHostController: NSObject, NSApplicationDelegate, NSWindowDelegat
     }
 
     private func finish(failure: HostFailure) async {
-        authHostLog("AuthHostController finish: failure=\(failure), ending=\(ending), workerUnavailable=\(workerUnavailable)")
         guard !ending else { return }
         ending = true
+        await finishTeardown(failure: failure)
+    }
+
+    private func finishTeardown(failure: HostFailure) async {
         stopView()
-        outputTask?.cancel()
+        let pendingOutput = outputTask
+        pendingOutput?.cancel()
+        if workerUnavailable { await channel.stop() }
+        await pendingOutput?.value
+        outputTask = nil
         if !workerUnavailable, session.flowID != nil, !session.terminal {
             do { try await send(failure == .cancelled ? .cancelled : .failed(failure)) }
-            catch { await channel.stop(); exit(1) }
+            catch {
+                await channel.stop()
+                exit(65)
+            }
         }
         await channel.stop()
-        exit(failure == .cancelled ? 2 : 1)
+        exit(failure == .cancelled && !workerUnavailable ? 2 : 65)
     }
 
     func windowShouldClose(_ sender: NSWindow) -> Bool {
-        authHostLog("AuthHostController windowShouldClose")
         guard sender === window else { return true }
         guard !ending else { return true }
         Task { await finish(failure: .cancelled) }
@@ -235,7 +248,6 @@ final class AuthHostController: NSObject, NSApplicationDelegate, NSWindowDelegat
     }
 
     func windowWillClose(_ notification: Notification) {
-        authHostLog("AuthHostController windowWillClose")
         guard let sender = notification.object as? NSWindow, sender === window, !ending else { return }
         Task { await finish(failure: .cancelled) }
     }

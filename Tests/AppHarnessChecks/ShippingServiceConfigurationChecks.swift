@@ -32,6 +32,26 @@ final class ShippingServiceConfigurationChecks: XCTestCase {
         }
     }
 
+    func testRealControlledPairStartupAdmissionMatchesCompiledProducer() throws {
+        guard let path = ProcessInfo.processInfo.environment["XODUS_ENGINE_INSPECTION_TEST_BACKEND"] else {
+            throw XCTSkip("Supply an actual controlled app's bundled CLI; no substitute is used.")
+        }
+        let executable = URL(fileURLWithPath: path)
+        let app = executable.deletingLastPathComponent().deletingLastPathComponent()
+            .deletingLastPathComponent().deletingLastPathComponent()
+        let receiptURL = app.deletingLastPathComponent().appendingPathComponent("package-receipt.json")
+        let receipt = try JSONDecoder().decode(PairReceipt.self, from: Data(contentsOf: receiptURL))
+        XCTAssertEqual(receipt.producerCommit, ShippingProducerPins.commit,
+                       "Packaging and compiled startup admission must approve the same producer.")
+        XCTAssertEqual(receipt.producerTree, ShippingProducerPins.tree)
+        let bundle = try XCTUnwrap(Bundle(url: app))
+        let admitted = try ShippingPairAdmission.configuration(
+            bundle: bundle, stateDirectory: FileManager.default.temporaryDirectory,
+            pins: receipt.pins)
+        XCTAssertEqual(admitted.executable, executable)
+        XCTAssertNotNil(ShippingPairAdmission.connectedServiceConfiguration(admitted, pins: receipt.pins))
+    }
+
     @MainActor
     func testRealControlledPairReadsEngineAndInstallationWithoutHistoricalCLIPin() async throws {
         guard let path = ProcessInfo.processInfo.environment["XODUS_ENGINE_INSPECTION_TEST_BACKEND"] else {
@@ -89,7 +109,7 @@ final class ShippingServiceConfigurationChecks: XCTestCase {
             expectedDigest: release.registrySHA256, executableIdentity: current.executableIdentity)
         XCTAssertTrue(inspection.ready)
         XCTAssertFalse(inspection.qualified)
-        let query = NativeInstallationQuery()
+        let query = NativeInstallationQuery(storageProbe: GameStorageProbe())
         let status = try await query.run(configuration: current, product: "9P9VNSQK1W3K",
             gameDirectory: root.appendingPathComponent("not-installed"),
             stateDirectory: root.appendingPathComponent("installation-status"))

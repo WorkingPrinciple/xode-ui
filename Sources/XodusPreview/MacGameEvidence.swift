@@ -162,7 +162,7 @@ struct MacGameEvidence: Decodable, Sendable {
                           validText($0.caption, limit: 1024) && $0.path.hasPrefix("/")
                               && validText($0.path, limit: 4096)
                               && ["png", "jpg", "jpeg", "heic"].contains(
-                                  URL(fileURLWithPath: $0.path).pathExtension.lowercased())
+                                  URL(fileURLWithPath: $0.path, isDirectory: false).pathExtension.lowercased())
                       }
               }) else { throw PCGamesError.invalidResponse }
         return value
@@ -187,37 +187,41 @@ final class MacGameEvidenceStore: ObservableObject {
     @Published private(set) var games: [String: MacGameEvidence.Game] = [:]
     @Published private(set) var errorMessage: String?
     private var lastBytes: Data?
+    let storageProbe = GameStorageProbe()
 
     func refresh(defaults: UserDefaults = .standard) async {
-        let defaultURL = URL(fileURLWithPath: NSHomeDirectory())
-            .appendingPathComponent("Library/Application Support/Ode to X/Evidence/tried-games.json")
+        let defaultURL = URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true)
+            .appendingPathComponent("Library/Application Support/Ode to X/Evidence/tried-games.json", isDirectory: false)
         let selected = defaults.string(forKey: "Xodus.evidence.triedGames").flatMap { $0.isEmpty ? nil : $0 }
         let path = selected ?? defaultURL.path
         let bundled: MacGameEvidence
         do {
-            bundled = try MacGameEvidence.bundled.get()
+            bundled = try await storageProbe.read { try MacGameEvidence.bundled.get() }
         } catch {
+            guard !Task.isCancelled else { return }
             games = [:]
             errorMessage = MacGameEvidenceDiagnostic.bundledUnavailable
             return
         }
-        if selected == nil && !FileManager.default.fileExists(atPath: path) {
+        let observedBytes: Data?
+        do {
+            observedBytes = try await storageProbe.read {
+                if selected == nil && !FileManager.default.fileExists(atPath: path) { return nil }
+                let url = URL(fileURLWithPath: path, isDirectory: false)
+                try GameScriptFiles.checkPath(url)
+                return try InstalledGameFiles.readRegular(url, maximumBytes: 1_048_576)
+            }
+        } catch {
+            guard !Task.isCancelled else { return }
+            games = [:]
+            errorMessage = MacGameEvidenceDiagnostic.unreadable(path: path)
+            return
+        }
+        guard let bytes = observedBytes else {
             let next = Dictionary(uniqueKeysWithValues: bundled.games.map { ($0.productId, $0) })
             if games != next { games = next }
             if errorMessage != nil { errorMessage = nil }
             lastBytes = nil
-            return
-        }
-        let bytes: Data
-        do {
-            bytes = try await Task.detached {
-                let url = URL(fileURLWithPath: path)
-                try GameScriptFiles.checkPath(url)
-                return try InstalledGameFiles.readRegular(url, maximumBytes: 1_048_576)
-            }.value
-        } catch {
-            games = [:]
-            errorMessage = MacGameEvidenceDiagnostic.unreadable(path: path)
             return
         }
         guard bytes != lastBytes || errorMessage != nil else { return }

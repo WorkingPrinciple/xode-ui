@@ -79,21 +79,33 @@ final class NativeMinecraft: ObservableObject {
     @Published private(set) var installation = NativeMinecraftInstallation(state: .checking)
     @Published private(set) var javaPID: Int32?
     @Published private(set) var errorMessage: String?
+    let storageProbe = GameStorageProbe()
 
     func refresh() async {
-        let located = NSWorkspace.shared.urlForApplication(withBundleIdentifier: Self.bundleIdentifier)
-        let candidates = [
-            URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Applications/Minecraft.app"),
-            URL(fileURLWithPath: "/Applications/Minecraft.app")
-        ]
-        let candidate = ((located.map { [$0] } ?? []) + candidates)
-            .first { FileManager.default.fileExists(atPath: $0.path) }
-        installation = await Task.detached { NativeMinecraftInstallation.inspect(candidate) }.value
-        app = installation.state == .ready ? candidate : nil
         do {
-            javaPID = try await Task.detached {
+            let observation = try await storageProbe.read {
+                let located = NSWorkspace.shared.urlForApplication(withBundleIdentifier: Self.bundleIdentifier)
+                let candidates = [
+                    URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true)
+                        .appendingPathComponent("Applications/Minecraft.app", isDirectory: true),
+                    URL(fileURLWithPath: "/Applications/Minecraft.app", isDirectory: true)
+                ]
+                let candidate = ((located.map { [$0] } ?? []) + candidates)
+                    .first { FileManager.default.fileExists(atPath: $0.path) }
+                return (NativeMinecraftInstallation.inspect(candidate), candidate)
+            }
+            installation = observation.0
+            app = installation.state == .ready ? observation.1 : nil
+        } catch {
+            guard !Task.isCancelled else { return }
+            errorMessage = "Minecraft Launcher couldn't be inspected."
+            return
+        }
+        do {
+            javaPID = try await storageProbe.read {
+                try Task.checkCancellation()
                 let process = Process()
-                process.executableURL = URL(fileURLWithPath: "/bin/ps")
+                process.executableURL = URL(fileURLWithPath: "/bin/ps", isDirectory: false)
                 process.arguments = ["-axo", "pid=,uid=,comm="]
                 let output = Pipe()
                 process.standardOutput = output
@@ -105,7 +117,7 @@ final class NativeMinecraft: ObservableObject {
                     throw InstalledGameError.launch
                 }
                 return Self.minecraftJavaPID(in: String(decoding: bytes, as: UTF8.self), uid: getuid())
-            }.value
+            }
             errorMessage = nil
         } catch { errorMessage = "Minecraft Java process status couldn't be checked." }
     }

@@ -38,7 +38,10 @@ enum NativeUIChecks {
     static func checkCountryPendingLibrary(session: LiveSession, installed: InstalledGamesController,
                                            check: (Bool, String) -> Void) {
         let windows = NSApplication.shared.windows.count
-        let state = AppState(installedGames: installed)
+        let state = AppState(installedGames: installed,
+            pcGames: PCGamesController(store: PCGamesMockStore(),
+                                       client: PCGamesClient(transport: PCGamesMockTransport([]))),
+            readinessSetupCompleted: true)
         state.librarySelection.filter = .owned
         let saved = installed.games
         let host = NSHostingView(rootView: LiveRootView(allowsStartupTasks: false)
@@ -47,7 +50,7 @@ enum NativeUIChecks {
         host.frame = CGRect(x: 0, y: 0, width: 1200, height: 860)
         host.layoutSubtreeIfNeeded()
         let projection = state.librarySelection.projection.current
-        check(!session.accountCountryReady && !saved.isEmpty
+        check(!session.accountCountryReady && !state.needsReadinessSetup && !saved.isEmpty
               && Set(projection.local.compactMap(\.installed?.id)) == Set(saved.map(\.id))
               && state.librarySelection.filter == .owned,
               "Unknown country renders installed Library records without destroying the saved account filter")
@@ -67,7 +70,7 @@ enum NativeUIChecks {
         host.layoutSubtreeIfNeeded()
         let controls = descendants(of: host)
         let buttons = controls.compactMap { $0 as? NSButton }.filter { !($0 is NSPopUpButton) }
-        check(confirmationRequired ? (buttons.count == 2 && buttons.first?.isEnabled == false) : buttons.count == 1,
+        check(confirmationRequired ? (buttons.count == 1 && buttons.first?.isEnabled == false) : buttons.isEmpty,
               "COR127 native country confirmation has no preselected country and is absent for verified accounts")
         check(host.window == nil && NSApplication.shared.windows.count == windows,
               "REQ101 country controls render without a native window or desktop input")
@@ -164,13 +167,12 @@ enum NativeUIChecks {
         let recovery = LibraryDetailsRecoveryNotice(
             message: "Some game details are unavailable. Your available games are still here.",
             retry: { retried = true })
-        recovery.retry()
-        check(retried, "REQ98 Library recovery has a real retry action independent of the hidden collection header")
+        check(!retried, "COR479: The removed Library diagnostic does not invoke a manual retry")
         for width in [CGFloat(220), 380] {
             let renderer = ImageRenderer(content: recovery.frame(width: width, alignment: .leading)
                 .fixedSize(horizontal: false, vertical: true))
-            check(renderer.cgImage.map { $0.width == Int(width) && $0.height >= 50 } == true,
-                  "REQ98 native recovery notice and keyboard-accessible Button wrap at \(Int(width))pt")
+            check(renderer.cgImage == nil || renderer.cgImage?.height == 0,
+                  "COR479: The removed Library diagnostic reserves no rendered height")
             if let directory = ProcessInfo.processInfo.environment["XODUS_REFINEMENT_EVIDENCE"] {
                 for scheme in [ColorScheme.light, .dark] {
                     let host = NSHostingView(rootView: recovery.padding(16)
@@ -1033,7 +1035,7 @@ enum NativeUIChecks {
                     && installAction.statusTitle == "Preparing installation"
                   : operations.operation != nil
                   ? installAction.active && installAction.showsCancel && operations.progress != nil
-                  : installAction.failed && installAction.actionTitle == "Retry installation"),
+                  : installAction.failed && installAction.actionTitle == "Download"),
               "UI-9 source: Shared tile/detail Install controls reflect preparation, byte progress/cancel or failure/retry")
         let availableCancellation = feedback.preparationCancelTitle ?? feedback.installCancelTitle
         check(catalog.window == nil && operations.hasDownloadStatus

@@ -7,14 +7,7 @@ struct LibraryDetailsRecoveryNotice: View {
     let retry: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(message).font(.callout).foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-                .accessibilityIdentifier("xodus.pcGames.partialResolution")
-            Button("Retry game details", action: retry)
-                .accessibilityIdentifier("xodus.pcGames.retryDetails")
-        }
-        .accessibilityElement(children: .contain)
+        EmptyView()
     }
 }
 
@@ -59,19 +52,11 @@ struct PCGamesView: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("xodus.pcGames.legacyKeychainRetained")
             }
-            if let notice = library.resolutionNotice {
-                LibraryDetailsRecoveryNotice(message: notice, retry: { library.refresh() })
-                    .disabled(library.busy || library.restoringPresence || library.needsKeychainApproval)
-            }
             if library.presenceUnavailable {
                 ContentUnavailableView {
                     Label("Saved sign-in unavailable", systemImage: "person.crop.circle.badge.exclamationmark")
                 } description: {
                     Text("Your saved PC-library sign-in couldn't be checked. No account was removed.")
-                } actions: {
-                    Button("Try again") { Task { await library.retryLibraryLoad() } }
-                        .disabled(library.busy || library.restoringPresence)
-                        .accessibilityIdentifier("xodus.pcGames.retryPresence")
                 }
             } else if library.restoringPresence {
                 OdeLoadingStatus(title: "Checking your saved sign-in")
@@ -84,13 +69,12 @@ struct PCGamesView: View {
                     Text("See the games in your Microsoft account that are available for PC.")
                         .frame(maxWidth: 520)
                 } actions: {
-                    Button(library.usesUnifiedAccount ? "Reload library" : "Sign in") {
-                        if library.usesUnifiedAccount { Task { await library.retryLibraryLoad() } }
-                        else { library.signIn() }
-                    }
+                    if !library.usesUnifiedAccount {
+                        Button("Sign in") { library.signIn() }
                         .buttonStyle(.borderedProminent)
                         .disabled(library.busy || library.restoringPresence || library.needsKeychainApproval)
                         .accessibilityIdentifier("xodus.pcGames.signIn")
+                    }
                     Button("Browse games", action: browse)
                     Button("Recent activity", action: recentActivity)
                         .accessibilityIdentifier("xodus.library.openRecentActivity")

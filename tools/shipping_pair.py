@@ -10,8 +10,8 @@ import re
 import stat
 import sys
 
-PRODUCER = "809dd6f24686132b3da099b28cb47c89d89ba996"
-PRODUCER_TREE = "fc6cc572409da85cd4b45b4ce6b19ff4a86b0259"
+PRODUCER = "c9f370fe4d98734ae0efe313bd42bd5545262ac9"
+PRODUCER_TREE = "9bdced357cf9c959d09ba40feaf4e5b318b7f4f5"
 # Historical released payloads retain their own producer; a new sealed CLI is
 # not evidence that the old notarized CLI, helper or manifest changed identity.
 RELEASED_PRODUCER = "01d4cfd625764c2a8ec4d60824ef4f277b30b9e9"

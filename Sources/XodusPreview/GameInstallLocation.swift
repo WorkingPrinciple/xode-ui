@@ -6,7 +6,7 @@ struct GameStorageVolume: Codable, Equatable, Sendable {
 
     func contains(_ folder: String) -> Bool {
         path.hasPrefix("/") && path.count <= 4096
-            && URL(fileURLWithPath: path).standardizedFileURL.path == path
+            && URL(fileURLWithPath: path, isDirectory: true).standardizedFileURL.path == path
             && (path == "/" || folder == path || folder.hasPrefix(path + "/"))
     }
 
@@ -55,7 +55,7 @@ struct GameInstallLocation: Codable, Equatable, Sendable {
         guard data.count <= 16384 else { throw GameScriptError.invalidDestination }
         let location = try JSONDecoder().decode(Self.self, from: data)
         guard location.folder.hasPrefix("/"), location.folder.count <= 4096,
-              URL(fileURLWithPath: location.folder).standardizedFileURL.path == location.folder,
+              URL(fileURLWithPath: location.folder, isDirectory: true).standardizedFileURL.path == location.folder,
               location.volume.contains(location.folder) else {
             throw GameScriptError.invalidDestination
         }

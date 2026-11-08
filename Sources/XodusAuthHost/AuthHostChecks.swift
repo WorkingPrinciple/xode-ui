@@ -239,6 +239,7 @@ enum AuthHostChecks {
             _ = try expired.encode(.failed(.deadlineExpired), now: start.advanced(by: .milliseconds(2)))
             check(expired.terminal, "Expiry produces only a terminal failure, never an authorization-budget extension")
             try await channelChecks(check: check)
+            try await productionCleanupChecks(check: check)
             try await outputFenceChecks(check: check)
             try await windowCloseChecks(check: check)
             try await browserChecks(check: check)
@@ -249,6 +250,136 @@ enum AuthHostChecks {
         }
         print("\(count) private native-host checks, \(failures) failures. Detached synthetic WebKit only; no provider request.")
         return failures == 0
+    }
+
+    private static func productionCleanupChecks(check: (Bool, String) -> Void) async throws {
+        var path = [CChar](repeating: 0, count: 4096)
+        guard proc_pidpath(getpid(), &path, UInt32(path.count)) > 0 else { throw HostFailure.protocolInvalid }
+        let executable = URL(fileURLWithPath: String(cString: path))
+        for signal in [Int32(0), SIGTERM, SIGKILL] {
+            let sockets = try pair()
+            defer { sockets.forEach { Darwin.close($0) } }
+            let process = Process()
+            process.executableURL = executable
+            process.arguments = []
+            process.standardInput = FileHandle(fileDescriptor: sockets[1], closeOnDealloc: false)
+            process.standardOutput = FileHandle.nullDevice
+            process.standardError = FileHandle.nullDevice
+            try await runOwnedProductionProcess(process) {
+                if signal == 0 { shutdown(sockets[0], SHUT_WR) }
+                else { kill(process.processIdentifier, signal) }
+            }
+            check(signal == 0
+                  ? process.terminationReason == .exit && process.terminationStatus == 65
+                  : process.terminationReason == .uncaughtSignal && process.terminationStatus != 65,
+                  signal == 0 ? "Real no-argument helper EOF before open acknowledges completed teardown with exit 65"
+                    : "Signal termination of the real unopened helper cannot acknowledge cleanup")
+        }
+        let invalid = Process()
+        invalid.executableURL = executable
+        invalid.arguments = ["--invalid-production-argument"]
+        invalid.standardInput = FileHandle.nullDevice
+        invalid.standardOutput = FileHandle.nullDevice
+        invalid.standardError = FileHandle.nullDevice
+        try await runOwnedProductionProcess(invalid)
+        check(invalid.terminationReason == .exit && invalid.terminationStatus == 64,
+              "Startup argument rejection preserves non-cleanup exit 64")
+        let nonSocket = Process()
+        nonSocket.executableURL = executable
+        nonSocket.arguments = []
+        nonSocket.standardInput = FileHandle.nullDevice
+        nonSocket.standardOutput = FileHandle.nullDevice
+        nonSocket.standardError = FileHandle.nullDevice
+        try await runOwnedProductionProcess(nonSocket)
+        check(nonSocket.terminationReason == .exit && nonSocket.terminationStatus == 1,
+              "Invalid startup channel cannot acknowledge completed controller teardown")
+
+        for cancel in [false, true] {
+            let sockets = try pair()
+            defer { sockets.forEach { Darwin.close($0) } }
+            let process = Process()
+            process.executableURL = executable
+            process.arguments = []
+            process.standardInput = FileHandle(fileDescriptor: sockets[1], closeOnDealloc: false)
+            process.standardOutput = FileHandle.nullDevice
+            process.standardError = FileHandle.nullDevice
+            let owned = Task {
+                try await runOwnedProductionProcess(process, wait: .milliseconds(50)) {
+                    kill(process.processIdentifier, SIGSTOP)
+                    if cancel { withUnsafeCurrentTask { $0?.cancel() } }
+                }
+            }
+            do {
+                try await owned.value
+                check(false, "Interrupted unopened helper check fails rather than claiming cleanup")
+            } catch {
+                check((cancel ? error is CancellationError : error as? HostFailure == .deadlineExpired)
+                      && !process.isRunning && process.terminationReason == .uncaughtSignal
+                      && process.terminationStatus == SIGKILL,
+                      cancel ? "Cancelled unopened helper check kills and joins its owned process"
+                        : "Timed-out unopened helper check kills and joins its owned process")
+            }
+        }
+    }
+
+    private static func runOwnedProductionProcess(
+        _ process: Process, wait: Duration = .seconds(5), afterSpawn: () -> Void = {}
+    ) async throws {
+        try process.run()
+        let outcome: Result<Void, Error>
+        do {
+            afterSpawn()
+            let deadline = ContinuousClock.now.advanced(by: wait)
+            while process.isRunning, ContinuousClock.now < deadline {
+                try Task.checkCancellation()
+                try await Task.sleep(for: .milliseconds(10))
+            }
+            try Task.checkCancellation()
+            guard !process.isRunning else { throw HostFailure.deadlineExpired }
+            outcome = .success(())
+        } catch {
+            outcome = .failure(error)
+        }
+        let cleanup = Task { @MainActor in
+            try await retireOwnedProductionProcess(process)
+        }
+        try await cleanup.value
+        try outcome.get()
+    }
+
+    private enum ProductionCleanupFailure: Error {
+        case signalRejected, exitUnconfirmed
+    }
+
+    private static var unresolvedProductionProcesses: [Process] = []
+
+    private static func retireOwnedProductionProcess(_ process: Process) async throws {
+        let signalRejected: Bool
+        if process.isRunning {
+            let result = kill(process.processIdentifier, SIGKILL)
+            signalRejected = result != 0 && errno != ESRCH
+        } else {
+            signalRejected = false
+        }
+        // This independent cleanup task is not cancelled with the interrupted check.
+        let deadline = ContinuousClock.now.advanced(by: .seconds(2))
+        do {
+            while process.isRunning, ContinuousClock.now < deadline {
+                try await Task.sleep(for: .milliseconds(10))
+            }
+        } catch {
+            unresolvedProductionProcesses.append(process)
+            print("FAIL: Owned production-check cleanup interrupted; ownership retained")
+            throw ProductionCleanupFailure.exitUnconfirmed
+        }
+        if signalRejected || process.isRunning {
+            unresolvedProductionProcesses.append(process)
+            print(signalRejected
+                  ? "FAIL: Owned production-check cleanup signal rejected; ownership retained"
+                  : "FAIL: Owned production-check exit unconfirmed within cleanup deadline; ownership retained")
+            throw signalRejected ? ProductionCleanupFailure.signalRejected
+                : ProductionCleanupFailure.exitUnconfirmed
+        }
     }
 
     private static func pair() throws -> [Int32] {

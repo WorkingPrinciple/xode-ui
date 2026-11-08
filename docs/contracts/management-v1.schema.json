@@ -65,6 +65,7 @@
             "auth.cancel",
             "auth.status",
             "auth.logout",
+            "auth.recover",
             "auth.verify",
             "library.recent",
             "inventory.snapshot",
@@ -212,6 +213,25 @@
             "properties": {
               "command": {
                 "const": "auth.logout"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "type": "object",
+                "required": [],
+                "properties": {},
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "command": {
+                "const": "auth.recover"
               }
             }
           },

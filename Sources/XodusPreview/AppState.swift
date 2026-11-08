@@ -104,8 +104,10 @@ final class AppState: ObservableObject {
     }
 
     init(installedGames: InstalledGamesController = InstalledGamesController(),
-         pcGames: PCGamesController = PCGamesController(), gameScriptPaths: GameScriptPaths = .production) {
-        self.readinessSetupCompleted = UserDefaults.standard.bool(forKey: "Xodus.readinessSetupCompleted")
+         pcGames: PCGamesController = PCGamesController(), gameScriptPaths: GameScriptPaths = .production,
+         readinessSetupCompleted: Bool? = nil) {
+        self.readinessSetupCompleted = readinessSetupCompleted
+            ?? UserDefaults.standard.bool(forKey: "Xodus.readinessSetupCompleted")
         self.installedGames = installedGames
         self.pcGames = pcGames
         self.gameScriptPaths = gameScriptPaths
@@ -116,19 +118,46 @@ final class AppState: ObservableObject {
             && !pcGames.busy && !pcGames.restoringPresence && !runtimeSettings.planning
     }
 
+    func bindUnifiedAccount(session: LiveSession) {
+        guard session.supports(.odeAccountRead) else { return }
+        pcGames.useUnifiedAccount(session)
+        XboxCompanionController.shared.useUnifiedAccount(session)
+        if !gameOperations.usesUnifiedAccount { gameOperations.useUnifiedAccount(session) }
+        installedGames.useUnifiedAccount(session)
+    }
+
     func beginUnifiedSignIn(session: LiveSession) async {
+        unifiedSignInRequested = SignInOwnershipPolicy.retainsRetryLatch(
+            requested: unifiedSignInRequested, ownerActive: session.hasSignInOwner)
         guard !unifiedSignInRequested else { return }
         unifiedSignInRequested = true
         await session.beginSignIn()
-        if !session.signInPending, !session.hasConfirmedSignIn {
-            unifiedSignInRequested = false
+        if !session.hasConfirmedSignIn {
+            unifiedSignInRequested = SignInOwnershipPolicy.retainsRetryLatch(
+                requested: unifiedSignInRequested, ownerActive: session.hasSignInOwner)
         }
     }
 
     func recoverUnifiedSignIn(session: LiveSession) async {
-        if session.needsAccountDisconnect {
-            guard await signOut(session: session) else { return }
+        unifiedSignInRequested = SignInOwnershipPolicy.retainsRetryLatch(
+            requested: unifiedSignInRequested, ownerActive: session.hasSignInOwner)
+        guard !unifiedSignInRequested else { return }
+        if !session.accountStatusCurrent {
+            await session.refreshAccount()
+            if session.hasConfirmedSignIn { return }
         }
+        guard session.supports(.authRecover) else {
+            session.reportSignInRecoveryBlocked()
+            return
+        }
+        guard canSignOut(session: session) else {
+            if session.accountStatusCurrent, !session.accountBusy, !session.signInPending {
+                session.reportSignInRecoveryBlocked()
+            }
+            return
+        }
+        bindUnifiedAccount(session: session)
+        guard await signOut(session: session, forSignInRecovery: true) else { return }
         await beginUnifiedSignIn(session: session)
     }
 
@@ -149,17 +178,27 @@ final class AppState: ObservableObject {
     }
 
     @discardableResult
-    func signOut(session: LiveSession) async -> Bool {
-        guard canSignOut(session: session), gameOperations.beginAccountDisconnect() else { return false }
+    func signOut(session: LiveSession, forSignInRecovery: Bool = false) async -> Bool {
+        guard !forSignInRecovery || session.supports(.authRecover) else {
+            session.reportSignInRecoveryBlocked()
+            return false
+        }
+        guard canSignOut(session: session), gameOperations.beginAccountDisconnect() else {
+            session.reportAccountDisconnectBlocked(forSignInRecovery: forSignInRecovery)
+            return false
+        }
+        defer { gameOperations.finishAccountDisconnect() }
+        guard pcGames.beginAccountDisconnect() else {
+            session.reportAccountDisconnectBlocked(forSignInRecovery: forSignInRecovery)
+            return false
+        }
+        defer { pcGames.finishAccountDisconnect() }
         librarySelection.projection.clear(to: .empty)
         discoverSelection.projection.clear(to: .empty)
         installedGames.setAccountAccessAllowed(false)
         installedGames.productAccess.retire()
-        defer { gameOperations.finishAccountDisconnect() }
-        guard pcGames.beginAccountDisconnect() else { return false }
-        defer { pcGames.finishAccountDisconnect() }
         if pcGames.usesUnifiedAccount {
-            let result = await session.signOut {
+            let result = await session.signOut(forSignInRecovery: forSignInRecovery) {
                 await self.gameOperations.cancelPrecheck()
                 guard await session.stopUnifiedRuntime() else {
                     return "The game connection hasn't stopped. Your saved account was not removed."
@@ -175,7 +214,7 @@ final class AppState: ObservableObject {
             }
             return result
         }
-        let result = await session.signOut {
+        let result = await session.signOut(forSignInRecovery: forSignInRecovery) {
             await self.gameOperations.cancelPrecheck()
             guard await self.gameOperations.signOutForApp() else {
                 return self.gameOperations.serviceError ?? "Ode to X couldn't start game-service sign-out. No other sign-in was removed."

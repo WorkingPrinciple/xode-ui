@@ -859,7 +859,9 @@ enum NativeLifecycleChecks {
         }
     }
 
-    private static func installationStatusChecks(root: URL, check: (Bool, String) -> Void) async throws {
+    static func installationStatusChecks(root: URL, owner: GameStorageProbe? = nil,
+                                        observeOverlap: (() async throws -> Void)? = nil,
+                                        check: (Bool, String) -> Void) async throws {
         let executable = root.appendingPathComponent("synthetic-install-status")
         try Data(#"""
         #!/usr/bin/python3
@@ -902,7 +904,21 @@ enum NativeLifecycleChecks {
         """#.utf8).write(to: executable)
         try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: executable.path)
         let configuration = BackendConfiguration(executable: executable, stateDirectory: root.appendingPathComponent("manage"))
-        let query = NativeInstallationQuery()
+        let queryOwner = owner ?? GameStorageProbe()
+        let query = NativeInstallationQuery(storageProbe: queryOwner)
+        let failedStartState = root.appendingPathComponent("status-start-failed", isDirectory: true)
+        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: executable.path)
+        do {
+            _ = try await query.run(configuration: configuration, product: "FIXTURE00001",
+                gameDirectory: root.appendingPathComponent("complete", isDirectory: true),
+                stateDirectory: failedStartState)
+            check(false, "A non-executable existing inspector must fail to start")
+        } catch {
+            check(error is CocoaError && !query.isRunning
+                  && !FileManager.default.fileExists(atPath: failedStartState.path),
+                  "A real start failure closes staged handles and removes only its unstarted private output")
+        }
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: executable.path)
         check(NativeInstallationQuery.defaultTimeout == .seconds(120),
               "Read-only readiness allows the measured 54-second TUNIC inspection within a bounded 120-second deadline")
         let slowQuery = Task {
@@ -915,7 +931,17 @@ enum NativeLifecycleChecks {
             try await Task.sleep(for: .milliseconds(10))
         }
         check(query.isRunning, "The 54-second readiness check keeps its inspection running rather than reporting failure")
+        check(queryOwner.activeReads == 1,
+              "The actual inspector and its output handles retain one bounded owner reservation until cleanup returns")
+        try await observeOverlap?()
         let slowResult = try await slowQuery.value
+        let cleanupDeadline = ContinuousClock.now.advanced(by: .seconds(2))
+        while queryOwner.activeReads != 0 && ContinuousClock.now < cleanupDeadline {
+            try await Task.sleep(for: .milliseconds(5))
+        }
+        check(queryOwner.activeReads == 0,
+              "The native inspection releases bounded ownership after its real worker and cleanup return")
+        try await observeOverlap?()
         check(slowResult.action == .play && slowResult.status == .complete && !query.isRunning,
               "A real 54-second synthetic inspection completes with default timing and preserves the authoritative Play result")
         check(NativeInstallationQuery.failureMessage(GameScriptError.timeout)

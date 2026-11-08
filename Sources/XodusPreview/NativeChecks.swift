@@ -668,8 +668,9 @@ enum NativeChecks {
             await mixed.refreshAccount()
             try await PCGamesChecks.checkAppSignOut(session: mixed, launcherAlreadySignedOut: true, check: check)
             let mixedAuthTrace = try trace(mixedConfiguration).filter { $0.hasPrefix("auth.") }
-            check(!mixedAuthTrace.isEmpty && mixedAuthTrace.allSatisfy { $0 == "auth.status" },
-                  "Mixed-state cleanup uses confirmed signed-out launcher status without auth.begin or redundant auth.logout")
+            check(mixedAuthTrace.filter { $0 == "auth.logout" }.count == 1
+                  && mixedAuthTrace.allSatisfy { ["auth.status", "auth.logout"].contains($0) },
+                  "Mixed-state cleanup confirms launcher logout even when saved status is already signedOut, without auth.begin")
             check(await mixed.disconnect(), "Mixed-state cleanup retires only its synthetic management child")
             check(!mixed.canDisconnectAccount, "Disconnected launcher cannot admit further mixed-state cleanup")
             try cleanLifecycle(mixedConfiguration)

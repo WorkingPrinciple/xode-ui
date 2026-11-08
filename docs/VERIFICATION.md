@@ -1,5 +1,69 @@
 # Verification evidence
 
+COR-478/479 supersedes the diagnostic/action presentation described below.
+Game controls now present Play/Download, with Stop/Cancel only while active.
+The focused InstalledGameRefreshChecks cover concurrent healthy-folder reads,
+bounded retained syscall reservations after cancellation, and preserved verified
+readiness without a diagnostic badge. A saturated probe times out a waiting read
+without spawning a fifth worker; actual syscall return releases its slot.
+These source checks are not an installed UI or signed-in restart observation.
+
+Automatic recovery of an unresolved native game operation also uses the game
+operations controller's persistent storage probe. Receipt-directory construction,
+bounded reads and complete receipt validation run in one admitted utility
+worker, with explicit directory/file hints. A per-operation recovery key prevents
+repeated admission while an earlier blocked worker remains owned. Cancellation
+releases the waiter, not the actual reservation. Account binding, operation
+identity and termination are checked before applying the observed result.
+The existing interleaving seam checks four real blocked reservations and retained
+recovery-key coalescing; it does not reproduce a stalled mounted receipt or
+prove installed responsiveness. Successful registration still uses the existing
+separate import validator rather than granting installation from a receipt alone.
+
+COR-479 installed follow-up: a read-only app sample observed Foundation
+`URL.appendingPathComponent` inferring directory-ness with `lstat` on the main
+thread while constructing a mounted library root. Mounted roots now carry
+explicit directory hints, including lexical candidate-retention paths. Native
+status staging and receipt I/O use the existing bounded storage probe, not the
+main actor. The existing status scenario retains its timeout, cancellation,
+stdout/persisted-receipt agreement and authoritative action checks. The source
+regression verifies directory hints on main for a nonexistent mount; it does not
+simulate a hung drive or claim installed responsiveness.
+
+The subsequent source review extended this boundary to the visible Library's
+bundled/local Mac evidence and Minecraft workspace discovery. Their persistent
+storage owners admit the complete filesystem lookup, including the evidence's
+lazy bundled first-load. Every native installation query must receive its
+controller's persistent readiness owner. Staging, launch, inspection, receipt
+verification and handle closure run in one retained utility worker; cancellation
+is forwarded without releasing its reservation before actual return. The
+inspector retains its 120-second deadline, with a separate 30-second outer
+allowance for staging/receipt work. Unstarted private output is removed on
+failure; started inspection evidence is retained. Framework launch/join stays
+on one worker thread without an intervening async suspension. These source
+checks do not establish universal nonblocking filesystem or LaunchServices
+behavior, nor installed responsiveness. They reuse the existing neutral
+inspection scenario and package interleaving checks, not live account access.
+
+The installed follow-up observed four retained discovery workers blocked on
+eager recorded-folder URL inference, before native status staging. Root
+discovery now plans explicit directory URLs, checks recorded volume availability
+before folder I/O and admits each deduplicated root separately through the
+controller's existing four-slot owner. A keyed reservation remains until its
+real worker returns; later automatic attempts for that root report pending
+without admitting duplicate syscalls. Aggregate readiness and native queries
+also retain stable keys. A blocked root does not consume four slots through
+retries; distinct blocked roots can still exhaust the bounded owner. Unknown
+storage never grants Play or Download. The existing interleaving regression
+demonstrates duplicate-root starvation on the predecessor, healthy admission
+after coalescing, and automatic readmission only after actual worker return.
+
+Discovery reservations use the `discovery-root:` namespace. Native-query
+directory keys cannot enter the pending-discovery set, including when mounted
+volume enumeration returns nil. The existing real inspector scenario checks
+Download admission during its running child and after receipt/cleanup; a
+separate retained discovery reservation still keeps discovery fail-closed.
+
 COR-467: Explicit native Check installation publishes the existing disabled
 Checking installation progress before awaiting storage or service readiness.
 It checks only the selected installation through the real native query rather

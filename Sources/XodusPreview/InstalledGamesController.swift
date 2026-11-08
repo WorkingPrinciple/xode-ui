@@ -46,7 +46,6 @@ final class InstalledGamesController: ObservableObject {
     private var engineOverridesChecked = false
     private var failedEngineOverrides: Set<String> = []
     @Published private(set) var undiscoveredInstallations: [String: String] = [:]
-    private var mountedDiscoveryProbes: [String: GameStorageProbe] = [:]
     @Published private(set) var pendingDiscoveryRoots: Set<String> = []
     @Published private(set) var discoveringMounts = false
     @Published private(set) var mutationGameID: UUID?
@@ -78,7 +77,7 @@ final class InstalledGamesController: ObservableObject {
     private let detectAvailability: @Sendable () async -> RunnerAvailability
     private let inspectPackage: @Sendable (URL) throws -> PackageType
     private let mountedStorageRoots: @Sendable () -> [String]?
-    private let readinessProbe = GameStorageProbe()
+    let readinessProbe = GameStorageProbe()
     private let discoveryRoot: URL
     private let installLocation: @Sendable () throws -> GameInstallLocation?
     private let discoveryCompleteness: (@MainActor (String, URL) async throws -> Bool)?
@@ -224,69 +223,62 @@ final class InstalledGamesController: ObservableObject {
         let mountedStorageRoots = mountedStorageRoots
         let inspectPackage = inspectPackage
         let account = unifiedSession?.accountHash
-        pendingDiscoveryRoots.formUnion(mountedDiscoveryProbes.keys)
+        reconcilePendingDiscoveryRoots(volumes: nil)
         discoveringMounts = true
         do {
-            let volumes = try await readinessProbe.read(timeout: .seconds(3)) {
+            let volumes = try await readinessProbe.read(timeout: .seconds(3), key: "discovery-mounts") {
                 mountedStorageRoots()
             }
             discoveringMounts = false
+            reconcilePendingDiscoveryRoots(volumes: volumes, includeMounted: root == nil)
             if let volumes {
-                let mounted = Set(GameInstallationDiscovery.mountedLibraryRoots(volumes).map(\.path))
-                pendingDiscoveryRoots.formIntersection(mounted)
-                if root == nil { pendingDiscoveryRoots.formUnion(mounted) }
                 undiscoveredInstallations = Self.retainingMountedCandidates(undiscoveredInstallations, volumes: volumes)
             }
-            var observation = try await readinessProbe.read {
-                try GameInstallationDiscovery.scan(originalRoot: directory,
-                    location: root == nil ? installLocation() : nil, entries: entries,
-                    mountedRoots: volumes, inspectPackage: inspectPackage)
+            let location = try await readinessProbe.read(key: "discovery-location") {
+                try root == nil ? installLocation() : nil
             }
-            pendingDiscoveryRoots.subtract(observation.scannedRoots)
+            var roots = GameInstallationDiscovery.discoveryRoots(originalRoot: directory,
+                location: location, entries: entries)
+            guard roots.count <= 514 else { throw InstalledGameError.invalidRegistry }
             if root == nil {
-                for library in GameInstallationDiscovery.mountedLibraryRoots(volumes) {
-                    try Task.checkCancellation()
-                    guard !accountDisconnecting, !applicationTerminating,
-                          unifiedSession?.accountHash == account else { return }
-                    guard !observation.scannedRoots.contains(library.path) else { continue }
-                    let remaining = 512 - observation.childrenRead
-                    guard remaining > 0 else {
-                        observation.errors.append(InstalledGameError.invalidRegistry.localizedDescription)
-                        break
-                    }
-                    let probe: GameStorageProbe
-                    if let existing = mountedDiscoveryProbes[library.path] { probe = existing }
-                    else {
-                        guard mountedDiscoveryProbes.count < 32 else {
-                            pendingDiscoveryRoots.insert(library.path)
-                            observation.errors.append(GameStorageProbeError.pending.localizedDescription)
-                            continue
-                        }
-                        probe = GameStorageProbe()
-                        mountedDiscoveryProbes[library.path] = probe
-                    }
-                    pendingDiscoveryRoots.insert(library.path)
-                    do {
-                        let mounted = try await probe.read(timeout: .seconds(3)) {
-                            try GameInstallationDiscovery.scan(originalRoot: library, location: nil, entries: entries,
-                                mountedRoots: volumes, includeRecordedRoots: false,
-                                maximumChildren: remaining, inspectPackage: inspectPackage)
-                        }
-                        observation.candidates += mounted.candidates
-                        observation.errors += mounted.errors
-                        observation.scannedRoots.formUnion(mounted.scannedRoots)
-                        observation.childrenRead += mounted.childrenRead
-                        observation.identifiedInstallations.merge(mounted.identifiedInstallations) { _, current in current }
-                        pendingDiscoveryRoots.remove(library.path)
-                    } catch is CancellationError { throw CancellationError() }
-                    catch { observation.errors.append("\(library.path): \(error.localizedDescription)") }
+                let mounted = GameInstallationDiscovery.mountedLibraryRoots(volumes)
+                guard mounted.count <= 32 else { throw InstalledGameError.invalidRegistry }
+                roots += mounted.map { ($0, nil, false) }
+            }
+            var observation = GameInstallationDiscovery.Observation()
+            var attemptedRoots: Set<String> = []
+            for (library, volume, required) in roots {
+                try Task.checkCancellation()
+                guard !accountDisconnecting, !applicationTerminating,
+                      unifiedSession?.accountHash == account else { return }
+                guard attemptedRoots.insert(library.path).inserted else { continue }
+                let remaining = 512 - observation.childrenRead
+                guard remaining > 0 else {
+                    observation.errors.append(InstalledGameError.invalidRegistry.localizedDescription)
+                    break
                 }
+                pendingDiscoveryRoots.insert(library.path)
+                do {
+                    let mounted = try await readinessProbe.read(timeout: .seconds(3), key: "discovery-root:" + library.path) {
+                        try GameInstallationDiscovery.scan(originalRoot: library, location: nil, entries: entries,
+                            mountedRoots: volumes, includeRecordedRoots: false,
+                            originalVolume: volume, originalRequired: required,
+                            maximumChildren: remaining, inspectPackage: inspectPackage)
+                    }
+                    observation.candidates += mounted.candidates
+                    observation.errors += mounted.errors
+                    observation.scannedRoots.formUnion(mounted.scannedRoots)
+                    observation.childrenRead += mounted.childrenRead
+                    observation.identifiedInstallations.merge(mounted.identifiedInstallations) { _, current in current }
+                    pendingDiscoveryRoots.remove(library.path)
+                } catch is CancellationError { throw CancellationError() }
+                catch { observation.errors.append("\(library.path): \(error.localizedDescription)") }
             }
             try Task.checkCancellation()
             guard !accountDisconnecting, !applicationTerminating,
                   unifiedSession?.accountHash == account else { return }
             undiscoveredInstallations = undiscoveredInstallations.filter { folder, _ in
-                !observation.scannedRoots.contains(URL(fileURLWithPath: folder).deletingLastPathComponent().path)
+                !observation.scannedRoots.contains(URL(fileURLWithPath: folder, isDirectory: true).deletingLastPathComponent().path)
                     || observation.errors.contains(where: { $0.hasPrefix(folder + ": ") })
             }
             undiscoveredInstallations.merge(observation.identifiedInstallations) { _, current in current }
@@ -305,9 +297,8 @@ final class InstalledGamesController: ObservableObject {
                         guard let configuration = unifiedSession?.nativeInstallStatusConfiguration else {
                             throw GameInstallationDiscoveryError.serviceUnavailable
                         }
-                        let status = try await NativeInstallationQuery().run(configuration: configuration,
-                            product: candidate.config.storeId, gameDirectory: candidate.folder,
-                            storageProbe: readinessProbe)
+                        let status = try await NativeInstallationQuery(storageProbe: readinessProbe).run(configuration: configuration,
+                            product: candidate.config.storeId, gameDirectory: candidate.folder)
                         guard status.success else {
                             throw GameInstallationDiscoveryError.inspectionFailed(
                                 status.explanation ?? "The installation couldn't be checked. Try again.")
@@ -359,6 +350,17 @@ final class InstalledGamesController: ObservableObject {
         }
     }
 
+    func reconcilePendingDiscoveryRoots(volumes: [String]?, includeMounted: Bool = false) {
+        let prefix = "discovery-root:"
+        pendingDiscoveryRoots.formUnion(readinessProbe.activeKeys
+            .filter { $0.hasPrefix(prefix) }.map { String($0.dropFirst(prefix.count)) })
+        if let volumes {
+            let mounted = Set(GameInstallationDiscovery.mountedLibraryRoots(volumes).map(\.path))
+            pendingDiscoveryRoots.formIntersection(mounted)
+            if includeMounted { pendingDiscoveryRoots.formUnion(mounted) }
+        }
+    }
+
     func hasUnverifiedInstallation(productID: String) -> Bool {
         undiscoveredInstallations.values.contains(productID)
     }
@@ -378,7 +380,7 @@ final class InstalledGamesController: ObservableObject {
                                           home: String = NSHomeDirectory()) -> [String: String] {
         let mounted = Set(GameInstallationDiscovery.mountedLibraryRoots(volumes, home: home).map(\.path))
         return candidates.filter { folder, _ in
-            let parent = URL(fileURLWithPath: folder).deletingLastPathComponent()
+            let parent = URL(fileURLWithPath: folder, isDirectory: true).deletingLastPathComponent()
             let possible = GameInstallationDiscovery.mountedLibraryRoots(
                 [parent.deletingLastPathComponent().path], home: home).map(\.path)
             return !possible.contains(parent.path) || mounted.contains(parent.path)
@@ -666,8 +668,7 @@ final class InstalledGamesController: ObservableObject {
 
     func refreshNativeInstallationStatuses() async {
         guard !refreshingNativeStatuses, loaded, !editing, !choosing, !mutationActive, !accountDisconnecting,
-              !applicationTerminating, runningGameID == nil, stoppingGameID == nil,
-              unifiedSession?.nativeInstallStatusConfiguration != nil else { return }
+              !applicationTerminating, runningGameID == nil, stoppingGameID == nil else { return }
         refreshingNativeStatuses = true
         defer { refreshingNativeStatuses = false }
         for game in games where requiresNativeInstallationStatus(game) {
@@ -726,10 +727,10 @@ final class InstalledGamesController: ObservableObject {
             installationErrors[game.id] = "Wait for the current installation check or operation, then try again."
             return nil
         }
-        let query = NativeInstallationQuery()
+        let query = NativeInstallationQuery(storageProbe: readinessProbe)
         let task = Task {
             try await query.run(configuration: configuration, product: game.storeId,
-                                gameDirectory: URL(fileURLWithPath: game.folder))
+                                gameDirectory: URL(fileURLWithPath: game.folder, isDirectory: true))
         }
         nativeInspectionTasks[game.id] = task
         // A background attempt is not a new readiness result.
@@ -1017,7 +1018,7 @@ final class InstalledGamesController: ObservableObject {
         await refreshLaunchableGames()
     }
 
-    func checkInstallation(_ game: InstalledGame) async {
+    func refreshInstallation(_ game: InstalledGame) async {
         guard !checkingInstallations.contains(game.id) else { return }
         guard loaded, !editing, !choosing, !mutationActive, !accountDisconnecting,
               !applicationTerminating, runningGameID != game.id,
@@ -1272,7 +1273,7 @@ final class InstalledGamesController: ObservableObject {
         let inspectPackage = inspectPackage
         let mountedStorageRoots = mountedStorageRoots
         let nativeIDs = Set(entries.filter(requiresNativeInstallationStatus).map(\.id))
-        let outcome = await Task { try await readinessProbe.read {
+        let outcome = await Task { try await readinessProbe.read(key: "installed-readiness") {
             var launchable: Set<UUID> = []
             var publishers: [UUID: String] = [:]
             var packageTypes: [UUID: PackageType] = [:]
@@ -1283,12 +1284,13 @@ final class InstalledGamesController: ObservableObject {
             var validNativeFolders: Set<UUID> = []
             let mounted = mountedStorageRoots()
             for game in entries {
-                let folder = URL(fileURLWithPath: game.folder)
                 if game.storageVolume?.isUnavailable(mountedRoots: mounted) == true {
                     unavailableDrives.insert(game.id)
                     failures[game.id] = Self.driveUnavailableMessage
                     continue
                 }
+                try Task.checkCancellation()
+                let folder = URL(fileURLWithPath: game.folder, isDirectory: true)
                 if game.publisher == nil, let publisher = (try? MicrosoftGameConfig.read(folder: folder))?.publisher {
                     publishers[game.id] = publisher
                 }

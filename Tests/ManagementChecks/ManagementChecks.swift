@@ -822,6 +822,19 @@ actor Checks {
                 "params": .object(["contentID": .string("513710f5-ab8e-4d7c-9ed5-d0ba94dcfb33")])
             ])
             try verificationValidator.validate(verificationRequest)
+            var recoveryRequest = verificationRequest.object ?? [:]
+            recoveryRequest["command"] = .string("auth.recover")
+            recoveryRequest["params"] = .object([:])
+            try verificationValidator.validate(.object(recoveryRequest))
+            check(ManagementCommand.authRecover.resultDefinition == "authData",
+                  "Complete recovery is a separate command with the existing authentication result")
+            recoveryRequest["params"] = .object(["clearDeviceRegistration": .bool(true)])
+            do {
+                try verificationValidator.validate(.object(recoveryRequest))
+                check(false, "Recovery rejects optional destructive scope parameters")
+            } catch {
+                check(true, "Recovery rejects optional destructive scope parameters")
+            }
             check(ManagementCommand.authVerify.defaultTimeout == .seconds(30),
                   "Authenticated read is an explicit negotiated operation with a 30-second deadline")
             for params: JSONValue in [
@@ -1300,6 +1313,13 @@ actor Checks {
                   "Unsupported command is rejected before transport")
         }
         do {
+            _ = try await client.request(.authRecover)
+            check(false, "Account-only producer cannot admit full sign-in recovery")
+        } catch {
+            check(error as? ManagementError == .capabilityMissing("auth.recover"),
+                  "Account-only producer cannot admit full sign-in recovery")
+        }
+        do {
             _ = try await client.request(.authStatus, params: ["token": .string("synthetic-forbidden-field")])
             check(false, "Credential parameter is rejected before transport")
         } catch { check(error as? ManagementError == .invalidRequest, "Credential parameter is rejected before transport") }
@@ -1316,6 +1336,7 @@ actor Checks {
         check(await denied.close(), "Owned inaccessible-store transport closes")
         check(ManagementCommand.authBegin.defaultTimeout == .seconds(600)
               && ManagementCommand.authLogout.defaultTimeout == .seconds(600)
+              && ManagementCommand.authRecover.defaultTimeout == .seconds(600)
               && ManagementCommand.authStatus.defaultTimeout == .seconds(130)
               && ManagementCommand.authVerify.defaultTimeout == .seconds(30)
               && ManagementCommand.hello.defaultTimeout == .seconds(30),
@@ -1662,7 +1683,7 @@ enum MockBackend {
         do {
             let lifecycleDirectory = URL(fileURLWithPath: CommandLine.arguments[index + 1])
             let lifecycleScenario = ["retireslow", "retirefailed", "retirehello", "retiresnapshot", "authgate",
-                                     "savedpermission", "startupquery", "uifailures",
+                                     "savedpermission", "expiredpermission", "startupquery", "uifailures",
                                      "statuspermission", "foregroundexpired", "deadlinecompleted", "discoverybounded",
                                      "discoveryhundreds"].contains(scenario) || scenario.hasPrefix("recent") || scenario.hasPrefix("ode")
             func trace(_ entry: String) throws {
@@ -1993,7 +2014,7 @@ enum MockBackend {
                         }
                         continue
                     }
-                    if ["savedpermission", "startupquery", "uifailures", "statuspermission", "foregroundexpired",
+                    if ["savedpermission", "expiredpermission", "startupquery", "uifailures", "statuspermission", "foregroundexpired",
                         "discoveryhundreds", "discoverybounded"].contains(scenario) { try trace(command) }
                     if scenario == "foregroundexpired", command == "auth.status" {
                         profileReads += 1
@@ -2111,6 +2132,7 @@ enum MockBackend {
                     }
                     if scenario == "authgate", command.hasPrefix("auth.") {
                         if command == "auth.status" { try trace("auth.status") }
+                        if command == "auth.logout" { try trace("auth.logout") }
                         var flowState = "pending"
                         let windowClosedMarker = lifecycleDirectory.appendingPathComponent("native-window-closed")
                         if command == "auth.begin" {

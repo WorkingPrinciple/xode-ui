@@ -123,10 +123,10 @@ enum InstalledGameChecks {
             processed: home.appendingPathComponent("processed"), logs: home.appendingPathComponent("logs"),
             games: library, journal: home.appendingPathComponent("operation.json"))
         let resumeOperations = GameOperationsController(installed: controller, paths: resumePaths)
-        check(GameInstallAction(game: game, operations: resumeOperations).actionTitle == "Install",
-              "REQ106: A matching partial default-root destination keeps the resumable install action instead of Check installation")
-        check(GameInstallAction(game: game, operations: operations).actionTitle == "Check installation",
-              "REQ106: Unverified matching package uses existing Check installation action, not blind Install")
+        check(GameInstallAction(game: game, operations: resumeOperations).actionTitle == "Download",
+              "COR478: A partial destination presents Download")
+        check(GameInstallAction(game: game, operations: operations).actionTitle == "Download",
+              "COR478: Download retains discovery admission for an unverified matching package")
         await GameInstallAction(game: game, operations: operations).requestInstall()
         check(operations.installConsent == nil && operations.operation == nil && operations.error != nil,
               "REQ106: Check installation retries discovery only and surfaces its failure without a download or consent")
@@ -188,7 +188,7 @@ enum InstalledGameChecks {
               && controller.launchableIDs == Set(entries.map(\.id)),
               "REQ92: Games across multiple recorded roots retain their exact paths and local readiness")
         try FileManager.default.moveItem(at: b, to: detachedB)
-        await controller.checkInstallation(entries[1])
+        await controller.refreshInstallation(entries[1])
         let savedOffline = try await store.load()
         check(controller.games.map(\.folder) == entries.map(\.folder)
               && controller.unavailableDriveIDs == [entries[1].id]
@@ -202,13 +202,13 @@ enum InstalledGameChecks {
         check(!offlineAttention.offersRepair && !offlineOperations.canRepair(entries[1]),
               "REQ92: An unavailable drive offers read-only recovery rather than repair or replacement")
         try FileManager.default.moveItem(at: detachedB, to: b)
-        await controller.checkInstallation(entries[1])
+        await controller.refreshInstallation(entries[1])
         check(controller.unavailableDriveIDs.isEmpty
               && controller.launchableIDs.contains(entries[1].id)
               && controller.games.map(\.folder) == entries.map(\.folder),
               "REQ92: Read-only Check again restores readiness after a drive returns without relocation or reimport")
         try FileManager.default.removeItem(at: URL(fileURLWithPath: entries[1].folder))
-        await controller.checkInstallation(entries[1])
+        await controller.refreshInstallation(entries[1])
         check(controller.unavailableDriveIDs.isEmpty && controller.games.count == 2
               && !controller.launchableIDs.contains(entries[1].id)
               && controller.packageErrors[entries[1].id] == InstalledGameError.missingFolder.localizedDescription,
@@ -263,14 +263,15 @@ enum InstalledGameChecks {
             check(error as? GameStorageProbeError == .timedOut,
                   "REQ92: A stalled filesystem read releases its UI waiter at the deadline")
         }
-        do {
-            _ = try await probe.read { 2 }
-            check(false, "REQ92: Timed-out syscall retains its one worker reservation until it actually returns")
-        } catch {
-            check(error as? GameStorageProbeError == .pending,
-                  "REQ92: Timed-out syscall retains its one worker reservation until it actually returns")
+        check(probe.activeReads == 1,
+              "REQ92: Timed-out syscall retains its worker reservation until it actually returns")
+        check(try await probe.read { 2 } == 2,
+              "COR479: A timed-out drive does not reject an independent storage read")
+        let completionDeadline = ContinuousClock.now.advanced(by: .seconds(2))
+        while probe.activeReads != 0 {
+            guard ContinuousClock.now < completionDeadline else { throw GameStorageProbeError.timedOut }
+            try await Task.sleep(for: .milliseconds(5))
         }
-        try await Task.sleep(for: .milliseconds(200))
         check(try await probe.read { 3 } == 3,
               "REQ92: Late completion cannot republish its old result and a returned worker can be reused")
         let gate = PackageInspectionInterleaving()
@@ -288,13 +289,10 @@ enum InstalledGameChecks {
         } catch {
             check(error is CancellationError, "COR105: Cancellation completes only the storage waiter")
         }
-        do {
-            _ = try await probe.read { 4 }
-            check(false, "COR105: Cancelled blocked worker prevents a replacement worker")
-        } catch {
-            check(error as? GameStorageProbeError == .pending,
-                  "COR105: Cancelled blocked worker prevents a replacement worker")
-        }
+        check(probe.activeReads == 1,
+              "COR105: Cancelled blocked worker retains its bounded slot")
+        check(try await probe.read { 4 } == 4,
+              "COR479: Cancellation leaves other bounded storage slots available")
         gate.release()
         try await Task.sleep(for: .milliseconds(50))
         check(try await probe.read { 5 } == 5,
@@ -345,7 +343,7 @@ enum InstalledGameChecks {
         let checkingObservation = controller.$checkingInstallations.sink {
             if $0.contains(existing.id) { showedChecking = true }
         }
-        await controller.checkInstallation(existing)
+        await controller.refreshInstallation(existing)
         check(showedChecking && !controller.checkingInstallations.contains(existing.id)
               && controller.installationErrors[existing.id] != nil,
               "COR467: An explicit native check publishes progress before storage/service work and resolves to an explicit error without a connected service")
@@ -554,7 +552,7 @@ enum InstalledGameChecks {
               "REQ95: A launch/access refusal never becomes an installation-damage claim or repair action")
         try Data("<Game><Identity Name=\"Wrong\" Version=\"7.6.0.0\"/><StoreId>FIXTURE00001</StoreId></Game>".utf8)
             .write(to: folder.appendingPathComponent("MicrosoftGame.config"))
-        await controller.checkInstallation(game)
+        await controller.refreshInstallation(game)
         check(controller.packageErrors[game.id] != nil,
               "REQ95: Native legacy records still reject a mismatched product identity")
         let historical = InstalledGamesController(store: store, inspectPackage: { _ in .msixvc })
@@ -803,7 +801,7 @@ enum InstalledGameChecks {
               && placeholderLibrary.packageErrors[game.id] == InstalledGameError.placeholderContent.localizedDescription
               && placeholderLibrary.games.count == 1,
               "Known placeholder registration remains intact but cannot advertise Play or Continue Playing")
-        await placeholderLibrary.checkInstallation(game)
+        await placeholderLibrary.refreshInstallation(game)
         check(placeholderLibrary.placeholderIDs.contains(game.id)
               && placeholderLibrary.checkingInstallations.isEmpty && !placeholderLibrary.editing
               && !placeholderLibrary.launchStarted,
@@ -858,8 +856,8 @@ enum InstalledGameChecks {
               "Nonzero fake session exit returns to Play with exact code and retry message")
         let failedButton = InstalledPlayButton(library: library,
             operations: GameOperationsController(installed: library), game: failedGame)
-        check(failedButton.loadingTitle == nil && failedButton.title == "Try again",
-              "REQ-75: A real launcher failure retires loading and exposes retry while preserving its exact error")
+        check(failedButton.loadingTitle == nil && failedButton.title == "Play",
+              "COR478: A launcher failure retires loading and returns to Play")
         check(library.playLogs[game.id] == nil, "AC2.3: A nonzero session without its stderr file offers no Show log")
         let logs = root.appendingPathComponent("logs")
         try FileManager.default.createDirectory(at: logs, withIntermediateDirectories: false)
@@ -1211,7 +1209,7 @@ enum InstalledGameChecks {
     }
 }
 
-private final class PackageInspectionInterleaving: @unchecked Sendable {
+final class PackageInspectionInterleaving: @unchecked Sendable {
     private let lock = NSLock()
     private let resume = DispatchSemaphore(value: 0)
     private var first = true

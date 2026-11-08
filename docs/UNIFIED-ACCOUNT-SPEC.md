@@ -12,6 +12,166 @@ Microsoft sign-in for games, PC library, Xbox profile and achievements where the
 provider authorizes those capabilities. This document does not promise ownership,
 downloadability, compatibility or gameplay merely because authentication succeeds.
 
+### Explicit sign-in recovery (REQ-234)
+
+COR-474 extends explicit recovery to Ode-owned device-registration sign-in
+material. The visible Sign in recovery action requires the negotiated
+`auth.recover` capability and sends that command with empty parameters only
+after the existing account/game teardown. There is no `auth.logout` fallback:
+an older producer cannot attest complete recovery cleanup. Ordinary Sign out
+continues to use `auth.logout`, preserving device registration, and ordinary
+restart still preserves valid saved authentication. A recovery refresh that
+confirms a valid saved account returns without either cleanup command or login.
+Capability admission occurs before retiring account views or starting teardown.
+The producer owns the selective deletion and must confirm cleanup before the
+UI begins fresh human sign-in; source wiring is not installed cleanup evidence.
+
+REQ-238 helper receipt: exit 65 means controller-owned failure or parent-loss
+teardown completed, not successful authentication. It is emitted only after
+stopping the owned browser/window, fencing the cancelled output task, and
+shutting down the private channel. Normal completion stays 0 and acknowledged
+user cancellation stays 2. Startup failures, signals and incomplete teardown do
+not produce this receipt. The producer must reap the bound helper before
+interpreting 65 as cleanup; no wire/schema or credential-result changes are made.
+Failure while draining output or writing a close acknowledgement also completes
+the shared teardown before exit 65; it cannot claim the completed acknowledgement
+or exit 0. The close path keeps its terminal admission fence throughout teardown.
+The actual no-argument helper EOF-before-open path is checked with a fresh
+socketpair and no open frame or provider request. Every production-check child
+is owned immediately after spawn, with bounded normal waiting and independently
+bounded cleanup on timeout, cancellation or error. Cleanup checks the kill result
+and observes process termination for at most two seconds without a synchronous
+unbounded join. A rejected signal or unconfirmed exit fails the check explicitly
+and retains unresolved process ownership; neither is reported as joined. Socket
+cleanup also covers spawn failure. Timeout and cancellation checks use unopened
+real children. Controller
+close/output-failure races are source-reviewed, not exercised by those checks.
+This is not proof of
+browser-open teardown, installed sign-in or full composed backend acceptance.
+
+The native helper has no application diagnostic-file sink (REQ-239). Provider
+URLs, requests, bridge messages, JavaScript results and account/credential
+payloads are not logged. Failure reporting remains limited to typed
+`HostFailure` values sent through the existing private control channel; normal
+helper stdout/stderr are redirected to `/dev/null`. Existing diagnostic files
+from older builds are outside this source correction and must not be inspected
+or treated as sanitized. Installed privacy acceptance requires a separately
+reviewed and deployed helper; this source change alone is not installed proof.
+
+The visible **Sign in with Xbox Live** recovery action refreshes unresolved saved
+status. If that refresh confirms a valid saved account, it preserves the account
+and returns without cleanup or a new login. Otherwise it awaits consolidated app
+teardown and a successful `auth.recover`
+acknowledgement before issuing `auth.begin`. A `signedOut` status does not prove
+that the backend's retained account exchange has been removed, so it cannot skip
+cleanup. Missing recovery support, failed cleanup or an unfinished flow prevents a
+new login; failure remains visible instead of claiming cleanup succeeded.
+
+Recovery requires the backend's account-and-device removal contract. It removes
+Ode-owned user credentials, pending exchange state and device-registration
+sign-in material, not unrelated Keychain entries, global browser sessions,
+games, saves or prefixes. The older producer retains `dev_license` and
+`device-tokens`, which also participate in sign-in, and lacks `auth.recover`.
+It therefore cannot admit this complete recovery action. The auth host
+uses a non-persistent browser store; the UI does not clear browser cookies itself.
+Ordinary connection and saved-status reads do not call cleanup and retain valid
+saved sign-in. These are distinct from explicit recovery.
+
+Recovery binds the negotiated unified-account consumers before sign-out, even
+before the first successful login. It must not depend on the authenticated root
+view's later binding or accidentally require legacy PC-library/game-service
+sign-out helpers for a unified producer. Ordinary non-unified sign-out retains
+its existing consolidated legacy cleanup and step-specific refusal messages;
+explicit recovery still requires the new producer capability.
+
+Sign-out eligibility is checked again when confirmation executes. If game or
+account work starts after the dialog opens, the action reports that sign-out
+did not start instead of silently returning. The busy/ownership guards remain
+in force; a rejected confirmation does not send account cleanup.
+The account sheet displays the precise not-started refusal. Partial cleanup keeps
+its established plain-language explanation and next action, with exact failure
+details retained separately. Account projections
+and installed-game access are retired only after both disconnect owners admit
+the operation.
+
+While sign-in remains pending, Welcome offers an explicit Check status action
+through the existing status-read path, including after polling stops or a
+manual check still finds a pending flow. It does not cancel the flow, release
+consent ownership or start another login; Cancel remains a separate action.
+
+The older producer also deserializes the saved management store-user bundle during
+logout to preserve device material. A corrupt bundle can therefore block account
+removal. The UI reports cleanup failure and refuses to begin login; source
+wiring alone does not prove corrupt-storage recovery or establish that the
+owner's stored bundle is corrupt.
+
+Each begin attempt owns its own Microsoft consent-gate identity. Terminal
+results release that identity; connection/account epochs and flow identity fence
+obsolete responses. A producer rejection is reconciled by a subsequent status
+read after the rejection reply has settled. A no-flow status can release that
+rejected attempt only because the producer completed its rejection before that
+read; `INVALID_TRANSITION` is not treated as definitive rejection.
+
+Transport errors and invalid begin replies retain the gate. A no-flow or prior
+flow snapshot cannot settle those ambiguous outcomes: the original request may
+still start consent afterward. Welcome and Account expose Check status and
+Reset sign-in connection. A newly observed flow binds reconciliation and enables
+normal polling/cancellation; reset awaits joined management connection retirement
+before reconnecting and reading status, without logout or a new login. Failed
+retirement does not release the consent hold. With an owned consent attempt,
+retirement additionally requires normal direct-process exit 0 without shutdown
+escalation. For producer-809, successful `serve` returns only after task retirement
+and awaited `stop_auth`; its success maps to exit 0. SIGTERM/SIGKILL or nonzero
+parent exit is not evidence of consent-child cleanup and leaves the gate held
+with an explicit blocking error.
+
+If retirement observes a non-orderly dead process, this session records terminal
+unconfirmed cleanup. Reset is hidden and cannot re-close that same dead client;
+reconnect is blocked while ownership remains held. The visible next step is to
+quit Ode and close any still-open Microsoft sign-in window before reopening.
+These are manual recovery instructions, not a claim that any helper joined or
+that cleanup has been verified.
+
+**Nested-host limit:** producer `stop_auth` discards the worker exit status after
+reaping, including a force-killed management-auth-worker. That worker owns the
+native auth host and normally awaits `host.abort()`, but cannot do so after
+SIGKILL. Channel EOF is asynchronous, not a join receipt. Cancellation
+acknowledgement and orderly management exit therefore establish only the
+producer's worker-stop contract, not independently confirmed termination of
+all consent UI descendants. This UI-only candidate cannot prove that broader
+boundary with the existing wire contract; backend descendant-join evidence is
+required before treating it as full consent-process safety or product acceptance.
+
+An `AUTH_EXPIRED` terminal flow may precede child reaping in producer-809.
+It therefore retains ownership until matching `auth.cancel` acknowledgement
+(which awaits `stop_auth`) or confirmed orderly retirement. Reset for a known
+unresolved flow uses cancellation rather than assuming terminal status stopped
+the worker. A confirmed pending flow keeps its
+consent hold until cancellation, terminal status or joined connection retirement.
+An unresolved polling outcome is not treated as confirmed cancellation.
+
+Other terminal statuses follow different producer paths: `poll_auth` reports
+cancelled/stage-unavailable only after worker `try_wait` returns an exit;
+`complete_auth` awaits reaping and `stop_auth` before publishing its outcome;
+preparation failures finish the flow before replying without a spawned child.
+Those paths establish the worker-level terminal contract, unlike early expiry.
+They still share the nested-host qualification above; no terminal status alone
+is claimed to prove all native consent UI descendants are gone (REQ-238).
+
+The source regression checks reuse the existing AppHarnessChecks management
+seams without new simulated backend behavior. The existing `humanwait` seam
+returns a structurally valid auth response without a flow for begin; the consumer
+rejects it and the check verifies retained ownership through no-flow status and
+explicit joined reset. It does not spawn a consent child, so ambiguous failure
+after actual producer consent startup remains unexercised under this lane's
+no-new-fixtures/no-login constraints. Existing expired-flow and forced-retirement
+seams verify conservative holds and rejection of a forced direct-process exit;
+they do not exercise an actual expired live consent child or its successful
+cancellation acknowledgement. These checks are not proof of the installed
+failure's cause, backend late-commit safety, actual credential removal or fresh
+human login. Those remain coordinator-owned runtime acceptance in
+`dragoshont/dragos-core`, `projects/ode-to-x/SPEC.md`, REQ-234/COR-468–472.
+
 ### Fresh integrated local candidate (21 October, after policy correction)
 
 Subsequent owner-authorized interactive test: the owner explicitly requested

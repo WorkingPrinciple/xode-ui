@@ -70,7 +70,8 @@ struct NativeInstallationStatus: Codable, Equatable, Sendable {
 final class NativeInstallationQuery {
     static let defaultTimeout: Duration = .seconds(120)
     private var process: Process?
-    private let storageProbe = GameStorageProbe()
+    private let storageProbe: GameStorageProbe
+    init(storageProbe: GameStorageProbe) { self.storageProbe = storageProbe }
     var isRunning: Bool { process?.isRunning == true }
 
     static func failureMessage(_ error: Error) -> String {
@@ -81,68 +82,115 @@ final class NativeInstallationQuery {
     }
 
     func run(configuration: BackendConfiguration, product: String, gameDirectory: URL,
-             stateDirectory: URL? = nil, timeout: Duration = NativeInstallationQuery.defaultTimeout,
-             storageProbe: GameStorageProbe? = nil) async throws -> NativeInstallationStatus {
+             stateDirectory: URL? = nil, timeout: Duration = NativeInstallationQuery.defaultTimeout) async throws -> NativeInstallationStatus {
         guard process == nil, PCGamesClient.validProductID(product) else { throw GameScriptError.busy }
 #if XODUS_SHIPPING
         guard configuration.executableIdentity != nil else { throw GameScriptError.runtimeUnavailable }
 #endif
+        try Task.checkCancellation()
+        let state = stateDirectory ?? URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true)
+            .appendingPathComponent("Library/Application Support/Xodus/InstallationStatus/\(InstalledGamesController.runID())",
+                                   isDirectory: true)
+        let child = Process()
+        process = child
+        defer { process = nil }
+        let environment = InstalledGamesController.launchEnvironment(ProcessInfo.processInfo.environment)
+        // Admission includes staging and receipt I/O as well as the inspector.
+        // A cancelled waiter cannot release this reservation before child cleanup.
+        do {
+            return try await storageProbe.read(timeout: timeout + .seconds(30), key: gameDirectory.path) {
+                try Self.inspect(child: child, configuration: configuration, product: product,
+                    gameDirectory: gameDirectory, state: state, timeout: timeout, environment: environment)
+            }
+        } catch {
+            if error is CancellationError {
+                while child.isRunning {
+                    await Task.detached { try? await Task.sleep(for: .milliseconds(10)) }.value
+                }
+            }
+            throw error
+        }
+    }
+
+    nonisolated private static func inspect(child: Process, configuration: BackendConfiguration,
+                                           product: String, gameDirectory: URL, state: URL,
+                                           timeout: Duration, environment: [String: String]) throws -> NativeInstallationStatus {
+        try Task.checkCancellation()
         if let identity = configuration.executableIdentity {
             guard identity.executable == configuration.executable else { throw GameScriptError.runtimeUnavailable }
-            _ = try await Task.detached { try identity.validatedArguments() }.value
+            _ = try identity.validatedArguments()
         }
-        try Task.checkCancellation()
-        try await (storageProbe ?? self.storageProbe).read {
-            try GameScriptFiles.checkPath(gameDirectory, allowMissing: true)
-        }
-        let state = stateDirectory ?? URL(fileURLWithPath: NSHomeDirectory())
-            .appendingPathComponent("Library/Application Support/Xodus/InstallationStatus/\(InstalledGamesController.runID())")
+        try GameScriptFiles.checkPath(gameDirectory, allowMissing: true)
+        let outputURL = state.appendingPathComponent("stdout.json", isDirectory: false)
+        let errorURL = state.appendingPathComponent("stderr.log", isDirectory: false)
         try GameScriptFiles.checkPath(state, allowMissing: true)
         guard state.path != gameDirectory.path, !state.path.hasPrefix(gameDirectory.path + "/"),
               !FileManager.default.fileExists(atPath: state.path) else { throw GameScriptError.invalidDestination }
+        try Task.checkCancellation()
         try FileManager.default.createDirectory(at: state, withIntermediateDirectories: true,
                                                 attributes: [.posixPermissions: 0o700])
-        let outputURL = state.appendingPathComponent("stdout.json")
-        let errorURL = state.appendingPathComponent("stderr.log")
-        try GameScriptFiles.writePrivate(Data(), to: outputURL)
-        try GameScriptFiles.writePrivate(Data(), to: errorURL)
-        let output = try FileHandle(forWritingTo: outputURL)
-        let diagnostic = try FileHandle(forWritingTo: errorURL)
-        defer { output.closeFile(); diagnostic.closeFile(); process = nil }
-        let child = Process()
+        func removeUnstartedState() throws {
+            for file in [outputURL, errorURL] {
+                guard unlink(file.path) == 0 || errno == ENOENT else { throw GameScriptError.storage }
+            }
+            guard rmdir(state.path) == 0 || errno == ENOENT else { throw GameScriptError.storage }
+        }
+        let output: FileHandle
+        let diagnostic: FileHandle
+        do {
+            try GameScriptFiles.writePrivate(Data(), to: outputURL)
+            try Task.checkCancellation()
+            try GameScriptFiles.writePrivate(Data(), to: errorURL)
+            output = try FileHandle(forWritingTo: outputURL)
+            do { diagnostic = try FileHandle(forWritingTo: errorURL) }
+            catch { output.closeFile(); throw error }
+        } catch {
+            try removeUnstartedState()
+            throw error
+        }
+        defer { output.closeFile() }
+        defer { diagnostic.closeFile() }
         child.executableURL = configuration.executable
         child.arguments = ["install-status", product, "--game-dir", gameDirectory.path, "--state-dir", state.path]
         child.standardInput = FileHandle.nullDevice
         child.standardOutput = output
         child.standardError = diagnostic
-        child.environment = InstalledGamesController.launchEnvironment(ProcessInfo.processInfo.environment)
-        process = child
-        try child.run()
+        child.environment = environment
+        do {
+            try Task.checkCancellation()
+            try child.run()
+        } catch {
+            try removeUnstartedState()
+            throw error
+        }
         let deadline = ContinuousClock.now.advanced(by: timeout)
         do {
             while child.isRunning {
                 guard ContinuousClock.now < deadline else { throw GameScriptError.timeout }
-                try await Task.sleep(for: .milliseconds(50))
+                try Task.checkCancellation()
+                Thread.sleep(forTimeInterval: 0.05)
             }
         } catch {
             if child.isRunning { child.terminate() }
             let grace = ContinuousClock.now.advanced(by: .seconds(2))
             while child.isRunning && ContinuousClock.now < grace {
-                await Task.detached { try? await Task.sleep(for: .milliseconds(50)) }.value
+                Thread.sleep(forTimeInterval: 0.05)
             }
             if child.isRunning { kill(child.processIdentifier, SIGKILL) }
-            await Task.detached { child.waitUntilExit() }.value
+            child.waitUntilExit()
             throw error
         }
         child.waitUntilExit()
+        try Task.checkCancellation()
+        let exitCode = child.terminationStatus
         try output.synchronize()
         let bytes = try InstalledGameFiles.readRegular(outputURL, maximumBytes: 1_048_576, privateFile: true)
         let value = try JSONDecoder().decode(NativeInstallationStatus.self, from: bytes)
         try value.validate(product: product, gameDirectory: gameDirectory, stateDirectory: state,
-                           exitCode: child.terminationStatus)
-        try GameScriptFiles.checkPath(URL(fileURLWithPath: value.resultPath))
-        let persisted = try InstalledGameFiles.readRegular(URL(fileURLWithPath: value.resultPath),
-                                                          maximumBytes: 1_048_576, privateFile: true)
+                           exitCode: exitCode)
+        let resultURL = URL(fileURLWithPath: value.resultPath, isDirectory: false)
+        try GameScriptFiles.checkPath(resultURL)
+        let persisted = try InstalledGameFiles.readRegular(resultURL, maximumBytes: 1_048_576, privateFile: true)
         guard try JSONDecoder().decode(NativeInstallationStatus.self, from: persisted) == value else {
             throw GameScriptError.statusMismatch
         }

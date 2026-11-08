@@ -23,8 +23,10 @@ enum GameInstallationDiscovery {
             prefixes.contains { prefix in
                 path.hasPrefix(prefix) && !path.dropFirst(prefix.count).isEmpty
                     && !path.dropFirst(prefix.count).contains("/")
-            } && URL(fileURLWithPath: path).standardizedFileURL.path == path
-        })).sorted().map { URL(fileURLWithPath: $0).appendingPathComponent("Xodus") }
+            } && URL(fileURLWithPath: path, isDirectory: true).standardizedFileURL.path == path
+        })).sorted().map {
+            URL(fileURLWithPath: $0, isDirectory: true).appendingPathComponent("Xodus", isDirectory: true)
+        }
     }
 
     struct Candidate: Sendable {
@@ -45,15 +47,13 @@ enum GameInstallationDiscovery {
     static func scan(originalRoot: URL, location: GameInstallLocation?, entries: [InstalledGame],
                      mountedRoots: [String]?,
                      includeRecordedRoots: Bool = true,
+                     originalVolume: GameStorageVolume? = nil,
+                     originalRequired: Bool = false,
                      maximumChildren: Int = 512,
                      inspectPackage: @Sendable (URL) throws -> PackageType) throws -> Observation {
-        var roots: [(URL, GameStorageVolume?, Bool)] = [(originalRoot, nil, false)]
-        if let location {
-            roots.append((URL(fileURLWithPath: location.folder), location.volume, true))
-        }
-        roots += (includeRecordedRoots ? entries : []).map {
-            (URL(fileURLWithPath: $0.folder).deletingLastPathComponent(), $0.storageVolume, true)
-        }
+        let roots = discoveryRoots(originalRoot: originalRoot, location: location,
+            entries: includeRecordedRoots ? entries : [], originalVolume: originalVolume,
+            originalRequired: originalRequired)
         guard roots.count <= 514 else { throw InstalledGameError.invalidRegistry }
         let recorded = Set(entries.map(\.folder))
         var seen = Set<String>(), childrenRead = 0
@@ -64,6 +64,7 @@ enum GameInstallationDiscovery {
                 guard volume?.isUnavailable(mountedRoots: mountedRoots) != true else {
                     throw GameInstallLocationError.driveUnavailable
                 }
+                try Task.checkCancellation()
                 if !required, !FileManager.default.fileExists(atPath: root.path) { continue }
                 try GameScriptFiles.checkPath(root)
                 try InstalledGameFiles.checkFolder(root)
@@ -75,6 +76,7 @@ enum GameInstallationDiscovery {
                     throw InstalledGameError.missingFolder
                 }
                 for case let folder as URL in children {
+                    try Task.checkCancellation()
                     childrenRead += 1
                     result.childrenRead = childrenRead
                     guard childrenRead <= maximumChildren else { throw InstalledGameError.invalidRegistry }
@@ -94,17 +96,32 @@ enum GameInstallationDiscovery {
                         }
                         result.candidates.append(Candidate(folder: folder, config: config,
                             package: try inspectPackage(folder), volume: storageVolume))
-                    } catch {
+                    } catch is CancellationError { throw CancellationError() }
+                    catch {
                         result.errors.append("\(folder.path): \(error.localizedDescription)")
                     }
                 }
                 if let enumerationError { throw enumerationError }
                 result.scannedRoots.insert(root.path)
-            } catch {
+            } catch is CancellationError { throw CancellationError() }
+            catch {
                 result.errors.append("\(root.path): \(error.localizedDescription)")
                 if childrenRead > maximumChildren { break }
             }
         }
         return result
+    }
+
+    static func discoveryRoots(originalRoot: URL, location: GameInstallLocation?, entries: [InstalledGame],
+                               originalVolume: GameStorageVolume? = nil,
+                               originalRequired: Bool = false) -> [(URL, GameStorageVolume?, Bool)] {
+        var roots: [(URL, GameStorageVolume?, Bool)] = [(originalRoot, originalVolume, originalRequired)]
+        if let location {
+            roots.append((URL(fileURLWithPath: location.folder, isDirectory: true), location.volume, true))
+        }
+        roots += entries.map {
+            (URL(fileURLWithPath: $0.folder, isDirectory: true).deletingLastPathComponent(), $0.storageVolume, true)
+        }
+        return roots
     }
 }

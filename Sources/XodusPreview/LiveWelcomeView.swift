@@ -30,7 +30,28 @@ struct LiveWelcomeView: View {
                             .frame(maxWidth: 360)
                             .accessibilityIdentifier("xodus.welcome.notice")
                     }
-                    if session.signInPending {
+                    if session.signInCleanupUnconfirmed {
+                        EmptyView()
+                    } else if session.signInOutcomeUnresolved {
+                        if session.authentication?.flow != nil {
+                            Button("Cancel sign-in") {
+                                Task { await state.cancelUnifiedSignIn(session: session) }
+                            }
+                            .disabled(session.accountBusy)
+                            .accessibilityIdentifier("xodus.welcome.cancel")
+                        }
+                        Button("Check status") { Task { await session.refreshAccount() } }
+                            .disabled(session.accountBusy || !session.isReady)
+                            .accessibilityIdentifier("xodus.welcome.checkStatus")
+                        Button("Reset sign-in connection") {
+                            Task { await session.resetUnresolvedSignInConnection() }
+                        }
+                        .disabled(!session.canResetUnresolvedSignIn)
+                        .accessibilityIdentifier("xodus.welcome.resetSignIn")
+                    } else if session.signInPending {
+                        Button("Check status") { Task { await session.refreshAccount() } }
+                            .disabled(session.accountBusy || !session.isReady)
+                            .accessibilityIdentifier("xodus.welcome.pending.checkStatus")
                         Button("Cancel sign-in") { Task { await state.cancelUnifiedSignIn(session: session) } }
                             .keyboardShortcut(.cancelAction)
                             .disabled(session.accountBusy)

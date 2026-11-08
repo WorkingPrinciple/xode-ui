@@ -5,6 +5,7 @@ import XodusCore
 public enum ManagementCommand: String, CaseIterable, Codable, Sendable {
     case hello, authStatus = "auth.status", authBegin = "auth.begin", authCancel = "auth.cancel"
     case authLogout = "auth.logout", inventory = "inventory.snapshot", search = "catalog.search"
+    case authRecover = "auth.recover"
     case authVerify = "auth.verify"
     case libraryRecent = "library.recent"
     case odeAccountRead = "ode.account.read.v1"
@@ -21,7 +22,7 @@ public enum ManagementCommand: String, CaseIterable, Codable, Sendable {
     public var resultDefinition: String? {
         switch self {
         case .hello: "helloData"
-        case .authStatus, .authLogout, .authBegin, .authCancel: "authData"
+        case .authStatus, .authLogout, .authRecover, .authBegin, .authCancel: "authData"
         case .authVerify: "authVerifiedData"
         case .libraryRecent: "recentLibraryData"
         case .odeAccountRead, .odeRuntimeVerify: "odeAccountData"
@@ -42,7 +43,7 @@ public enum ManagementCommand: String, CaseIterable, Codable, Sendable {
 
     public var defaultTimeout: Duration {
         switch self {
-        case .authBegin, .authLogout: .seconds(600)
+        case .authBegin, .authLogout, .authRecover: .seconds(600)
         case .authStatus: .seconds(130)
         case .odeAccountRead, .odeRuntimeVerify: .seconds(125)
         default: .seconds(30)

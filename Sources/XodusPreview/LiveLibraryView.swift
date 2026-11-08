@@ -141,23 +141,6 @@ struct LiveLibraryView: View {
             VStack(alignment: .leading, spacing: 22) {
                 if query.isEmpty, !continuing.isEmpty { continuePlaying }
                 GameOperationProgressView(operations: operations)
-                if OfflineGameCompatibility.unavailable {
-                    Text("The offline compatibility catalogue couldn't be read. Live package checks remain available.")
-                        .font(.callout).foregroundStyle(.secondary)
-                }
-                if let error = installed.error {
-                    ContentUnavailableView {
-                        Label("Installed games unavailable", systemImage: "exclamationmark.triangle")
-                    } description: { Text(error) } actions: {
-                        Button("Try again") { Task { await installed.load() } }.disabled(installed.loading)
-                    }
-                }
-                if let error = installed.historyError {
-                    Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
-                }
-                if let error = installed.discoveryError {
-                    Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
-                }
                 if countryUnresolved {
                     GroupBox {
                         VStack(alignment: .leading, spacing: 12) {
@@ -325,7 +308,14 @@ struct LiveLibraryView: View {
                 await macEvidence.refresh()
                 await installed.discoverNativeInstallations()
                 await NativeMinecraft.shared.refresh()
-                if NSApp.isActive { await installed.refreshNativeInstallationStatuses() }
+                if NSApp.isActive {
+                    if !installed.loaded { await installed.load() }
+                    await installed.refreshNativeInstallationStatuses()
+                    await library.refreshInBackground()
+                    if operations.recoveryRequired && !operations.checkingRecovery {
+                        await operations.reconcile()
+                    }
+                }
                 do { try await Task.sleep(for: .seconds(5)) }
                 catch { return }
             }
@@ -422,8 +412,7 @@ struct LiveLibraryView: View {
             if let details = art.images[id]?.detail { GameHeroMetadata(details: details) }
         } actions: {
             if !unsupportedIssues(game).isEmpty {
-                LibraryCompatibilityIndicators(issues: unsupportedIssues(game), heroStyle: true)
-                Button("View game") { open(game) }.modifier(LibraryActionStyle(primary: false))
+                EmptyView()
             } else if let match = game.installed {
                 InstalledPlayButton(library: installed, operations: operations, game: match,
                                     usesGlass: true, heroStyle: true)
@@ -439,7 +428,6 @@ struct LiveLibraryView: View {
                         disabledReason: allowsStartupTasks ? library.installAccessNotice(for: game.id)
                             : "Wait for Ode to X to finish starting.")
                 }
-                Button("View game") { open(game) }.modifier(LibraryActionStyle(primary: false))
                 if operations.precheckingProductID == game.id {
                     ProgressView().controlSize(.small).help("Checking whether this game runs on Mac")
                 }
@@ -542,9 +530,6 @@ struct LiveLibraryView: View {
                             .modifier(SearchResultFocusRing(focused: focusedGameID == "recent-\(game.id)"))
                             .accessibilityLabel("View \(game.title)")
                             .accessibilityHint("Open game details to play")
-                            .contextMenu {
-                                Button("View details") { open(recentGame(game), focusID: "recent-\(game.id)") }
-                            }
                             Text(game.title).font(.headline).lineLimit(1)
                             if let facts = projection.byID[game.storeId]?.facts { AccessBadges(facts: facts) }
                             if let date = game.lastPlayedAt {
@@ -640,13 +625,6 @@ struct LiveLibraryView: View {
         } status: {
             if let match = game.installed {
                 InstalledPlayError(library: installed, game: match)
-            }
-        }
-        .contextMenu {
-            Button("View details") { open(game) }
-            if let match = game.installed {
-                InstalledGameManagement(library: installed, operations: operations, game: match)
-                Button("Show in Finder") { NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: match.folder) }
             }
         }
     }

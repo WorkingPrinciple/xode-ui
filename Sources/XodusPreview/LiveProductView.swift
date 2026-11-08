@@ -182,15 +182,6 @@ struct LiveProductView: View {
                                 game: installed, repairGame: library.accessIsCurrent(for: product.id) ? owned : nil,
                                 close: dismiss.callAsFunction)
                         }
-                        if let error = catalog.detailErrors[product.id] ?? catalog.error {
-                            HStack {
-                                Label(error, systemImage: "exclamationmark.circle").foregroundStyle(.secondary)
-                                Spacer()
-                                Button("Try Again") {
-                                    Task { await catalog.retry(id: product.id, market: product.market, language: product.language) }
-                                }.disabled(!allowsArtworkLoading)
-                            }
-                        }
                         if let details {
                             if let description = details.description ?? details.shortDescription {
                                 VStack(alignment: .leading, spacing: 14) {
@@ -238,10 +229,16 @@ struct LiveProductView: View {
         .task(id: "\(product.id):\(product.market):\(product.language)") {
             if allowsArtworkLoading {
                 await catalog.loadDetail(id: product.id, market: product.market, language: product.language)
+                while !Task.isCancelled, catalog.detailErrors[product.id] != nil {
+                    do { try await Task.sleep(for: .seconds(30)) }
+                    catch { return }
+                    guard !Task.isCancelled else { return }
+                    await catalog.retry(id: product.id, market: product.market, language: product.language)
+                }
             }
         }
         .task(id: installed?.id) {
-            if allowsStartupTasks, let installed { await installedLibrary.checkInstallation(installed) }
+            if allowsStartupTasks, let installed { await installedLibrary.refreshInstallation(installed) }
         }
         .task(id: product.id) {
             guard allowsStartupTasks,
@@ -302,7 +299,7 @@ struct LiveProductView: View {
                                 Button {
                                     Task { await operations.repair(owned, installed: installed) }
                                 } label: {
-                                    Label("Download full game", systemImage: "icloud.and.arrow.down")
+                                    Label("Download", systemImage: "icloud.and.arrow.down")
                                 }
                                 .modifier(LibraryActionStyle())
                                 .disabled(!allowsStartupTasks || !library.accessIsCurrent(for: product.id)
@@ -328,28 +325,7 @@ struct LiveProductView: View {
                                               recoveryTitle: operations.installAccountUnavailable ? "Account settings" : nil,
                                               recover: { openSettings() }, reviewInstall: reviewInstall)
                         } else if gamePass, !operations.usesUnifiedAccount {
-                            VStack(alignment: .leading, spacing: 8) {
-                            Button {
-                                operations.checkGamePass(
-                                    discoveryProducts: session.gamePassProducts,
-                                    ownedGames: library.accessIsCurrent ? library.representedGames : nil
-                                )
-                            } label: {
-                                Label("Check Game Pass access", systemImage: "checkmark.shield")
-                            }
-                            .modifier(LibraryActionStyle())
-                            .disabled(!allowsStartupTasks || !operations.canStartMutation || !library.accessIsCurrent)
-                            .help(library.accessIsCurrent
-                                  ? "Verify this account's current PC Game Pass download access."
-                                  : "Refresh your PC library before checking Game Pass access.")
-                            if let status = GameDetailFacetCopy.gamePassActionStatus(
-                                startupAllowed: allowsStartupTasks, libraryNotice: library.gamePassCheckNotice,
-                                operationNotice: operations.installUnavailableReason) {
-                                InstallUnavailableNotice(message: status,
-                                    recoveryTitle: library.gamePassCheckNotice == nil ? nil : installRecovery.title,
-                                    recover: recoverInstall)
-                            }
-                            }
+                            EmptyView()
                         } else {
                             GameInstallAction(game: owned ?? PCGame(product: product), operations: operations,
                                               enabled: false, disabledReason: installAccessReason,

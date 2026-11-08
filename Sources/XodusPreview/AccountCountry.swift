@@ -74,11 +74,6 @@ struct AccountCountrySettings: View {
                     .disabled(selected.isEmpty)
                     .accessibilityIdentifier("xodus.account.confirmCountry")
             }
-            if session.hasConfirmedSignIn, !session.accountCountryChecking {
-                Button("Check account country again") {
-                    Task { await session.refreshAccountCountry() }
-                }
-            }
         }
         .onChange(of: session.accountHash) { _, _ in selected = "" }
     }
